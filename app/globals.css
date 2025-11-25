@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Remove focus ring from Clerk modal close button */
+[data-clerk-component] button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.cl-modalCloseButton:focus,
+.cl-modalCloseButton:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
