@@ -15,6 +15,7 @@ import {
   IconList,
   IconLogout,
   IconWebhook,
+  IconCreditCard,
 } from "@tabler/icons-react";
 
 export default function DashboardLayout({ children }) {
@@ -36,16 +37,17 @@ export default function DashboardLayout({ children }) {
   ];
 
   const accountItems = [
+    { label: "Payments", href: "/dashboard/payments", icon: IconCreditCard },
     { label: "API Keys", href: "/dashboard/settings", icon: IconApi },
     { label: "Webhooks", href: "/dashboard/webhooks", icon: IconWebhook },
   ];
 
-  const section = pathname === "/dashboard/settings" || pathname === "/dashboard/webhooks" ? "account" : "business";
+  const section = pathname === "/dashboard/settings" || pathname === "/dashboard/webhooks" || pathname === "/dashboard/payments" ? "account" : "business";
   const currentItems = section === "business" ? businessItems : accountItems;
 
   const handleSectionChange = (value) => {
     if (value === "account") {
-      router.push("/dashboard/settings");
+      router.push("/dashboard/payments");
     } else {
       router.push("/dashboard");
     }
