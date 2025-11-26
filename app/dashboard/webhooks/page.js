@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Card, Group, Text, Title, CopyButton, ActionIcon, Stack, Code, Modal, TextInput, Checkbox, Switch, Badge } from "@mantine/core";
-import { IconCopy, IconCheck, IconWebhook, IconTrash } from "@tabler/icons-react";
+import { Button, Card, Group, Text, Title, CopyButton, ActionIcon, Stack, Code, Modal, TextInput, Checkbox, Switch, Badge, Accordion, Paper, Tooltip } from "@mantine/core";
+import { IconCopy, IconCheck, IconWebhook, IconTrash, IconInfoCircle } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { notifications } from "@mantine/notifications";
 
@@ -32,12 +32,91 @@ export default function WebhooksPage() {
   };
 
   const availableEvents = [
-    { value: "booking.created", label: "Booking Created" },
-    { value: "booking.updated", label: "Booking Updated" },
-    { value: "booking.completed", label: "Booking Completed" },
-    { value: "client.created", label: "Client Created" },
-    { value: "payment.received", label: "Payment Received" },
-    { value: "service.updated", label: "Service Updated" },
+    {
+      value: "booking.created",
+      label: "Booking Created",
+      description: "Triggered when a new booking is created",
+      example: {
+        event: "booking.created",
+        data: {
+          id: "booking_123",
+          clientId: "client_456",
+          serviceId: "service_789",
+          scheduledAt: "2024-01-15T10:00:00Z",
+          status: "inquiry",
+          totalPrice: 15000,
+          duration: 60
+        }
+      }
+    },
+    {
+      value: "booking.updated",
+      label: "Booking Updated",
+      description: "Triggered when a booking is modified",
+      example: {
+        event: "booking.updated",
+        data: {
+          id: "booking_123",
+          status: "confirmed",
+          previousStatus: "inquiry"
+        }
+      }
+    },
+    {
+      value: "booking.completed",
+      label: "Booking Completed",
+      description: "Triggered when a booking is marked as completed",
+      example: {
+        event: "booking.completed",
+        data: {
+          id: "booking_123",
+          completedAt: "2024-01-15T11:00:00Z"
+        }
+      }
+    },
+    {
+      value: "client.created",
+      label: "Client Created",
+      description: "Triggered when a new client is added",
+      example: {
+        event: "client.created",
+        data: {
+          id: "client_456",
+          name: "John Doe",
+          email: "john@example.com",
+          phone: "+1234567890"
+        }
+      }
+    },
+    {
+      value: "payment.received",
+      label: "Payment Received",
+      description: "Triggered when a payment is successfully processed",
+      example: {
+        event: "payment.received",
+        data: {
+          id: "payment_789",
+          bookingId: "booking_123",
+          amount: 15000,
+          currency: "usd",
+          status: "succeeded"
+        }
+      }
+    },
+    {
+      value: "service.updated",
+      label: "Service Updated",
+      description: "Triggered when a service is modified",
+      example: {
+        event: "service.updated",
+        data: {
+          id: "service_789",
+          name: "Premium Consultation",
+          price: 15000,
+          duration: 60
+        }
+      }
+    },
   ];
 
   const createWebhook = async () => {
@@ -285,17 +364,86 @@ export default function WebhooksPage() {
           <div>
             <Text size="sm" fw={500} mb="xs">Events to Subscribe</Text>
             <Text size="xs" c="dimmed" mb="md">Select which events will trigger this webhook</Text>
-            <Stack gap="xs">
+            <Stack gap="sm">
               {availableEvents.map((event) => (
-                <Checkbox
-                  key={event.value}
-                  label={event.label}
-                  checked={newWebhook.events.includes(event.value)}
-                  onChange={() => toggleEvent(event.value)}
-                />
+                <Paper key={event.value} p="sm" withBorder style={{ backgroundColor: newWebhook.events.includes(event.value) ? 'rgba(34, 139, 230, 0.05)' : 'transparent' }}>
+                  <Group justify="space-between" wrap="nowrap">
+                    <Stack gap={4} style={{ flex: 1 }}>
+                      <Checkbox
+                        label={event.label}
+                        checked={newWebhook.events.includes(event.value)}
+                        onChange={() => toggleEvent(event.value)}
+                        fw={500}
+                      />
+                      <Text size="xs" c="dimmed" pl={28}>
+                        {event.description}
+                      </Text>
+                    </Stack>
+                    <Tooltip label="View example payload" position="left">
+                      <ActionIcon
+                        variant="subtle"
+                        color="blue"
+                        onClick={() => {
+                          notifications.show({
+                            title: `${event.label} - Example Payload`,
+                            message: (
+                              <Code block style={{ fontSize: '11px' }}>
+                                {JSON.stringify(event.example, null, 2)}
+                              </Code>
+                            ),
+                            autoClose: false,
+                            color: "blue",
+                          });
+                        }}
+                      >
+                        <IconInfoCircle size={18} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Paper>
               ))}
             </Stack>
           </div>
+
+          <Accordion variant="contained">
+            <Accordion.Item value="docs">
+              <Accordion.Control icon={<IconInfoCircle size={18} />}>
+                Webhook Documentation
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap="sm">
+                  <div>
+                    <Text size="sm" fw={500} mb="xs">Payload Structure</Text>
+                    <Text size="xs" c="dimmed" mb="sm">
+                      All webhook payloads include an event type and data object:
+                    </Text>
+                    <Code block>
+                      {`{
+  "event": "booking.created",
+  "data": { ... },
+  "timestamp": "2024-01-15T10:00:00Z",
+  "signature": "sha256_hash_for_verification"
+}`}
+                    </Code>
+                  </div>
+                  <div>
+                    <Text size="sm" fw={500} mb="xs">Security</Text>
+                    <Text size="xs" c="dimmed">
+                      Each webhook request includes an HMAC-SHA256 signature in the <Code>X-Webhook-Signature</Code> header.
+                      Use your webhook secret to verify the authenticity of requests.
+                    </Text>
+                  </div>
+                  <div>
+                    <Text size="sm" fw={500} mb="xs">Retry Policy</Text>
+                    <Text size="xs" c="dimmed">
+                      Failed webhook deliveries will be retried up to 3 times with exponential backoff.
+                      Your endpoint should return a 200-299 status code to acknowledge receipt.
+                    </Text>
+                  </div>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
           <Group justify="flex-end" mt="md">
             <Button variant="subtle" onClick={() => setWebhookModalOpen(false)}>
               Cancel
