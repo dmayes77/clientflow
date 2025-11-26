@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -17,14 +17,20 @@
     "@mantine/hooks": "^8.3.9",
     "@mantine/notifications": "^8.3.9",
     "@neondatabase/serverless": "^1.0.2",
-    "@prisma/client": "^7.0.0",
+    "@prisma/client": "^6.19.0",
+    "@react-email/components": "^1.0.1",
     "@tabler/icons-react": "^3.35.0",
+    "@uploadthing/react": "^7.3.3",
     "dayjs": "^1.11.19",
     "next": "16.0.3",
-    "prisma": "^7.0.0",
+    "prisma": "^6.19.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-email": "^5.0.5",
+    "resend": "^6.5.2",
     "stripe": "^20.0.0",
+    "uploadthing": "^7.7.4",
+    "ws": "^8.18.3",
     "zod": "^4.1.13"
   },
   "devDependencies": {

@@ -4,6 +4,7 @@ import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/dates/styles.css";
+import "@uploadthing/react/styles.css";
 import "./globals.css";
 
 export const metadata = {

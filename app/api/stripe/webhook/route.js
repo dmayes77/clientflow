@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { clerkClient } from "@clerk/nextjs/server";
+import { resend } from "@/lib/resend";
+import { MagicLinkEmail } from "@/emails/magic-link";
 
 export async function POST(request) {
   const body = await request.text();
@@ -214,31 +217,102 @@ async function handleCheckoutCompleted(session) {
 
   const subscription = await stripe.subscriptions.retrieve(session.subscription);
   const customerId = session.customer;
+  const customerEmail = session.customer_details?.email || session.customer_email;
 
-  // Find tenant by Stripe customer ID
-  const tenant = await prisma.tenant.findFirst({
-    where: { stripeCustomerId: customerId },
-  });
-
-  if (!tenant) {
-    console.error(`Tenant not found for customer: ${customerId}`);
+  if (!customerEmail) {
+    console.error("No customer email found in checkout session");
     return;
   }
 
-  // Determine status based on trial
-  const status = subscription.status === "trialing" ? "trialing" : subscription.status;
-  const planType = subscription.metadata.planType || "professional";
-
-  // Update tenant subscription info
-  await prisma.tenant.update({
-    where: { id: tenant.id },
-    data: {
-      subscriptionStatus: status,
-      planType: planType,
-    },
+  // Check if tenant already exists for this customer
+  let tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
   });
 
-  console.log(`Checkout completed for tenant: ${tenant.id}, Status: ${status}`);
+  if (tenant) {
+    // Tenant already exists, just update subscription status
+    const status = subscription.status === "trialing" ? "trialing" : subscription.status;
+    const planType = subscription.metadata.planType || "professional";
+
+    await prisma.tenant.update({
+      where: { id: tenant.id },
+      data: {
+        subscriptionStatus: status,
+        planType: planType,
+      },
+    });
+
+    console.log(`Checkout completed for existing tenant: ${tenant.id}, Status: ${status}`);
+    return;
+  }
+
+  // NEW USER: Create Clerk account + tenant
+  try {
+    const client = await clerkClient();
+
+    // Create Clerk user
+    // Extract name from email if available
+    const nameFromEmail = customerEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim();
+
+    const clerkUser = await client.users.createUser({
+      emailAddress: [customerEmail],
+      skipPasswordRequirement: true,
+      firstName: nameFromEmail || "User",
+      lastName: "",
+    });
+
+    // Create Clerk organization
+    const clerkOrg = await client.organizations.createOrganization({
+      name: `${customerEmail.split('@')[0]}'s Organization`,
+      createdBy: clerkUser.id,
+    });
+
+    // Determine status and plan type
+    const status = subscription.status === "trialing" ? "trialing" : subscription.status;
+    const planType = subscription.metadata.planType || "professional";
+
+    // Create tenant in our database
+    tenant = await prisma.tenant.create({
+      data: {
+        name: clerkOrg.name,
+        email: customerEmail,
+        clerkOrgId: clerkOrg.id,
+        stripeCustomerId: customerId,
+        subscriptionStatus: status,
+        planType: planType,
+      },
+    });
+
+    // Create sign-in token for magic link
+    const signInToken = await client.signInTokens.createSignInToken({
+      userId: clerkUser.id,
+      expiresInSeconds: 86400, // 24 hours
+    });
+
+    // Generate magic link
+    const magicLink = `${process.env.NEXT_PUBLIC_APP_URL}/sign-in#/?__clerk_ticket=${signInToken.token}`;
+
+    // Send magic link email via Resend
+    try {
+      await resend.emails.send({
+        from: 'ClientFlow <onboarding@resend.dev>', // Use your verified domain in production
+        to: customerEmail,
+        subject: 'Welcome to ClientFlow - Sign in with your magic link',
+        react: MagicLinkEmail({ magicLink, planType }),
+      });
+
+      console.log(`✅ Magic link email sent to ${customerEmail}`);
+    } catch (emailError) {
+      console.error(`❌ Failed to send magic link email to ${customerEmail}:`, emailError);
+      // Log magic link as fallback
+      console.log(`Fallback Magic Link: ${magicLink}`);
+    }
+
+    console.log(`Created new account for ${customerEmail}, Tenant: ${tenant.id}, Status: ${status}`);
+  } catch (error) {
+    console.error("Error creating Clerk account:", error);
+    // TODO: Send notification to admin about failed account creation
+  }
 }
 
 async function handleSubscriptionCreated(subscription) {
@@ -281,14 +355,36 @@ async function handleSubscriptionUpdated(subscription) {
 
   const status = subscription.status;
 
+  // Only update planType if there's a pendingDowngradeTo in metadata
+  // This handles scheduled downgrades when billing period ends
+  // For immediate upgrades, the change-plan API handles the database update
+  const updateData = {
+    subscriptionStatus: status,
+  };
+
+  // If there's no pending downgrade metadata, keep current planType
+  if (subscription.metadata.pendingDowngradeTo) {
+    // Check if we're at the billing period end (when downgrade should take effect)
+    const now = Math.floor(Date.now() / 1000);
+    const periodEnd = subscription.current_period_end;
+
+    // If we're within 1 hour of period end, apply the downgrade
+    if (periodEnd - now < 3600) {
+      updateData.planType = subscription.metadata.pendingDowngradeTo;
+      console.log(`Applying scheduled downgrade for tenant: ${tenant.id} to ${subscription.metadata.pendingDowngradeTo}`);
+    }
+  } else if (subscription.metadata.planType && subscription.metadata.planType !== tenant.planType) {
+    // Only update if metadata explicitly has a different planType
+    // This catches edge cases but doesn't interfere with immediate upgrades
+    updateData.planType = subscription.metadata.planType;
+  }
+
   await prisma.tenant.update({
     where: { id: tenant.id },
-    data: {
-      subscriptionStatus: status,
-    },
+    data: updateData,
   });
 
-  console.log(`Subscription updated for tenant: ${tenant.id}, Status: ${status}`);
+  console.log(`Subscription updated for tenant: ${tenant.id}, Status: ${status}${updateData.planType ? `, Plan: ${updateData.planType}` : ''}`);
 }
 
 async function handleSubscriptionDeleted(subscription) {

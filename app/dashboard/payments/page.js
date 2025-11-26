@@ -40,7 +40,10 @@ export default function PaymentsPage() {
         method: "POST",
       });
 
-      if (!response.ok) throw new Error("Failed to create onboarding link");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create onboarding link");
+      }
 
       const { url } = await response.json();
 
@@ -48,10 +51,16 @@ export default function PaymentsPage() {
       window.location.href = url;
     } catch (error) {
       console.error("Error connecting Stripe:", error);
+
+      // Show more detailed error message
+      const isConnectError = error.message?.includes("Stripe Connect");
       notifications.show({
-        title: "Error",
-        message: "Failed to start Stripe onboarding",
-        color: "red",
+        title: "Setup Required",
+        message: isConnectError
+          ? error.message
+          : "Failed to start Stripe onboarding. Please try again.",
+        color: "orange",
+        autoClose: isConnectError ? false : 5000,
       });
       setConnecting(false);
     }

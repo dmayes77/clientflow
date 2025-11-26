@@ -33,8 +33,10 @@ import {
   IconLock,
   IconGift,
   IconWallet,
+  IconPhoto,
 } from "@tabler/icons-react";
 import Link from "next/link";
+import { HeroText } from "@/components/HeroText";
 
 export default function Home() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -59,6 +61,11 @@ export default function Home() {
       icon: IconApi,
       title: "REST API",
       description: "Full API access to build custom integrations and workflows",
+    },
+    {
+      icon: IconPhoto,
+      title: "Media Library",
+      description: "CDN-powered image storage with API access for your website",
     },
     {
       icon: IconSettings,
@@ -175,64 +182,36 @@ export default function Home() {
       </AppShell.Header>
 
       <AppShell.Main>
-        <Box
-          style={{
-            minHeight: "calc(100vh - 60px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+        <HeroText
+          title="Manage Your Service Business."
+          highlight="Your Way."
+          description="More than just a booking system—ClientFlow is the backend for your website. Manage bookings, clients, and services with a powerful REST API, all in one place. No limiting widgets. Full control over your data and customer experience."
+          maxWidth={700}
+          dotsConfig={[
+            { left: 0, top: 0 },
+            { left: 60, top: 0 },
+            { right: 0, top: 60 },
+            { right: 60, top: 140 }
+          ]}
         >
-          <Container size="lg" py="xl">
-            <Stack align="center" gap="xl" mb={60}>
-              <Box
-                style={{
-                  display: "inline-block",
-                  padding: "8px 20px",
-                  borderRadius: "100px",
-                  background: "linear-gradient(135deg, rgba(34, 139, 230, 0.1) 0%, rgba(121, 80, 242, 0.1) 100%)",
-                  border: "1px solid rgba(34, 139, 230, 0.2)",
-                }}
-              >
-                <Text size="sm" fw={600} style={{
-                  background: "linear-gradient(45deg, #228be6, #7950f2)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  letterSpacing: "0.5px",
-                }}>
-                  API-First Booking Platform
-                </Text>
-              </Box>
-              <Title
-                order={1}
-                size={48}
-                fw={900}
-                ta="center"
-                style={{ maxWidth: 800 }}
-              >
-                Manage Your Service Business. Your Way.
-              </Title>
-              <Text size="xl" c="dimmed" ta="center" style={{ maxWidth: 600 }}>
-                Intuitive dashboard for managing bookings and clients. Powerful REST API for custom integrations. No limiting widgets—build truly custom experiences that match your brand.
-              </Text>
-              <Group>
-                {isSignedIn ? (
-                  <Link href="/dashboard">
-                    <Button size="lg">Go to Dashboard</Button>
-                  </Link>
-                ) : (
-                  <SignUpButton mode="modal">
-                    <div>
-                      <Button size="lg">Start Free Trial</Button>
-                    </div>
-                  </SignUpButton>
-                )}
-                <Button size="lg" variant="outline">
-                  View Demo
-                </Button>
-              </Group>
-            </Stack>
+          {isSignedIn ? (
+            <Link href="/dashboard">
+              <Button size="lg">Go to Dashboard</Button>
+            </Link>
+          ) : (
+            <SignUpButton mode="modal">
+              <div>
+                <Button size="lg">Start Free Trial</Button>
+              </div>
+            </SignUpButton>
+          )}
+          <Button size="lg" variant="outline">
+            View Demo
+          </Button>
+        </HeroText>
 
+        <Box>
+          <Container size="lg" py="xl">
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
               {features.map((feature) => (
                 <Card key={feature.title} shadow="sm" padding="lg" radius="md" withBorder>
@@ -393,25 +372,58 @@ export default function Home() {
           </Container>
         </Box>
 
-        {/* REST API Section */}
-        <Box id="rest-api" py={80} style={{ backgroundColor: "var(--mantine-color-gray-0)" }}>
+        {/* Media Library Section */}
+        <Box id="media-library" py={80} style={{ backgroundColor: "var(--mantine-color-gray-0)" }}>
           <Container size="lg">
             <Group align="flex-start" gap={60}>
               <Box style={{ flex: 1 }}>
                 <Card shadow="sm" padding="xl" radius="md" withBorder>
                   <Text size="sm" tt="uppercase" fw={700} c="dimmed" mb="md" style={{ letterSpacing: 1 }}>
-                    API Capabilities
+                    Media Features
                   </Text>
                   <Stack gap="md">
-                    <Text size="sm">RESTful API architecture with JSON request/response format</Text>
-                    <Text size="sm">Comprehensive documentation with code examples in multiple languages</Text>
-                    <Text size="sm">Test mode for development and rate limiting protection for production</Text>
-                    <Text size="sm">Create, read, update, and delete bookings, clients, and services programmatically</Text>
-                    <Text size="sm">Real-time data synchronization between your website and ClientFlow</Text>
-                    <Text size="sm">Secure API key authentication with granular permissions control</Text>
+                    <Text size="sm">Upload and store images with automatic CDN delivery for fast global access</Text>
+                    <Text size="sm">Organize images with custom names and alt text for accessibility and SEO</Text>
+                    <Text size="sm">Access all images via API endpoints to display on your website</Text>
+                    <Text size="sm">Edit metadata, copy CDN URLs, and delete images with a clean interface</Text>
+                    <Text size="sm">View image dimensions, file sizes, and upload dates at a glance</Text>
+                    <Text size="sm">Maximum file size limits and automatic optimization for web delivery</Text>
                   </Stack>
                 </Card>
               </Box>
+              <Box style={{ flex: 1 }}>
+                <IconPhoto size={40} style={{ marginBottom: 12, color: "var(--mantine-color-pink-6)" }} />
+                <Title order={2} size={32} fw={800} mb="sm">
+                  Media Library
+                </Title>
+                <Text size="md" c="dimmed" mb="lg">
+                  Store and manage all your business images in one place with CDN-powered delivery. Upload logos, service photos, and marketing materials, then access them via API for use on your website.
+                </Text>
+                <Stack gap="md">
+                  <Box>
+                    <Group gap="xs" mb={4}>
+                      <IconPhoto size={18} />
+                      <Text fw={600} size="sm">CDN Delivery</Text>
+                    </Group>
+                    <Text size="sm" c="dimmed" pl={26}>Fast global image delivery with CDN URLs</Text>
+                  </Box>
+                  <Box>
+                    <Group gap="xs" mb={4}>
+                      <IconApi size={18} />
+                      <Text fw={600} size="sm">API Access</Text>
+                    </Group>
+                    <Text size="sm" c="dimmed" pl={26}>Fetch images programmatically for your website</Text>
+                  </Box>
+                </Stack>
+              </Box>
+            </Group>
+          </Container>
+        </Box>
+
+        {/* REST API Section */}
+        <Box id="rest-api" py={80}>
+          <Container size="lg">
+            <Group align="flex-start" gap={60}>
               <Box style={{ flex: 1 }}>
                 <IconApi size={40} style={{ marginBottom: 12, color: "var(--mantine-color-teal-6)" }} />
                 <Title order={2} size={32} fw={800} mb="sm">
@@ -436,6 +448,21 @@ export default function Home() {
                     <Text size="sm" c="dimmed" pl={26}>API key authentication keeps your data safe</Text>
                   </Box>
                 </Stack>
+              </Box>
+              <Box style={{ flex: 1 }}>
+                <Card shadow="sm" padding="xl" radius="md" withBorder style={{ backgroundColor: "var(--mantine-color-gray-0)" }}>
+                  <Text size="sm" tt="uppercase" fw={700} c="dimmed" mb="md" style={{ letterSpacing: 1 }}>
+                    API Capabilities
+                  </Text>
+                  <Stack gap="md">
+                    <Text size="sm">RESTful API architecture with JSON request/response format</Text>
+                    <Text size="sm">Comprehensive documentation with code examples in multiple languages</Text>
+                    <Text size="sm">Test mode for development and rate limiting protection for production</Text>
+                    <Text size="sm">Create, read, update, and delete bookings, clients, and services programmatically</Text>
+                    <Text size="sm">Real-time data synchronization between your website and ClientFlow</Text>
+                    <Text size="sm">Secure API key authentication with granular permissions control</Text>
+                  </Stack>
+                </Card>
               </Box>
             </Group>
           </Container>

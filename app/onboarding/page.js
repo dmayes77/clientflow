@@ -12,8 +12,8 @@ export default function OnboardingPage() {
 
   // These will be Stripe Price IDs - you'll create these in Stripe Dashboard
   const PRICE_IDS = {
+    platform: process.env.NEXT_PUBLIC_STRIPE_PRICE_PLATFORM || "price_platform",
     professional: process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "price_professional",
-    enterprise: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "price_enterprise",
   };
 
   const handleSelectPlan = async (planType, priceId) => {
@@ -64,7 +64,7 @@ export default function OnboardingPage() {
       </Stack>
 
       <Group align="flex-start" gap="xl" style={{ justifyContent: "center" }}>
-        {/* Professional Plan */}
+        {/* Platform Plan */}
         <Card
           shadow="lg"
           padding="xl"
@@ -77,13 +77,13 @@ export default function OnboardingPage() {
         >
           <Stack gap="md">
             <div>
-              <Text size="sm" fw={600} c="blue">PROFESSIONAL</Text>
+              <Text size="sm" fw={600} c="blue">PLATFORM</Text>
               <Group align="baseline" gap="xs" mt="xs">
                 <Text size={48} fw={900}>$99</Text>
                 <Text size="lg" c="dimmed">/month</Text>
               </Group>
               <Text size="sm" c="dimmed" mt="xs">
-                Perfect for growing service businesses
+                Full platform access for growing businesses
               </Text>
             </div>
 
@@ -115,11 +115,11 @@ export default function OnboardingPage() {
               >
                 <List.Item>Unlimited bookings</List.Item>
                 <List.Item>Unlimited clients</List.Item>
-                <List.Item>Full REST API access</List.Item>
-                <List.Item>Webhook integrations</List.Item>
                 <List.Item>Stripe payment processing</List.Item>
                 <List.Item>Service & package management</List.Item>
                 <List.Item>Visual pipeline boards</List.Item>
+                <List.Item>Webhook notifications (single URL)</List.Item>
+                <List.Item>Booking calendar</List.Item>
                 <List.Item>Email support</List.Item>
               </List>
             </Stack>
@@ -127,8 +127,8 @@ export default function OnboardingPage() {
             <Button
               size="lg"
               fullWidth
-              onClick={() => handleSelectPlan("professional", PRICE_IDS.professional)}
-              loading={loading === "professional"}
+              onClick={() => handleSelectPlan("platform", PRICE_IDS.platform)}
+              loading={loading === "platform"}
               mt="md"
             >
               Start 14-Day Free Trial
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
           </Stack>
         </Card>
 
-        {/* Enterprise Plan */}
+        {/* Professional Plan */}
         <Card
           shadow="lg"
           padding="xl"
@@ -163,7 +163,7 @@ export default function OnboardingPage() {
 
           <Stack gap="md">
             <div>
-              <Text size="sm" fw={600} c="violet">ENTERPRISE</Text>
+              <Text size="sm" fw={600} c="violet">PROFESSIONAL</Text>
               <Group align="baseline" gap="xs" mt="xs">
                 <Text size={48} fw={900}>$149</Text>
                 <Text size="lg" c="dimmed">/month</Text>
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
             </Box>
 
             <Stack gap="xs">
-              <Text size="sm" fw={600} mb="xs">Everything in Professional, plus:</Text>
+              <Text size="sm" fw={600} mb="xs">Everything in Platform, plus:</Text>
               <List
                 spacing="xs"
                 size="sm"
@@ -199,13 +199,14 @@ export default function OnboardingPage() {
                   </ThemeIcon>
                 }
               >
+                <List.Item>Full REST API access</List.Item>
+                <List.Item>Custom webhook management</List.Item>
+                <List.Item>Multiple webhook endpoints</List.Item>
                 <List.Item>Priority support (24h response)</List.Item>
-                <List.Item>Custom webhook events</List.Item>
                 <List.Item>Advanced analytics</List.Item>
                 <List.Item>Team collaboration (coming soon)</List.Item>
                 <List.Item>White-label options</List.Item>
                 <List.Item>Dedicated account manager</List.Item>
-                <List.Item>Custom integrations</List.Item>
                 <List.Item>SLA guarantee</List.Item>
               </List>
             </Stack>
@@ -215,8 +216,8 @@ export default function OnboardingPage() {
               fullWidth
               variant="gradient"
               gradient={{ from: "violet", to: "grape" }}
-              onClick={() => handleSelectPlan("enterprise", PRICE_IDS.enterprise)}
-              loading={loading === "enterprise"}
+              onClick={() => handleSelectPlan("professional", PRICE_IDS.professional)}
+              loading={loading === "professional"}
               mt="md"
             >
               Start 14-Day Free Trial

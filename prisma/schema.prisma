@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Tenant {
@@ -11,6 +12,7 @@ model Tenant {
   clerkOrgId          String    @unique
   name                String
   email               String
+  slug                String?   @unique // URL-friendly identifier for custom sign-in
 
   stripeCustomerId    String?   @unique
   stripeAccountId     String?   @unique
@@ -18,6 +20,30 @@ model Tenant {
   stripeOnboardingComplete Boolean @default(false)
   subscriptionStatus  String?   @default("trialing")
   planType            String?   @default("basic")
+
+  // Business Information
+  businessName        String?
+  businessAddress     String?
+  businessCity        String?
+  businessState       String?
+  businessZip         String?
+  businessCountry     String?
+  businessPhone       String?
+  contactPerson       String?
+  businessWebsite     String?
+  businessDescription String?
+  logoUrl             String?
+
+  // Social Media Links
+  facebookUrl         String?
+  twitterUrl          String?
+  instagramUrl        String?
+  linkedinUrl         String?
+  youtubeUrl          String?
+
+  // Metadata and Setup
+  metadata            Json?
+  setupComplete       Boolean   @default(false)
 
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
@@ -30,6 +56,7 @@ model Tenant {
   availability        Availability[]
   webhooks            Webhook[]
   payments            Payment[]
+  images              Image[]
 
   @@index([clerkOrgId])
 }
@@ -230,5 +257,27 @@ model Payment {
   @@index([tenantId])
   @@index([stripePaymentIntentId])
   @@index([status])
+  @@index([createdAt])
+}
+
+model Image {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  url         String    // CDN URL of the image
+  key         String    // Storage key/identifier
+  name        String    // Original filename
+  alt         String    // Alt text (required for accessibility)
+  size        Int       // File size in bytes
+  width       Int?      // Image width in pixels
+  height      Int?      // Image height in pixels
+  mimeType    String    // e.g., image/jpeg, image/png
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
   @@index([createdAt])
 }

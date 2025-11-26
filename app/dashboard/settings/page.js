@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Card, Group, Text, Title, CopyButton, ActionIcon, Stack, Code, Badge } from "@mantine/core";
-import { IconCopy, IconCheck, IconPlus, IconKey } from "@tabler/icons-react";
+import { Button, Card, Group, Text, Title, CopyButton, ActionIcon, Stack, Code, Badge, Alert, List, Divider } from "@mantine/core";
+import { IconCopy, IconCheck, IconPlus, IconKey, IconInfoCircle, IconExternalLink } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { notifications } from "@mantine/notifications";
 import { useAuth } from "@clerk/nextjs";
@@ -134,6 +134,71 @@ export default function SettingsPage() {
               </Group>
             </Card>
           ))
+        )}
+
+        {/* API Usage Instructions - Show when there are API keys */}
+        {apiKeys.length > 0 && (
+          <Card shadow="sm" padding="lg" radius="md" withBorder mt="md">
+            <Stack gap="md">
+              <Group gap="xs">
+                <IconInfoCircle size={20} />
+                <Text size="lg" fw={600}>Getting Started with the API</Text>
+              </Group>
+
+              <Divider />
+
+              <div>
+                <Text size="sm" fw={500} mb="xs">Authentication</Text>
+                <Text size="sm" c="dimmed" mb="xs">
+                  Include your API key in the request header:
+                </Text>
+                <Code block>
+                  {`Authorization: Bearer YOUR_API_KEY`}
+                </Code>
+              </div>
+
+              <div>
+                <Text size="sm" fw={500} mb="xs">Base URL</Text>
+                <Code block>
+                  {`${process.env.NEXT_PUBLIC_APP_URL || 'https://your-app.com'}/api`}
+                </Code>
+              </div>
+
+              <div>
+                <Text size="sm" fw={500} mb="xs">Example Request</Text>
+                <Text size="sm" c="dimmed" mb="xs">
+                  Fetch your bookings:
+                </Text>
+                <Code block>
+                  {`curl -X GET \\
+  ${process.env.NEXT_PUBLIC_APP_URL || 'https://your-app.com'}/api/bookings \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json"`}
+                </Code>
+              </div>
+
+              <Alert icon={<IconInfoCircle size={16} />} variant="light" color="blue">
+                <Text size="sm" fw={500} mb={4}>Important Security Notes:</Text>
+                <List size="sm" spacing={4}>
+                  <List.Item>Keep your API keys secure and never share them publicly</List.Item>
+                  <List.Item>API keys provide full access to your account data</List.Item>
+                  <List.Item>Rotate keys regularly for better security</List.Item>
+                  <List.Item>Use different keys for development and production</List.Item>
+                </List>
+              </Alert>
+
+              <Button
+                variant="light"
+                component="a"
+                href="/api-reference"
+                target="_blank"
+                rightSection={<IconExternalLink size={16} />}
+                fullWidth
+              >
+                View Full API Documentation
+              </Button>
+            </Stack>
+          </Card>
         )}
       </Stack>
     </>

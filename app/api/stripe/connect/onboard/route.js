@@ -59,8 +59,20 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error("Error creating Stripe onboarding link:", error);
+
+    // Check if it's a Stripe Connect not enabled error
+    if (error.message?.includes("signed up for Connect")) {
+      return NextResponse.json(
+        {
+          error: "Stripe Connect is not enabled for this account. Please visit https://dashboard.stripe.com/settings/applications to enable Connect.",
+          details: error.message
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to create onboarding link" },
+      { error: "Failed to create onboarding link", details: error.message },
       { status: 500 }
     );
   }

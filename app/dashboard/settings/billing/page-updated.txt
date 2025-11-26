@@ -1,0 +1,14 @@
+I'll provide you with the summary of changes instead since the file is large. Here are the key updates:
+
+1. Added Modal import from Mantine
+2. Added IconAlertTriangle for cancel button
+3. Added cancel modal state using useDisclosure
+4. Updated handleChangePlan to show different messages for upgrades vs downgrades
+5. Added handleCancelSubscription function
+6. Updated upgrade button text to show price difference
+7. Updated downgrade button text to show savings
+8. Added Cancel Subscription card with modal
+9. Split billing portal and cancel into separate cards in a grid
+
+The upgrade now shows: "Upgrade - Pay $50 more/mo"
+The downgrade shows: "Downgrade - Save $50/mo"
