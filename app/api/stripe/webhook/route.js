@@ -44,6 +44,27 @@ export async function POST(request) {
         await handleAccountUpdated(event.data.object, event.account);
         break;
 
+      // Subscription events for ClientFlow billing
+      case "customer.subscription.created":
+        await handleSubscriptionCreated(event.data.object);
+        break;
+
+      case "customer.subscription.updated":
+        await handleSubscriptionUpdated(event.data.object);
+        break;
+
+      case "customer.subscription.deleted":
+        await handleSubscriptionDeleted(event.data.object);
+        break;
+
+      case "customer.subscription.trial_will_end":
+        await handleTrialWillEnd(event.data.object);
+        break;
+
+      case "checkout.session.completed":
+        await handleCheckoutCompleted(event.data.object);
+        break;
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -183,4 +204,128 @@ async function handleAccountUpdated(account, accountId) {
   });
 
   console.log(`Account updated: ${tenant.id}`);
+}
+
+// ClientFlow Subscription Handlers
+async function handleCheckoutCompleted(session) {
+  if (session.mode !== "subscription") {
+    return;
+  }
+
+  const subscription = await stripe.subscriptions.retrieve(session.subscription);
+  const customerId = session.customer;
+
+  // Find tenant by Stripe customer ID
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
+  });
+
+  if (!tenant) {
+    console.error(`Tenant not found for customer: ${customerId}`);
+    return;
+  }
+
+  // Determine status based on trial
+  const status = subscription.status === "trialing" ? "trialing" : subscription.status;
+  const planType = subscription.metadata.planType || "professional";
+
+  // Update tenant subscription info
+  await prisma.tenant.update({
+    where: { id: tenant.id },
+    data: {
+      subscriptionStatus: status,
+      planType: planType,
+    },
+  });
+
+  console.log(`Checkout completed for tenant: ${tenant.id}, Status: ${status}`);
+}
+
+async function handleSubscriptionCreated(subscription) {
+  const customerId = subscription.customer;
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
+  });
+
+  if (!tenant) {
+    console.error(`Tenant not found for customer: ${customerId}`);
+    return;
+  }
+
+  const status = subscription.status;
+  const planType = subscription.metadata.planType || "professional";
+
+  await prisma.tenant.update({
+    where: { id: tenant.id },
+    data: {
+      subscriptionStatus: status,
+      planType: planType,
+    },
+  });
+
+  console.log(`Subscription created for tenant: ${tenant.id}, Status: ${status}`);
+}
+
+async function handleSubscriptionUpdated(subscription) {
+  const customerId = subscription.customer;
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
+  });
+
+  if (!tenant) {
+    console.error(`Tenant not found for customer: ${customerId}`);
+    return;
+  }
+
+  const status = subscription.status;
+
+  await prisma.tenant.update({
+    where: { id: tenant.id },
+    data: {
+      subscriptionStatus: status,
+    },
+  });
+
+  console.log(`Subscription updated for tenant: ${tenant.id}, Status: ${status}`);
+}
+
+async function handleSubscriptionDeleted(subscription) {
+  const customerId = subscription.customer;
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
+  });
+
+  if (!tenant) {
+    console.error(`Tenant not found for customer: ${customerId}`);
+    return;
+  }
+
+  await prisma.tenant.update({
+    where: { id: tenant.id },
+    data: {
+      subscriptionStatus: "canceled",
+    },
+  });
+
+  console.log(`Subscription canceled for tenant: ${tenant.id}`);
+}
+
+async function handleTrialWillEnd(subscription) {
+  const customerId = subscription.customer;
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
+  });
+
+  if (!tenant) {
+    console.error(`Tenant not found for customer: ${customerId}`);
+    return;
+  }
+
+  // TODO: Send email notification about trial ending
+  console.log(`Trial will end soon for tenant: ${tenant.id}`);
+  // This is where you would send an email reminder
 }
