@@ -1,264 +1,228 @@
 "use client";
 
 import {
-  AppShell,
-  Button,
-  Group,
-  Text,
   Container,
   Title,
-  Box,
+  Text,
   Stack,
   Card,
   Code,
   Divider,
   Badge,
   Table,
+  Button,
+  Group,
 } from "@mantine/core";
-import { SignInButton, SignUpButton, useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { PageLayout } from "@/components/PageLayout";
+
+const endpoints = [
+  {
+    method: "GET",
+    path: "/api/services",
+    description: "Get all services",
+    auth: "API Key or Session",
+  },
+  {
+    method: "POST",
+    path: "/api/services",
+    description: "Create a new service",
+    auth: "API Key or Session",
+  },
+  {
+    method: "PUT",
+    path: "/api/services/:id",
+    description: "Update a service",
+    auth: "API Key or Session",
+  },
+  {
+    method: "DELETE",
+    path: "/api/services/:id",
+    description: "Delete a service",
+    auth: "API Key or Session",
+  },
+  {
+    method: "GET",
+    path: "/api/bookings",
+    description: "Get all bookings",
+    auth: "API Key or Session",
+  },
+  {
+    method: "POST",
+    path: "/api/bookings",
+    description: "Create a new booking",
+    auth: "API Key or Session",
+  },
+  {
+    method: "PATCH",
+    path: "/api/bookings/:id",
+    description: "Update booking status",
+    auth: "API Key or Session",
+  },
+  {
+    method: "DELETE",
+    path: "/api/bookings/:id",
+    description: "Delete a booking",
+    auth: "API Key or Session",
+  },
+  {
+    method: "GET",
+    path: "/api/clients",
+    description: "Get all clients",
+    auth: "API Key or Session",
+  },
+  {
+    method: "POST",
+    path: "/api/clients",
+    description: "Create a new client",
+    auth: "API Key or Session",
+  },
+  {
+    method: "PUT",
+    path: "/api/clients/:id",
+    description: "Update a client",
+    auth: "API Key or Session",
+  },
+  {
+    method: "DELETE",
+    path: "/api/clients/:id",
+    description: "Delete a client",
+    auth: "API Key or Session",
+  },
+  {
+    method: "GET",
+    path: "/api/packages",
+    description: "Get all packages",
+    auth: "API Key or Session",
+  },
+  {
+    method: "POST",
+    path: "/api/packages",
+    description: "Create a new package",
+    auth: "API Key or Session",
+  },
+  {
+    method: "PUT",
+    path: "/api/packages/:id",
+    description: "Update a package",
+    auth: "API Key or Session",
+  },
+  {
+    method: "DELETE",
+    path: "/api/packages/:id",
+    description: "Delete a package",
+    auth: "API Key or Session",
+  },
+];
+
+function getMethodColor(method) {
+  switch (method) {
+    case "GET":
+      return "blue";
+    case "POST":
+      return "green";
+    case "PUT":
+      return "yellow";
+    case "PATCH":
+      return "orange";
+    case "DELETE":
+      return "red";
+    default:
+      return "gray";
+  }
+}
 
 export default function APIReferencePage() {
-  const { isSignedIn, isLoaded } = useUser();
-
-  const endpoints = [
-    {
-      method: "GET",
-      path: "/api/services",
-      description: "Get all services",
-      auth: "API Key or Session",
-    },
-    {
-      method: "POST",
-      path: "/api/services",
-      description: "Create a new service",
-      auth: "API Key or Session",
-    },
-    {
-      method: "PUT",
-      path: "/api/services/:id",
-      description: "Update a service",
-      auth: "API Key or Session",
-    },
-    {
-      method: "DELETE",
-      path: "/api/services/:id",
-      description: "Delete a service",
-      auth: "API Key or Session",
-    },
-    {
-      method: "GET",
-      path: "/api/bookings",
-      description: "Get all bookings",
-      auth: "API Key or Session",
-    },
-    {
-      method: "POST",
-      path: "/api/bookings",
-      description: "Create a new booking",
-      auth: "API Key or Session",
-    },
-    {
-      method: "PATCH",
-      path: "/api/bookings/:id",
-      description: "Update booking status",
-      auth: "API Key or Session",
-    },
-    {
-      method: "DELETE",
-      path: "/api/bookings/:id",
-      description: "Delete a booking",
-      auth: "API Key or Session",
-    },
-    {
-      method: "GET",
-      path: "/api/clients",
-      description: "Get all clients",
-      auth: "API Key or Session",
-    },
-    {
-      method: "POST",
-      path: "/api/clients",
-      description: "Create a new client",
-      auth: "API Key or Session",
-    },
-    {
-      method: "PUT",
-      path: "/api/clients/:id",
-      description: "Update a client",
-      auth: "API Key or Session",
-    },
-    {
-      method: "DELETE",
-      path: "/api/clients/:id",
-      description: "Delete a client",
-      auth: "API Key or Session",
-    },
-    {
-      method: "GET",
-      path: "/api/packages",
-      description: "Get all packages",
-      auth: "API Key or Session",
-    },
-    {
-      method: "POST",
-      path: "/api/packages",
-      description: "Create a new package",
-      auth: "API Key or Session",
-    },
-    {
-      method: "PUT",
-      path: "/api/packages/:id",
-      description: "Update a package",
-      auth: "API Key or Session",
-    },
-    {
-      method: "DELETE",
-      path: "/api/packages/:id",
-      description: "Delete a package",
-      auth: "API Key or Session",
-    },
-  ];
-
   return (
-    <AppShell header={{ height: 60 }} padding={0}>
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-              <Text size="xl" fw={700}>
-                ClientFlow
-              </Text>
-            </Link>
-          </Group>
+    <PageLayout showGetStarted>
+      <Container size="lg" py={60}>
+        <Stack gap="xl">
+          <div>
+            <Title order={1} mb="md">
+              API Reference
+            </Title>
+            <Text size="lg" c="dimmed">
+              Complete reference for the ClientFlow REST API
+            </Text>
+          </div>
 
-          <Group>
-            {!isLoaded ? null : isSignedIn ? (
-              <>
-                <Link href="/dashboard">
-                  <Button variant="subtle">Dashboard</Button>
-                </Link>
-                <UserButton />
-              </>
-            ) : (
-              <>
-                <SignInButton mode="modal">
-                  <div>
-                    <Button variant="subtle">Sign In</Button>
-                  </div>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <div>
-                    <Button>Get Started</Button>
-                  </div>
-                </SignUpButton>
-              </>
-            )}
-          </Group>
-        </Group>
-      </AppShell.Header>
+          <Divider />
 
-      <AppShell.Main>
-        <Container size="lg" py={60}>
-          <Stack gap="xl">
-            <div>
-              <Title order={1} mb="md">
-                API Reference
-              </Title>
-              <Text size="lg" c="dimmed">
-                Complete reference for the ClientFlow REST API
-              </Text>
-            </div>
-
-            <Divider />
-
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Authentication
-              </Title>
-              <Text size="sm" c="dimmed" mb="md">
-                All API requests must include your API key in the <Code>x-api-key</Code> header:
-              </Text>
-              <Code block>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Authentication
+            </Title>
+            <Text size="sm" c="dimmed" mb="md">
+              All API requests must include your API key in the <Code>x-api-key</Code> header:
+            </Text>
+            <Code block>
 {`curl -X GET https://yourdomain.com/api/services \\
   -H "x-api-key: your_api_key_here"`}
-              </Code>
-              <Text size="sm" c="dimmed" mt="md">
-                Generate API keys from your dashboard under Account → API Keys.
-              </Text>
-            </Card>
+            </Code>
+            <Text size="sm" c="dimmed" mt="md">
+              Generate API keys from your dashboard under Account - API Keys.
+            </Text>
+          </Card>
 
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Base URL
-              </Title>
-              <Code>https://yourdomain.com/api</Code>
-              <Text size="sm" c="dimmed" mt="md">
-                Replace <Code>yourdomain.com</Code> with your actual domain.
-              </Text>
-            </Card>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Base URL
+            </Title>
+            <Code>https://yourdomain.com/api</Code>
+            <Text size="sm" c="dimmed" mt="md">
+              Replace <Code>yourdomain.com</Code> with your actual domain.
+            </Text>
+          </Card>
 
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Endpoints
-              </Title>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Method</Table.Th>
-                    <Table.Th>Endpoint</Table.Th>
-                    <Table.Th>Description</Table.Th>
-                    <Table.Th>Auth</Table.Th>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Endpoints
+            </Title>
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Method</Table.Th>
+                  <Table.Th>Endpoint</Table.Th>
+                  <Table.Th>Description</Table.Th>
+                  <Table.Th>Auth</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {endpoints.map((endpoint, index) => (
+                  <Table.Tr key={index}>
+                    <Table.Td>
+                      <Badge color={getMethodColor(endpoint.method)}>
+                        {endpoint.method}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code>{endpoint.path}</Code>
+                    </Table.Td>
+                    <Table.Td>{endpoint.description}</Table.Td>
+                    <Table.Td>
+                      <Text size="xs" c="dimmed">
+                        {endpoint.auth}
+                      </Text>
+                    </Table.Td>
                   </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {endpoints.map((endpoint, index) => (
-                    <Table.Tr key={index}>
-                      <Table.Td>
-                        <Badge
-                          color={
-                            endpoint.method === "GET"
-                              ? "blue"
-                              : endpoint.method === "POST"
-                              ? "green"
-                              : endpoint.method === "PUT"
-                              ? "yellow"
-                              : endpoint.method === "PATCH"
-                              ? "orange"
-                              : "red"
-                          }
-                        >
-                          {endpoint.method}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Code>{endpoint.path}</Code>
-                      </Table.Td>
-                      <Table.Td>{endpoint.description}</Table.Td>
-                      <Table.Td>
-                        <Text size="xs" c="dimmed">
-                          {endpoint.auth}
-                        </Text>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Card>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Card>
 
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Create a Booking
-              </Title>
-              <Text size="sm" c="dimmed" mb="md">
-                Create a new booking with automatic client creation if the email doesn't exist.
-              </Text>
-              <Stack gap="md">
-                <div>
-                  <Text fw={600} size="sm" mb="xs">
-                    Request
-                  </Text>
-                  <Code block>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Create a Booking
+            </Title>
+            <Text size="sm" c="dimmed" mb="md">
+              Create a new booking with automatic client creation if the email doesn&apos;t exist.
+            </Text>
+            <Stack gap="md">
+              <div>
+                <Text fw={600} size="sm" mb="xs">
+                  Request
+                </Text>
+                <Code block>
 {`POST /api/bookings
 Content-Type: application/json
 x-api-key: your_api_key_here
@@ -273,13 +237,13 @@ x-api-key: your_api_key_here
   "notes": "Special requirements here",
   "status": "inquiry"
 }`}
-                  </Code>
-                </div>
-                <div>
-                  <Text fw={600} size="sm" mb="xs">
-                    Response
-                  </Text>
-                  <Code block>
+                </Code>
+              </div>
+              <div>
+                <Text fw={600} size="sm" mb="xs">
+                  Response
+                </Text>
+                <Code block>
 {`{
   "id": "clyyy....",
   "clientId": "clzzz....",
@@ -290,33 +254,33 @@ x-api-key: your_api_key_here
   "notes": "Special requirements here",
   "createdAt": "2024-11-24T10:30:00.000Z"
 }`}
-                  </Code>
-                </div>
-              </Stack>
-            </Card>
+                </Code>
+              </div>
+            </Stack>
+          </Card>
 
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Get All Services
-              </Title>
-              <Text size="sm" c="dimmed" mb="md">
-                Retrieve all services for your organization.
-              </Text>
-              <Stack gap="md">
-                <div>
-                  <Text fw={600} size="sm" mb="xs">
-                    Request
-                  </Text>
-                  <Code block>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Get All Services
+            </Title>
+            <Text size="sm" c="dimmed" mb="md">
+              Retrieve all services for your organization.
+            </Text>
+            <Stack gap="md">
+              <div>
+                <Text fw={600} size="sm" mb="xs">
+                  Request
+                </Text>
+                <Code block>
 {`GET /api/services
 x-api-key: your_api_key_here`}
-                  </Code>
-                </div>
-                <div>
-                  <Text fw={600} size="sm" mb="xs">
-                    Response
-                  </Text>
-                  <Code block>
+                </Code>
+              </div>
+              <div>
+                <Text fw={600} size="sm" mb="xs">
+                  Response
+                </Text>
+                <Code block>
 {`[
   {
     "id": "clxxx....",
@@ -335,76 +299,75 @@ x-api-key: your_api_key_here`}
     "createdAt": "2024-11-01T10:05:00.000Z"
   }
 ]`}
-                  </Code>
-                </div>
-              </Stack>
-            </Card>
+                </Code>
+              </div>
+            </Stack>
+          </Card>
 
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Status Codes
-              </Title>
-              <Stack gap="xs">
-                <Group>
-                  <Badge color="green">200</Badge>
-                  <Text size="sm">Success - Request completed successfully</Text>
-                </Group>
-                <Group>
-                  <Badge color="green">201</Badge>
-                  <Text size="sm">Created - Resource created successfully</Text>
-                </Group>
-                <Group>
-                  <Badge color="red">400</Badge>
-                  <Text size="sm">Bad Request - Invalid request data</Text>
-                </Group>
-                <Group>
-                  <Badge color="red">401</Badge>
-                  <Text size="sm">Unauthorized - Missing or invalid API key</Text>
-                </Group>
-                <Group>
-                  <Badge color="red">404</Badge>
-                  <Text size="sm">Not Found - Resource not found</Text>
-                </Group>
-                <Group>
-                  <Badge color="red">500</Badge>
-                  <Text size="sm">Server Error - Internal server error</Text>
-                </Group>
-              </Stack>
-            </Card>
-
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Rate Limits
-              </Title>
-              <Text size="sm" c="dimmed">
-                API requests are rate limited to prevent abuse:
-              </Text>
-              <Stack gap="xs" mt="md">
-                <Text size="sm">• Starter: 100 requests per minute</Text>
-                <Text size="sm">• Professional: 500 requests per minute</Text>
-                <Text size="sm">• Enterprise: Custom limits</Text>
-              </Stack>
-            </Card>
-
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Title order={2} size="h3" mb="md">
-                Need Help?
-              </Title>
-              <Text size="sm" c="dimmed" mb="md">
-                Questions about the API? Check out our documentation or contact support.
-              </Text>
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Status Codes
+            </Title>
+            <Stack gap="xs">
               <Group>
-                <Link href="/documentation">
-                  <Button variant="outline">Documentation</Button>
-                </Link>
-                <Link href="/support">
-                  <Button variant="outline">Contact Support</Button>
-                </Link>
+                <Badge color="green">200</Badge>
+                <Text size="sm">Success - Request completed successfully</Text>
               </Group>
-            </Card>
-          </Stack>
-        </Container>
-      </AppShell.Main>
-    </AppShell>
+              <Group>
+                <Badge color="green">201</Badge>
+                <Text size="sm">Created - Resource created successfully</Text>
+              </Group>
+              <Group>
+                <Badge color="red">400</Badge>
+                <Text size="sm">Bad Request - Invalid request data</Text>
+              </Group>
+              <Group>
+                <Badge color="red">401</Badge>
+                <Text size="sm">Unauthorized - Missing or invalid API key</Text>
+              </Group>
+              <Group>
+                <Badge color="red">404</Badge>
+                <Text size="sm">Not Found - Resource not found</Text>
+              </Group>
+              <Group>
+                <Badge color="red">500</Badge>
+                <Text size="sm">Server Error - Internal server error</Text>
+              </Group>
+            </Stack>
+          </Card>
+
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Rate Limits
+            </Title>
+            <Text size="sm" c="dimmed">
+              API requests are rate limited to prevent abuse:
+            </Text>
+            <Stack gap="xs" mt="md">
+              <Text size="sm">- Starter: 100 requests per minute</Text>
+              <Text size="sm">- Professional: 500 requests per minute</Text>
+              <Text size="sm">- Enterprise: Custom limits</Text>
+            </Stack>
+          </Card>
+
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Title order={2} size="h3" mb="md">
+              Need Help?
+            </Title>
+            <Text size="sm" c="dimmed" mb="md">
+              Questions about the API? Check out our documentation or contact support.
+            </Text>
+            <Group>
+              <Link href="/documentation">
+                <Button variant="outline">Documentation</Button>
+              </Link>
+              <Link href="/support">
+                <Button variant="outline">Contact Support</Button>
+              </Link>
+            </Group>
+          </Card>
+        </Stack>
+      </Container>
+    </PageLayout>
   );
 }

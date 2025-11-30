@@ -1,10 +1,20 @@
 "use client";
 
-import { AppShell, Button, Group, Text, Container, Title, Box, Stack, Card, SimpleGrid, Divider, Badge } from "@mantine/core";
-import { SignInButton, useUser, UserButton } from "@clerk/nextjs";
-import Link from "next/link";
-import { useState } from "react";
-import { notifications } from "@mantine/notifications";
+import {
+  Button,
+  Group,
+  Text,
+  Container,
+  Title,
+  Box,
+  Stack,
+  Card,
+  SimpleGrid,
+  Badge,
+  List,
+  ThemeIcon,
+  Accordion,
+} from "@mantine/core";
 import {
   IconCalendar,
   IconUsers,
@@ -14,395 +24,422 @@ import {
   IconWebhook,
   IconMail,
   IconMessage,
-  IconCheck
+  IconCheck,
+  IconArrowRight,
+  IconRocket,
+  IconCode,
+  IconDeviceDesktop,
 } from "@tabler/icons-react";
+import Link from "next/link";
+import { PageLayout } from "@/components/PageLayout";
+import { CheckoutButton } from "./components";
+
+const PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "price_professional";
+
+const includedFeatures = [
+  "Unlimited bookings & clients",
+  "Visual pipeline management",
+  "Stripe payment processing",
+  "Automatic invoicing",
+  "Full REST API access",
+  "Webhook notifications",
+  "Media library with CDN",
+  "Priority email support",
+];
+
+const featureCategories = [
+  {
+    icon: IconCalendar,
+    title: "Booking & CRM",
+    description: "Manage bookings with drag-and-drop pipelines. Track clients, history, and notes in one place.",
+    color: "blue",
+  },
+  {
+    icon: IconCreditCard,
+    title: "Payments & Invoicing",
+    description: "Accept payments via Stripe. Auto-generate invoices and track revenue effortlessly.",
+    color: "green",
+  },
+  {
+    icon: IconApi,
+    title: "REST API & Webhooks",
+    description: "Full API access for custom integrations. Real-time webhooks for every event.",
+    color: "violet",
+  },
+  {
+    icon: IconDeviceDesktop,
+    title: "Media & Assets",
+    description: "Upload images with CDN delivery. Access via API for your website.",
+    color: "orange",
+  },
+];
+
+const faqData = [
+  {
+    question: "What's included in the free trial?",
+    answer: "Full access to all features for 14 days. You can cancel anytime during the trial with no charges.",
+  },
+  {
+    question: "Why is there only one plan?",
+    answer: "We believe in keeping things simple. One price gets you everything: booking system, CRM, payments, invoicing, API access, webhooks, and all future features. No confusing tiers or hidden upsells.",
+  },
+  {
+    question: "Can I use this as a backend for my website?",
+    answer: "Absolutely! That's our main use case. Use our REST API to integrate booking forms, contact forms, and payment processing into your custom website. Build exactly what you want.",
+  },
+  {
+    question: "Are there any usage limits?",
+    answer: "No limits on bookings, clients, or API requests. Use as much as you need to run your business. We scale with you.",
+  },
+  {
+    question: "What payment methods do you accept?",
+    answer: "We accept all major credit cards (Visa, Mastercard, American Express) through Stripe's secure payment processing.",
+  },
+];
 
 export default function PricingPage() {
-  const { isSignedIn, isLoaded } = useUser();
-  const [loading, setLoading] = useState(false);
-
-  const PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "price_professional";
-
-  const handleSelectPlan = async () => {
-    try {
-      setLoading(true);
-
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: PRICE_ID,
-          planType: "professional",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create checkout session");
-      }
-
-      const { url } = await response.json();
-      window.location.href = url;
-    } catch (error) {
-      console.error("Error:", error);
-      notifications.show({
-        title: "Error",
-        message: "Failed to start checkout. Please try again.",
-        color: "red",
-      });
-      setLoading(false);
-    }
-  };
-
-  const features = [
-    { icon: IconCalendar, title: "Booking System", description: "Unlimited bookings with visual pipeline management" },
-    { icon: IconUsers, title: "CRM", description: "Complete client database with notes and history" },
-    { icon: IconCreditCard, title: "Payment Processing", description: "Accept payments with Stripe integration" },
-    { icon: IconReceipt, title: "Invoicing", description: "Generate and track invoices automatically" },
-    { icon: IconApi, title: "REST API", description: "Full API access for custom integrations" },
-    { icon: IconWebhook, title: "Webhooks", description: "Real-time notifications for all events" },
-    { icon: IconMail, title: "Email Notifications", description: "Automated email updates (coming soon)" },
-    { icon: IconMessage, title: "SMS Notifications", description: "Text message reminders (coming soon)" },
-  ];
-
   return (
-    <AppShell header={{ height: 60 }} padding={0}>
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-              <Text size="xl" fw={700}>
-                ClientFlow
-              </Text>
-            </Link>
-          </Group>
+    <PageLayout>
+      {/* Hero Section with Pricing */}
+      <Box
+        py={80}
+        style={{
+          background: "linear-gradient(180deg, rgba(34, 139, 230, 0.03) 0%, transparent 100%)",
+        }}
+      >
+        <Container size="lg">
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={60} style={{ alignItems: "center" }}>
+            {/* Left: Value Proposition */}
+            <Stack gap="xl">
+              <Box>
+                <Badge size="lg" variant="light" color="blue" mb="md">
+                  Simple Pricing
+                </Badge>
+                <Title order={1} size={48} fw={900} mb="md" style={{ lineHeight: 1.1 }}>
+                  One price.
+                  <br />
+                  <Text
+                    component="span"
+                    inherit
+                    variant="gradient"
+                    gradient={{ from: "blue", to: "cyan", deg: 45 }}
+                  >
+                    Everything included.
+                  </Text>
+                </Title>
+                <Text size="xl" c="dimmed" style={{ lineHeight: 1.6 }}>
+                  No confusing tiers. No hidden fees. Get the complete backend for your service business—bookings, CRM, payments, and API access.
+                </Text>
+              </Box>
 
-          <Group>
-            {!isLoaded ? null : isSignedIn ? (
-              <>
-                <Link href="/dashboard">
-                  <Button variant="subtle">Dashboard</Button>
-                </Link>
-                <UserButton />
-              </>
-            ) : (
-              <SignInButton mode="modal">
-                <div>
-                  <Button variant="subtle">Sign In</Button>
-                </div>
-              </SignInButton>
-            )}
-          </Group>
-        </Group>
-      </AppShell.Header>
-
-      <AppShell.Main>
-        <Container size="lg" py={60}>
-          <Stack gap="xl">
-            {/* Hero Section */}
-            <Stack align="center" gap="md" mb={40}>
-              <Badge size="lg" variant="light" color="blue">
-                Complete Backend Solution
-              </Badge>
-              <Title order={1} size={48} fw={900} ta="center">
-                The Backend for Your Business
-              </Title>
-              <Text size="xl" c="dimmed" ta="center" style={{ maxWidth: 700 }}>
-                Everything you need to run your small business: booking system, CRM, payments, invoicing, and a complete REST API for your website
-              </Text>
+              <List
+                spacing="sm"
+                size="md"
+                icon={
+                  <ThemeIcon color="green" size={24} radius="xl">
+                    <IconCheck size={14} />
+                  </ThemeIcon>
+                }
+              >
+                {includedFeatures.slice(0, 4).map((feature) => (
+                  <List.Item key={feature}>
+                    <Text fw={500}>{feature}</Text>
+                  </List.Item>
+                ))}
+              </List>
             </Stack>
 
-            {/* Main Pricing Card */}
-            <Box style={{ maxWidth: 700, margin: "0 auto", width: "100%" }}>
+            {/* Right: Pricing Card */}
+            <Card
+              shadow="xl"
+              padding={40}
+              radius="xl"
+              withBorder
+              style={{
+                borderColor: "var(--mantine-color-blue-4)",
+                borderWidth: 2,
+                background: "white",
+                position: "relative",
+                overflow: "visible",
+              }}
+            >
+              <Badge
+                size="lg"
+                variant="gradient"
+                gradient={{ from: "blue", to: "cyan" }}
+                style={{
+                  position: "absolute",
+                  top: -12,
+                  right: 24,
+                }}
+              >
+                14-Day Free Trial
+              </Badge>
+
+              <Stack gap="lg">
+                <Box>
+                  <Text size="lg" fw={600} c="dimmed" mb={8}>
+                    ClientFlow Professional
+                  </Text>
+                  <Group align="baseline" gap={4}>
+                    <Text size="xl" fw={500} c="blue">$</Text>
+                    <Text size={64} fw={900} lh={1} c="blue">149</Text>
+                    <Text size="lg" c="dimmed">/month</Text>
+                  </Group>
+                </Box>
+
+                <List
+                  spacing="xs"
+                  size="sm"
+                  icon={
+                    <ThemeIcon color="blue" size={20} radius="xl" variant="light">
+                      <IconCheck size={12} />
+                    </ThemeIcon>
+                  }
+                >
+                  {includedFeatures.map((feature) => (
+                    <List.Item key={feature}>{feature}</List.Item>
+                  ))}
+                </List>
+
+                <CheckoutButton
+                  priceId={PRICE_ID}
+                  planType="professional"
+                  fullWidth
+                  size="xl"
+                  radius="md"
+                  variant="gradient"
+                  gradient={{ from: "blue", to: "cyan", deg: 135 }}
+                  rightSection={<IconArrowRight size={20} />}
+                >
+                  Start Free Trial
+                </CheckoutButton>
+
+                <Text size="xs" c="dimmed" ta="center">
+                  Cancel anytime during trial
+                </Text>
+              </Stack>
+            </Card>
+          </SimpleGrid>
+        </Container>
+      </Box>
+
+      {/* Features Section */}
+      <Box py={80}>
+        <Container size="lg">
+          <Stack align="center" gap="md" mb={60}>
+            <Badge size="lg" variant="light" color="violet">
+              Everything You Need
+            </Badge>
+            <Title order={2} size={36} fw={800} ta="center">
+              Built for service businesses
+            </Title>
+            <Text size="lg" c="dimmed" ta="center" style={{ maxWidth: 600 }}>
+              Whether you&apos;re a photographer, consultant, or any service provider—manage your entire business from one platform.
+            </Text>
+          </Stack>
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
+            {featureCategories.map((category) => (
               <Card
-                shadow="xl"
+                key={category.title}
                 padding="xl"
                 radius="lg"
                 withBorder
                 style={{
-                  borderColor: "var(--mantine-color-blue-6)",
-                  borderWidth: 2,
-                  background: "linear-gradient(135deg, rgba(34, 139, 230, 0.03) 0%, rgba(34, 139, 230, 0.08) 100%)",
+                  borderColor: `var(--mantine-color-${category.color}-2)`,
+                  transition: "all 0.2s ease",
                 }}
               >
-                <Stack gap="xl">
-                  <Group justify="space-between" align="flex-start">
-                    <Box>
-                      <Text size="xl" fw={700} mb={4}>
-                        ClientFlow Professional
-                      </Text>
-                      <Text size="sm" c="dimmed">
-                        Full access to everything
-                      </Text>
-                    </Box>
-                    <Box ta="right">
-                      <Group gap={4} align="baseline" justify="flex-end">
-                        <Text size="sm" c="blue">
-                          $
-                        </Text>
-                        <Text size={48} fw={900} lh={1} c="blue">
-                          149
-                        </Text>
-                      </Group>
-                      <Text size="xs" c="dimmed">
-                        per month
-                      </Text>
-                    </Box>
-                  </Group>
-
-                  <Divider color="blue" />
-
-                  <Text size="sm" c="dimmed" ta="center">
-                    14-day free trial • No credit card required • Cancel anytime
-                  </Text>
-
-                  <Button
-                    fullWidth
-                    size="xl"
-                    radius="md"
-                    variant="gradient"
-                    gradient={{ from: "blue", to: "cyan", deg: 135 }}
-                    onClick={handleSelectPlan}
-                    loading={loading}
-                  >
-                    Start Free Trial
-                  </Button>
-                </Stack>
+                <Group gap="md" mb="md">
+                  <ThemeIcon size={48} radius="md" color={category.color} variant="light">
+                    <category.icon size={26} />
+                  </ThemeIcon>
+                  <Title order={3} size="h4" fw={700}>
+                    {category.title}
+                  </Title>
+                </Group>
+                <Text size="md" c="dimmed" style={{ lineHeight: 1.6 }}>
+                  {category.description}
+                </Text>
               </Card>
-            </Box>
+            ))}
+          </SimpleGrid>
+        </Container>
+      </Box>
 
-            {/* Features Grid */}
-            <Box mt={60}>
-              <Title order={2} size="h2" ta="center" mb={40}>
-                Everything You Need to Run Your Business
-              </Title>
-              <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
-                {features.map((feature, index) => (
-                  <Card key={index} shadow="sm" padding="lg" radius="md" withBorder>
-                    <Stack gap="sm">
-                      <Box
-                        style={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: "50%",
-                          backgroundColor: "var(--mantine-color-blue-1)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <feature.icon size={24} color="var(--mantine-color-blue-6)" />
-                      </Box>
-                      <div>
-                        <Text size="sm" fw={600} mb={4}>
-                          {feature.title}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {feature.description}
-                        </Text>
-                      </div>
-                    </Stack>
-                  </Card>
-                ))}
-              </SimpleGrid>
-            </Box>
+      {/* How It Works - Condensed */}
+      <Box py={80} style={{ backgroundColor: "var(--mantine-color-gray-0)" }}>
+        <Container size="md">
+          <Stack align="center" gap="md" mb={60}>
+            <Badge size="lg" variant="light" color="teal">
+              How It Works
+            </Badge>
+            <Title order={2} size={36} fw={800} ta="center">
+              Your website&apos;s backend in 3 steps
+            </Title>
+          </Stack>
 
-            {/* How It Works Section */}
-            <Card shadow="md" padding="xl" radius="lg" withBorder mt={60} style={{
-              background: "linear-gradient(135deg, rgba(34, 139, 230, 0.03) 0%, rgba(34, 139, 230, 0.08) 100%)",
-            }}>
-              <Title order={2} size="h3" mb="xl" ta="center">
-                Perfect for Website Integration
-              </Title>
-              <Text size="md" c="dimmed" ta="center" mb={40} style={{ maxWidth: 800, margin: "0 auto 40px" }}>
-                Use ClientFlow as the backend for your custom website. Every customer interaction flows seamlessly into your system.
-              </Text>
-
-              <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl">
-                <Box>
-                  <Box style={{
-                    width: 60,
-                    height: 60,
+          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl">
+            {[
+              {
+                step: 1,
+                icon: IconRocket,
+                title: "Sign Up",
+                description: "Create your account and configure your services in minutes",
+              },
+              {
+                step: 2,
+                icon: IconCode,
+                title: "Integrate",
+                description: "Connect your website using our REST API and documentation",
+              },
+              {
+                step: 3,
+                icon: IconDeviceDesktop,
+                title: "Manage",
+                description: "Handle bookings, clients, and payments from your dashboard",
+              },
+            ].map((item) => (
+              <Stack key={item.step} align="center" gap="md">
+                <Box
+                  style={{
+                    width: 80,
+                    height: 80,
                     borderRadius: "50%",
-                    backgroundColor: "var(--mantine-color-blue-1)",
+                    background: `linear-gradient(135deg, var(--mantine-color-teal-5), var(--mantine-color-cyan-5))`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    margin: "0 auto 16px",
-                  }}>
-                    <Text size="xl" fw={700} c="blue">1</Text>
-                  </Box>
-                  <Title order={4} size="h5" ta="center" mb="xs">
-                    Client Visits Your Website
+                    boxShadow: "0 8px 32px rgba(18, 184, 134, 0.25)",
+                  }}
+                >
+                  <item.icon size={36} color="white" />
+                </Box>
+                <Box ta="center">
+                  <Text size="sm" fw={700} c="teal" mb={4}>
+                    Step {item.step}
+                  </Text>
+                  <Title order={4} size="h5" fw={700} mb={8}>
+                    {item.title}
                   </Title>
-                  <Text size="sm" c="dimmed" ta="center">
-                    Your customer browses services and decides to book or reach out
+                  <Text size="sm" c="dimmed">
+                    {item.description}
                   </Text>
                 </Box>
-
-                <Box>
-                  <Box style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
-                    backgroundColor: "var(--mantine-color-blue-2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 16px",
-                  }}>
-                    <Text size="xl" fw={700} c="blue">2</Text>
-                  </Box>
-                  <Title order={4} size="h5" ta="center" mb="xs">
-                    Form Submits to API
-                  </Title>
-                  <Text size="sm" c="dimmed" ta="center">
-                    Contact forms and bookings are sent directly to ClientFlow via REST API
-                  </Text>
-                </Box>
-
-                <Box>
-                  <Box style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
-                    backgroundColor: "var(--mantine-color-blue-6)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 16px",
-                  }}>
-                    <Text size="xl" fw={700} c="white">3</Text>
-                  </Box>
-                  <Title order={4} size="h5" ta="center" mb="xs">
-                    Manage Everything
-                  </Title>
-                  <Text size="sm" c="dimmed" ta="center">
-                    New clients and bookings appear instantly in your dashboard
-                  </Text>
-                </Box>
-              </SimpleGrid>
-
-              <Box mt={40} p="lg" style={{
-                backgroundColor: "white",
-                borderRadius: "8px",
-                border: "1px solid var(--mantine-color-gray-3)",
-              }}>
-                <Stack gap="sm">
-                  <Group gap="xs">
-                    <IconCheck size={16} color="green" />
-                    <Text size="sm">No duplicate data entry - everything syncs automatically</Text>
-                  </Group>
-                  <Group gap="xs">
-                    <IconCheck size={16} color="green" />
-                    <Text size="sm">Full API documentation and webhook support</Text>
-                  </Group>
-                  <Group gap="xs">
-                    <IconCheck size={16} color="green" />
-                    <Text size="sm">Use our dashboard or build your own interface</Text>
-                  </Group>
-                  <Group gap="xs">
-                    <IconCheck size={16} color="green" />
-                    <Text size="sm">Process payments and generate invoices automatically</Text>
-                  </Group>
-                </Stack>
-              </Box>
-            </Card>
-
-            {/* FAQ Section */}
-            <Card shadow="sm" padding="lg" radius="md" withBorder mt={40}>
-              <Title order={2} size="h3" mb="md">
-                Frequently Asked Questions
-              </Title>
-              <Stack gap="lg">
-                <div>
-                  <Text fw={600} mb="xs">
-                    What's included in the free trial?
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    Full access to all features for 14 days. No credit card required to start. You can cancel anytime during the trial.
-                  </Text>
-                </div>
-                <Divider />
-                <div>
-                  <Text fw={600} mb="xs">
-                    Is there only one plan?
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    Yes! We believe in keeping it simple. One price gets you everything: booking system, CRM, payments, invoicing, API access, webhooks, and all future features.
-                  </Text>
-                </div>
-                <Divider />
-                <div>
-                  <Text fw={600} mb="xs">
-                    Can I use this as a backend for my website?
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    Absolutely! That's one of our main use cases. Use our REST API to integrate booking forms, contact forms, and payment processing into your custom website.
-                  </Text>
-                </div>
-                <Divider />
-                <div>
-                  <Text fw={600} mb="xs">
-                    What payment methods do you accept?
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    We accept all major credit cards (Visa, Mastercard, American Express) through Stripe.
-                  </Text>
-                </div>
-                <Divider />
-                <div>
-                  <Text fw={600} mb="xs">
-                    Are there any limits?
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    No limits on bookings, clients, or API requests. Use as much as you need to run your business.
-                  </Text>
-                </div>
               </Stack>
-            </Card>
+            ))}
+          </SimpleGrid>
+        </Container>
+      </Box>
 
-            {/* CTA Section */}
-            <Box ta="center" py={40}>
-              <Text size="xl" fw={600} mb="md">
+      {/* FAQ Section */}
+      <Box py={80}>
+        <Container size="md">
+          <Stack align="center" gap="md" mb={60}>
+            <Badge size="lg" variant="light" color="orange">
+              FAQ
+            </Badge>
+            <Title order={2} size={36} fw={800} ta="center">
+              Common questions
+            </Title>
+          </Stack>
+
+          <Accordion
+            variant="separated"
+            radius="lg"
+            styles={{
+              item: {
+                borderColor: "var(--mantine-color-gray-3)",
+                backgroundColor: "white",
+              },
+              control: {
+                padding: 20,
+              },
+              panel: {
+                padding: 20,
+                paddingTop: 0,
+              },
+            }}
+          >
+            {faqData.map((faq, index) => (
+              <Accordion.Item key={index} value={`faq-${index}`}>
+                <Accordion.Control>
+                  <Text fw={600}>{faq.question}</Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <Text size="sm" c="dimmed" style={{ lineHeight: 1.7 }}>
+                    {faq.answer}
+                  </Text>
+                </Accordion.Panel>
+              </Accordion.Item>
+            ))}
+          </Accordion>
+        </Container>
+      </Box>
+
+      {/* Final CTA */}
+      <Box
+        py={100}
+        style={{
+          background: "linear-gradient(135deg, var(--mantine-color-blue-6) 0%, var(--mantine-color-cyan-5) 100%)",
+        }}
+      >
+        <Container size="sm">
+          <Stack align="center" gap="xl">
+            <Stack align="center" gap="md">
+              <Title order={2} size={40} fw={900} ta="center" c="white">
                 Ready to streamline your business?
+              </Title>
+              <Text size="lg" ta="center" c="white" opacity={0.9}>
+                Join service providers who use ClientFlow to manage bookings, clients, and payments.
               </Text>
-              <Button
+            </Stack>
+
+            <Group>
+              <CheckoutButton
+                priceId={PRICE_ID}
+                planType="professional"
                 size="xl"
-                variant="gradient"
-                gradient={{ from: "blue", to: "cyan", deg: 135 }}
-                onClick={handleSelectPlan}
-                loading={loading}
-                mb="lg"
+                radius="md"
+                color="white"
+                variant="white"
+                c="blue"
+                rightSection={<IconArrowRight size={20} />}
               >
                 Start Your Free Trial
-              </Button>
-              <Text size="sm" c="dimmed">
-                14 days free • No credit card required • Cancel anytime
-              </Text>
-            </Box>
+              </CheckoutButton>
+            </Group>
 
-            <Divider my="xl" />
-
-            <Box ta="center">
-              <Text size="lg" fw={600} mb="md">
-                Need help getting started?
-              </Text>
-              <Group justify="center">
-                <Link href="/support">
-                  <Button variant="outline" size="lg">
-                    Contact Support
-                  </Button>
-                </Link>
-                <Link href="/documentation">
-                  <Button variant="outline" size="lg">
-                    View Documentation
-                  </Button>
-                </Link>
-              </Group>
-            </Box>
+            <Text size="sm" c="white" opacity={0.8}>
+              14 days free • Cancel anytime
+            </Text>
           </Stack>
         </Container>
-      </AppShell.Main>
-    </AppShell>
+      </Box>
+
+      {/* Support Links */}
+      <Box py={60}>
+        <Container size="sm">
+          <Stack align="center" gap="md">
+            <Text size="lg" fw={600}>
+              Need help getting started?
+            </Text>
+            <Group justify="center">
+              <Link href="/support">
+                <Button variant="outline" size="lg" radius="md">
+                  Contact Support
+                </Button>
+              </Link>
+              <Link href="/documentation">
+                <Button variant="outline" size="lg" radius="md">
+                  View Documentation
+                </Button>
+              </Link>
+            </Group>
+          </Stack>
+        </Container>
+      </Box>
+    </PageLayout>
   );
 }

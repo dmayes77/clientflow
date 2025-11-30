@@ -1,5 +1,3 @@
-"use client";
-
 import { Container, Title, Text, Card, Stack, Button, Group, Box, ThemeIcon } from "@mantine/core";
 import { IconMail, IconCheck } from "@tabler/icons-react";
 import Link from "next/link";

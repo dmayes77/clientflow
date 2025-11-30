@@ -10,13 +10,9 @@ import {
   Box,
   SimpleGrid,
   Card,
-  HoverCard,
   Anchor,
   Stack,
-  Accordion,
-  ThemeIcon,
 } from "@mantine/core";
-import { SignInButton, SignUpButton, useUser, UserButton } from "@clerk/nextjs";
 import {
   IconCalendar,
   IconUsers,
@@ -26,7 +22,6 @@ import {
   IconShield,
   IconCreditCard,
   IconWebhook,
-  IconBook,
   IconCode,
   IconLifebuoy,
   IconQuestionMark,
@@ -37,148 +32,90 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { HeroText } from "@/components/HeroText";
+import { MarketingHeader, HeroCTA, FAQCard } from "./(marketing)/components";
+
+const features = [
+  {
+    icon: IconCalendar,
+    title: "Booking Management",
+    description: "Manage appointments and schedules with ease",
+  },
+  {
+    icon: IconUsers,
+    title: "Client Database",
+    description: "Keep track of all your customers in one place",
+  },
+  {
+    icon: IconChartLine,
+    title: "Visual Pipeline",
+    description: "Drag-and-drop boards for client journey tracking",
+  },
+  {
+    icon: IconApi,
+    title: "REST API",
+    description: "Full API access to build custom integrations and workflows",
+  },
+  {
+    icon: IconPhoto,
+    title: "Media Library",
+    description: "CDN-powered image storage with API access for your website",
+  },
+  {
+    icon: IconSettings,
+    title: "Service Management",
+    description: "Create and manage your services and packages",
+  },
+  {
+    icon: IconShield,
+    title: "Secure & Scalable",
+    description: "Built with modern security and multi-tenant architecture",
+  },
+];
+
+const faqItems = [
+  {
+    icon: IconApi,
+    title: "How does the API integration work?",
+    description: "Generate an API key from your dashboard and use our REST API to create bookings directly from your website. We provide comprehensive documentation and code examples in multiple languages to help you integrate seamlessly.",
+    color: "blue",
+  },
+  {
+    icon: IconQuestionMark,
+    title: "Can I cancel my subscription anytime?",
+    description: "Yes, you can cancel your subscription at any time with no penalties or hidden fees. Your account will remain active until the end of your current billing period, and you can export all your data before your account closes.",
+    color: "violet",
+  },
+  {
+    icon: IconGift,
+    title: "Do you offer a free trial?",
+    description: "Yes! All new accounts get a 14-day free trial with full access to all features. A credit card is required to start your trial, and you'll be automatically charged after 14 days unless you cancel during the trial period.",
+    color: "green",
+  },
+  {
+    icon: IconLock,
+    title: "Is my data secure?",
+    description: "Yes. We use enterprise-grade authentication with Clerk, end-to-end encryption for all data, and implement comprehensive security headers. Your data is isolated in a multi-tenant architecture where each organization only accesses their own data.",
+    color: "indigo",
+  },
+  {
+    icon: IconWallet,
+    title: "What payment methods do you accept?",
+    description: "We accept all major credit cards (Visa, MasterCard, Amex) through secure Stripe processing. Enterprise customers can arrange for invoice billing with flexible payment terms.",
+    color: "teal",
+  },
+  {
+    icon: IconLifebuoy,
+    title: "What kind of support do you offer?",
+    description: "We provide email support for all customers with response times within 24 hours. Premium plans include priority support with faster response times and direct access to our technical team.",
+    color: "orange",
+  },
+];
 
 export default function Home() {
-  const { isSignedIn, user, isLoaded } = useUser();
-
-  const features = [
-    {
-      icon: IconCalendar,
-      title: "Booking Management",
-      description: "Manage appointments and schedules with ease",
-    },
-    {
-      icon: IconUsers,
-      title: "Client Database",
-      description: "Keep track of all your customers in one place",
-    },
-    {
-      icon: IconChartLine,
-      title: "Visual Pipeline",
-      description: "Drag-and-drop boards for client journey tracking",
-    },
-    {
-      icon: IconApi,
-      title: "REST API",
-      description: "Full API access to build custom integrations and workflows",
-    },
-    {
-      icon: IconPhoto,
-      title: "Media Library",
-      description: "CDN-powered image storage with API access for your website",
-    },
-    {
-      icon: IconSettings,
-      title: "Service Management",
-      description: "Create and manage your services and packages",
-    },
-    {
-      icon: IconShield,
-      title: "Secure & Scalable",
-      description: "Built with modern security and multi-tenant architecture",
-    },
-  ];
-
   return (
     <AppShell header={{ height: 60 }} padding={0}>
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Text size="xl" fw={700}>
-              ClientFlow
-            </Text>
-
-            <HoverCard width={600} position="bottom" radius="md" shadow="md" withinPortal>
-              <HoverCard.Target>
-                <Anchor href="#" underline="never" c="dimmed">
-                  Features
-                </Anchor>
-              </HoverCard.Target>
-              <HoverCard.Dropdown style={{ overflow: "hidden" }}>
-                <Group justify="space-between" px="md">
-                  <div>
-                    <Text fw={500} mb="xs">
-                      Platform Features
-                    </Text>
-                    <Stack gap="xs">
-                      <Anchor href="#booking-management" size="sm">
-                        Booking Management
-                      </Anchor>
-                      <Anchor href="#client-database" size="sm">
-                        Client Database
-                      </Anchor>
-                      <Anchor href="#service-management" size="sm">
-                        Service Management
-                      </Anchor>
-                    </Stack>
-                  </div>
-
-                  <div>
-                    <Text fw={500} mb="xs">
-                      Integrations
-                    </Text>
-                    <Stack gap="xs">
-                      <Anchor href="#rest-api" size="sm">
-                        REST API
-                      </Anchor>
-                      <Anchor href="#stripe-payments" size="sm">
-                        Stripe Payments
-                      </Anchor>
-                      <Anchor href="#webhooks" size="sm">
-                        Webhooks
-                      </Anchor>
-                    </Stack>
-                  </div>
-
-                  <div>
-                    <Text fw={500} mb="xs">
-                      Resources
-                    </Text>
-                    <Stack gap="xs">
-                      <Anchor href="/documentation" size="sm">
-                        Documentation
-                      </Anchor>
-                      <Anchor href="/api-reference" size="sm">
-                        API Reference
-                      </Anchor>
-                      <Anchor href="/support" size="sm">
-                        Support
-                      </Anchor>
-                    </Stack>
-                  </div>
-                </Group>
-              </HoverCard.Dropdown>
-            </HoverCard>
-
-            <Link href="/pricing" style={{ textDecoration: "none" }}>
-              <Text c="dimmed">Pricing</Text>
-            </Link>
-          </Group>
-
-          <Group>
-            {!isLoaded ? null : isSignedIn ? (
-              <>
-                <Link href="/dashboard">
-                  <Button variant="subtle">Dashboard</Button>
-                </Link>
-                <UserButton />
-              </>
-            ) : (
-              <>
-                <SignInButton mode="modal">
-                  <div>
-                    <Button variant="subtle">Sign In</Button>
-                  </div>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                  <div>
-                    <Button>Get Started</Button>
-                  </div>
-                </SignUpButton>
-              </>
-            )}
-          </Group>
-        </Group>
+        <MarketingHeader />
       </AppShell.Header>
 
       <AppShell.Main>
@@ -191,23 +128,10 @@ export default function Home() {
             { left: 0, top: 0 },
             { left: 60, top: 0 },
             { right: 0, top: 60 },
-            { right: 60, top: 140 }
+            { right: 60, top: 140 },
           ]}
         >
-          {isSignedIn ? (
-            <Link href="/dashboard">
-              <Button size="lg">Go to Dashboard</Button>
-            </Link>
-          ) : (
-            <SignUpButton mode="modal">
-              <div>
-                <Button size="lg">Start Free Trial</Button>
-              </div>
-            </SignUpButton>
-          )}
-          <Button size="lg" variant="outline">
-            View Demo
-          </Button>
+          <HeroCTA />
         </HeroText>
 
         <Box>
@@ -487,7 +411,7 @@ export default function Home() {
                   Complete Design Freedom
                 </Title>
                 <Text size="md" c="dimmed" mb="xl">
-                  We don't force you into pre-built widgets or templates. ClientFlow provides the API infrastructure, and you build the booking experience exactly how you want it. Full control over design, user flow, and brand experience.
+                  We don&apos;t force you into pre-built widgets or templates. ClientFlow provides the API infrastructure, and you build the booking experience exactly how you want it. Full control over design, user flow, and brand experience.
                 </Text>
                 <Stack gap="md">
                   <Text size="sm" style={{ borderLeft: "3px solid var(--mantine-color-blue-6)", paddingLeft: 12 }}>
@@ -505,10 +429,16 @@ export default function Home() {
                 </Stack>
               </Card>
 
-              <Card shadow="sm" padding="xl" radius="md" withBorder style={{
-                background: "linear-gradient(135deg, rgba(34, 139, 230, 0.03) 0%, rgba(34, 139, 230, 0.06) 100%)",
-                borderColor: "var(--mantine-color-blue-2)",
-              }}>
+              <Card
+                shadow="sm"
+                padding="xl"
+                radius="md"
+                withBorder
+                style={{
+                  background: "linear-gradient(135deg, rgba(34, 139, 230, 0.03) 0%, rgba(34, 139, 230, 0.06) 100%)",
+                  borderColor: "var(--mantine-color-blue-2)",
+                }}
+              >
                 <IconSettings size={48} style={{ marginBottom: 16, color: "var(--mantine-color-violet-6)" }} />
                 <Title order={3} size={24} fw={700} mb="md">
                   Need a Custom Website?
@@ -642,9 +572,12 @@ export default function Home() {
         </Box>
 
         {/* FAQ Section */}
-        <Box py={120} style={{
-          background: "linear-gradient(180deg, #ffffff 0%, rgba(34, 139, 230, 0.02) 100%)",
-        }}>
+        <Box
+          py={120}
+          style={{
+            background: "linear-gradient(180deg, #ffffff 0%, rgba(34, 139, 230, 0.02) 100%)",
+          }}
+        >
           <Container size="lg">
             <Stack align="center" gap="xl" mb={80}>
               <Box
@@ -656,12 +589,16 @@ export default function Home() {
                   border: "1px solid rgba(34, 139, 230, 0.2)",
                 }}
               >
-                <Text size="sm" fw={600} style={{
-                  background: "linear-gradient(45deg, #228be6, #7950f2)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  letterSpacing: "0.5px",
-                }}>
+                <Text
+                  size="sm"
+                  fw={600}
+                  style={{
+                    background: "linear-gradient(45deg, #228be6, #7950f2)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    letterSpacing: "0.5px",
+                  }}
+                >
                   FAQ
                 </Text>
               </Box>
@@ -669,286 +606,14 @@ export default function Home() {
                 Frequently Asked Questions
               </Title>
               <Text size="xl" c="dimmed" ta="center" style={{ maxWidth: 650, lineHeight: 1.6 }}>
-                Everything you need to know about ClientFlow. Can't find the answer you're looking for? Reach out to our support team.
+                Everything you need to know about ClientFlow. Can&apos;t find the answer you&apos;re looking for? Reach out to our support team.
               </Text>
             </Stack>
 
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing={32}>
-              <Card
-                shadow="xs"
-                padding={32}
-                radius="lg"
-                style={{
-                  border: "1px solid var(--mantine-color-gray-2)",
-                  transition: "all 0.3s ease",
-                  cursor: "pointer",
-                  background: "#ffffff",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(0, 0, 0, 0.08)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-blue-3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-gray-2)";
-                }}
-              >
-                <Stack gap="lg">
-                  <Group gap="md">
-                    <Box
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        background: "linear-gradient(135deg, rgba(34, 139, 230, 0.1) 0%, rgba(34, 139, 230, 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <IconApi size={24} style={{ color: "var(--mantine-color-blue-6)" }} />
-                    </Box>
-                    <Title order={3} size={20} fw={700}>
-                      How does the API integration work?
-                    </Title>
-                  </Group>
-                  <Text size="md" c="dimmed" style={{ lineHeight: 1.7 }}>
-                    Generate an API key from your dashboard and use our REST API to create bookings directly from your website. We provide comprehensive documentation and code examples in multiple languages to help you integrate seamlessly.
-                  </Text>
-                </Stack>
-              </Card>
-
-              <Card
-                shadow="xs"
-                padding={32}
-                radius="lg"
-                style={{
-                  border: "1px solid var(--mantine-color-gray-2)",
-                  transition: "all 0.3s ease",
-                  cursor: "pointer",
-                  background: "#ffffff",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(0, 0, 0, 0.08)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-violet-3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-gray-2)";
-                }}
-              >
-                <Stack gap="lg">
-                  <Group gap="md">
-                    <Box
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        background: "linear-gradient(135deg, rgba(121, 80, 242, 0.1) 0%, rgba(121, 80, 242, 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <IconQuestionMark size={24} style={{ color: "var(--mantine-color-violet-6)" }} />
-                    </Box>
-                    <Title order={3} size={20} fw={700}>
-                      Can I cancel my subscription anytime?
-                    </Title>
-                  </Group>
-                  <Text size="md" c="dimmed" style={{ lineHeight: 1.7 }}>
-                    Yes, you can cancel your subscription at any time with no penalties or hidden fees. Your account will remain active until the end of your current billing period, and you can export all your data before your account closes.
-                  </Text>
-                </Stack>
-              </Card>
-
-              <Card
-                shadow="xs"
-                padding={32}
-                radius="lg"
-                style={{
-                  border: "1px solid var(--mantine-color-gray-2)",
-                  transition: "all 0.3s ease",
-                  cursor: "pointer",
-                  background: "#ffffff",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(0, 0, 0, 0.08)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-green-3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-gray-2)";
-                }}
-              >
-                <Stack gap="lg">
-                  <Group gap="md">
-                    <Box
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        background: "linear-gradient(135deg, rgba(18, 184, 134, 0.1) 0%, rgba(18, 184, 134, 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <IconGift size={24} style={{ color: "var(--mantine-color-green-6)" }} />
-                    </Box>
-                    <Title order={3} size={20} fw={700}>
-                      Do you offer a free trial?
-                    </Title>
-                  </Group>
-                  <Text size="md" c="dimmed" style={{ lineHeight: 1.7 }}>
-                    Yes! All new accounts get a 14-day free trial with full access to all features. A credit card is required to start your trial, and you'll be automatically charged after 14 days unless you cancel during the trial period.
-                  </Text>
-                </Stack>
-              </Card>
-
-              <Card
-                shadow="xs"
-                padding={32}
-                radius="lg"
-                style={{
-                  border: "1px solid var(--mantine-color-gray-2)",
-                  transition: "all 0.3s ease",
-                  cursor: "pointer",
-                  background: "#ffffff",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(0, 0, 0, 0.08)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-indigo-3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-gray-2)";
-                }}
-              >
-                <Stack gap="lg">
-                  <Group gap="md">
-                    <Box
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        background: "linear-gradient(135deg, rgba(76, 110, 245, 0.1) 0%, rgba(76, 110, 245, 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <IconLock size={24} style={{ color: "var(--mantine-color-indigo-6)" }} />
-                    </Box>
-                    <Title order={3} size={20} fw={700}>
-                      Is my data secure?
-                    </Title>
-                  </Group>
-                  <Text size="md" c="dimmed" style={{ lineHeight: 1.7 }}>
-                    Yes. We use enterprise-grade authentication with Clerk, end-to-end encryption for all data, and implement comprehensive security headers. Your data is isolated in a multi-tenant architecture where each organization only accesses their own data.
-                  </Text>
-                </Stack>
-              </Card>
-
-              <Card
-                shadow="xs"
-                padding={32}
-                radius="lg"
-                style={{
-                  border: "1px solid var(--mantine-color-gray-2)",
-                  transition: "all 0.3s ease",
-                  cursor: "pointer",
-                  background: "#ffffff",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(0, 0, 0, 0.08)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-teal-3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-gray-2)";
-                }}
-              >
-                <Stack gap="lg">
-                  <Group gap="md">
-                    <Box
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        background: "linear-gradient(135deg, rgba(18, 184, 176, 0.1) 0%, rgba(18, 184, 176, 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <IconWallet size={24} style={{ color: "var(--mantine-color-teal-6)" }} />
-                    </Box>
-                    <Title order={3} size={20} fw={700}>
-                      What payment methods do you accept?
-                    </Title>
-                  </Group>
-                  <Text size="md" c="dimmed" style={{ lineHeight: 1.7 }}>
-                    We accept all major credit cards (Visa, MasterCard, Amex) through secure Stripe processing. Enterprise customers can arrange for invoice billing with flexible payment terms.
-                  </Text>
-                </Stack>
-              </Card>
-
-              <Card
-                shadow="xs"
-                padding={32}
-                radius="lg"
-                style={{
-                  border: "1px solid var(--mantine-color-gray-2)",
-                  transition: "all 0.3s ease",
-                  cursor: "pointer",
-                  background: "#ffffff",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)";
-                  e.currentTarget.style.boxShadow = "0 12px 40px rgba(0, 0, 0, 0.08)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-orange-3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
-                  e.currentTarget.style.borderColor = "var(--mantine-color-gray-2)";
-                }}
-              >
-                <Stack gap="lg">
-                  <Group gap="md">
-                    <Box
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 12,
-                        background: "linear-gradient(135deg, rgba(253, 126, 20, 0.1) 0%, rgba(253, 126, 20, 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <IconLifebuoy size={24} style={{ color: "var(--mantine-color-orange-6)" }} />
-                    </Box>
-                    <Title order={3} size={20} fw={700}>
-                      What kind of support do you offer?
-                    </Title>
-                  </Group>
-                  <Text size="md" c="dimmed" style={{ lineHeight: 1.7 }}>
-                    We provide email support for all customers with response times within 24 hours. Premium plans include priority support with faster response times and direct access to our technical team.
-                  </Text>
-                </Stack>
-              </Card>
+              {faqItems.map((item, index) => (
+                <FAQCard key={index} {...item} />
+              ))}
             </SimpleGrid>
 
             <Box mt={60} ta="center">
@@ -956,7 +621,7 @@ export default function Home() {
                 Still have questions?
               </Text>
               <Text size="md" c="dimmed" mb="xl">
-                Can't find the answer you're looking for? Our support team is here to help.
+                Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
               </Text>
               <Link href="/support">
                 <Button size="lg" radius="md" variant="gradient" gradient={{ from: "blue", to: "violet", deg: 45 }}>
