@@ -57,6 +57,7 @@ model Tenant {
   webhooks            Webhook[]
   payments            Payment[]
   images              Image[]
+  invoices            Invoice[]
 
   @@index([clerkOrgId])
 }
@@ -125,6 +126,7 @@ model Client {
 
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   bookings  Booking[]
+  invoices  Invoice[]
 
   @@index([tenantId])
   @@index([email])
@@ -154,6 +156,7 @@ model Booking {
   service         Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   package         Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
   payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  invoice         Invoice?
 
   @@index([tenantId])
   @@index([clientId])
@@ -279,5 +282,56 @@ model Image {
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([createdAt])
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  tenantId        String
+  clientId        String?
+  bookingId       String?   @unique
+
+  invoiceNumber   String    // e.g., INV-2024-0001
+  status          String    @default("draft") // draft, sent, viewed, paid, overdue, cancelled
+
+  // Dates
+  issueDate       DateTime  @default(now())
+  dueDate         DateTime
+  sentAt          DateTime?
+  paidAt          DateTime?
+  viewedAt        DateTime?
+
+  // Amounts (in cents)
+  subtotal        Int
+  taxRate         Float     @default(0) // Percentage (e.g., 8.25 for 8.25%)
+  taxAmount       Int       @default(0)
+  total           Int
+  currency        String    @default("usd")
+
+  // Line items stored as JSON array
+  // Each item: { description: string, quantity: number, unitPrice: number, amount: number }
+  lineItems       Json
+
+  // Client info (denormalized for invoice record permanence)
+  clientName      String
+  clientEmail     String
+  clientAddress   String?
+
+  // Additional fields
+  notes           String?   // Notes visible on invoice
+  terms           String?   // Payment terms
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([status])
+  @@index([dueDate])
   @@index([createdAt])
 }

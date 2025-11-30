@@ -18,6 +18,7 @@ import {
   IconCreditCard,
   IconReceipt,
   IconPhoto,
+  IconFileInvoice,
 } from "@tabler/icons-react";
 
 export function DashboardShell({ children }) {
@@ -62,6 +63,7 @@ export function DashboardShell({ children }) {
     { label: "Clients", href: "/dashboard/clients", icon: IconUsers },
     { label: "Services", href: "/dashboard/services", icon: IconList },
     { label: "Packages", href: "/dashboard/packages", icon: IconPackage },
+    { label: "Invoices", href: "/dashboard/invoices", icon: IconFileInvoice },
     { label: "Media Library", href: "/dashboard/images", icon: IconPhoto },
   ];
 

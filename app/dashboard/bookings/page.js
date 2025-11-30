@@ -16,13 +16,16 @@ import {
   Paper,
   Box,
   NumberInput,
+  Menu,
+  ActionIcon,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconPlus, IconCalendar } from "@tabler/icons-react";
+import { IconPlus, IconCalendar, IconDotsVertical, IconFileInvoice, IconTrash } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const STATUSES = [
@@ -38,6 +41,7 @@ export default function BookingsPage() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opened, { open, close }] = useDisclosure(false);
+  const router = useRouter();
 
   const form = useForm({
     initialValues: {
@@ -169,6 +173,92 @@ export default function BookingsPage() {
     return bookings.filter((booking) => booking.status === status);
   };
 
+  const createInvoiceFromBooking = async (booking) => {
+    try {
+      // Check if booking already has an invoice
+      if (booking.invoice) {
+        notifications.show({
+          title: "Invoice Exists",
+          message: "This booking already has an invoice",
+          color: "yellow",
+        });
+        router.push("/dashboard/invoices");
+        return;
+      }
+
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 14); // Due in 14 days
+
+      const lineItems = [
+        {
+          description: booking.service?.name || "Service",
+          quantity: 1,
+          unitPrice: (booking.amount || 0) * 100, // Convert to cents
+          amount: (booking.amount || 0) * 100,
+        },
+      ];
+
+      const response = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: booking.clientId,
+          bookingId: booking.id,
+          clientName: booking.client?.name || booking.clientName || "Client",
+          clientEmail: booking.client?.email || booking.clientEmail || "",
+          clientAddress: booking.client?.address || null,
+          dueDate: dueDate.toISOString(),
+          lineItems,
+          notes: booking.notes || null,
+        }),
+      });
+
+      if (response.ok) {
+        const invoice = await response.json();
+        notifications.show({
+          title: "Invoice Created",
+          message: `Invoice ${invoice.invoiceNumber} created successfully`,
+          color: "green",
+        });
+        router.push("/dashboard/invoices");
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create invoice");
+      }
+    } catch (error) {
+      notifications.show({
+        title: "Error",
+        message: error.message || "Failed to create invoice",
+        color: "red",
+      });
+    }
+  };
+
+  const deleteBooking = async (bookingId) => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+        notifications.show({
+          title: "Success",
+          message: "Booking deleted",
+          color: "green",
+        });
+      } else {
+        throw new Error("Failed to delete booking");
+      }
+    } catch (error) {
+      notifications.show({
+        title: "Error",
+        message: "Failed to delete booking",
+        color: "red",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Container size="xl" py="xl">
@@ -247,8 +337,40 @@ export default function BookingsPage() {
                                     opacity: snapshot.isDragging ? 0.8 : 1,
                                   }}
                                 >
-                                  <Stack gap="xs">
+                                  <Group justify="space-between" align="flex-start" mb="xs">
                                     <Text fw={600}>{booking.client?.name}</Text>
+                                    <Menu shadow="md" width={180} position="bottom-end">
+                                      <Menu.Target>
+                                        <ActionIcon variant="subtle" size="sm" onClick={(e) => e.stopPropagation()}>
+                                          <IconDotsVertical size={16} />
+                                        </ActionIcon>
+                                      </Menu.Target>
+                                      <Menu.Dropdown>
+                                        <Menu.Item
+                                          leftSection={<IconFileInvoice size={16} />}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            createInvoiceFromBooking(booking);
+                                          }}
+                                          disabled={!!booking.invoice}
+                                        >
+                                          {booking.invoice ? "Invoice Created" : "Create Invoice"}
+                                        </Menu.Item>
+                                        <Menu.Divider />
+                                        <Menu.Item
+                                          color="red"
+                                          leftSection={<IconTrash size={16} />}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteBooking(booking.id);
+                                          }}
+                                        >
+                                          Delete
+                                        </Menu.Item>
+                                      </Menu.Dropdown>
+                                    </Menu>
+                                  </Group>
+                                  <Stack gap="xs">
                                     <Text size="sm" c="dimmed">
                                       {booking.service?.name}
                                     </Text>
@@ -261,11 +383,18 @@ export default function BookingsPage() {
                                         minute: "2-digit",
                                       })}
                                     </Text>
-                                    {booking.amount && (
-                                      <Text size="sm" fw={600} c="green">
-                                        ${booking.amount}
-                                      </Text>
-                                    )}
+                                    <Group gap="xs">
+                                      {booking.amount && (
+                                        <Text size="sm" fw={600} c="green">
+                                          ${booking.amount}
+                                        </Text>
+                                      )}
+                                      {booking.invoice && (
+                                        <Badge size="xs" color="blue" variant="light">
+                                          Invoiced
+                                        </Badge>
+                                      )}
+                                    </Group>
                                     {booking.notes && (
                                       <Text size="xs" c="dimmed" lineClamp={2}>
                                         {booking.notes}

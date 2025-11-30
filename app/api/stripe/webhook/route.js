@@ -224,6 +224,10 @@ async function handleCheckoutCompleted(session) {
     return;
   }
 
+  // Determine status and plan type
+  const status = subscription.status === "trialing" ? "trialing" : subscription.status;
+  const planType = subscription.metadata.planType || "professional";
+
   // Check if tenant already exists for this customer
   let tenant = await prisma.tenant.findFirst({
     where: { stripeCustomerId: customerId },
@@ -231,9 +235,6 @@ async function handleCheckoutCompleted(session) {
 
   if (tenant) {
     // Tenant already exists, just update subscription status
-    const status = subscription.status === "trialing" ? "trialing" : subscription.status;
-    const planType = subscription.metadata.planType || "professional";
-
     await prisma.tenant.update({
       where: { id: tenant.id },
       data: {
@@ -246,30 +247,80 @@ async function handleCheckoutCompleted(session) {
     return;
   }
 
-  // NEW USER: Create Clerk account + tenant
+  // Check if user already exists in Clerk (signed up before paying)
   try {
     const client = await clerkClient();
 
-    // Create Clerk user
-    // Extract name from email if available
-    const nameFromEmail = customerEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim();
-
-    const clerkUser = await client.users.createUser({
+    // Search for existing Clerk user by email
+    const existingUsers = await client.users.getUserList({
       emailAddress: [customerEmail],
-      skipPasswordRequirement: true,
-      firstName: nameFromEmail || "User",
-      lastName: "",
     });
 
-    // Create Clerk organization
-    const clerkOrg = await client.organizations.createOrganization({
-      name: `${customerEmail.split('@')[0]}'s Organization`,
-      createdBy: clerkUser.id,
-    });
+    let clerkUser = existingUsers.data?.[0];
+    let clerkOrg;
+    let isNewUser = false;
 
-    // Determine status and plan type
-    const status = subscription.status === "trialing" ? "trialing" : subscription.status;
-    const planType = subscription.metadata.planType || "professional";
+    if (clerkUser) {
+      // User already exists in Clerk (signed up first, then paid)
+      console.log(`Found existing Clerk user for ${customerEmail}: ${clerkUser.id}`);
+
+      // Get their organization memberships
+      const orgMemberships = await client.users.getOrganizationMembershipList({
+        userId: clerkUser.id,
+      });
+
+      if (orgMemberships.data?.length > 0) {
+        // Use their first organization
+        const orgId = orgMemberships.data[0].organization.id;
+        clerkOrg = await client.organizations.getOrganization({ organizationId: orgId });
+        console.log(`Using existing organization: ${clerkOrg.id}`);
+      } else {
+        // User exists but has no org - create one
+        clerkOrg = await client.organizations.createOrganization({
+          name: `${customerEmail.split('@')[0]}'s Business`,
+          createdBy: clerkUser.id,
+        });
+        console.log(`Created organization for existing user: ${clerkOrg.id}`);
+      }
+
+      // Check if tenant already exists for this org
+      tenant = await prisma.tenant.findFirst({
+        where: { clerkOrgId: clerkOrg.id },
+      });
+
+      if (tenant) {
+        // Update existing tenant with Stripe info and email
+        await prisma.tenant.update({
+          where: { id: tenant.id },
+          data: {
+            email: customerEmail,
+            stripeCustomerId: customerId,
+            subscriptionStatus: status,
+            planType: planType,
+          },
+        });
+        console.log(`Updated existing tenant ${tenant.id} with Stripe subscription`);
+        return;
+      }
+    } else {
+      // NEW USER: Email-first checkout (no Clerk account yet)
+      isNewUser = true;
+      const nameFromEmail = customerEmail.split('@')[0].replace(/[^a-zA-Z]/g, ' ').trim();
+
+      clerkUser = await client.users.createUser({
+        emailAddress: [customerEmail],
+        skipPasswordRequirement: true,
+        firstName: nameFromEmail || "User",
+        lastName: "",
+      });
+
+      clerkOrg = await client.organizations.createOrganization({
+        name: `${customerEmail.split('@')[0]}'s Business`,
+        createdBy: clerkUser.id,
+      });
+
+      console.log(`Created new Clerk user ${clerkUser.id} and org ${clerkOrg.id}`);
+    }
 
     // Create tenant in our database
     tenant = await prisma.tenant.create({
@@ -283,35 +334,35 @@ async function handleCheckoutCompleted(session) {
       },
     });
 
-    // Create sign-in token for magic link
-    const signInToken = await client.signInTokens.createSignInToken({
-      userId: clerkUser.id,
-      expiresInSeconds: 86400, // 24 hours
-    });
+    console.log(`Created tenant ${tenant.id} for ${customerEmail}, Status: ${status}`);
 
-    // Generate magic link
-    const magicLink = `${process.env.NEXT_PUBLIC_APP_URL}/sign-in#/?__clerk_ticket=${signInToken.token}`;
-
-    // Send magic link email via Resend
-    try {
-      await resend.emails.send({
-        from: 'ClientFlow <onboarding@resend.dev>', // Use your verified domain in production
-        to: customerEmail,
-        subject: 'Welcome to ClientFlow - Sign in with your magic link',
-        react: MagicLinkEmail({ magicLink, planType }),
+    // Only send magic link email for truly new users (email-first checkout)
+    if (isNewUser) {
+      const signInToken = await client.signInTokens.createSignInToken({
+        userId: clerkUser.id,
+        expiresInSeconds: 86400, // 24 hours
       });
 
-      console.log(`✅ Magic link email sent to ${customerEmail}`);
-    } catch (emailError) {
-      console.error(`❌ Failed to send magic link email to ${customerEmail}:`, emailError);
-      // Log magic link as fallback
-      console.log(`Fallback Magic Link: ${magicLink}`);
-    }
+      const magicLink = `${process.env.NEXT_PUBLIC_APP_URL}/sign-in#/?__clerk_ticket=${signInToken.token}`;
 
-    console.log(`Created new account for ${customerEmail}, Tenant: ${tenant.id}, Status: ${status}`);
+      try {
+        await resend.emails.send({
+          from: 'ClientFlow <onboarding@resend.dev>',
+          to: customerEmail,
+          subject: 'Welcome to ClientFlow - Sign in with your magic link',
+          react: MagicLinkEmail({ magicLink, planType }),
+        });
+
+        console.log(`✅ Magic link email sent to ${customerEmail}`);
+      } catch (emailError) {
+        console.error(`❌ Failed to send magic link email to ${customerEmail}:`, emailError);
+        console.log(`Fallback Magic Link: ${magicLink}`);
+      }
+    } else {
+      console.log(`User ${customerEmail} already signed up with Clerk - no magic link needed`);
+    }
   } catch (error) {
-    console.error("Error creating Clerk account:", error);
-    // TODO: Send notification to admin about failed account creation
+    console.error("Error in checkout completion:", error);
   }
 }
 
