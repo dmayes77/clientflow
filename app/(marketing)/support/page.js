@@ -10,19 +10,33 @@ import {
 } from "@mantine/core";
 import { IconHelp, IconBrandGithub } from "@tabler/icons-react";
 import Link from "next/link";
-import { PageLayout } from "@/components/PageLayout";
 import { ContactForm } from "./components";
+
+export const metadata = {
+  title: "Support | ClientFlow",
+  description: "Get help with ClientFlow. Contact our support team, browse FAQs, and find answers to common questions about booking and client management.",
+  keywords: ["ClientFlow support", "customer service", "help center", "contact support"],
+  openGraph: {
+    title: "Support | ClientFlow",
+    description: "Get help with ClientFlow. Contact our support team, browse FAQs, and find answers to common questions.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Support | ClientFlow",
+    description: "Get help with ClientFlow. Contact our support team.",
+  },
+};
 
 export default function SupportPage() {
   return (
-    <PageLayout showGetStarted>
-      <Container size="md" py={60}>
+    <Container size="md" py={{ base: 32, md: 60 }}>
         <Stack gap="xl">
           <div>
-            <Title order={1} mb="md">
+            <Title order={1} size={{ base: 28, md: 36 }} mb="md">
               Support
             </Title>
-            <Text size="lg" c="dimmed">
+            <Text size={{ base: "md", md: "lg" }} c="dimmed">
               Get help with ClientFlow - we&apos;re here to assist you
             </Text>
           </div>
@@ -30,7 +44,7 @@ export default function SupportPage() {
           <Divider />
 
           <Stack gap="md">
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
               <Group mb="md">
                 <IconHelp size={32} />
                 <div>
@@ -45,7 +59,15 @@ export default function SupportPage() {
               <Text size="sm" c="dimmed" mb="md">
                 Check out our comprehensive documentation and API reference for detailed guides and examples.
               </Text>
-              <Group>
+              <Stack gap="sm" hiddenFrom="sm">
+                <Link href="/documentation" style={{ width: "100%" }}>
+                  <Button variant="outline" fullWidth>Documentation</Button>
+                </Link>
+                <Link href="/api-reference" style={{ width: "100%" }}>
+                  <Button variant="outline" fullWidth>API Reference</Button>
+                </Link>
+              </Stack>
+              <Group visibleFrom="sm">
                 <Link href="/documentation">
                   <Button variant="outline">Documentation</Button>
                 </Link>
@@ -84,7 +106,7 @@ export default function SupportPage() {
             </Card>
           </Stack>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={3} size="h4" mb="md">
               Response Times
             </Title>
@@ -101,6 +123,5 @@ export default function SupportPage() {
           </Card>
         </Stack>
       </Container>
-    </PageLayout>
   );
 }

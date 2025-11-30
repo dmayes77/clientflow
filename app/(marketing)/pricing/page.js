@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Button,
   Group,
@@ -31,8 +29,23 @@ import {
   IconDeviceDesktop,
 } from "@tabler/icons-react";
 import Link from "next/link";
-import { PageLayout } from "@/components/PageLayout";
 import { CheckoutButton } from "./components";
+
+export const metadata = {
+  title: "Pricing | ClientFlow",
+  description: "Simple, transparent pricing for ClientFlow. $29/month for unlimited bookings, clients, API access, and all features. Start with a 14-day free trial.",
+  keywords: ["ClientFlow pricing", "booking software cost", "client management pricing", "SaaS pricing"],
+  openGraph: {
+    title: "Pricing | ClientFlow",
+    description: "Simple, transparent pricing. $29/month for unlimited bookings, clients, API access, and all features. 14-day free trial included.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Pricing | ClientFlow",
+    description: "Simple, transparent pricing. $29/month with a 14-day free trial.",
+  },
+};
 
 const PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "price_professional";
 
@@ -99,23 +112,23 @@ const faqData = [
 
 export default function PricingPage() {
   return (
-    <PageLayout>
+    <>
       {/* Hero Section with Pricing */}
       <Box
-        py={80}
+        py={{ base: 40, md: 80 }}
         style={{
           background: "linear-gradient(180deg, rgba(34, 139, 230, 0.03) 0%, transparent 100%)",
         }}
       >
         <Container size="lg">
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={60} style={{ alignItems: "center" }}>
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing={{ base: 32, md: 60 }} style={{ alignItems: "center" }}>
             {/* Left: Value Proposition */}
             <Stack gap="xl">
               <Box>
                 <Badge size="lg" variant="light" color="blue" mb="md">
                   Simple Pricing
                 </Badge>
-                <Title order={1} size={48} fw={900} mb="md" style={{ lineHeight: 1.1 }}>
+                <Title order={1} size={{ base: 32, md: 48 }} fw={900} mb="md" style={{ lineHeight: 1.1 }}>
                   One price.
                   <br />
                   <Text
@@ -127,7 +140,7 @@ export default function PricingPage() {
                     Everything included.
                   </Text>
                 </Title>
-                <Text size="xl" c="dimmed" style={{ lineHeight: 1.6 }}>
+                <Text size={{ base: "md", md: "xl" }} c="dimmed" style={{ lineHeight: 1.6 }}>
                   No confusing tiers. No hidden fees. Get the complete backend for your service business—bookings, CRM, payments, and API access.
                 </Text>
               </Box>
@@ -152,7 +165,7 @@ export default function PricingPage() {
             {/* Right: Pricing Card */}
             <Card
               shadow="xl"
-              padding={40}
+              padding={{ base: 24, md: 40 }}
               radius="xl"
               withBorder
               style={{
@@ -178,13 +191,13 @@ export default function PricingPage() {
 
               <Stack gap="lg">
                 <Box>
-                  <Text size="lg" fw={600} c="dimmed" mb={8}>
+                  <Text size={{ base: "md", md: "lg" }} fw={600} c="dimmed" mb={8}>
                     ClientFlow Professional
                   </Text>
                   <Group align="baseline" gap={4}>
                     <Text size="xl" fw={500} c="blue">$</Text>
-                    <Text size={64} fw={900} lh={1} c="blue">149</Text>
-                    <Text size="lg" c="dimmed">/month</Text>
+                    <Text size={{ base: 48, md: 64 }} fw={900} lh={1} c="blue">149</Text>
+                    <Text size={{ base: "md", md: "lg" }} c="dimmed">/month</Text>
                   </Group>
                 </Box>
 
@@ -225,25 +238,25 @@ export default function PricingPage() {
       </Box>
 
       {/* Features Section */}
-      <Box py={80}>
+      <Box py={{ base: 40, md: 80 }}>
         <Container size="lg">
-          <Stack align="center" gap="md" mb={60}>
+          <Stack align="center" gap="md" mb={{ base: 32, md: 60 }}>
             <Badge size="lg" variant="light" color="violet">
               Everything You Need
             </Badge>
-            <Title order={2} size={36} fw={800} ta="center">
+            <Title order={2} size={{ base: 28, md: 36 }} fw={800} ta="center">
               Built for service businesses
             </Title>
-            <Text size="lg" c="dimmed" ta="center" style={{ maxWidth: 600 }}>
+            <Text size={{ base: "md", md: "lg" }} c="dimmed" ta="center" style={{ maxWidth: 600 }}>
               Whether you&apos;re a photographer, consultant, or any service provider—manage your entire business from one platform.
             </Text>
           </Stack>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={{ base: "lg", md: "xl" }}>
             {featureCategories.map((category) => (
               <Card
                 key={category.title}
-                padding="xl"
+                padding={{ base: "lg", md: "xl" }}
                 radius="lg"
                 withBorder
                 style={{
@@ -269,18 +282,18 @@ export default function PricingPage() {
       </Box>
 
       {/* How It Works - Condensed */}
-      <Box py={80} style={{ backgroundColor: "var(--mantine-color-gray-0)" }}>
+      <Box py={{ base: 40, md: 80 }} style={{ backgroundColor: "var(--mantine-color-gray-0)" }}>
         <Container size="md">
-          <Stack align="center" gap="md" mb={60}>
+          <Stack align="center" gap="md" mb={{ base: 32, md: 60 }}>
             <Badge size="lg" variant="light" color="teal">
               How It Works
             </Badge>
-            <Title order={2} size={36} fw={800} ta="center">
+            <Title order={2} size={{ base: 28, md: 36 }} fw={800} ta="center">
               Your website&apos;s backend in 3 steps
             </Title>
           </Stack>
 
-          <SimpleGrid cols={{ base: 1, md: 3 }} spacing="xl">
+          <SimpleGrid cols={{ base: 1, md: 3 }} spacing={{ base: "xl", md: "xl" }}>
             {[
               {
                 step: 1,
@@ -304,8 +317,8 @@ export default function PricingPage() {
               <Stack key={item.step} align="center" gap="md">
                 <Box
                   style={{
-                    width: 80,
-                    height: 80,
+                    width: 64,
+                    height: 64,
                     borderRadius: "50%",
                     background: `linear-gradient(135deg, var(--mantine-color-teal-5), var(--mantine-color-cyan-5))`,
                     display: "flex",
@@ -314,7 +327,7 @@ export default function PricingPage() {
                     boxShadow: "0 8px 32px rgba(18, 184, 134, 0.25)",
                   }}
                 >
-                  <item.icon size={36} color="white" />
+                  <item.icon size={28} color="white" />
                 </Box>
                 <Box ta="center">
                   <Text size="sm" fw={700} c="teal" mb={4}>
@@ -334,13 +347,13 @@ export default function PricingPage() {
       </Box>
 
       {/* FAQ Section */}
-      <Box py={80}>
+      <Box py={{ base: 40, md: 80 }}>
         <Container size="md">
-          <Stack align="center" gap="md" mb={60}>
+          <Stack align="center" gap="md" mb={{ base: 32, md: 60 }}>
             <Badge size="lg" variant="light" color="orange">
               FAQ
             </Badge>
-            <Title order={2} size={36} fw={800} ta="center">
+            <Title order={2} size={{ base: 28, md: 36 }} fw={800} ta="center">
               Common questions
             </Title>
           </Stack>
@@ -380,7 +393,7 @@ export default function PricingPage() {
 
       {/* Final CTA */}
       <Box
-        py={100}
+        py={{ base: 60, md: 100 }}
         style={{
           background: "linear-gradient(135deg, var(--mantine-color-blue-6) 0%, var(--mantine-color-cyan-5) 100%)",
         }}
@@ -388,10 +401,10 @@ export default function PricingPage() {
         <Container size="sm">
           <Stack align="center" gap="xl">
             <Stack align="center" gap="md">
-              <Title order={2} size={40} fw={900} ta="center" c="white">
+              <Title order={2} size={{ base: 28, md: 40 }} fw={900} ta="center" c="white">
                 Ready to streamline your business?
               </Title>
-              <Text size="lg" ta="center" c="white" opacity={0.9}>
+              <Text size={{ base: "md", md: "lg" }} ta="center" c="white" opacity={0.9}>
                 Join service providers who use ClientFlow to manage bookings, clients, and payments.
               </Text>
             </Stack>
@@ -419,13 +432,25 @@ export default function PricingPage() {
       </Box>
 
       {/* Support Links */}
-      <Box py={60}>
+      <Box py={{ base: 40, md: 60 }}>
         <Container size="sm">
           <Stack align="center" gap="md">
-            <Text size="lg" fw={600}>
+            <Text size={{ base: "md", md: "lg" }} fw={600} ta="center">
               Need help getting started?
             </Text>
-            <Group justify="center">
+            <Stack gap="sm" hiddenFrom="sm" w="100%">
+              <Link href="/support" style={{ width: "100%" }}>
+                <Button variant="outline" size="md" radius="md" fullWidth>
+                  Contact Support
+                </Button>
+              </Link>
+              <Link href="/documentation" style={{ width: "100%" }}>
+                <Button variant="outline" size="md" radius="md" fullWidth>
+                  View Documentation
+                </Button>
+              </Link>
+            </Stack>
+            <Group justify="center" visibleFrom="sm">
               <Link href="/support">
                 <Button variant="outline" size="lg" radius="md">
                   Contact Support
@@ -440,6 +465,6 @@ export default function PricingPage() {
           </Stack>
         </Container>
       </Box>
-    </PageLayout>
+    </>
   );
 }

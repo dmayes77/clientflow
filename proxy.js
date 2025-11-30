@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   '/support',
   '/documentation',
   '/api-reference',
+  '/custom-development',
   '/not-found',
   '/sign-in(.*)',
   '/sign-up(.*)',

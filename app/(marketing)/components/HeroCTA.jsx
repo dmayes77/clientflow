@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@mantine/core";
+import { Button, Box } from "@mantine/core";
 import { SignUpButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 
@@ -9,20 +9,45 @@ export function HeroCTA() {
 
   return (
     <>
-      {isSignedIn ? (
-        <Link href="/dashboard">
-          <Button size="lg">Go to Dashboard</Button>
-        </Link>
-      ) : (
-        <SignUpButton mode="modal">
-          <div>
-            <Button size="lg">Start Free Trial</Button>
-          </div>
-        </SignUpButton>
-      )}
-      <Button size="lg" variant="outline">
-        View Demo
-      </Button>
+      {/* Desktop buttons */}
+      <Box visibleFrom="sm">
+        {isSignedIn ? (
+          <Link href="/dashboard">
+            <Button size="lg">Go to Dashboard</Button>
+          </Link>
+        ) : (
+          <SignUpButton mode="modal">
+            <div>
+              <Button size="lg">Start Free Trial</Button>
+            </div>
+          </SignUpButton>
+        )}
+      </Box>
+      <Box visibleFrom="sm">
+        <Button size="lg" variant="outline">
+          View Demo
+        </Button>
+      </Box>
+
+      {/* Mobile buttons - full width */}
+      <Box hiddenFrom="sm" w="100%">
+        {isSignedIn ? (
+          <Link href="/dashboard" style={{ width: '100%' }}>
+            <Button size="lg" fullWidth>Go to Dashboard</Button>
+          </Link>
+        ) : (
+          <SignUpButton mode="modal">
+            <div style={{ width: '100%' }}>
+              <Button size="lg" fullWidth>Start Free Trial</Button>
+            </div>
+          </SignUpButton>
+        )}
+      </Box>
+      <Box hiddenFrom="sm" w="100%">
+        <Button size="lg" variant="outline" fullWidth>
+          View Demo
+        </Button>
+      </Box>
     </>
   );
 }

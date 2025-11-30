@@ -99,6 +99,11 @@ small {
   font-weight: 700 !important;
 }
 
+/* Scroll offset for fixed header (60px + padding) */
+[id] {
+  scroll-margin-top: 80px;
+}
+
 /* Remove focus ring from Clerk modal close button */
 [data-clerk-component] button:focus-visible {
   outline: none;

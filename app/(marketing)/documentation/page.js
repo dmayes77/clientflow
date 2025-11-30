@@ -11,18 +11,32 @@ import {
   Text,
 } from "@mantine/core";
 import Link from "next/link";
-import { PageLayout } from "@/components/PageLayout";
+
+export const metadata = {
+  title: "Documentation | ClientFlow",
+  description: "Complete documentation and guides for ClientFlow. Learn how to set up services, manage clients, process payments, and integrate with the API.",
+  keywords: ["ClientFlow documentation", "booking software guide", "client management tutorial", "API integration guide"],
+  openGraph: {
+    title: "Documentation | ClientFlow",
+    description: "Complete documentation and guides for ClientFlow. Learn how to set up services, manage clients, process payments, and integrate with the API.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Documentation | ClientFlow",
+    description: "Complete documentation and guides for ClientFlow.",
+  },
+};
 
 export default function DocumentationPage() {
   return (
-    <PageLayout showGetStarted>
-      <Container size="md" py={60}>
+    <Container size="md" py={{ base: 32, md: 60 }}>
         <Stack gap="xl">
           <div>
-            <Title order={1} mb="md">
+            <Title order={1} size={{ base: 28, md: 36 }} mb="md">
               Documentation
             </Title>
-            <Text size="lg" c="dimmed">
+            <Text size={{ base: "md", md: "lg" }} c="dimmed">
               Everything you need to know to get started with ClientFlow
             </Text>
           </div>
@@ -157,14 +171,22 @@ export default function DocumentationPage() {
               </Stack>
             </Card>
 
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
               <Title order={2} size="h3" mb="md">
                 Need Help?
               </Title>
               <Text size="sm" c="dimmed" mb="md">
                 Can&apos;t find what you&apos;re looking for? We&apos;re here to help.
               </Text>
-              <Group>
+              <Stack gap="sm" hiddenFrom="sm">
+                <Link href="/support" style={{ width: "100%" }}>
+                  <Button variant="outline" fullWidth>Contact Support</Button>
+                </Link>
+                <Link href="/api-reference" style={{ width: "100%" }}>
+                  <Button variant="outline" fullWidth>API Reference</Button>
+                </Link>
+              </Stack>
+              <Group visibleFrom="sm">
                 <Link href="/support">
                   <Button variant="outline">Contact Support</Button>
                 </Link>
@@ -176,6 +198,5 @@ export default function DocumentationPage() {
           </Stack>
         </Stack>
       </Container>
-    </PageLayout>
   );
 }

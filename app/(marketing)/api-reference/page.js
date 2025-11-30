@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Container,
   Title,
@@ -12,9 +10,26 @@ import {
   Table,
   Button,
   Group,
+  Box,
+  ScrollArea,
 } from "@mantine/core";
 import Link from "next/link";
-import { PageLayout } from "@/components/PageLayout";
+
+export const metadata = {
+  title: "API Reference | ClientFlow",
+  description: "Complete REST API reference for ClientFlow. Explore endpoints for bookings, clients, services, and media. Includes authentication guides and code examples.",
+  keywords: ["ClientFlow API", "REST API documentation", "booking API", "client management API", "developer documentation"],
+  openGraph: {
+    title: "API Reference | ClientFlow",
+    description: "Complete REST API reference for ClientFlow. Explore endpoints for bookings, clients, services, and media.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "API Reference | ClientFlow",
+    description: "Complete REST API reference for ClientFlow developers.",
+  },
+};
 
 const endpoints = [
   {
@@ -134,21 +149,20 @@ function getMethodColor(method) {
 
 export default function APIReferencePage() {
   return (
-    <PageLayout showGetStarted>
-      <Container size="lg" py={60}>
+    <Container size="lg" py={{ base: 32, md: 60 }}>
         <Stack gap="xl">
           <div>
-            <Title order={1} mb="md">
+            <Title order={1} size={{ base: 28, md: 36 }} mb="md">
               API Reference
             </Title>
-            <Text size="lg" c="dimmed">
+            <Text size={{ base: "md", md: "lg" }} c="dimmed">
               Complete reference for the ClientFlow REST API
             </Text>
           </div>
 
           <Divider />
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Authentication
             </Title>
@@ -164,7 +178,7 @@ export default function APIReferencePage() {
             </Text>
           </Card>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Base URL
             </Title>
@@ -174,43 +188,45 @@ export default function APIReferencePage() {
             </Text>
           </Card>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Endpoints
             </Title>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Method</Table.Th>
-                  <Table.Th>Endpoint</Table.Th>
-                  <Table.Th>Description</Table.Th>
-                  <Table.Th>Auth</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {endpoints.map((endpoint, index) => (
-                  <Table.Tr key={index}>
-                    <Table.Td>
-                      <Badge color={getMethodColor(endpoint.method)}>
-                        {endpoint.method}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{endpoint.path}</Code>
-                    </Table.Td>
-                    <Table.Td>{endpoint.description}</Table.Td>
-                    <Table.Td>
-                      <Text size="xs" c="dimmed">
-                        {endpoint.auth}
-                      </Text>
-                    </Table.Td>
+            <ScrollArea>
+              <Table striped highlightOnHover style={{ minWidth: 600 }}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Method</Table.Th>
+                    <Table.Th>Endpoint</Table.Th>
+                    <Table.Th>Description</Table.Th>
+                    <Table.Th>Auth</Table.Th>
                   </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+                </Table.Thead>
+                <Table.Tbody>
+                  {endpoints.map((endpoint, index) => (
+                    <Table.Tr key={index}>
+                      <Table.Td>
+                        <Badge color={getMethodColor(endpoint.method)}>
+                          {endpoint.method}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Code>{endpoint.path}</Code>
+                      </Table.Td>
+                      <Table.Td>{endpoint.description}</Table.Td>
+                      <Table.Td>
+                        <Text size="xs" c="dimmed">
+                          {endpoint.auth}
+                        </Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
           </Card>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Create a Booking
             </Title>
@@ -259,7 +275,7 @@ x-api-key: your_api_key_here
             </Stack>
           </Card>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Get All Services
             </Title>
@@ -304,7 +320,7 @@ x-api-key: your_api_key_here`}
             </Stack>
           </Card>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Status Codes
             </Title>
@@ -336,7 +352,7 @@ x-api-key: your_api_key_here`}
             </Stack>
           </Card>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Rate Limits
             </Title>
@@ -350,14 +366,22 @@ x-api-key: your_api_key_here`}
             </Stack>
           </Card>
 
-          <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Card shadow="sm" padding={{ base: "md", md: "lg" }} radius="md" withBorder>
             <Title order={2} size="h3" mb="md">
               Need Help?
             </Title>
             <Text size="sm" c="dimmed" mb="md">
               Questions about the API? Check out our documentation or contact support.
             </Text>
-            <Group>
+            <Stack gap="sm" hiddenFrom="sm">
+              <Link href="/documentation" style={{ width: "100%" }}>
+                <Button variant="outline" fullWidth>Documentation</Button>
+              </Link>
+              <Link href="/support" style={{ width: "100%" }}>
+                <Button variant="outline" fullWidth>Contact Support</Button>
+              </Link>
+            </Stack>
+            <Group visibleFrom="sm">
               <Link href="/documentation">
                 <Button variant="outline">Documentation</Button>
               </Link>
@@ -368,6 +392,5 @@ x-api-key: your_api_key_here`}
           </Card>
         </Stack>
       </Container>
-    </PageLayout>
   );
 }
