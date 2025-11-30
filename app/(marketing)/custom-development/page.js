@@ -19,7 +19,7 @@ import {
   IconCheck,
   IconX,
 } from "@tabler/icons-react";
-import { ProjectInquiryForm, IncludedFeatures, OptionalAddons } from "./components";
+import { ProjectInquiryForm, IncludedFeatures, OptionalAddons, DevFAQ } from "./components";
 
 export const metadata = {
   title: "Custom Website Development | ClientFlow",
@@ -235,6 +235,22 @@ export default function CustomDevelopmentPage() {
           </Stack>
 
           <ProjectInquiryForm />
+        </Container>
+      </Box>
+
+      {/* FAQ Section */}
+      <Box py={{ base: 40, md: 80 }}>
+        <Container size="md">
+          <Stack align="center" gap="md" mb={{ base: 32, md: 60 }}>
+            <Title order={2} size={{ base: 24, md: 36 }} fw={800} ta="center">
+              Frequently Asked Questions
+            </Title>
+            <Text size={{ base: "md", md: "lg" }} c="dimmed" ta="center" style={{ maxWidth: 600 }}>
+              Everything you need to know about our custom development services.
+            </Text>
+          </Stack>
+
+          <DevFAQ />
         </Container>
       </Box>
     </>

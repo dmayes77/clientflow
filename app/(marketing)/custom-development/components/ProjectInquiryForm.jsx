@@ -16,11 +16,12 @@ import { IconSend } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 
 const budgetOptions = [
+  { value: "under-1k", label: "Under $1,000" },
+  { value: "1k-2.5k", label: "$1,000 - $2,500" },
+  { value: "2.5k-5k", label: "$2,500 - $5,000" },
   { value: "5k-10k", label: "$5,000 - $10,000" },
-  { value: "10k-20k", label: "$10,000 - $20,000" },
-  { value: "20k-50k", label: "$20,000 - $50,000" },
-  { value: "50k+", label: "$50,000+" },
-  { value: "unsure", label: "Not sure yet" },
+  { value: "10k+", label: "$10,000+" },
+  { value: "discuss", label: "Let's discuss" },
 ];
 
 const timelineOptions = [
