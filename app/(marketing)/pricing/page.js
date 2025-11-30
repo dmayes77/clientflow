@@ -9,27 +9,17 @@ import {
   Card,
   SimpleGrid,
   Badge,
-  List,
-  ThemeIcon,
-  Accordion,
 } from "@mantine/core";
-import {
-  IconCalendar,
-  IconUsers,
-  IconCreditCard,
-  IconReceipt,
-  IconApi,
-  IconWebhook,
-  IconMail,
-  IconMessage,
-  IconCheck,
-  IconArrowRight,
-  IconRocket,
-  IconCode,
-  IconDeviceDesktop,
-} from "@tabler/icons-react";
+import { IconArrowRight } from "@tabler/icons-react";
 import Link from "next/link";
-import { CheckoutButton } from "./components";
+import {
+  CheckoutButton,
+  HeroFeatureList,
+  PricingCardList,
+  PricingFeatures,
+  PricingSteps,
+  PricingFAQ,
+} from "./components";
 
 export const metadata = {
   title: "Pricing | ClientFlow",
@@ -48,67 +38,6 @@ export const metadata = {
 };
 
 const PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "price_professional";
-
-const includedFeatures = [
-  "Unlimited bookings & clients",
-  "Visual pipeline management",
-  "Stripe payment processing",
-  "Automatic invoicing",
-  "Full REST API access",
-  "Webhook notifications",
-  "Media library with CDN",
-  "Priority email support",
-];
-
-const featureCategories = [
-  {
-    icon: IconCalendar,
-    title: "Booking & CRM",
-    description: "Manage bookings with drag-and-drop pipelines. Track clients, history, and notes in one place.",
-    color: "blue",
-  },
-  {
-    icon: IconCreditCard,
-    title: "Payments & Invoicing",
-    description: "Accept payments via Stripe. Auto-generate invoices and track revenue effortlessly.",
-    color: "green",
-  },
-  {
-    icon: IconApi,
-    title: "REST API & Webhooks",
-    description: "Full API access for custom integrations. Real-time webhooks for every event.",
-    color: "violet",
-  },
-  {
-    icon: IconDeviceDesktop,
-    title: "Media & Assets",
-    description: "Upload images with CDN delivery. Access via API for your website.",
-    color: "orange",
-  },
-];
-
-const faqData = [
-  {
-    question: "What's included in the free trial?",
-    answer: "Full access to all features for 14 days. You can cancel anytime during the trial with no charges.",
-  },
-  {
-    question: "Why is there only one plan?",
-    answer: "We believe in keeping things simple. One price gets you everything: booking system, CRM, payments, invoicing, API access, webhooks, and all future features. No confusing tiers or hidden upsells.",
-  },
-  {
-    question: "Can I use this as a backend for my website?",
-    answer: "Absolutely! That's our main use case. Use our REST API to integrate booking forms, contact forms, and payment processing into your custom website. Build exactly what you want.",
-  },
-  {
-    question: "Are there any usage limits?",
-    answer: "No limits on bookings, clients, or API requests. Use as much as you need to run your business. We scale with you.",
-  },
-  {
-    question: "What payment methods do you accept?",
-    answer: "We accept all major credit cards (Visa, Mastercard, American Express) through Stripe's secure payment processing.",
-  },
-];
 
 export default function PricingPage() {
   return (
@@ -145,21 +74,7 @@ export default function PricingPage() {
                 </Text>
               </Box>
 
-              <List
-                spacing="sm"
-                size="md"
-                icon={
-                  <ThemeIcon color="green" size={24} radius="xl">
-                    <IconCheck size={14} />
-                  </ThemeIcon>
-                }
-              >
-                {includedFeatures.slice(0, 4).map((feature) => (
-                  <List.Item key={feature}>
-                    <Text fw={500}>{feature}</Text>
-                  </List.Item>
-                ))}
-              </List>
+              <HeroFeatureList />
             </Stack>
 
             {/* Right: Pricing Card */}
@@ -201,19 +116,7 @@ export default function PricingPage() {
                   </Group>
                 </Box>
 
-                <List
-                  spacing="xs"
-                  size="sm"
-                  icon={
-                    <ThemeIcon color="blue" size={20} radius="xl" variant="light">
-                      <IconCheck size={12} />
-                    </ThemeIcon>
-                  }
-                >
-                  {includedFeatures.map((feature) => (
-                    <List.Item key={feature}>{feature}</List.Item>
-                  ))}
-                </List>
+                <PricingCardList />
 
                 <CheckoutButton
                   priceId={PRICE_ID}
@@ -252,32 +155,7 @@ export default function PricingPage() {
             </Text>
           </Stack>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={{ base: "lg", md: "xl" }}>
-            {featureCategories.map((category) => (
-              <Card
-                key={category.title}
-                padding={{ base: "lg", md: "xl" }}
-                radius="lg"
-                withBorder
-                style={{
-                  borderColor: `var(--mantine-color-${category.color}-2)`,
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <Group gap="md" mb="md">
-                  <ThemeIcon size={48} radius="md" color={category.color} variant="light">
-                    <category.icon size={26} />
-                  </ThemeIcon>
-                  <Title order={3} size="h4" fw={700}>
-                    {category.title}
-                  </Title>
-                </Group>
-                <Text size="md" c="dimmed" style={{ lineHeight: 1.6 }}>
-                  {category.description}
-                </Text>
-              </Card>
-            ))}
-          </SimpleGrid>
+          <PricingFeatures />
         </Container>
       </Box>
 
@@ -293,56 +171,7 @@ export default function PricingPage() {
             </Title>
           </Stack>
 
-          <SimpleGrid cols={{ base: 1, md: 3 }} spacing={{ base: "xl", md: "xl" }}>
-            {[
-              {
-                step: 1,
-                icon: IconRocket,
-                title: "Sign Up",
-                description: "Create your account and configure your services in minutes",
-              },
-              {
-                step: 2,
-                icon: IconCode,
-                title: "Integrate",
-                description: "Connect your website using our REST API and documentation",
-              },
-              {
-                step: 3,
-                icon: IconDeviceDesktop,
-                title: "Manage",
-                description: "Handle bookings, clients, and payments from your dashboard",
-              },
-            ].map((item) => (
-              <Stack key={item.step} align="center" gap="md">
-                <Box
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: "50%",
-                    background: `linear-gradient(135deg, var(--mantine-color-teal-5), var(--mantine-color-cyan-5))`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    boxShadow: "0 8px 32px rgba(18, 184, 134, 0.25)",
-                  }}
-                >
-                  <item.icon size={28} color="white" />
-                </Box>
-                <Box ta="center">
-                  <Text size="sm" fw={700} c="teal" mb={4}>
-                    Step {item.step}
-                  </Text>
-                  <Title order={4} size="h5" fw={700} mb={8}>
-                    {item.title}
-                  </Title>
-                  <Text size="sm" c="dimmed">
-                    {item.description}
-                  </Text>
-                </Box>
-              </Stack>
-            ))}
-          </SimpleGrid>
+          <PricingSteps />
         </Container>
       </Box>
 
@@ -358,36 +187,7 @@ export default function PricingPage() {
             </Title>
           </Stack>
 
-          <Accordion
-            variant="separated"
-            radius="lg"
-            styles={{
-              item: {
-                borderColor: "var(--mantine-color-gray-3)",
-                backgroundColor: "white",
-              },
-              control: {
-                padding: 20,
-              },
-              panel: {
-                padding: 20,
-                paddingTop: 0,
-              },
-            }}
-          >
-            {faqData.map((faq, index) => (
-              <Accordion.Item key={index} value={`faq-${index}`}>
-                <Accordion.Control>
-                  <Text fw={600}>{faq.question}</Text>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Text size="sm" c="dimmed" style={{ lineHeight: 1.7 }}>
-                    {faq.answer}
-                  </Text>
-                </Accordion.Panel>
-              </Accordion.Item>
-            ))}
-          </Accordion>
+          <PricingFAQ />
         </Container>
       </Box>
 
