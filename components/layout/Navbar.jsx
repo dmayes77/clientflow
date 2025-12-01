@@ -109,10 +109,8 @@ export function Navbar() {
                   <Button variant="subtle">Sign In</Button>
                 </div>
               </SignInButton>
-              <SignUpButton mode="modal">
-                <div>
-                  <Button>Get Started</Button>
-                </div>
+              <SignUpButton mode="redirect" forceRedirectUrl="/onboarding/create-org">
+                <Button>Get Started</Button>
               </SignUpButton>
             </>
           )}
@@ -186,10 +184,8 @@ export function Navbar() {
                     <Button fullWidth variant="outline" onClick={closeDrawer}>Sign In</Button>
                   </div>
                 </SignInButton>
-                <SignUpButton mode="modal">
-                  <div>
-                    <Button fullWidth onClick={closeDrawer}>Get Started</Button>
-                  </div>
+                <SignUpButton mode="redirect" forceRedirectUrl="/onboarding/create-org">
+                  <Button fullWidth onClick={closeDrawer}>Get Started</Button>
                 </SignUpButton>
               </Stack>
             )}
