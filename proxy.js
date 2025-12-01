@@ -59,6 +59,7 @@ const isPublicApiRoute = createRouteMatcher([
   '/api/stripe/verify-checkout(.*)',
   '/api/tenant/status(.*)',
   '/api/tenant/business(.*)',
+  '/api/tenant/scheduling(.*)',
   '/api/webhooks/clerk(.*)',
   '/api/test/process-checkout(.*)',
   '/api/test/reset-user(.*)',

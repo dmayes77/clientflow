@@ -89,7 +89,7 @@ export async function POST(request, { params }) {
           active: true,
         },
         include: {
-          packageServices: {
+          services: {
             include: { service: true },
           },
         },
@@ -100,7 +100,7 @@ export async function POST(request, { params }) {
       }
 
       totalPrice = pkg.price;
-      duration = pkg.packageServices.reduce(
+      duration = pkg.services.reduce(
         (sum, ps) => sum + ps.service.duration,
         0
       );

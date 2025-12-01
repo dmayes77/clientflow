@@ -19,6 +19,11 @@ import {
   Center,
   Alert,
   SegmentedControl,
+  Checkbox,
+  Divider,
+  Grid,
+  ActionIcon,
+  Box,
 } from "@mantine/core";
 import { DateInput, TimeInput } from "@mantine/dates";
 import {
@@ -30,6 +35,10 @@ import {
   IconAlertCircle,
   IconPackage,
   IconList,
+  IconShoppingCart,
+  IconInfoCircle,
+  IconTrash,
+  IconX,
 } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
@@ -40,6 +49,12 @@ function formatCurrency(cents) {
     style: "currency",
     currency: "USD",
   }).format(cents / 100);
+}
+
+function formatDate(date, options) {
+  // Handle both Date objects and dayjs objects from Mantine
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return dateObj.toLocaleDateString("en-US", options);
 }
 
 function formatDuration(minutes) {
@@ -62,8 +77,7 @@ export default function PublicBookingPage() {
 
   // Booking state
   const [active, setActive] = useState(0);
-  const [itemType, setItemType] = useState("service");
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]); // Array of selected services/packages
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
   const [clientForm, setClientForm] = useState({
@@ -76,6 +90,15 @@ export default function PublicBookingPage() {
   const [bookingResult, setBookingResult] = useState(null);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [dayAvailability, setDayAvailability] = useState(null); // Holds hours and isClosed for selected date
+  const [weeklyAvailability, setWeeklyAvailability] = useState([]); // For multi-day spanning
+
+  // Calculate combined totals from selected items
+  const selectedTotal = selectedItems.reduce((sum, item) => sum + item.price, 0);
+  const selectedDuration = selectedItems.reduce(
+    (sum, item) => sum + (item.duration || item.totalDuration || 0),
+    0
+  );
 
   useEffect(() => {
     fetchBusinessData();
@@ -91,12 +114,22 @@ export default function PublicBookingPage() {
   const fetchBookedSlots = async (date) => {
     try {
       setLoadingSlots(true);
-      const dateStr = date.toISOString().split("T")[0];
+      setDayAvailability(null);
+      // Ensure date is a proper Date object
+      const dateObj = date instanceof Date ? date : new Date(date);
+      const dateStr = dateObj.toISOString().split("T")[0];
       const response = await fetch(`/api/public/${slug}/availability?date=${dateStr}`);
 
       if (response.ok) {
         const data = await response.json();
         setBookedSlots(data.bookedSlots || []);
+        setDayAvailability({
+          isClosed: data.isClosed,
+          hours: data.hours,
+          override: data.override,
+          slotInterval: data.slotInterval,
+          timezone: data.timezone,
+        });
       }
     } catch (err) {
       console.error("Error fetching booked slots:", err);
@@ -121,6 +154,10 @@ export default function PublicBookingPage() {
 
       const data = await response.json();
       setBusinessData(data);
+      // Store weekly availability for multi-day spanning logic
+      if (data.availability) {
+        setWeeklyAvailability(data.availability);
+      }
     } catch (err) {
       console.error("Error fetching business data:", err);
       setError("Failed to load business information");
@@ -129,8 +166,35 @@ export default function PublicBookingPage() {
     }
   };
 
-  const handleSelectItem = (item, type) => {
-    setSelectedItem({ ...item, type });
+  // Toggle item selection (checkbox behavior)
+  const handleToggleItem = (item, type) => {
+    const itemWithType = { ...item, type };
+    const exists = selectedItems.find(
+      (i) => i.id === item.id && i.type === type
+    );
+
+    if (exists) {
+      setSelectedItems(selectedItems.filter((i) => !(i.id === item.id && i.type === type)));
+    } else {
+      setSelectedItems([...selectedItems, itemWithType]);
+    }
+  };
+
+  // Check if item is selected
+  const isItemSelected = (item, type) => {
+    return selectedItems.some((i) => i.id === item.id && i.type === type);
+  };
+
+  // Proceed to next step
+  const handleProceedToDateTime = () => {
+    if (selectedItems.length === 0) {
+      notifications.show({
+        title: "Please select at least one service",
+        message: "Choose services or packages to book",
+        color: "orange",
+      });
+      return;
+    }
     setActive(1);
   };
 
@@ -164,13 +228,26 @@ export default function PublicBookingPage() {
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(hours, minutes, 0, 0);
 
+      // Separate services and packages
+      const serviceIds = selectedItems
+        .filter((i) => i.type === "service")
+        .map((i) => i.id);
+      const packageIds = selectedItems
+        .filter((i) => i.type === "package")
+        .map((i) => i.id);
+
       const response = await fetch(`/api/public/${slug}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          serviceId: selectedItem.type === "service" ? selectedItem.id : null,
-          packageId: selectedItem.type === "package" ? selectedItem.id : null,
+          serviceIds: serviceIds.length > 0 ? serviceIds : undefined,
+          packageIds: packageIds.length > 0 ? packageIds : undefined,
+          // For backward compatibility, also send single values if only one selected
+          serviceId: serviceIds.length === 1 ? serviceIds[0] : null,
+          packageId: packageIds.length === 1 && serviceIds.length === 0 ? packageIds[0] : null,
           scheduledAt: scheduledAt.toISOString(),
+          totalDuration: selectedDuration,
+          totalPrice: selectedTotal,
           clientName: clientForm.name,
           clientEmail: clientForm.email,
           clientPhone: clientForm.phone,
@@ -203,7 +280,9 @@ export default function PublicBookingPage() {
   const isDateAvailable = (date) => {
     if (!businessData?.availability?.length) return true;
 
-    const dayOfWeek = date.getDay();
+    // Handle both Date objects and dayjs objects from Mantine
+    const dateObj = date instanceof Date ? date : new Date(date);
+    const dayOfWeek = dateObj.getDay();
     const dayAvailability = businessData.availability.find(
       (a) => a.dayOfWeek === dayOfWeek
     );
@@ -213,14 +292,14 @@ export default function PublicBookingPage() {
 
   // Check if a time slot conflicts with any booked appointment
   const isTimeSlotBooked = (timeString) => {
-    if (!selectedDate || !selectedItem || bookedSlots.length === 0) return false;
+    if (!selectedDate || selectedItems.length === 0 || bookedSlots.length === 0) return false;
 
     const [hours, minutes] = timeString.split(":").map(Number);
     const slotStart = new Date(selectedDate);
     slotStart.setHours(hours, minutes, 0, 0);
 
-    const serviceDuration = selectedItem.duration || selectedItem.totalDuration || 60;
-    const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
+    // Use combined duration from all selected items
+    const slotEnd = new Date(slotStart.getTime() + selectedDuration * 60000);
 
     // Check if this slot overlaps with any booked slot
     return bookedSlots.some((booked) => {
@@ -232,34 +311,107 @@ export default function PublicBookingPage() {
     });
   };
 
+  // Calculate available business hours across multiple days for multi-day spanning
+  const getBusinessHoursForDate = (date) => {
+    if (!weeklyAvailability.length) return null;
+    const dayOfWeek = date.getDay();
+    const dayAvail = weeklyAvailability.find((a) => a.dayOfWeek === dayOfWeek);
+    if (!dayAvail?.isOpen) return null;
+    return {
+      startTime: dayAvail.startTime,
+      endTime: dayAvail.endTime,
+    };
+  };
+
+  // Calculate total available hours across consecutive business days
+  const calculateMultiDayAvailability = (startDate, requiredDuration) => {
+    let totalAvailableMinutes = 0;
+    let currentDate = new Date(startDate);
+    let daysSpanned = 0;
+    const maxDaysToCheck = 7; // Limit to prevent infinite loops
+
+    // First check today's remaining hours from the slot time
+    const todayHours = dayAvailability?.hours;
+    if (todayHours) {
+      const [endHour, endMin] = todayHours.endTime.split(":").map(Number);
+      const endMinutes = endHour * 60 + endMin;
+      // This will be calculated per-slot in getAvailableTimeSlots
+      return { canFit: true, endMinutes };
+    }
+
+    return { canFit: false, endMinutes: 0 };
+  };
+
   // Get available time slots for the selected date
   const getAvailableTimeSlots = () => {
-    if (!selectedDate || !businessData?.availability?.length) {
+    // Use dayAvailability from API if available (includes overrides)
+    if (dayAvailability?.isClosed || !dayAvailability?.hours) {
       return [];
     }
 
-    const dayOfWeek = selectedDate.getDay();
-    const dayAvailability = businessData.availability.find(
-      (a) => a.dayOfWeek === dayOfWeek
-    );
-
-    if (!dayAvailability?.isOpen) return [];
-
     const slots = [];
-    const [startHour, startMin] = dayAvailability.startTime.split(":").map(Number);
-    const [endHour, endMin] = dayAvailability.endTime.split(":").map(Number);
+    const [startHour, startMin] = dayAvailability.hours.startTime.split(":").map(Number);
+    const [endHour, endMin] = dayAvailability.hours.endTime.split(":").map(Number);
+
+    // Use slot interval from API (default to 30 if not set)
+    const interval = dayAvailability.slotInterval || 30;
+
+    // Use combined duration from selected items
+    const totalDuration = selectedDuration || 60;
+
+    // Calculate today's available business hours in minutes
+    const todayStartMinutes = startHour * 60 + startMin;
+    const todayEndMinutes = endHour * 60 + endMin;
+    const todayTotalMinutes = todayEndMinutes - todayStartMinutes;
+
+    // Check if appointment can span multiple days
+    const spanMultipleDays = totalDuration > todayTotalMinutes;
 
     let currentHour = startHour;
     let currentMin = startMin;
 
     while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-      const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
-      slots.push(timeString);
+      const slotStartInMinutes = currentHour * 60 + currentMin;
+      const remainingTodayMinutes = todayEndMinutes - slotStartInMinutes;
 
-      currentMin += 30;
+      // If duration fits within today's hours, add the slot
+      if (totalDuration <= remainingTodayMinutes) {
+        const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
+        slots.push(timeString);
+      } else if (spanMultipleDays && weeklyAvailability.length > 0) {
+        // Calculate if there's enough time across consecutive business days
+        let accumulatedMinutes = remainingTodayMinutes;
+        let checkDate = new Date(selectedDate);
+        let foundEnoughTime = false;
+        const maxDays = 7;
+
+        for (let i = 1; i < maxDays && !foundEnoughTime; i++) {
+          checkDate.setDate(checkDate.getDate() + 1);
+          const nextDayHours = getBusinessHoursForDate(checkDate);
+
+          if (nextDayHours) {
+            const [nextStartH, nextStartM] = nextDayHours.startTime.split(":").map(Number);
+            const [nextEndH, nextEndM] = nextDayHours.endTime.split(":").map(Number);
+            const nextDayMinutes = (nextEndH * 60 + nextEndM) - (nextStartH * 60 + nextStartM);
+
+            accumulatedMinutes += nextDayMinutes;
+
+            if (accumulatedMinutes >= totalDuration) {
+              foundEnoughTime = true;
+            }
+          }
+        }
+
+        if (foundEnoughTime) {
+          const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
+          slots.push(timeString);
+        }
+      }
+
+      currentMin += interval;
       if (currentMin >= 60) {
-        currentMin = 0;
-        currentHour++;
+        currentHour += Math.floor(currentMin / 60);
+        currentMin = currentMin % 60;
       }
     }
 
@@ -296,10 +448,12 @@ export default function PublicBookingPage() {
     );
   }
 
-  const items = itemType === "service" ? businessData.services : businessData.packages;
+  // All items combined (both services and packages)
+  const services = businessData.services || [];
+  const packages = businessData.packages || [];
 
   return (
-    <Container size="md" py="xl">
+    <Container size="xl" py="xl">
       <Stack gap="xl">
         {/* Header */}
         <div style={{ textAlign: "center" }}>
@@ -311,93 +465,266 @@ export default function PublicBookingPage() {
 
         {/* Stepper */}
         <Stepper active={active} onStepClick={setActive} allowNextStepsSelect={false}>
-          <Stepper.Step label="Select Service" icon={<IconList size={18} />}>
-            <Stack gap="lg" mt="lg">
-              {businessData.packages?.length > 0 && (
-                <SegmentedControl
-                  value={itemType}
-                  onChange={setItemType}
-                  data={[
-                    { label: "Services", value: "service" },
-                    { label: "Packages", value: "package" },
-                  ]}
-                  fullWidth
-                />
-              )}
+          <Stepper.Step label="Select Services" icon={<IconShoppingCart size={18} />}>
+            <Grid mt="lg" gutter="xl">
+              {/* Left Column - Services/Packages */}
+              <Grid.Col span={{ base: 12, md: 8 }}>
+                <Stack gap="lg">
+                  <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+                    Select one or more services. Duration and prices will be combined.
+                  </Alert>
 
-              {items.length === 0 ? (
-                <Alert icon={<IconAlertCircle size={16} />} color="gray">
-                  No {itemType === "service" ? "services" : "packages"} available at this time.
-                </Alert>
-              ) : (
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                  {items.map((item) => (
-                    <Card
-                      key={item.id}
-                      shadow="sm"
-                      padding="lg"
-                      radius="md"
-                      withBorder
-                      style={{ cursor: "pointer" }}
-                      onClick={() => handleSelectItem(item, itemType)}
-                    >
-                      <Group justify="space-between" mb="xs">
-                        <Text fw={600}>{item.name}</Text>
-                        <ThemeIcon
-                          size="sm"
-                          variant="light"
-                          color={itemType === "package" ? "grape" : "blue"}
-                        >
-                          {itemType === "package" ? (
-                            <IconPackage size={14} />
-                          ) : (
+              {/* Services Section */}
+              {services.length > 0 && (
+                <>
+                  <Text fw={600} size="lg">
+                    Services
+                  </Text>
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                    {services.map((item) => (
+                      <Card
+                        key={item.id}
+                        shadow="sm"
+                        padding="lg"
+                        radius="md"
+                        withBorder
+                        style={{
+                          cursor: "pointer",
+                          borderColor: isItemSelected(item, "service") ? "var(--mantine-color-blue-5)" : undefined,
+                          backgroundColor: isItemSelected(item, "service") ? "var(--mantine-color-blue-0)" : undefined,
+                        }}
+                        onClick={() => handleToggleItem(item, "service")}
+                      >
+                        <Group justify="space-between" mb="xs">
+                          <Group gap="sm">
+                            <Checkbox
+                              checked={isItemSelected(item, "service")}
+                              onChange={() => {}}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Text fw={600}>{item.name}</Text>
+                          </Group>
+                          <ThemeIcon size="sm" variant="light" color="blue">
                             <IconList size={14} />
-                          )}
-                        </ThemeIcon>
-                      </Group>
-
-                      {item.description && (
-                        <Text size="sm" c="dimmed" mb="md">
-                          {item.description}
-                        </Text>
-                      )}
-
-                      <Group justify="space-between">
-                        <Group gap="xs">
-                          <IconClock size={16} />
-                          <Text size="sm">
-                            {formatDuration(item.duration || item.totalDuration)}
-                          </Text>
+                          </ThemeIcon>
                         </Group>
-                        <Badge size="lg" variant="light" color="green">
-                          {formatCurrency(item.price)}
-                        </Badge>
-                      </Group>
-                    </Card>
-                  ))}
-                </SimpleGrid>
+
+                        {item.description && (
+                          <Text size="sm" c="dimmed" mb="md" ml={32}>
+                            {item.description}
+                          </Text>
+                        )}
+
+                        <Group justify="space-between" ml={32}>
+                          <Group gap="xs">
+                            <IconClock size={16} />
+                            <Text size="sm">{formatDuration(item.duration)}</Text>
+                          </Group>
+                          <Badge size="lg" variant="light" color="green">
+                            {formatCurrency(item.price)}
+                          </Badge>
+                        </Group>
+                      </Card>
+                    ))}
+                  </SimpleGrid>
+                </>
               )}
-            </Stack>
+
+              {/* Packages Section */}
+              {packages.length > 0 && (
+                <>
+                  <Divider my="sm" />
+                  <Text fw={600} size="lg">
+                    Packages
+                  </Text>
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                    {packages.map((item) => (
+                      <Card
+                        key={item.id}
+                        shadow="sm"
+                        padding="lg"
+                        radius="md"
+                        withBorder
+                        style={{
+                          cursor: "pointer",
+                          borderColor: isItemSelected(item, "package") ? "var(--mantine-color-grape-5)" : undefined,
+                          backgroundColor: isItemSelected(item, "package") ? "var(--mantine-color-grape-0)" : undefined,
+                        }}
+                        onClick={() => handleToggleItem(item, "package")}
+                      >
+                        <Group justify="space-between" mb="xs">
+                          <Group gap="sm">
+                            <Checkbox
+                              checked={isItemSelected(item, "package")}
+                              onChange={() => {}}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Text fw={600}>{item.name}</Text>
+                          </Group>
+                          <ThemeIcon size="sm" variant="light" color="grape">
+                            <IconPackage size={14} />
+                          </ThemeIcon>
+                        </Group>
+
+                        {item.description && (
+                          <Text size="sm" c="dimmed" mb="md" ml={32}>
+                            {item.description}
+                          </Text>
+                        )}
+
+                        <Group justify="space-between" ml={32}>
+                          <Group gap="xs">
+                            <IconClock size={16} />
+                            <Text size="sm">{formatDuration(item.totalDuration)}</Text>
+                          </Group>
+                          <Badge size="lg" variant="light" color="green">
+                            {formatCurrency(item.price)}
+                          </Badge>
+                        </Group>
+                      </Card>
+                    ))}
+                  </SimpleGrid>
+                </>
+              )}
+
+              {services.length === 0 && packages.length === 0 && (
+                <Alert icon={<IconAlertCircle size={16} />} color="gray">
+                  No services or packages available at this time.
+                </Alert>
+              )}
+                </Stack>
+              </Grid.Col>
+
+              {/* Right Column - Cart Sidebar */}
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <Box style={{ position: "sticky", top: 20 }}>
+                  <Paper p="lg" withBorder radius="md" shadow="sm">
+                    <Group justify="space-between" mb="md">
+                      <Group gap="xs">
+                        <IconShoppingCart size={20} />
+                        <Text fw={600} size="lg">Your Cart</Text>
+                      </Group>
+                      {selectedItems.length > 0 && (
+                        <Badge size="lg" variant="filled" color="blue">
+                          {selectedItems.length}
+                        </Badge>
+                      )}
+                    </Group>
+
+                    {selectedItems.length === 0 ? (
+                      <Stack align="center" gap="md" py="xl">
+                        <ThemeIcon size={60} variant="light" color="gray" radius="xl">
+                          <IconShoppingCart size={30} />
+                        </ThemeIcon>
+                        <Text c="dimmed" ta="center">
+                          Select services or packages to get started
+                        </Text>
+                      </Stack>
+                    ) : (
+                      <Stack gap="md">
+                        {/* Cart Items */}
+                        <Stack gap="xs">
+                          {selectedItems.map((item) => (
+                            <Paper key={`${item.type}-${item.id}`} p="sm" withBorder radius="sm">
+                              <Group justify="space-between" wrap="nowrap">
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <Group gap="xs" mb={4}>
+                                    <Badge size="xs" color={item.type === "package" ? "grape" : "blue"}>
+                                      {item.type}
+                                    </Badge>
+                                  </Group>
+                                  <Text size="sm" fw={500} lineClamp={1}>
+                                    {item.name}
+                                  </Text>
+                                  <Group gap="xs" mt={4}>
+                                    <Text size="xs" c="dimmed">
+                                      <IconClock size={12} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
+                                      {formatDuration(item.duration || item.totalDuration)}
+                                    </Text>
+                                  </Group>
+                                </div>
+                                <Group gap="xs" wrap="nowrap">
+                                  <Text size="sm" fw={600} c="green">
+                                    {formatCurrency(item.price)}
+                                  </Text>
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color="red"
+                                    size="sm"
+                                    onClick={() => handleToggleItem(item, item.type)}
+                                  >
+                                    <IconX size={14} />
+                                  </ActionIcon>
+                                </Group>
+                              </Group>
+                            </Paper>
+                          ))}
+                        </Stack>
+
+                        {/* Totals */}
+                        <Divider />
+                        <Stack gap="xs">
+                          <Group justify="space-between">
+                            <Text size="sm" c="dimmed">Duration</Text>
+                            <Text size="sm" fw={500}>
+                              {formatDuration(selectedDuration)}
+                            </Text>
+                          </Group>
+                          <Group justify="space-between">
+                            <Text size="lg" fw={600}>Total</Text>
+                            <Text size="lg" fw={700} c="green">
+                              {formatCurrency(selectedTotal)}
+                            </Text>
+                          </Group>
+                        </Stack>
+
+                        {/* Actions */}
+                        <Stack gap="xs">
+                          <Button
+                            fullWidth
+                            size="md"
+                            onClick={handleProceedToDateTime}
+                          >
+                            Continue
+                          </Button>
+                          <Button
+                            fullWidth
+                            variant="subtle"
+                            color="red"
+                            size="xs"
+                            leftSection={<IconTrash size={14} />}
+                            onClick={() => setSelectedItems([])}
+                          >
+                            Clear Cart
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    )}
+                  </Paper>
+                </Box>
+              </Grid.Col>
+            </Grid>
           </Stepper.Step>
 
           <Stepper.Step label="Choose Time" icon={<IconCalendar size={18} />}>
             <Stack gap="lg" mt="lg">
-              {selectedItem && (
+              {selectedItems.length > 0 && (
                 <Paper p="md" withBorder>
-                  <Group justify="space-between">
-                    <div>
-                      <Text fw={600}>{selectedItem.name}</Text>
-                      <Text size="sm" c="dimmed">
-                        {formatDuration(selectedItem.duration || selectedItem.totalDuration)} - {formatCurrency(selectedItem.price)}
-                      </Text>
-                    </div>
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      onClick={() => setActive(0)}
-                    >
+                  <Group justify="space-between" mb="xs">
+                    <Text fw={600}>Selected Services ({selectedItems.length})</Text>
+                    <Button variant="subtle" size="xs" onClick={() => setActive(0)}>
                       Change
                     </Button>
+                  </Group>
+                  {selectedItems.map((item) => (
+                    <Text key={`${item.type}-${item.id}`} size="sm" c="dimmed">
+                      • {item.name} ({formatDuration(item.duration || item.totalDuration)})
+                    </Text>
+                  ))}
+                  <Divider my="xs" />
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>Total: {formatDuration(selectedDuration)}</Text>
+                    <Badge size="lg" color="green">{formatCurrency(selectedTotal)}</Badge>
                   </Group>
                 </Paper>
               )}
@@ -422,8 +749,25 @@ export default function PublicBookingPage() {
                       <Center py="md">
                         <Loader size="sm" />
                       </Center>
+                    ) : dayAvailability?.isClosed ? (
+                      <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
+                        <Text fw={500}>Closed on this date</Text>
+                        {dayAvailability?.override?.reason && (
+                          <Text size="sm" c="dimmed" mt={4}>
+                            {dayAvailability.override.reason}
+                          </Text>
+                        )}
+                      </Alert>
                     ) : (
                       <>
+                        {dayAvailability?.override?.type === "custom" && (
+                          <Alert icon={<IconClock size={16} />} color="blue" variant="light" mb="sm">
+                            <Text size="sm">
+                              Special hours: {dayAvailability.hours?.startTime} - {dayAvailability.hours?.endTime}
+                              {dayAvailability.override?.reason && ` (${dayAvailability.override.reason})`}
+                            </Text>
+                          </Alert>
+                        )}
                         <SimpleGrid cols={3} spacing="xs">
                           {availableTimeSlots.map((time) => (
                             <Button
@@ -457,13 +801,13 @@ export default function PublicBookingPage() {
 
           <Stepper.Step label="Your Details" icon={<IconUser size={18} />}>
             <Stack gap="lg" mt="lg">
-              {selectedItem && selectedDate && selectedTime && (
+              {selectedItems.length > 0 && selectedDate && selectedTime && (
                 <Paper p="md" withBorder>
-                  <Group justify="space-between">
+                  <Group justify="space-between" mb="xs">
                     <div>
-                      <Text fw={600}>{selectedItem.name}</Text>
+                      <Text fw={600}>Appointment Summary</Text>
                       <Text size="sm" c="dimmed">
-                        {selectedDate.toLocaleDateString("en-US", {
+                        {formatDate(selectedDate, {
                           weekday: "long",
                           month: "long",
                           day: "numeric",
@@ -472,9 +816,18 @@ export default function PublicBookingPage() {
                       </Text>
                     </div>
                     <Badge size="lg" color="green">
-                      {formatCurrency(selectedItem.price)}
+                      {formatCurrency(selectedTotal)}
                     </Badge>
                   </Group>
+                  <Divider my="xs" />
+                  {selectedItems.map((item) => (
+                    <Text key={`${item.type}-${item.id}`} size="sm" c="dimmed">
+                      • {item.name} ({formatDuration(item.duration || item.totalDuration)})
+                    </Text>
+                  ))}
+                  <Text size="sm" fw={500} mt="xs">
+                    Total Duration: {formatDuration(selectedDuration)}
+                  </Text>
                 </Paper>
               )}
 
@@ -580,7 +933,7 @@ export default function PublicBookingPage() {
                   variant="light"
                   onClick={() => {
                     setActive(0);
-                    setSelectedItem(null);
+                    setSelectedItems([]);
                     setSelectedDate(null);
                     setSelectedTime("");
                     setClientForm({ name: "", email: "", phone: "", notes: "" });

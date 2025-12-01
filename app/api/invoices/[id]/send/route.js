@@ -57,6 +57,8 @@ export async function POST(request, { params }) {
             businessName: true,
             name: true,
             email: true,
+            stripeAccountId: true,
+            stripeOnboardingComplete: true,
           },
         },
       },
@@ -119,10 +121,14 @@ export async function POST(request, { params }) {
     // Trigger webhook
     triggerWebhook(tenantId, "invoice.sent", updatedInvoice);
 
+    // Check if Stripe is set up for payment processing
+    const stripeSetup = invoice.tenant.stripeAccountId && invoice.tenant.stripeOnboardingComplete;
+
     return NextResponse.json({
       success: true,
       message: "Invoice sent successfully",
       emailId: data?.id,
+      warning: !stripeSetup ? "Online payments are not enabled. Set up Stripe Connect to accept payments." : null,
     });
   } catch (error) {
     console.error("Send invoice error:", error);

@@ -281,11 +281,23 @@ export default function InvoicesPage() {
         throw new Error(error.error || "Failed to send invoice");
       }
 
+      const data = await response.json();
+
       notifications.show({
         title: "Success",
         message: "Invoice sent successfully",
         color: "green",
       });
+
+      // Show warning if Stripe is not set up
+      if (data.warning) {
+        notifications.show({
+          title: "Payment Setup Required",
+          message: data.warning,
+          color: "yellow",
+          autoClose: 10000,
+        });
+      }
 
       fetchInvoices();
     } catch (error) {

@@ -50,12 +50,22 @@ export async function GET(request) {
     const packages = await prisma.package.findMany({
       where: { tenantId },
       include: {
-        services: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(packages);
+    // Flatten services for frontend compatibility
+    const flattenedPackages = packages.map((pkg) => ({
+      ...pkg,
+      services: pkg.services.map((ps) => ps.service),
+    }));
+
+    return NextResponse.json(flattenedPackages);
   } catch (error) {
     console.error("Error fetching packages:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -108,15 +118,25 @@ export async function POST(request) {
         description: validation.data.description || null,
         price: validation.data.price,
         services: {
-          connect: validation.data.serviceIds?.map((id) => ({ id })) || [],
+          create: validation.data.serviceIds?.map((serviceId) => ({ serviceId })) || [],
         },
       },
       include: {
-        services: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(packageData, { status: 201 });
+    // Flatten services for frontend compatibility
+    const flattenedPackage = {
+      ...packageData,
+      services: packageData.services.map((ps) => ps.service),
+    };
+
+    return NextResponse.json(flattenedPackage, { status: 201 });
   } catch (error) {
     console.error("Error creating package:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

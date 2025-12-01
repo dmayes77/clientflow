@@ -36,6 +36,10 @@ model Tenant {
   businessDescription String?
   logoUrl             String?
 
+  // Scheduling Settings
+  timezone            String    @default("America/New_York") // IANA timezone
+  slotInterval        Int       @default(30) // Minutes between slot starts (30, 60, 120, 180, 240)
+
   // Social Media Links
   facebookUrl         String?
   twitterUrl          String?
@@ -56,6 +60,7 @@ model Tenant {
   bookings            Booking[]
   apiKeys             ApiKey[]
   availability        Availability[]
+  availabilityOverrides AvailabilityOverride[]
   webhooks            Webhook[]
   payments            Payment[]
   images              Image[]
@@ -195,6 +200,26 @@ model Availability {
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+}
+
+model AvailabilityOverride {
+  id        String   @id @default(cuid())
+  tenantId  String
+
+  date      DateTime @db.Date // Specific date for the override
+  type      String   // "closed" or "custom"
+  startTime String?  // For custom hours (null if closed)
+  endTime   String?  // For custom hours (null if closed)
+  reason    String?  // e.g., "Christmas Day", "Special Event"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, date]) // Only one override per date per tenant
+  @@index([tenantId])
+  @@index([date])
 }
 
 model Webhook {
@@ -347,6 +372,10 @@ model Invoice {
   clientName      String
   clientEmail     String
   clientAddress   String?
+
+  // Stripe payment tracking
+  stripeCheckoutSessionId String?   @unique
+  stripePaymentIntentId   String?   @unique
 
   // Additional fields
   notes           String?   // Notes visible on invoice

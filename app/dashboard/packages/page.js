@@ -84,7 +84,8 @@ export default function PackagesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
-          price: parseFloat(values.price),
+          // Convert dollars to cents for storage
+          price: Math.round(parseFloat(values.price) * 100),
         }),
       });
 
@@ -115,7 +116,8 @@ export default function PackagesPage() {
     form.setValues({
       name: pkg.name,
       description: pkg.description || "",
-      price: pkg.price.toString(),
+      // Convert cents to dollars for display in form
+      price: (pkg.price / 100).toString(),
       serviceIds: pkg.services?.map((s) => s.id) || [],
     });
     open();
@@ -231,7 +233,7 @@ export default function PackagesPage() {
               )}
 
               <Text size="xl" fw={700} c="green" mb="md">
-                ${pkg.price}
+                ${(pkg.price / 100).toFixed(2)}
               </Text>
 
               {pkg.services && pkg.services.length > 0 && (

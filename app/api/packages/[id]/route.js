@@ -43,22 +43,45 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Package not found" }, { status: 404 });
     }
 
+    // If serviceIds are provided, update the package services
+    if (validation.data.serviceIds) {
+      // Delete existing package services
+      await prisma.packageService.deleteMany({
+        where: { packageId: id },
+      });
+
+      // Create new package services
+      await prisma.packageService.createMany({
+        data: validation.data.serviceIds.map((serviceId) => ({
+          packageId: id,
+          serviceId,
+        })),
+      });
+    }
+
     const updatedPackage = await prisma.package.update({
       where: { id },
       data: {
         name: validation.data.name,
         description: validation.data.description || null,
         price: validation.data.price,
-        services: validation.data.serviceIds ? {
-          set: validation.data.serviceIds.map((id) => ({ id })),
-        } : undefined,
       },
       include: {
-        services: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(updatedPackage);
+    // Flatten services for frontend compatibility
+    const flattenedPackage = {
+      ...updatedPackage,
+      services: updatedPackage.services.map((ps) => ps.service),
+    };
+
+    return NextResponse.json(flattenedPackage);
   } catch (error) {
     return createSmartErrorResponse(error);
   }
