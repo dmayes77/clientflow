@@ -55,21 +55,23 @@ export function FAQCard({ icon, title, description, color }) {
       }}
     >
       <Stack gap="lg">
-        <Group gap="md">
+        <Group gap="md" align="flex-start" wrap="nowrap">
           <Box
             style={{
               width: 48,
               height: 48,
+              minWidth: 48,
               borderRadius: 12,
               background: `linear-gradient(135deg, ${colors.bg} 0%, ${colors.bg.replace("0.1", "0.05")} 100%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <Icon size={24} style={{ color: colors.icon }} />
           </Box>
-          <Title order={3} size={20} fw={700}>
+          <Title order={3} size={20} fw={700} style={{ flex: 1 }}>
             {title}
           </Title>
         </Group>
