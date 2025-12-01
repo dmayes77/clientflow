@@ -40,7 +40,7 @@ export function Footer() {
         <Box pt={20} style={{ borderTop: "1px solid var(--mantine-color-dark-6)" }}>
           <Stack gap="sm" hiddenFrom="sm">
             <Text size="sm" c="dimmed" ta="center">
-              © 2024 ClientFlow. All rights reserved.
+              © {new Date().getFullYear()} ClientFlow. All rights reserved.
             </Text>
             <Group gap="md" justify="center">
               <Anchor href="#" size="sm" c="dimmed" underline="never">Privacy Policy</Anchor>
@@ -49,7 +49,7 @@ export function Footer() {
           </Stack>
           <Group justify="space-between" visibleFrom="sm">
             <Text size="sm" c="dimmed">
-              © 2024 ClientFlow. All rights reserved.
+              © {new Date().getFullYear()} ClientFlow. All rights reserved.
             </Text>
             <Group gap="md">
               <Anchor href="#" size="sm" c="dimmed" underline="never">Privacy Policy</Anchor>
