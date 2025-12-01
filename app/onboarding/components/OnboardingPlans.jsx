@@ -115,7 +115,6 @@ export function OnboardingPlans() {
                 <List.Item>Unlimited clients</List.Item>
                 <List.Item>Stripe payment processing</List.Item>
                 <List.Item>Service & package management</List.Item>
-                <List.Item>Visual pipeline boards</List.Item>
                 <List.Item>Webhook notifications (single URL)</List.Item>
                 <List.Item>Booking calendar</List.Item>
                 <List.Item>Email support</List.Item>

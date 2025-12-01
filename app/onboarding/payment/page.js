@@ -157,7 +157,6 @@ export default function PaymentPage() {
                 <List.Item>Unlimited bookings & clients</List.Item>
                 <List.Item>Stripe payment processing</List.Item>
                 <List.Item>Service & package management</List.Item>
-                <List.Item>Visual pipeline boards</List.Item>
                 <List.Item>Invoice generation</List.Item>
                 <List.Item>Full REST API access</List.Item>
                 <List.Item>Webhook notifications</List.Item>

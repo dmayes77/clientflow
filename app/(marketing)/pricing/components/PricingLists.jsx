@@ -5,7 +5,6 @@ import { IconCheck } from "@tabler/icons-react";
 
 const includedFeatures = [
   "Unlimited bookings & clients",
-  "Visual pipeline management",
   "Stripe payment processing",
   "Automatic invoicing",
   "Full REST API access",

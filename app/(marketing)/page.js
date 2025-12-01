@@ -81,13 +81,6 @@ export default function Home() {
               <Stack gap="md">
                 <Box>
                   <Group gap="xs" mb={4}>
-                    <IconChartLine size={18} />
-                    <Text fw={600} size="sm">Visual Pipeline</Text>
-                  </Group>
-                  <Text size="sm" c="dimmed" pl={26}>Drag-and-drop board to visualize your booking pipeline</Text>
-                </Box>
-                <Box>
-                  <Group gap="xs" mb={4}>
                     <IconCalendar size={18} />
                     <Text fw={600} size="sm">Calendar View</Text>
                   </Group>
