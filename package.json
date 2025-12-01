@@ -1,12 +1,15 @@
 {
   "name": "clientflow-saas",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "concurrently \"next dev --webpack\" \"prisma studio\"",
     "build": "prisma generate && next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.35.4",
@@ -36,6 +39,7 @@
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
     "concurrently": "^9.2.1",
