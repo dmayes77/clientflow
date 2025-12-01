@@ -213,6 +213,9 @@ function FoundersContent() {
                 <Text size="sm">
                   As a Founding Member, we ask that you actively report any bugs, issues, or feedback you encounter. Your insights are invaluable in helping us build the best product possible.
                 </Text>
+                <Text size="sm" mt="xs" fw={500}>
+                  You must be an established business registered with your state to participate.
+                </Text>
               </Alert>
 
               <Divider />
@@ -265,6 +268,7 @@ function FoundersContent() {
                 <List.Item>After 1 year, you can continue at 50% off ($74.50/mo) or cancel</List.Item>
                 <List.Item>No automatic charges - we&apos;ll notify you before your year ends</List.Item>
                 <List.Item>Founding Member status and discount are permanent and non-transferable</List.Item>
+                <List.Item><Text fw={600} component="span">Required:</Text> Must be an established business registered with your state</List.Item>
                 <List.Item><Text fw={600} component="span">Required:</Text> Actively report bugs, issues, and provide feedback to help improve the platform</List.Item>
               </List>
             </Stack>
