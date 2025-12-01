@@ -21,6 +21,7 @@ import {
   IconFileInvoice,
   IconClock,
   IconReportMoney,
+  IconSparkles,
 } from "@tabler/icons-react";
 
 export function DashboardShell({ children }) {
@@ -31,9 +32,15 @@ export function DashboardShell({ children }) {
   const { orgId, isLoaded } = useAuth();
   const [accessChecked, setAccessChecked] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
+  const [version, setVersion] = useState(null);
 
   useEffect(() => {
     setMounted(true);
+    // Fetch version info
+    fetch("/api/version")
+      .then((res) => res.json())
+      .then((data) => setVersion(data.version))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -158,18 +165,33 @@ export function DashboardShell({ children }) {
           </Box>
 
           <Box style={{ marginTop: "auto" }}>
-            <SignOutButton>
-              <div>
-                <Button
-                  variant="light"
-                  color="red"
-                  fullWidth
-                  leftSection={<IconLogout size={20} />}
-                >
-                  Sign Out
-                </Button>
-              </div>
-            </SignOutButton>
+            <Stack gap="xs">
+              <NavLink
+                href="/dashboard/whats-new"
+                label="What's New"
+                leftSection={<IconSparkles size={20} stroke={1.5} />}
+                rightSection={
+                  version && (
+                    <Text size="xs" c="dimmed">
+                      v{version}
+                    </Text>
+                  )
+                }
+                active={pathname === "/dashboard/whats-new"}
+              />
+              <SignOutButton>
+                <div>
+                  <Button
+                    variant="light"
+                    color="red"
+                    fullWidth
+                    leftSection={<IconLogout size={20} />}
+                  >
+                    Sign Out
+                  </Button>
+                </div>
+              </SignOutButton>
+            </Stack>
           </Box>
         </Stack>
       </AppShell.Navbar>
