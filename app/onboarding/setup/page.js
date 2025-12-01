@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Paper,
@@ -28,7 +28,7 @@ const COUNTRIES = [
   { value: "NZ", label: "New Zealand" },
 ];
 
-export default function SetupPage() {
+function SetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoaded, isSignedIn } = useAuth();
@@ -405,5 +405,20 @@ export default function SetupPage() {
         </Group>
       </Paper>
     </>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <Stack align="center" gap="md" py={80}>
+          <Loader size="lg" />
+          <Text c="dimmed">Loading...</Text>
+        </Stack>
+      }
+    >
+      <SetupContent />
+    </Suspense>
   );
 }
