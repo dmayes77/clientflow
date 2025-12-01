@@ -90,7 +90,7 @@ export default function ImagesPage() {
 
       if (imagesRes.ok) {
         const imagesData = await imagesRes.json();
-        setImages(imagesData);
+        setImages(imagesData.images || []);
       }
       if (videosRes.ok) {
         const videosData = await videosRes.json();
