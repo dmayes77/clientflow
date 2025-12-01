@@ -48,6 +48,7 @@ const isPublicMarketingRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/book(.*)',
+  '/founders(.*)',
 ])
 
 // Public API routes (accessible from any subdomain)
