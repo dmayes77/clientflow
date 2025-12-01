@@ -133,6 +133,9 @@ function FoundersContent() {
             <Text size="lg" c="dimmed" ta="center" maw={600}>
               You&apos;ve been invited to join ClientFlow as a Founding Member. Get 1 year free plus exclusive lifetime benefits.
             </Text>
+            <Text size="sm" ta="center">
+              Check out our <Link href="/roadmap" style={{ color: "var(--mantine-color-violet-6)", fontWeight: 500 }}>Product Roadmap</Link> to see what&apos;s coming next!
+            </Text>
           </Stack>
 
           {/* Main Card */}
