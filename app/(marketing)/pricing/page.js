@@ -13,7 +13,6 @@ import {
 import { IconArrowRight } from "@tabler/icons-react";
 import Link from "next/link";
 import {
-  CheckoutButton,
   HeroFeatureList,
   PricingCardList,
   PricingFeatures,
@@ -36,8 +35,6 @@ export const metadata = {
     description: "Simple, transparent pricing. $29/month with a 14-day free trial.",
   },
 };
-
-const PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "price_professional";
 
 export default function PricingPage() {
   return (
@@ -118,18 +115,18 @@ export default function PricingPage() {
 
                 <PricingCardList />
 
-                <CheckoutButton
-                  priceId={PRICE_ID}
-                  planType="professional"
-                  fullWidth
-                  size="xl"
-                  radius="md"
-                  variant="gradient"
-                  gradient={{ from: "blue", to: "cyan", deg: 135 }}
-                  rightSection={<IconArrowRight size={20} />}
-                >
-                  Start Free Trial
-                </CheckoutButton>
+                <Link href="/sign-up" style={{ width: "100%" }}>
+                  <Button
+                    fullWidth
+                    size="xl"
+                    radius="md"
+                    variant="gradient"
+                    gradient={{ from: "blue", to: "cyan", deg: 135 }}
+                    rightSection={<IconArrowRight size={20} />}
+                  >
+                    Start Free Trial
+                  </Button>
+                </Link>
 
                 <Text size="xs" c="dimmed" ta="center">
                   Cancel anytime during trial
@@ -210,18 +207,18 @@ export default function PricingPage() {
             </Stack>
 
             <Group>
-              <CheckoutButton
-                priceId={PRICE_ID}
-                planType="professional"
-                size="xl"
-                radius="md"
-                color="white"
-                variant="white"
-                c="blue"
-                rightSection={<IconArrowRight size={20} />}
-              >
-                Start Your Free Trial
-              </CheckoutButton>
+              <Link href="/sign-up">
+                <Button
+                  size="xl"
+                  radius="md"
+                  color="white"
+                  variant="white"
+                  c="blue"
+                  rightSection={<IconArrowRight size={20} />}
+                >
+                  Start Your Free Trial
+                </Button>
+              </Link>
             </Group>
 
             <Text size="sm" c="white" opacity={0.8}>
