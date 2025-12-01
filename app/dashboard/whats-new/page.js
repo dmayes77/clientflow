@@ -53,7 +53,7 @@ export default function WhatsNewPage() {
           </ThemeIcon>
           <div>
             <Title order={1}>What&apos;s New</Title>
-            <Text c="dimmed">
+            <Text c="dimmed" component="span">
               Current version: <Badge variant="light" color="violet">v{versionData?.version}</Badge>
             </Text>
           </div>
