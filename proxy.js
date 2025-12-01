@@ -131,19 +131,10 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Protect dashboard/admin routes when accessed directly (without subdomain)
-  // In production, these should redirect to the subdomain version
+  // Use path-based routing (no subdomain redirects)
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
-    // In development, allow direct access
-    if (process.env.NODE_ENV === 'development') {
-      await auth.protect()
-      return addSecurityHeaders(req, NextResponse.next())
-    }
-
-    // In production, redirect to subdomain
-    const targetSubdomain = pathname.startsWith('/dashboard') ? 'dashboard' : 'admin'
-    const newPath = pathname.replace(/^\/(dashboard|admin)/, '') || '/'
-    const url = new URL(`https://${targetSubdomain}.${ROOT_DOMAIN}${newPath}`)
-    return NextResponse.redirect(url)
+    await auth.protect()
+    return addSecurityHeaders(req, NextResponse.next())
   }
 
   // Public marketing routes
