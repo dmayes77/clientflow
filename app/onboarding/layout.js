@@ -23,7 +23,7 @@ export default function OnboardingLayout({ children }) {
     <Box style={{ minHeight: "100vh", backgroundColor: "var(--mantine-color-gray-0)" }}>
       <Container size="lg" py="xl">
         <Paper shadow="sm" p="lg" radius="md" mb="xl">
-          <Stepper active={activeStep} breakpoint="sm">
+          <Stepper active={activeStep}>
             <Stepper.Step
               label="Create Business"
               description="Name your business"
