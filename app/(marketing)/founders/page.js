@@ -26,6 +26,7 @@ import {
   IconRocket,
   IconGift,
   IconAlertCircle,
+  IconMessageReport,
 } from "@tabler/icons-react";
 import Link from "next/link";
 
@@ -190,7 +191,28 @@ function FoundersContent() {
                     <Text size="sm" c="dimmed">Be the first to try new features before public release</Text>
                   </div>
                 </Group>
+
+                <Group gap="sm">
+                  <ThemeIcon size={32} radius="xl" color="orange">
+                    <IconMessageReport size={18} />
+                  </ThemeIcon>
+                  <div>
+                    <Text fw={600}>Your Feedback Matters</Text>
+                    <Text size="sm" c="dimmed">Help shape ClientFlow by reporting bugs and sharing ideas</Text>
+                  </div>
+                </Group>
               </Stack>
+
+              <Alert
+                icon={<IconAlertCircle size={18} />}
+                color="orange"
+                variant="light"
+                title="What We Ask in Return"
+              >
+                <Text size="sm">
+                  As a Founding Member, we ask that you actively report any bugs, issues, or feedback you encounter. Your insights are invaluable in helping us build the best product possible.
+                </Text>
+              </Alert>
 
               <Divider />
 
@@ -242,6 +264,7 @@ function FoundersContent() {
                 <List.Item>After 1 year, you can continue at 50% off ($74.50/mo) or cancel</List.Item>
                 <List.Item>No automatic charges - we&apos;ll notify you before your year ends</List.Item>
                 <List.Item>Founding Member status and discount are permanent and non-transferable</List.Item>
+                <List.Item><Text fw={600} component="span">Required:</Text> Actively report bugs, issues, and provide feedback to help improve the platform</List.Item>
               </List>
             </Stack>
           </Paper>
@@ -253,7 +276,14 @@ function FoundersContent() {
             <Paper p="md" radius="md" withBorder>
               <Text fw={600} mb="xs">Why is this free?</Text>
               <Text size="sm" c="dimmed">
-                We&apos;re looking for early adopters who can provide feedback and help us improve ClientFlow. In exchange, you get a great deal and help shape the product.
+                We&apos;re looking for early adopters who will actively use ClientFlow and share feedback. In exchange for reporting bugs and issues, you get a year free and help shape the product.
+              </Text>
+            </Paper>
+
+            <Paper p="md" radius="md" withBorder>
+              <Text fw={600} mb="xs">What kind of feedback do you need?</Text>
+              <Text size="sm" c="dimmed">
+                Report any bugs, confusing workflows, missing features, or general ideas. We value honest feedback - if something doesn&apos;t work well, let us know so we can fix it.
               </Text>
             </Paper>
 
