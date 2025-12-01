@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// Valid founder codes - can also be stored in env vars for more security
-const VALID_CODES = ["FOUNDER2024", "CLIENTFLOW50"];
+// Valid founder codes - keep in sync with /app/(marketing)/founders/page.js
+const VALID_CODES = ["9B6CD382C9B2"];
 
 export async function POST(request) {
   try {

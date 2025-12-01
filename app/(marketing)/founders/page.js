@@ -31,7 +31,8 @@ import {
 import Link from "next/link";
 
 // The code is validated server-side, this is just for UI state
-const VALID_CODES = ["FOUNDER2024", "CLIENTFLOW50"]; // You can change these
+// To add more codes, add them to this array AND to /api/founders/activate/route.js
+const VALID_CODES = ["9B6CD382C9B2"];
 
 function FoundersContent() {
   const searchParams = useSearchParams();
