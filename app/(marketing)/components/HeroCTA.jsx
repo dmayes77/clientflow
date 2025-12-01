@@ -16,10 +16,8 @@ export function HeroCTA() {
             <Button size="lg">Go to Dashboard</Button>
           </Link>
         ) : (
-          <SignUpButton mode="modal">
-            <div>
-              <Button size="lg">Start Free Trial</Button>
-            </div>
+          <SignUpButton mode="redirect" forceRedirectUrl="/onboarding/create-org">
+            <Button size="lg">Start Free Trial</Button>
           </SignUpButton>
         )}
       </Box>
@@ -36,10 +34,8 @@ export function HeroCTA() {
             <Button size="lg" fullWidth>Go to Dashboard</Button>
           </Link>
         ) : (
-          <SignUpButton mode="modal">
-            <div style={{ width: '100%' }}>
-              <Button size="lg" fullWidth>Start Free Trial</Button>
-            </div>
+          <SignUpButton mode="redirect" forceRedirectUrl="/onboarding/create-org">
+            <Button size="lg" fullWidth>Start Free Trial</Button>
           </SignUpButton>
         )}
       </Box>
