@@ -107,9 +107,9 @@ export default function PricingPage() {
                     ClientFlow Professional
                   </Text>
                   <Group align="baseline" gap={4}>
-                    <Text size="xl" fw={500} c="blue">$</Text>
-                    <Text size={{ base: 48, md: 64 }} fw={900} lh={1} c="blue">149</Text>
-                    <Text size={{ base: "md", md: "lg" }} c="dimmed">/month</Text>
+                    <Text fw={600} c="blue" style={{ fontSize: "clamp(24px, 4vw, 32px)" }}>$</Text>
+                    <Text fw={900} lh={1} c="blue" style={{ fontSize: "clamp(48px, 8vw, 72px)" }}>149</Text>
+                    <Text size={{ base: "md", md: "xl" }} c="dimmed">/month</Text>
                   </Group>
                 </Box>
 
