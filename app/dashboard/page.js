@@ -87,7 +87,7 @@ export default function DashboardPage() {
 
   // Get bookings for selected date
   const selectedDateBookings = useMemo(() => {
-    if (!selectedDate) return [];
+    if (!selectedDate || !(selectedDate instanceof Date) || isNaN(selectedDate)) return [];
     const dateStr = selectedDate.toDateString();
     return bookingsByDate[dateStr] || [];
   }, [selectedDate, bookingsByDate]);
@@ -168,19 +168,25 @@ export default function DashboardPage() {
             <Calendar
               size="md"
               getDayProps={(date) => {
+                if (!(date instanceof Date) || isNaN(date)) {
+                  return {};
+                }
                 const dateStr = date.toDateString();
                 const dayBookings = bookingsByDate[dateStr];
-                const isSelected = selectedDate?.toDateString() === dateStr;
+                const isSelected = selectedDate instanceof Date && selectedDate.toDateString() === dateStr;
 
                 return {
                   selected: isSelected,
-                  onClick: () => setSelectedDate(date),
+                  onClick: () => setSelectedDate(new Date(date)),
                   style: dayBookings ? {
                     position: 'relative',
                   } : undefined,
                 };
               }}
               renderDay={(date) => {
+                if (!(date instanceof Date) || isNaN(date)) {
+                  return null;
+                }
                 const dateStr = date.toDateString();
                 const dayBookings = bookingsByDate[dateStr];
                 const day = date.getDate();
@@ -205,13 +211,13 @@ export default function DashboardPage() {
 
           <Box>
             <Text fw={600} mb="md">
-              {selectedDate
+              {selectedDate instanceof Date && !isNaN(selectedDate)
                 ? `Bookings for ${selectedDate.toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`
                 : "Select a date to view bookings"
               }
             </Text>
 
-            {selectedDate && selectedDateBookings.length === 0 && (
+            {selectedDate instanceof Date && !isNaN(selectedDate) && selectedDateBookings.length === 0 && (
               <Paper p="xl" withBorder radius="md" bg="gray.0">
                 <Text c="dimmed" ta="center">No bookings on this date</Text>
               </Paper>
