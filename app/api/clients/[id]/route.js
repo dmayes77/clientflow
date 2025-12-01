@@ -4,6 +4,79 @@ import { prisma } from "@/lib/prisma";
 import { updateClientSchema, validateRequest } from "@/lib/validations";
 import { createSmartErrorResponse } from "@/lib/errors";
 
+// GET /api/clients/[id] - Get a single client with their bookings and invoices
+export async function GET(request, { params }) {
+  try {
+    const { userId, orgId } = await auth();
+
+    if (!userId || !orgId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { clerkOrgId: orgId },
+    });
+
+    if (!tenant) {
+      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+    }
+
+    const { id } = await params;
+
+    const client = await prisma.client.findFirst({
+      where: {
+        id,
+        tenantId: tenant.id,
+      },
+      include: {
+        bookings: {
+          orderBy: { scheduledAt: "desc" },
+          include: {
+            service: {
+              select: { id: true, name: true },
+            },
+            package: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+        invoices: {
+          orderBy: { issueDate: "desc" },
+          select: {
+            id: true,
+            invoiceNumber: true,
+            status: true,
+            total: true,
+            issueDate: true,
+            dueDate: true,
+            paidAt: true,
+          },
+        },
+      },
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    // Calculate summary stats
+    const stats = {
+      totalBookings: client.bookings.length,
+      completedBookings: client.bookings.filter((b) => b.status === "completed").length,
+      totalSpent: client.bookings
+        .filter((b) => b.paymentStatus === "paid")
+        .reduce((sum, b) => sum + b.totalPrice, 0),
+      upcomingBookings: client.bookings.filter(
+        (b) => new Date(b.scheduledAt) > new Date() && b.status !== "cancelled"
+      ).length,
+    };
+
+    return NextResponse.json({ client, stats });
+  } catch (error) {
+    return createSmartErrorResponse(error);
+  }
+}
+
 export async function PUT(request, { params }) {
   try {
     const { userId, orgId } = await auth();

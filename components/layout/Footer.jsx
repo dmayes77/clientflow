@@ -19,6 +19,7 @@ export function Footer() {
             <Anchor href="/#features" size="sm" c="dimmed" underline="never">Features</Anchor>
             <Anchor href="/pricing" size="sm" c="dimmed" underline="never">Pricing</Anchor>
             <Anchor href="/api-reference" size="sm" c="dimmed" underline="never">API</Anchor>
+            <Anchor href="/roadmap" size="sm" c="dimmed" underline="never">Roadmap</Anchor>
           </Stack>
 
           <Stack gap="xs">

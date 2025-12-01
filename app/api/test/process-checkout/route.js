@@ -3,7 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 import { resend } from "@/lib/resend";
-import { MagicLinkEmail } from "@/emails/magic-link";
+import { MagicLinkEmail } from "@/emails/tenant/magic-link";
 
 export async function POST(request) {
   try {

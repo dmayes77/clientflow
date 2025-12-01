@@ -16,10 +16,12 @@ model Tenant {
 
   stripeCustomerId    String?   @unique
   stripeAccountId     String?   @unique
+  stripeSubscriptionId String?  @unique
   stripeAccountStatus String?   @default("pending") // pending, active, restricted
   stripeOnboardingComplete Boolean @default(false)
   subscriptionStatus  String?   @default("trialing")
   planType            String?   @default("basic")
+  currentPeriodEnd    DateTime?
 
   // Business Information
   businessName        String?
@@ -57,6 +59,7 @@ model Tenant {
   webhooks            Webhook[]
   payments            Payment[]
   images              Image[]
+  videos              Video[]
   invoices            Invoice[]
 
   @@index([clerkOrgId])
@@ -271,6 +274,7 @@ model Image {
   key         String    // Storage key/identifier
   name        String    // Original filename
   alt         String    // Alt text (required for accessibility)
+  type        String    @default("general") // Image type: logo, hero, banner, gallery, team, product, general
   size        Int       // File size in bytes
   width       Int?      // Image width in pixels
   height      Int?      // Image height in pixels
@@ -283,6 +287,33 @@ model Image {
 
   @@index([tenantId])
   @@index([createdAt])
+  @@index([type])
+}
+
+model Video {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  url         String    // CDN URL of the video
+  thumbnailUrl String?  // Thumbnail image URL
+  key         String    // Storage key/identifier (Cloudinary public_id)
+  name        String    // Filename
+  alt         String    // Description/alt text for accessibility
+  type        String    @default("general") // Video type: hero, background, testimonial, tutorial, promo, general
+  size        Int       // File size in bytes
+  width       Int?      // Video width in pixels
+  height      Int?      // Video height in pixels
+  duration    Float?    // Duration in seconds
+  mimeType    String    // e.g., video/mp4, video/webm
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([type])
 }
 
 model Invoice {
@@ -333,5 +364,20 @@ model Invoice {
   @@index([clientId])
   @@index([status])
   @@index([dueDate])
+  @@index([createdAt])
+}
+
+model FeatureRequest {
+  id          String    @id @default(cuid())
+
+  email       String
+  feature     String
+  status      String    @default("new") // new, reviewed, planned, completed, declined
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
   @@index([createdAt])
 }

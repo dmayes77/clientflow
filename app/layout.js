@@ -4,7 +4,6 @@ import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/dates/styles.css";
-import "@uploadthing/react/styles.css";
 import "./globals.css";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://getclientflow.app";
@@ -43,9 +42,25 @@ export const metadata = {
   },
 };
 
+// Clerk localization to use "Business" instead of "Organization"
+const clerkLocalization = {
+  formFieldLabel__organizationName: "Business name",
+  formFieldInputPlaceholder__organizationName: "Enter your business name",
+  organizationProfile: {
+    title: "Business Settings",
+  },
+  createOrganization: {
+    title: "Create your business",
+    formButtonSubmit: "Create business",
+  },
+  organizationSwitcher: {
+    action__createOrganization: "Create business",
+  },
+};
+
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={clerkLocalization}>
       <html lang="en" suppressHydrationWarning>
         <head>
           <ColorSchemeScript />

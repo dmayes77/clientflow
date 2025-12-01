@@ -1,33 +1,163 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
-const isPublicRoute = createRouteMatcher([
+// Get the root domain from env or default
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'getclientflow.app'
+
+// Helper to extract subdomain from host
+function getSubdomain(host) {
+  if (!host) return null
+
+  // Remove port if present
+  const hostname = host.split(':')[0]
+
+  // For localhost development, check for subdomain patterns
+  // e.g., dashboard.localhost, admin.localhost
+  if (hostname.includes('localhost') || hostname.includes('127.0.0.1')) {
+    const parts = hostname.split('.')
+    if (parts.length > 1 && parts[0] !== 'www') {
+      return parts[0]
+    }
+    return null
+  }
+
+  // For production domain (e.g., dashboard.getclientflow.app)
+  if (hostname.endsWith(ROOT_DOMAIN)) {
+    const subdomain = hostname.replace(`.${ROOT_DOMAIN}`, '')
+    if (subdomain && subdomain !== 'www' && subdomain !== ROOT_DOMAIN) {
+      return subdomain
+    }
+  }
+
+  return null
+}
+
+// Public routes for marketing site
+const isPublicMarketingRoute = createRouteMatcher([
   '/',
   '/pricing',
   '/welcome(.*)',
   '/support',
   '/documentation',
   '/api-reference',
-  '/custom-development',
+  '/website-development',
   '/not-found',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/book(.*)',
+])
+
+// Public API routes (accessible from any subdomain)
+const isPublicApiRoute = createRouteMatcher([
   '/api/stripe/checkout(.*)',
   '/api/stripe/webhook(.*)',
+  '/api/stripe/billing-portal(.*)',
+  '/api/stripe/verify-checkout(.*)',
+  '/api/tenant/status(.*)',
+  '/api/tenant/business(.*)',
+  '/api/webhooks/clerk(.*)',
   '/api/test/process-checkout(.*)',
   '/api/test/reset-user(.*)',
   '/api/test/resend-magic-link(.*)',
+  '/api/public(.*)',
+])
+
+// Onboarding routes (special handling)
+const isOnboardingRoute = createRouteMatcher([
+  '/onboarding(.*)',
+  '/account(.*)',
 ])
 
 export default clerkMiddleware(async (auth, req) => {
-  // Protect all routes except public ones
-  if (!isPublicRoute(req)) {
-    await auth.protect()
+  const host = req.headers.get('host')
+  const subdomain = getSubdomain(host)
+  const pathname = req.nextUrl.pathname
+
+  // Allow API routes through (they handle their own auth)
+  if (pathname.startsWith('/api/')) {
+    if (!isPublicApiRoute(req)) {
+      await auth.protect()
+    }
+    return addSecurityHeaders(req, NextResponse.next())
   }
 
-  // Add security headers to all responses
-  const response = NextResponse.next()
+  // Handle subdomain routing
+  if (subdomain === 'dashboard') {
+    // Dashboard subdomain - require auth and rewrite to /dashboard routes
+    await auth.protect()
 
+    // If already on /dashboard path, continue
+    if (pathname.startsWith('/dashboard')) {
+      return addSecurityHeaders(req, NextResponse.next())
+    }
+
+    // Rewrite root to /dashboard
+    if (pathname === '/') {
+      const url = req.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return addSecurityHeaders(req, NextResponse.rewrite(url))
+    }
+
+    // For other paths on dashboard subdomain, prefix with /dashboard
+    const url = req.nextUrl.clone()
+    url.pathname = `/dashboard${pathname}`
+    return addSecurityHeaders(req, NextResponse.rewrite(url))
+  }
+
+  if (subdomain === 'admin') {
+    // Admin subdomain - require auth and check for admin role
+    await auth.protect()
+
+    // Rewrite to /admin routes
+    if (pathname === '/') {
+      const url = req.nextUrl.clone()
+      url.pathname = '/admin'
+      return addSecurityHeaders(req, NextResponse.rewrite(url))
+    }
+
+    if (!pathname.startsWith('/admin')) {
+      const url = req.nextUrl.clone()
+      url.pathname = `/admin${pathname}`
+      return addSecurityHeaders(req, NextResponse.rewrite(url))
+    }
+
+    return addSecurityHeaders(req, NextResponse.next())
+  }
+
+  // No subdomain or www - this is the marketing site
+  // Allow onboarding routes (they handle their own auth flow)
+  if (isOnboardingRoute(req)) {
+    return addSecurityHeaders(req, NextResponse.next())
+  }
+
+  // Protect dashboard/admin routes when accessed directly (without subdomain)
+  // In production, these should redirect to the subdomain version
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) {
+    // In development, allow direct access
+    if (process.env.NODE_ENV === 'development') {
+      await auth.protect()
+      return addSecurityHeaders(req, NextResponse.next())
+    }
+
+    // In production, redirect to subdomain
+    const targetSubdomain = pathname.startsWith('/dashboard') ? 'dashboard' : 'admin'
+    const newPath = pathname.replace(/^\/(dashboard|admin)/, '') || '/'
+    const url = new URL(`https://${targetSubdomain}.${ROOT_DOMAIN}${newPath}`)
+    return NextResponse.redirect(url)
+  }
+
+  // Public marketing routes
+  if (isPublicMarketingRoute(req)) {
+    return addSecurityHeaders(req, NextResponse.next())
+  }
+
+  // Everything else requires auth
+  await auth.protect()
+  return addSecurityHeaders(req, NextResponse.next())
+})
+
+// Add security headers to response
+function addSecurityHeaders(req, response) {
   // Content Security Policy
   response.headers.set(
     'Content-Security-Policy',
@@ -67,7 +197,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   return response
-})
+}
 
 export const config = {
   matcher: [

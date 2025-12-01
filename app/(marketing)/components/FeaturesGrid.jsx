@@ -4,7 +4,6 @@ import { SimpleGrid, Card, Text } from "@mantine/core";
 import {
   IconCalendar,
   IconUsers,
-  IconChartLine,
   IconApi,
   IconPhoto,
   IconSettings,
@@ -21,11 +20,6 @@ const features = [
     icon: IconUsers,
     title: "Client Database",
     description: "Keep track of all your customers in one place",
-  },
-  {
-    icon: IconChartLine,
-    title: "Visual Pipeline",
-    description: "Drag-and-drop boards for client journey tracking",
   },
   {
     icon: IconApi,

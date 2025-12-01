@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
-import { MagicLinkEmail } from "@/emails/magic-link";
+import { MagicLinkEmail } from "@/emails/tenant/magic-link";
 
 export async function POST(request) {
   try {

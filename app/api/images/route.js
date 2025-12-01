@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/images - Get all images for the tenant
+// Optional query params: ?type=logo to filter by image type
 export async function GET(request) {
   try {
     const { userId, orgId } = await auth();
@@ -24,12 +25,25 @@ export async function GET(request) {
       return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
     }
 
+    // Parse query parameters for filtering
+    const { searchParams } = new URL(request.url);
+    const typeFilter = searchParams.get("type");
+
+    const whereClause = {
+      tenantId: tenant.id,
+    };
+
+    // Add type filter if provided
+    if (typeFilter) {
+      whereClause.type = typeFilter;
+    }
+
     const images = await prisma.image.findMany({
-      where: { tenantId: tenant.id },
+      where: whereClause,
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(images);
+    return NextResponse.json({ images });
   } catch (error) {
     console.error("Error fetching images:", error);
     return NextResponse.json({ error: "Failed to fetch images" }, { status: 500 });

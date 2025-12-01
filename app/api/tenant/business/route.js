@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { resend } from "@/lib/resend";
+import { render } from "@react-email/render";
+import { OnboardingCompleteEmail } from "@/emails/admin/onboarding-complete";
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "dmayes77@gmail.com";
 
 export async function GET(request) {
   try {
@@ -72,12 +77,23 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const tenant = await prisma.tenant.findUnique({
+    let tenant = await prisma.tenant.findUnique({
       where: { clerkOrgId: orgId },
     });
 
+    // Create tenant if it doesn't exist (for local dev without webhooks)
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+      tenant = await prisma.tenant.create({
+        data: {
+          name: "New Business",
+          email: "",
+          clerkOrgId: orgId,
+          subscriptionStatus: "pending",
+          planType: null,
+          setupComplete: false,
+        },
+      });
+      console.log(`Created tenant ${tenant.id} for org ${orgId} during business update`);
     }
 
     const data = await request.json();
@@ -133,6 +149,9 @@ export async function PUT(request) {
       }
     }
 
+    // Check if this is the first time completing setup
+    const isFirstTimeSetupComplete = data.setupComplete === true && !tenant.setupComplete;
+
     const updatedTenant = await prisma.tenant.update({
       where: { id: tenant.id },
       data: updateData,
@@ -159,6 +178,36 @@ export async function PUT(request) {
         setupComplete: true,
       },
     });
+
+    // Send notification email when onboarding is completed
+    if (isFirstTimeSetupComplete) {
+      try {
+        const emailHtml = await render(
+          OnboardingCompleteEmail({
+            businessName: updatedTenant.businessName,
+            contactPerson: updatedTenant.contactPerson,
+            businessPhone: updatedTenant.businessPhone,
+            businessWebsite: updatedTenant.businessWebsite,
+            businessCity: updatedTenant.businessCity,
+            businessState: updatedTenant.businessState,
+            businessDescription: updatedTenant.businessDescription,
+            tenantId: updatedTenant.id,
+            slug: updatedTenant.slug,
+            completedAt: new Date().toLocaleString(),
+          })
+        );
+
+        await resend.emails.send({
+          from: "onboarding@getclientflow.app",
+          to: ADMIN_EMAIL,
+          subject: `New Business Onboarding Complete: ${updatedTenant.businessName || 'New Business'}`,
+          html: emailHtml,
+        });
+      } catch (emailError) {
+        console.error("Failed to send onboarding complete notification:", emailError);
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

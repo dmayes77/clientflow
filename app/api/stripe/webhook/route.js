@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { clerkClient } from "@clerk/nextjs/server";
 import { resend } from "@/lib/resend";
-import { MagicLinkEmail } from "@/emails/magic-link";
+import { MagicLinkEmail } from "@/emails/tenant/magic-link";
 
 export async function POST(request) {
   const body = await request.text();
@@ -66,6 +66,15 @@ export async function POST(request) {
 
       case "checkout.session.completed":
         await handleCheckoutCompleted(event.data.object);
+        break;
+
+      // Invoice events for recurring payment tracking
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(event.data.object);
+        break;
+
+      case "invoice.payment_succeeded":
+        await handleInvoicePaymentSucceeded(event.data.object);
         break;
 
       default:
@@ -475,4 +484,66 @@ async function handleTrialWillEnd(subscription) {
   // TODO: Send email notification about trial ending
   console.log(`Trial will end soon for tenant: ${tenant.id}`);
   // This is where you would send an email reminder
+}
+
+// Invoice Payment Handlers for recurring billing
+async function handleInvoicePaymentFailed(invoice) {
+  // Only handle subscription invoices
+  if (!invoice.subscription) {
+    return;
+  }
+
+  const customerId = invoice.customer;
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
+  });
+
+  if (!tenant) {
+    console.error(`Tenant not found for customer: ${customerId}`);
+    return;
+  }
+
+  // Update subscription status to past_due
+  await prisma.tenant.update({
+    where: { id: tenant.id },
+    data: {
+      subscriptionStatus: "past_due",
+    },
+  });
+
+  console.log(`Invoice payment failed for tenant: ${tenant.id}, Invoice: ${invoice.id}`);
+  // TODO: Send email notification about failed payment
+}
+
+async function handleInvoicePaymentSucceeded(invoice) {
+  // Only handle subscription invoices
+  if (!invoice.subscription) {
+    return;
+  }
+
+  const customerId = invoice.customer;
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { stripeCustomerId: customerId },
+  });
+
+  if (!tenant) {
+    console.error(`Tenant not found for customer: ${customerId}`);
+    return;
+  }
+
+  // Only update if currently past_due (payment recovery)
+  if (tenant.subscriptionStatus === "past_due") {
+    await prisma.tenant.update({
+      where: { id: tenant.id },
+      data: {
+        subscriptionStatus: "active",
+      },
+    });
+
+    console.log(`Invoice payment succeeded, tenant restored: ${tenant.id}`);
+  } else {
+    console.log(`Invoice payment succeeded for tenant: ${tenant.id}`);
+  }
 }

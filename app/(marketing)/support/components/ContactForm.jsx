@@ -26,17 +26,38 @@ export function ContactForm() {
 
   const handleSubmit = async (values) => {
     setLoading(true);
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    notifications.show({
-      title: "Message Sent",
-      message: "We'll get back to you as soon as possible!",
-      color: "green",
-    });
+    try {
+      const response = await fetch("/api/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
 
-    form.reset();
-    setLoading(false);
+      if (response.ok) {
+        notifications.show({
+          title: "Message Sent",
+          message: "We'll get back to you as soon as possible!",
+          color: "green",
+        });
+        form.reset();
+      } else {
+        const data = await response.json();
+        notifications.show({
+          title: "Error",
+          message: data.error || "Failed to send message. Please try again.",
+          color: "red",
+        });
+      }
+    } catch (error) {
+      notifications.show({
+        title: "Error",
+        message: "Failed to send message. Please try again.",
+        color: "red",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

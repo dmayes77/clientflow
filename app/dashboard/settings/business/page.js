@@ -16,8 +16,9 @@ import {
   Alert,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconBuilding, IconInfoCircle, IconPhoto } from "@tabler/icons-react";
-import { ImageUploader } from "@/components/ImageUploader";
+import { IconBuilding, IconInfoCircle, IconPhoto, IconLink, IconCopy, IconExternalLink } from "@tabler/icons-react";
+import { LogoSelector } from "@/components/LogoSelector";
+import { useClipboard } from "@mantine/hooks";
 
 const COUNTRIES = [
   { value: "US", label: "United States" },
@@ -30,6 +31,8 @@ const COUNTRIES = [
 export default function BusinessSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [slug, setSlug] = useState(null);
+  const clipboard = useClipboard({ timeout: 2000 });
 
   // Form data
   const [formData, setFormData] = useState({
@@ -62,6 +65,7 @@ export default function BusinessSettingsPage() {
 
       if (response.ok) {
         const data = await response.json();
+        setSlug(data.slug || null);
         setFormData({
           businessName: data.businessName || "",
           businessDescription: data.businessDescription || "",
@@ -153,29 +157,63 @@ export default function BusinessSettingsPage() {
           This information can be accessed via the API and used on your custom website or booking pages.
         </Alert>
 
+        {/* Public Booking Link */}
+        {slug && (
+          <Card shadow="sm" padding="lg" radius="md" withBorder>
+            <Group gap="xs" mb="md">
+              <IconLink size={24} />
+              <Text size="lg" fw={600}>
+                Public Booking Link
+              </Text>
+            </Group>
+
+            <Stack gap="md">
+              <Text size="sm" c="dimmed">
+                Share this link with your clients so they can book appointments directly.
+              </Text>
+
+              <Group>
+                <TextInput
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/book/${slug}`}
+                  readOnly
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  variant="light"
+                  leftSection={<IconCopy size={16} />}
+                  onClick={() => {
+                    clipboard.copy(`${window.location.origin}/book/${slug}`);
+                    notifications.show({
+                      title: "Copied!",
+                      message: "Booking link copied to clipboard",
+                      color: "green",
+                    });
+                  }}
+                  color={clipboard.copied ? "green" : "blue"}
+                >
+                  {clipboard.copied ? "Copied!" : "Copy"}
+                </Button>
+                <Button
+                  variant="light"
+                  leftSection={<IconExternalLink size={16} />}
+                  component="a"
+                  href={`/book/${slug}`}
+                  target="_blank"
+                >
+                  Preview
+                </Button>
+              </Group>
+            </Stack>
+          </Card>
+        )}
+
         {/* Logo Upload */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Group gap="xs" mb="md">
-            <IconPhoto size={24} />
-            <Text size="lg" fw={600}>
-              Business Logo
-            </Text>
-          </Group>
-
-          <Stack gap="md">
-            <Text size="sm" c="dimmed">
-              Upload your business logo. It will be available via CDN for use on your website and in your booking pages.
-            </Text>
-
-            <ImageUploader
-              value={formData.logoUrl}
-              onChange={(url) => updateField("logoUrl", url)}
-              label="Logo"
-              description="Recommended size: 400x400px. Max file size: 4MB"
-              showAltText={false}
-            />
-          </Stack>
-        </Card>
+        <LogoSelector
+          value={formData.logoUrl}
+          onChange={(url) => updateField("logoUrl", url)}
+          label="Business Logo"
+          description="Select from your media library or upload a new logo. Recommended size: 400x400px."
+        />
 
         {/* Business Information */}
         <Card shadow="sm" padding="lg" radius="md" withBorder>
@@ -196,8 +234,9 @@ export default function BusinessSettingsPage() {
 
             <Textarea
               label="Business Description"
-              placeholder="Describe what your business does"
-              minRows={3}
+              description="This description is used for SEO metadata on your booking page. Include your services, location, and unique value proposition to help rank higher on Google."
+              placeholder="Example: Professional auto detailing services in Austin, TX. We specialize in ceramic coatings, paint correction, and interior detailing for cars, trucks, and SUVs. Book your appointment online for premium car care."
+              minRows={4}
               value={formData.businessDescription}
               onChange={(e) => updateField("businessDescription", e.target.value)}
             />

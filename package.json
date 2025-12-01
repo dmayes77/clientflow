@@ -21,7 +21,8 @@
     "@react-email/components": "^1.0.1",
     "@react-pdf/renderer": "^4.3.1",
     "@tabler/icons-react": "^3.35.0",
-    "@uploadthing/react": "^7.3.3",
+    "cloudinary": "^2.8.0",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
     "next": "16.0.3",
     "prisma": "^6.19.0",
@@ -31,7 +32,6 @@
     "resend": "^6.5.2",
     "stripe": "^20.0.0",
     "svix": "^1.81.0",
-    "uploadthing": "^7.7.4",
     "ws": "^8.18.3",
     "zod": "^4.1.13"
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { AppShell, Burger, Group, NavLink, Text, SegmentedControl, Stack, Button, Box } from "@mantine/core";
+import { AppShell, Burger, Group, NavLink, Text, SegmentedControl, Stack, Button, Box, Loader, Center } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { UserButton, SignOutButton, useAuth } from "@clerk/nextjs";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,6 +19,8 @@ import {
   IconReceipt,
   IconPhoto,
   IconFileInvoice,
+  IconClock,
+  IconReportMoney,
 } from "@tabler/icons-react";
 
 export function DashboardShell({ children }) {
@@ -26,36 +28,49 @@ export function DashboardShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { orgId } = useAuth();
-  const [checkedOnboarding, setCheckedOnboarding] = useState(false);
+  const { orgId, isLoaded } = useAuth();
+  const [accessChecked, setAccessChecked] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    const checkSetupComplete = async () => {
-      if (!orgId || checkedOnboarding) return;
+    const checkAccess = async () => {
+      if (!isLoaded || !orgId || accessChecked) return;
 
       try {
-        const response = await fetch("/api/tenant/business");
+        const response = await fetch("/api/tenant/status");
         if (response.ok) {
-          const businessInfo = await response.json();
+          const status = await response.json();
 
-          // Redirect to setup if not completed
-          if (!businessInfo.setupComplete) {
-            router.push("/setup");
+          if (status.canAccessDashboard) {
+            setHasAccess(true);
+          } else if (status.redirectTo) {
+            router.push(status.redirectTo);
+            return;
+          } else {
+            // Default fallback
+            router.push("/onboarding/payment");
+            return;
           }
+        } else {
+          // API error - redirect to onboarding
+          router.push("/onboarding/payment");
+          return;
         }
       } catch (error) {
-        console.error("Error checking setup status:", error);
+        console.error("Error checking access:", error);
+        router.push("/onboarding/payment");
+        return;
       } finally {
-        setCheckedOnboarding(true);
+        setAccessChecked(true);
       }
     };
 
-    checkSetupComplete();
-  }, [orgId, checkedOnboarding, router]);
+    checkAccess();
+  }, [isLoaded, orgId, accessChecked, router]);
 
   const businessItems = [
     { label: "Overview", href: "/dashboard", icon: IconDashboard },
@@ -64,7 +79,9 @@ export function DashboardShell({ children }) {
     { label: "Services", href: "/dashboard/services", icon: IconList },
     { label: "Packages", href: "/dashboard/packages", icon: IconPackage },
     { label: "Invoices", href: "/dashboard/invoices", icon: IconFileInvoice },
-    { label: "Media Library", href: "/dashboard/images", icon: IconPhoto },
+    { label: "Availability", href: "/dashboard/availability", icon: IconClock },
+    { label: "Transactions", href: "/dashboard/transactions", icon: IconReportMoney },
+    { label: "Media Library", href: "/dashboard/media", icon: IconPhoto },
   ];
 
   const accountItems = [
@@ -85,6 +102,18 @@ export function DashboardShell({ children }) {
       router.push("/dashboard");
     }
   };
+
+  // Show loading while checking access
+  if (!accessChecked || !hasAccess) {
+    return (
+      <Center style={{ height: "100vh" }}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" />
+          <Text c="dimmed">Loading...</Text>
+        </Stack>
+      </Center>
+    );
+  }
 
   return (
     <AppShell

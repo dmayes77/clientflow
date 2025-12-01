@@ -138,9 +138,16 @@ async function handleOrganizationUpdated(data) {
     return;
   }
 
+  // Update both name (Clerk org name) and businessName (display name)
+  // Only update businessName if it's not already set or matches the old name
+  const updateData = { name };
+  if (!tenant.businessName || tenant.businessName === tenant.name) {
+    updateData.businessName = name;
+  }
+
   await prisma.tenant.update({
     where: { id: tenant.id },
-    data: { name },
+    data: updateData,
   });
 
   console.log(`Updated tenant ${tenant.id} name to ${name}`);

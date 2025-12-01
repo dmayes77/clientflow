@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, createRateLimitResponse } from "@/lib/ratelimit";
-import crypto from "crypto";
+import { generateWebhookSecret, ALL_WEBHOOK_EVENTS } from "@/lib/webhooks";
 
 export async function GET(request) {
   // Apply rate limiting: 100 requests per minute
@@ -41,7 +41,10 @@ export async function GET(request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(webhooks);
+    return NextResponse.json({
+      webhooks,
+      availableEvents: ALL_WEBHOOK_EVENTS,
+    });
   } catch (error) {
     console.error("Error fetching webhooks:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -91,7 +94,7 @@ export async function POST(request) {
     }
 
     // Generate a secret for signing webhooks
-    const secret = crypto.randomBytes(32).toString("hex");
+    const secret = generateWebhookSecret();
 
     const webhook = await prisma.webhook.create({
       data: {

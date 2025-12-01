@@ -1,5 +1,6 @@
-import { OnboardingPlans } from "./components";
+import { redirect } from "next/navigation";
 
 export default function OnboardingPage() {
-  return <OnboardingPlans />;
+  // Redirect to create-org step by default
+  redirect("/onboarding/create-org");
 }

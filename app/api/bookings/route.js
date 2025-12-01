@@ -56,7 +56,7 @@ export async function GET(request) {
         service: true,
         invoice: true,
       },
-      orderBy: { date: "desc" },
+      orderBy: { scheduledAt: "desc" },
     });
 
     return NextResponse.json(bookings);
@@ -141,10 +141,11 @@ export async function POST(request) {
         tenantId,
         clientId: client.id,
         serviceId: validation.data.serviceId,
-        date: new Date(validation.data.date),
+        scheduledAt: new Date(validation.data.date || validation.data.scheduledAt),
         status: validation.data.status || "inquiry",
         notes: validation.data.notes || null,
-        amount: validation.data.amount || null,
+        totalPrice: validation.data.amount || validation.data.totalPrice || 0,
+        duration: validation.data.duration || 60,
       },
       include: {
         client: true,

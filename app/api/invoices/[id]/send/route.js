@@ -5,7 +5,7 @@ import { rateLimit, createRateLimitResponse } from "@/lib/ratelimit";
 import { createSmartErrorResponse } from "@/lib/errors";
 import { triggerWebhook } from "@/lib/webhooks";
 import { resend } from "@/lib/resend";
-import { InvoiceEmail } from "@/emails/invoice";
+import { InvoiceEmail } from "@/emails/tenant/invoice";
 
 export async function POST(request, { params }) {
   const rateLimitResult = rateLimit(request, { limit: 20, windowMs: 60000 });

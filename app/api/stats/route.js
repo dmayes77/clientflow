@@ -55,7 +55,7 @@ export async function GET(request) {
       prisma.booking.count({
         where: {
           tenantId: tenant.id,
-          date: {
+          scheduledAt: {
             gte: firstDayOfMonth,
             lte: lastDayOfMonth,
           },
@@ -64,23 +64,23 @@ export async function GET(request) {
       prisma.booking.findMany({
         where: {
           tenantId: tenant.id,
-          amount: { not: null },
+          totalPrice: { not: null },
         },
-        select: { amount: true, date: true },
+        select: { totalPrice: true, scheduledAt: true },
       }),
     ]);
 
     const totalRevenue = allBookings.reduce(
-      (sum, booking) => sum + (booking.amount || 0),
+      (sum, booking) => sum + (booking.totalPrice || 0),
       0
     );
 
     const thisMonthRevenue = allBookings
       .filter(
         (booking) =>
-          booking.date >= firstDayOfMonth && booking.date <= lastDayOfMonth
+          booking.scheduledAt >= firstDayOfMonth && booking.scheduledAt <= lastDayOfMonth
       )
-      .reduce((sum, booking) => sum + (booking.amount || 0), 0);
+      .reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
 
     return NextResponse.json({
       totalBookings,

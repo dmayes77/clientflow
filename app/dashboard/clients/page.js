@@ -17,10 +17,12 @@ import {
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconPlus, IconPencil, IconTrash, IconUsers } from "@tabler/icons-react";
+import { IconPlus, IconPencil, IconTrash, IconUsers, IconEye } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opened, { open, close }] = useDisclosure(false);
@@ -203,6 +205,13 @@ export default function ClientsPage() {
                   </Table.Td>
                   <Table.Td>
                     <Group gap="xs">
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                      >
+                        <IconEye size={18} />
+                      </ActionIcon>
                       <ActionIcon
                         variant="subtle"
                         color="blue"

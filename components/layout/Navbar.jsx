@@ -83,6 +83,10 @@ export function Navbar() {
               </HoverCard.Dropdown>
             </HoverCard>
 
+            <Link href="/website-development" style={{ textDecoration: "none" }}>
+              <Text c="dimmed">Website Development</Text>
+            </Link>
+
             <Link href="/pricing" style={{ textDecoration: "none" }}>
               <Text c="dimmed">Pricing</Text>
             </Link>
@@ -158,6 +162,9 @@ export function Navbar() {
           </Link>
           <Link href="/support" onClick={closeDrawer} style={{ textDecoration: "none" }}>
             <Text c="dark">Support</Text>
+          </Link>
+          <Link href="/website-development" onClick={closeDrawer} style={{ textDecoration: "none" }}>
+            <Text c="dark">Website Development</Text>
           </Link>
 
           <Divider />
