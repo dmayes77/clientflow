@@ -139,6 +139,15 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Public marketing routes
   if (isPublicMarketingRoute(req)) {
+    // Redirect signed-in users away from sign-up page to onboarding
+    if (pathname.startsWith('/sign-up')) {
+      const { userId } = await auth()
+      if (userId) {
+        const url = req.nextUrl.clone()
+        url.pathname = '/onboarding/create-org'
+        return addSecurityHeaders(req, NextResponse.redirect(url))
+      }
+    }
     return addSecurityHeaders(req, NextResponse.next())
   }
 
