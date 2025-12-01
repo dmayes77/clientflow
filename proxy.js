@@ -42,6 +42,8 @@ const isPublicMarketingRoute = createRouteMatcher([
   '/api-reference',
   '/website-development',
   '/roadmap',
+  '/privacy',
+  '/terms',
   '/not-found',
   '/sign-in(.*)',
   '/sign-up(.*)',

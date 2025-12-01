@@ -43,8 +43,8 @@ export function Footer() {
               © {new Date().getFullYear()} ClientFlow. All rights reserved.
             </Text>
             <Group gap="md" justify="center">
-              <Anchor href="#" size="sm" c="dimmed" underline="never">Privacy Policy</Anchor>
-              <Anchor href="#" size="sm" c="dimmed" underline="never">Terms of Service</Anchor>
+              <Anchor href="/privacy" size="sm" c="dimmed" underline="never">Privacy Policy</Anchor>
+              <Anchor href="/terms" size="sm" c="dimmed" underline="never">Terms of Service</Anchor>
             </Group>
           </Stack>
           <Group justify="space-between" visibleFrom="sm">
@@ -52,8 +52,8 @@ export function Footer() {
               © {new Date().getFullYear()} ClientFlow. All rights reserved.
             </Text>
             <Group gap="md">
-              <Anchor href="#" size="sm" c="dimmed" underline="never">Privacy Policy</Anchor>
-              <Anchor href="#" size="sm" c="dimmed" underline="never">Terms of Service</Anchor>
+              <Anchor href="/privacy" size="sm" c="dimmed" underline="never">Privacy Policy</Anchor>
+              <Anchor href="/terms" size="sm" c="dimmed" underline="never">Terms of Service</Anchor>
             </Group>
           </Group>
         </Box>
