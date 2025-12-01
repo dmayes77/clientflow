@@ -153,10 +153,11 @@ function addSecurityHeaders(req, response) {
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.getclientflow.app https://clerk.getclientflow.app; " +
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.getclientflow.app https://clerk.getclientflow.app blob:; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data: https:; " +
     "font-src 'self' data:; " +
+    "worker-src 'self' blob:; " +
     "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.getclientflow.app https://clerk.getclientflow.app https://api.clerk.dev wss://*.clerk.accounts.dev; " +
     "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://*.clerk.getclientflow.app;"
   )
