@@ -26,8 +26,8 @@ export default function SignUpPage() {
         routing="path"
         path="/sign-up"
         signInUrl="/sign-in"
-        afterSignUpUrl="/onboarding/create-org"
-        afterSignInUrl="/dashboard"
+        forceRedirectUrl="/onboarding/create-org"
+        fallbackRedirectUrl="/onboarding/create-org"
       />
     </Box>
   );
