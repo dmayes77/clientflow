@@ -157,6 +157,41 @@ const ROADMAP_ITEMS = [
     phase: "exploring",
     items: [
       {
+        title: "Booking Data Export",
+        description: "Export booking data and generate reports for analysis",
+        icon: IconFileText,
+      },
+      {
+        title: "Client Tags & Segments",
+        description: "Custom tags to organize clients by categories or preferences",
+        icon: IconUsers,
+      },
+      {
+        title: "Duplicate Client Merge",
+        description: "Identify and merge duplicate client entries",
+        icon: IconUsers,
+      },
+      {
+        title: "Client Engagement Metrics",
+        description: "Identify your most valuable customers with engagement data",
+        icon: IconChartBar,
+      },
+      {
+        title: "Multi-currency Support",
+        description: "Accept payments in multiple currencies for international clients",
+        icon: IconBrandStripe,
+      },
+      {
+        title: "Recurring Billing",
+        description: "Subscription billing with flexible payment schedules",
+        icon: IconBrandStripe,
+      },
+      {
+        title: "Real-time Team Sync",
+        description: "Live updates across your team with automatic synchronization",
+        icon: IconUsers,
+      },
+      {
         title: "CMS - Content Management",
         description: "Manage website content, pages, and blog posts",
         icon: IconFileText,
@@ -173,7 +208,7 @@ const ROADMAP_ITEMS = [
       },
       {
         title: "Advanced Reporting",
-        description: "Custom reports and data exports",
+        description: "Custom reports and advanced analytics dashboard",
         icon: IconChartBar,
       },
     ],

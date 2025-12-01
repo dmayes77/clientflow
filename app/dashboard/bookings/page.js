@@ -14,7 +14,7 @@ import {
   Card,
   Badge,
   Paper,
-  Box,
+  Table,
   NumberInput,
   Menu,
   ActionIcon,
@@ -23,10 +23,9 @@ import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { IconPlus, IconCalendar, IconDotsVertical, IconFileInvoice, IconTrash } from "@tabler/icons-react";
+import { IconPlus, IconCalendar, IconDotsVertical, IconFileInvoice, IconTrash, IconPencil } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const STATUSES = [
   { value: "inquiry", label: "Inquiry", color: "blue" },
@@ -35,12 +34,20 @@ const STATUSES = [
   { value: "cancelled", label: "Cancelled", color: "red" },
 ];
 
+const STATUS_COLORS = {
+  inquiry: "blue",
+  booked: "green",
+  completed: "gray",
+  cancelled: "red",
+};
+
 export default function BookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opened, { open, close }] = useDisclosure(false);
+  const [editingBooking, setEditingBooking] = useState(null);
   const router = useRouter();
 
   const form = useForm({
@@ -52,6 +59,7 @@ export default function BookingsPage() {
       date: new Date(),
       amount: "",
       notes: "",
+      status: "inquiry",
     },
     validate: {
       clientName: (value) => (value.length < 2 ? "Name must be at least 2 characters" : null),
@@ -98,8 +106,11 @@ export default function BookingsPage() {
 
   const handleSubmit = async (values) => {
     try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
+      const url = editingBooking ? `/api/bookings/${editingBooking.id}` : "/api/bookings";
+      const method = editingBooking ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
@@ -110,35 +121,28 @@ export default function BookingsPage() {
       if (response.ok) {
         notifications.show({
           title: "Success",
-          message: "Booking created successfully",
+          message: editingBooking ? "Booking updated successfully" : "Booking created successfully",
           color: "green",
         });
         form.reset();
         close();
+        setEditingBooking(null);
         fetchData();
       } else {
-        throw new Error("Failed to create booking");
+        throw new Error("Failed to save booking");
       }
     } catch (error) {
       notifications.show({
         title: "Error",
-        message: "Failed to create booking",
+        message: "Failed to save booking",
         color: "red",
       });
     }
   };
 
-  const handleDragEnd = async (result) => {
-    if (!result.destination) return;
-
-    const { source, destination, draggableId } = result;
-
-    if (source.droppableId === destination.droppableId) return;
-
-    const newStatus = destination.droppableId;
-
+  const handleStatusChange = async (bookingId, newStatus) => {
     try {
-      const response = await fetch(`/api/bookings/${draggableId}`, {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -147,7 +151,7 @@ export default function BookingsPage() {
       if (response.ok) {
         setBookings((prev) =>
           prev.map((booking) =>
-            booking.id === draggableId
+            booking.id === bookingId
               ? { ...booking, status: newStatus }
               : booking
           )
@@ -169,13 +173,23 @@ export default function BookingsPage() {
     }
   };
 
-  const getBookingsByStatus = (status) => {
-    return bookings.filter((booking) => booking.status === status);
+  const handleEdit = (booking) => {
+    setEditingBooking(booking);
+    form.setValues({
+      clientName: booking.client?.name || "",
+      clientEmail: booking.client?.email || "",
+      clientPhone: booking.client?.phone || "",
+      serviceId: booking.serviceId || "",
+      date: new Date(booking.date),
+      amount: booking.amount || "",
+      notes: booking.notes || "",
+      status: booking.status,
+    });
+    open();
   };
 
   const createInvoiceFromBooking = async (booking) => {
     try {
-      // Check if booking already has an invoice
       if (booking.invoice) {
         notifications.show({
           title: "Invoice Exists",
@@ -187,13 +201,13 @@ export default function BookingsPage() {
       }
 
       const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 14); // Due in 14 days
+      dueDate.setDate(dueDate.getDate() + 14);
 
       const lineItems = [
         {
           description: booking.service?.name || "Service",
           quantity: 1,
-          unitPrice: (booking.amount || 0) * 100, // Convert to cents
+          unitPrice: (booking.amount || 0) * 100,
           amount: (booking.amount || 0) * 100,
         },
       ];
@@ -235,6 +249,8 @@ export default function BookingsPage() {
   };
 
   const deleteBooking = async (bookingId) => {
+    if (!confirm("Are you sure you want to delete this booking?")) return;
+
     try {
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: "DELETE",
@@ -259,6 +275,12 @@ export default function BookingsPage() {
     }
   };
 
+  const handleCloseModal = () => {
+    close();
+    setEditingBooking(null);
+    form.reset();
+  };
+
   if (loading) {
     return (
       <Container size="xl" py="xl">
@@ -271,7 +293,7 @@ export default function BookingsPage() {
     <Container size="xl" py="xl">
       <Group justify="space-between" mb="xl">
         <Title order={2}>Bookings</Title>
-        <Button leftSection={<IconPlus size={20} />} onClick={open}>
+        <Button leftSection={<IconPlus size={20} />} onClick={() => { setEditingBooking(null); form.reset(); open(); }}>
           Add Booking
         </Button>
       </Group>
@@ -290,134 +312,105 @@ export default function BookingsPage() {
           </Stack>
         </Paper>
       ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Group align="flex-start" gap="md" style={{ flexWrap: "nowrap", overflowX: "auto" }}>
-            {STATUSES.map((status) => {
-              const statusBookings = getBookingsByStatus(status.value);
-              return (
-                <Box key={status.value} style={{ minWidth: 300, flex: 1 }}>
-                  <Paper p="md" withBorder mb="md">
-                    <Group justify="space-between">
-                      <Text fw={600}>{status.label}</Text>
-                      <Badge color={status.color}>{statusBookings.length}</Badge>
-                    </Group>
-                  </Paper>
-
-                  <Droppable droppableId={status.value}>
-                    {(provided, snapshot) => (
-                      <Box
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        style={{
-                          minHeight: 400,
-                          backgroundColor: snapshot.isDraggingOver ? "#f8f9fa" : "transparent",
-                          padding: "4px",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Stack gap="sm">
-                          {statusBookings.map((booking, index) => (
-                            <Draggable
-                              key={booking.id}
-                              draggableId={booking.id}
-                              index={index}
-                            >
-                              {(provided, snapshot) => (
-                                <Card
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  shadow="sm"
-                                  padding="md"
-                                  radius="md"
-                                  withBorder
-                                  style={{
-                                    ...provided.draggableProps.style,
-                                    cursor: "grab",
-                                    opacity: snapshot.isDragging ? 0.8 : 1,
-                                  }}
-                                >
-                                  <Group justify="space-between" align="flex-start" mb="xs">
-                                    <Text fw={600}>{booking.client?.name}</Text>
-                                    <Menu shadow="md" width={180} position="bottom-end">
-                                      <Menu.Target>
-                                        <ActionIcon variant="subtle" size="sm" onClick={(e) => e.stopPropagation()}>
-                                          <IconDotsVertical size={16} />
-                                        </ActionIcon>
-                                      </Menu.Target>
-                                      <Menu.Dropdown>
-                                        <Menu.Item
-                                          leftSection={<IconFileInvoice size={16} />}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            createInvoiceFromBooking(booking);
-                                          }}
-                                          disabled={!!booking.invoice}
-                                        >
-                                          {booking.invoice ? "Invoice Created" : "Create Invoice"}
-                                        </Menu.Item>
-                                        <Menu.Divider />
-                                        <Menu.Item
-                                          color="red"
-                                          leftSection={<IconTrash size={16} />}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteBooking(booking.id);
-                                          }}
-                                        >
-                                          Delete
-                                        </Menu.Item>
-                                      </Menu.Dropdown>
-                                    </Menu>
-                                  </Group>
-                                  <Stack gap="xs">
-                                    <Text size="sm" c="dimmed">
-                                      {booking.service?.name}
-                                    </Text>
-                                    <Text size="sm">
-                                      {new Date(booking.date).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                    </Text>
-                                    <Group gap="xs">
-                                      {booking.amount && (
-                                        <Text size="sm" fw={600} c="green">
-                                          ${booking.amount}
-                                        </Text>
-                                      )}
-                                      {booking.invoice && (
-                                        <Badge size="xs" color="blue" variant="light">
-                                          Invoiced
-                                        </Badge>
-                                      )}
-                                    </Group>
-                                    {booking.notes && (
-                                      <Text size="xs" c="dimmed" lineClamp={2}>
-                                        {booking.notes}
-                                      </Text>
-                                    )}
-                                  </Stack>
-                                </Card>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </Stack>
-                      </Box>
+        <Paper withBorder>
+          <Table striped highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Client</Table.Th>
+                <Table.Th>Service</Table.Th>
+                <Table.Th>Date & Time</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th>Amount</Table.Th>
+                <Table.Th>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {bookings.map((booking) => (
+                <Table.Tr key={booking.id}>
+                  <Table.Td>
+                    <Text fw={500}>{booking.client?.name}</Text>
+                    <Text size="xs" c="dimmed">{booking.client?.email}</Text>
+                  </Table.Td>
+                  <Table.Td>{booking.service?.name}</Table.Td>
+                  <Table.Td>
+                    {new Date(booking.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                    <Text size="xs" c="dimmed">
+                      {new Date(booking.date).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Select
+                      size="xs"
+                      value={booking.status}
+                      onChange={(value) => handleStatusChange(booking.id, value)}
+                      data={STATUSES.map(s => ({ value: s.value, label: s.label }))}
+                      styles={{
+                        input: {
+                          backgroundColor: `var(--mantine-color-${STATUS_COLORS[booking.status]}-0)`,
+                          borderColor: `var(--mantine-color-${STATUS_COLORS[booking.status]}-4)`,
+                          color: `var(--mantine-color-${STATUS_COLORS[booking.status]}-7)`,
+                          fontWeight: 500,
+                        },
+                      }}
+                    />
+                  </Table.Td>
+                  <Table.Td>
+                    {booking.amount ? (
+                      <Text fw={600} c="green">${booking.amount}</Text>
+                    ) : (
+                      <Text c="dimmed">-</Text>
                     )}
-                  </Droppable>
-                </Box>
-              );
-            })}
-          </Group>
-        </DragDropContext>
+                  </Table.Td>
+                  <Table.Td>
+                    <Group gap="xs">
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        onClick={() => handleEdit(booking)}
+                      >
+                        <IconPencil size={18} />
+                      </ActionIcon>
+                      <Menu shadow="md" width={180} position="bottom-end">
+                        <Menu.Target>
+                          <ActionIcon variant="subtle" size="sm">
+                            <IconDotsVertical size={16} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item
+                            leftSection={<IconFileInvoice size={16} />}
+                            onClick={() => createInvoiceFromBooking(booking)}
+                            disabled={!!booking.invoice}
+                          >
+                            {booking.invoice ? "Invoice Created" : "Create Invoice"}
+                          </Menu.Item>
+                          <Menu.Divider />
+                          <Menu.Item
+                            color="red"
+                            leftSection={<IconTrash size={16} />}
+                            onClick={() => deleteBooking(booking.id)}
+                          >
+                            Delete
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
       )}
 
-      <Modal opened={opened} onClose={close} title="Add Booking" size="lg">
+      <Modal opened={opened} onClose={handleCloseModal} title={editingBooking ? "Edit Booking" : "Add Booking"} size="lg">
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack>
             <TextInput
@@ -450,6 +443,11 @@ export default function BookingsPage() {
               required
               {...form.getInputProps("date")}
             />
+            <Select
+              label="Status"
+              data={STATUSES.map(s => ({ value: s.value, label: s.label }))}
+              {...form.getInputProps("status")}
+            />
             <NumberInput
               label="Amount"
               placeholder="0.00"
@@ -464,10 +462,10 @@ export default function BookingsPage() {
               {...form.getInputProps("notes")}
             />
             <Group justify="flex-end" mt="md">
-              <Button variant="subtle" onClick={close}>
+              <Button variant="subtle" onClick={handleCloseModal}>
                 Cancel
               </Button>
-              <Button type="submit">Create Booking</Button>
+              <Button type="submit">{editingBooking ? "Update Booking" : "Create Booking"}</Button>
             </Group>
           </Stack>
         </form>

@@ -10,14 +10,27 @@ import {
   Table,
   Badge,
   Stack,
+  SimpleGrid,
+  Box,
+  Indicator,
+  Paper,
+  Tooltip,
 } from "@mantine/core";
+import { Calendar } from "@mantine/dates";
 import {
   IconCalendar,
   IconUsers,
   IconList,
   IconCurrencyDollar,
 } from "@tabler/icons-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+
+const STATUS_COLORS = {
+  inquiry: "blue",
+  booked: "green",
+  completed: "gray",
+  cancelled: "red",
+};
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -28,8 +41,9 @@ export default function DashboardPage() {
     thisMonthBookings: 0,
     thisMonthRevenue: 0,
   });
-  const [recentBookings, setRecentBookings] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -49,7 +63,7 @@ export default function DashboardPage() {
 
       if (bookingsRes.ok) {
         const bookingsData = await bookingsRes.json();
-        setRecentBookings(bookingsData.slice(0, 5));
+        setBookings(bookingsData);
       }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
@@ -57,6 +71,26 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+
+  // Create a map of dates to bookings for the calendar
+  const bookingsByDate = useMemo(() => {
+    const map = {};
+    bookings.forEach((booking) => {
+      const dateStr = new Date(booking.date).toDateString();
+      if (!map[dateStr]) {
+        map[dateStr] = [];
+      }
+      map[dateStr].push(booking);
+    });
+    return map;
+  }, [bookings]);
+
+  // Get bookings for selected date
+  const selectedDateBookings = useMemo(() => {
+    if (!selectedDate) return [];
+    const dateStr = selectedDate.toDateString();
+    return bookingsByDate[dateStr] || [];
+  }, [selectedDate, bookingsByDate]);
 
   const statCards = [
     {
@@ -124,11 +158,103 @@ export default function DashboardPage() {
         ))}
       </Grid>
 
+      {/* Calendar View Section */}
+      <Card shadow="sm" padding="lg" radius="md" withBorder mb="xl">
+        <Title order={3} mb="md">
+          Booking Calendar
+        </Title>
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
+          <Box>
+            <Calendar
+              size="md"
+              getDayProps={(date) => {
+                const dateStr = date.toDateString();
+                const dayBookings = bookingsByDate[dateStr];
+                const isSelected = selectedDate?.toDateString() === dateStr;
+
+                return {
+                  selected: isSelected,
+                  onClick: () => setSelectedDate(date),
+                  style: dayBookings ? {
+                    position: 'relative',
+                  } : undefined,
+                };
+              }}
+              renderDay={(date) => {
+                const dateStr = date.toDateString();
+                const dayBookings = bookingsByDate[dateStr];
+                const day = date.getDate();
+
+                if (dayBookings && dayBookings.length > 0) {
+                  return (
+                    <Indicator size={8} color="blue" offset={-2}>
+                      <div>{day}</div>
+                    </Indicator>
+                  );
+                }
+
+                return <div>{day}</div>;
+              }}
+            />
+            <Group gap="xs" mt="md">
+              <Indicator size={8} color="blue" processing={false}>
+                <Text size="xs" c="dimmed" ml="xs">Has bookings</Text>
+              </Indicator>
+            </Group>
+          </Box>
+
+          <Box>
+            <Text fw={600} mb="md">
+              {selectedDate
+                ? `Bookings for ${selectedDate.toLocaleDateString("en-US", { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`
+                : "Select a date to view bookings"
+              }
+            </Text>
+
+            {selectedDate && selectedDateBookings.length === 0 && (
+              <Paper p="xl" withBorder radius="md" bg="gray.0">
+                <Text c="dimmed" ta="center">No bookings on this date</Text>
+              </Paper>
+            )}
+
+            <Stack gap="sm">
+              {selectedDateBookings.map((booking) => (
+                <Paper key={booking.id} p="md" withBorder radius="md">
+                  <Group justify="space-between" mb="xs">
+                    <Text fw={600}>{booking.client?.name}</Text>
+                    <Badge color={STATUS_COLORS[booking.status] || "gray"}>
+                      {booking.status}
+                    </Badge>
+                  </Group>
+                  <Text size="sm" c="dimmed" mb="xs">
+                    {booking.service?.name}
+                  </Text>
+                  <Group justify="space-between">
+                    <Text size="sm">
+                      {new Date(booking.date).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                    {booking.amount && (
+                      <Text size="sm" fw={600} c="green">
+                        ${booking.amount}
+                      </Text>
+                    )}
+                  </Group>
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
+        </SimpleGrid>
+      </Card>
+
+      {/* Recent Bookings Table */}
       <Card shadow="sm" padding="lg" radius="md" withBorder>
         <Title order={3} mb="md">
           Recent Bookings
         </Title>
-        {recentBookings.length === 0 ? (
+        {bookings.length === 0 ? (
           <Text c="dimmed">No bookings yet. Start by adding services and clients!</Text>
         ) : (
           <Table striped>
@@ -142,7 +268,7 @@ export default function DashboardPage() {
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {recentBookings.map((booking) => (
+              {bookings.slice(0, 5).map((booking) => (
                 <Table.Tr key={booking.id}>
                   <Table.Td>{booking.client?.name}</Table.Td>
                   <Table.Td>{booking.service?.name}</Table.Td>
@@ -154,17 +280,7 @@ export default function DashboardPage() {
                     })}
                   </Table.Td>
                   <Table.Td>
-                    <Badge
-                      color={
-                        booking.status === "inquiry"
-                          ? "blue"
-                          : booking.status === "booked"
-                          ? "green"
-                          : booking.status === "completed"
-                          ? "gray"
-                          : "red"
-                      }
-                    >
+                    <Badge color={STATUS_COLORS[booking.status] || "gray"}>
                       {booking.status}
                     </Badge>
                   </Table.Td>

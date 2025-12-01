@@ -94,12 +94,12 @@ export default function Home() {
                   What You Get
                 </Text>
                 <Stack gap="md">
-                  <Text size="sm">Drag-and-drop status updates between inquiry, confirmed, and completed stages</Text>
+                  <Text size="sm">Calendar view to see all bookings at a glance by day, week, or month</Text>
                   <Text size="sm">Track booking dates, amounts, and link services directly to each appointment</Text>
                   <Text size="sm">Add detailed notes and requirements for every booking</Text>
-                  <Text size="sm">Real-time updates across your team with automatic synchronization</Text>
-                  <Text size="sm">Filter and search bookings by status, date, client, or service</Text>
-                  <Text size="sm">Export booking data and generate reports for analysis</Text>
+                  <Text size="sm">Create invoices directly from bookings with one click</Text>
+                  <Text size="sm">Update booking status between inquiry, booked, completed, or cancelled</Text>
+                  <Text size="sm">Quick access to client details and service information</Text>
                 </Stack>
               </Card>
             </Box>
@@ -170,9 +170,9 @@ export default function Home() {
                   <Text size="sm">Store full contact details including name, email, and phone for every client</Text>
                   <Text size="sm">View complete booking history and track customer relationships over time</Text>
                   <Text size="sm">Quick search and filtering to find clients instantly</Text>
-                  <Text size="sm">Edit, update, and merge duplicate entries to keep your database clean</Text>
-                  <Text size="sm">See client engagement metrics and identify your most valuable customers</Text>
-                  <Text size="sm">Add custom tags and notes to organize clients by categories or preferences</Text>
+                  <Text size="sm">Edit and update client information to keep your database clean</Text>
+                  <Text size="sm">See client stats including total bookings, completed, and total spent</Text>
+                  <Text size="sm">Add notes to clients for preferences and important details</Text>
                 </Stack>
               </Card>
             </Box>
@@ -185,9 +185,9 @@ export default function Home() {
                   <Text size="sm">Store full contact details including name, email, and phone for every client</Text>
                   <Text size="sm">View complete booking history and track customer relationships over time</Text>
                   <Text size="sm">Quick search and filtering to find clients instantly</Text>
-                  <Text size="sm">Edit, update, and merge duplicate entries to keep your database clean</Text>
-                  <Text size="sm">See client engagement metrics and identify your most valuable customers</Text>
-                  <Text size="sm">Add custom tags and notes to organize clients by categories or preferences</Text>
+                  <Text size="sm">Edit and update client information to keep your database clean</Text>
+                  <Text size="sm">See client stats including total bookings, completed, and total spent</Text>
+                  <Text size="sm">Add notes to clients for preferences and important details</Text>
                 </Stack>
               </Card>
             </Box>
@@ -469,7 +469,7 @@ export default function Home() {
                 Stripe Payments
               </Title>
               <Text size="md" c="dimmed" mb="lg">
-                Accept payments securely with Stripe integration. Process credit cards, track revenue, and manage subscriptions all within ClientFlow.
+                Accept payments securely with Stripe Connect. Process credit cards, generate invoices, and track revenue all within ClientFlow.
               </Text>
               <Stack gap="md">
                 <Box>
@@ -495,10 +495,10 @@ export default function Home() {
                 </Text>
                 <Stack gap="md">
                   <Text size="sm">Accept all major credit cards with automatic invoice generation</Text>
-                  <Text size="sm">Recurring subscription billing with flexible payment schedules</Text>
-                  <Text size="sm">Refund processing, payment history tracking, and comprehensive reporting</Text>
-                  <Text size="sm">Multi-currency support for international clients</Text>
-                  <Text size="sm">Automated payment reminders and receipt delivery via email</Text>
+                  <Text size="sm">Stripe Connect integration for direct payments to your business</Text>
+                  <Text size="sm">Track payment history and view transaction details</Text>
+                  <Text size="sm">Generate invoices from bookings and send to clients</Text>
+                  <Text size="sm">Automated receipt delivery via email after payment</Text>
                   <Text size="sm">Secure payment processing with PCI DSS compliance through Stripe</Text>
                 </Stack>
               </Card>
