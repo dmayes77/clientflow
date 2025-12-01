@@ -126,9 +126,9 @@ function FoundersContent() {
             </Badge>
             <Title order={1} ta="center" size={{ base: 32, md: 48 }}>
               Welcome to the{" "}
-              <Text component="span" inherit variant="gradient" gradient={{ from: "violet", to: "grape" }}>
+              <span style={{ background: "linear-gradient(135deg, var(--mantine-color-violet-6), var(--mantine-color-grape-6))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                 Founders Program
-              </Text>
+              </span>
             </Title>
             <Text size="lg" c="dimmed" ta="center" maw={600}>
               You&apos;ve been invited to join ClientFlow as a Founding Member. Get 1 year free plus exclusive lifetime benefits.
