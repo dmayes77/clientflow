@@ -119,7 +119,6 @@ export default function AvailabilityPage() {
   // Scheduling settings state
   const [timezone, setTimezone] = useState("America/New_York");
   const [slotInterval, setSlotInterval] = useState("30");
-  const [savingScheduling, setSavingScheduling] = useState(false);
 
   useEffect(() => {
     fetchAvailability();
@@ -188,39 +187,6 @@ export default function AvailabilityPage() {
     }
   };
 
-  const handleSaveScheduling = async () => {
-    setSavingScheduling(true);
-    try {
-      const response = await fetch("/api/tenant/scheduling", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          timezone,
-          slotInterval: parseInt(slotInterval),
-        }),
-      });
-
-      if (response.ok) {
-        notifications.show({
-          title: "Success",
-          message: "Booking settings saved successfully",
-          color: "green",
-          icon: <IconCheck size={18} />,
-        });
-      } else {
-        throw new Error("Failed to save");
-      }
-    } catch (error) {
-      notifications.show({
-        title: "Error",
-        message: "Failed to save booking settings",
-        color: "red",
-      });
-    } finally {
-      setSavingScheduling(false);
-    }
-  };
-
   const handleToggleDay = (dayOfWeek) => {
     setSchedule((prev) =>
       prev.map((day) =>
@@ -240,20 +206,31 @@ export default function AvailabilityPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch("/api/availability", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slots: schedule.map((day) => ({
-            dayOfWeek: day.dayOfWeek,
-            startTime: day.startTime,
-            endTime: day.endTime,
-            active: day.active,
-          })),
+      // Save both availability and scheduling settings
+      const [availabilityRes, schedulingRes] = await Promise.all([
+        fetch("/api/availability", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slots: schedule.map((day) => ({
+              dayOfWeek: day.dayOfWeek,
+              startTime: day.startTime,
+              endTime: day.endTime,
+              active: day.active,
+            })),
+          }),
         }),
-      });
+        fetch("/api/tenant/scheduling", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            timezone,
+            slotInterval: parseInt(slotInterval),
+          }),
+        }),
+      ]);
 
-      if (response.ok) {
+      if (availabilityRes.ok && schedulingRes.ok) {
         notifications.show({
           title: "Success",
           message: "Availability saved successfully",
@@ -426,21 +403,12 @@ export default function AvailabilityPage() {
         {/* Booking Settings Section */}
         <Paper withBorder p="lg">
           <Stack gap="md">
-            <Group justify="space-between">
-              <div>
-                <Text fw={500}>Booking Settings</Text>
-                <Text size="sm" c="dimmed">
-                  Configure timezone and time slot intervals for bookings
-                </Text>
-              </div>
-              <Button
-                onClick={handleSaveScheduling}
-                loading={savingScheduling}
-                size="sm"
-              >
-                Save Settings
-              </Button>
-            </Group>
+            <div>
+              <Text fw={500}>Booking Settings</Text>
+              <Text size="sm" c="dimmed">
+                Configure timezone and time slot intervals for bookings
+              </Text>
+            </div>
 
             <Grid>
               <Grid.Col span={{ base: 12, sm: 6 }}>
