@@ -116,13 +116,20 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
+    // Build update data - only include provided fields
+    const updateData = {};
+    if (validation.data.name !== undefined) updateData.name = validation.data.name;
+    if (validation.data.email !== undefined) updateData.email = validation.data.email;
+    if (validation.data.phone !== undefined) updateData.phone = validation.data.phone || null;
+    if (validation.data.type !== undefined) updateData.type = validation.data.type;
+    if (validation.data.leadStatus !== undefined) updateData.leadStatus = validation.data.leadStatus;
+    if (validation.data.source !== undefined) updateData.source = validation.data.source;
+    if (validation.data.convertedAt !== undefined) updateData.convertedAt = new Date(validation.data.convertedAt);
+    if (validation.data.notes !== undefined) updateData.notes = validation.data.notes;
+
     const updatedClient = await prisma.client.update({
       where: { id },
-      data: {
-        name: validation.data.name,
-        email: validation.data.email,
-        phone: validation.data.phone || null,
-      },
+      data: updateData,
     });
 
     return NextResponse.json(updatedClient);

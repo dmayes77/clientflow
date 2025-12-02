@@ -1,48 +1,55 @@
 "use client";
 
-import {
-  Container,
-  Title,
-  Button,
-  Group,
-  Text,
-  Stack,
-  Modal,
-  TextInput,
-  Textarea,
-  Card,
-  Badge,
-  ActionIcon,
-  Paper,
-  NumberInput,
-  MultiSelect,
-  SimpleGrid,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { useDisclosure } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
-import { IconPlus, IconPencil, IconTrash, IconPackage } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
+import { notifications } from "@mantine/notifications";
+import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Badge,
+  Input,
+  Label,
+  Textarea,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Checkbox,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Package,
+  Loader2,
+  ChevronDown,
+  X,
+} from "lucide-react";
 
 export default function PackagesPage() {
   const [packages, setPackages] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [opened, { open, close }] = useDisclosure(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [serviceSelectOpen, setServiceSelectOpen] = useState(false);
 
-  const form = useForm({
-    initialValues: {
-      name: "",
-      description: "",
-      price: "",
-      serviceIds: [],
-    },
-    validate: {
-      name: (value) => (value.length < 2 ? "Name must be at least 2 characters" : null),
-      price: (value) => (!value || value <= 0 ? "Price must be greater than 0" : null),
-    },
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    serviceIds: [],
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -74,7 +81,23 @@ export default function PackagesPage() {
     }
   };
 
-  const handleSubmit = async (values) => {
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name || formData.name.length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      newErrors.price = "Price must be greater than 0";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setSaving(true);
     try {
       const url = editingPackage ? `/api/packages/${editingPackage.id}` : "/api/packages";
       const method = editingPackage ? "PUT" : "POST";
@@ -83,9 +106,8 @@ export default function PackagesPage() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...values,
-          // Convert dollars to cents for storage
-          price: Math.round(parseFloat(values.price) * 100),
+          ...formData,
+          price: Math.round(parseFloat(formData.price) * 100),
         }),
       });
 
@@ -95,9 +117,7 @@ export default function PackagesPage() {
           message: `Package ${editingPackage ? "updated" : "created"} successfully`,
           color: "green",
         });
-        form.reset();
-        close();
-        setEditingPackage(null);
+        handleCloseModal();
         fetchData();
       } else {
         throw new Error("Failed to save package");
@@ -108,19 +128,21 @@ export default function PackagesPage() {
         message: "Failed to save package",
         color: "red",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleEdit = (pkg) => {
     setEditingPackage(pkg);
-    form.setValues({
+    setFormData({
       name: pkg.name,
       description: pkg.description || "",
-      // Convert cents to dollars for display in form
       price: (pkg.price / 100).toString(),
       serviceIds: pkg.services?.map((s) => s.id) || [],
     });
-    open();
+    setErrors({});
+    setModalOpen(true);
   };
 
   const handleDelete = async (id) => {
@@ -151,153 +173,293 @@ export default function PackagesPage() {
   };
 
   const handleCloseModal = () => {
-    close();
+    setModalOpen(false);
     setEditingPackage(null);
-    form.reset();
+    setFormData({ name: "", description: "", price: "", serviceIds: [] });
+    setErrors({});
+  };
+
+  const toggleService = (serviceId) => {
+    setFormData((prev) => ({
+      ...prev,
+      serviceIds: prev.serviceIds.includes(serviceId)
+        ? prev.serviceIds.filter((id) => id !== serviceId)
+        : [...prev.serviceIds, serviceId],
+    }));
+  };
+
+  const getSelectedServiceNames = () => {
+    return services
+      .filter((s) => formData.serviceIds.includes(s.id))
+      .map((s) => s.name);
   };
 
   if (loading) {
     return (
-      <Container size="xl" py="xl">
-        <Text>Loading...</Text>
-      </Container>
+      <div className="flex flex-col items-center justify-center h-[400px] gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        <p className="text-xs text-zinc-500">Loading packages...</p>
+      </div>
     );
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Group justify="space-between" mb="xl">
-        <Title order={2}>Packages</Title>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-zinc-900">Packages</h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Create bundled service packages for your clients
+          </p>
+        </div>
         <Button
-          leftSection={<IconPlus size={20} />}
+          size="sm"
           onClick={() => {
             setEditingPackage(null);
-            form.reset();
-            open();
+            setFormData({ name: "", description: "", price: "", serviceIds: [] });
+            setErrors({});
+            setModalOpen(true);
           }}
+          className="text-xs"
         >
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
           Add Package
         </Button>
-      </Group>
+      </div>
 
       {packages.length === 0 ? (
-        <Paper p="xl" withBorder>
-          <Stack align="center" gap="md">
-            <IconPackage size={48} stroke={1.5} />
-            <Title order={3}>No packages yet</Title>
-            <Text c="dimmed" ta="center">
-              Create service packages to offer bundled deals to your clients
-            </Text>
-            <Button
-              leftSection={<IconPlus size={20} />}
-              onClick={() => {
-                setEditingPackage(null);
-                form.reset();
-                open();
-              }}
-            >
-              Add Package
-            </Button>
-          </Stack>
-        </Paper>
+        <Card>
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="h-12 w-12 rounded-full bg-zinc-100 flex items-center justify-center">
+                <Package className="h-6 w-6 text-zinc-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-zinc-900">No packages yet</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Create service packages to offer bundled deals to your clients
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingPackage(null);
+                  setFormData({ name: "", description: "", price: "", serviceIds: [] });
+                  setModalOpen(true);
+                }}
+                className="text-xs mt-2"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add Package
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {packages.map((pkg) => (
-            <Card key={pkg.id} shadow="sm" padding="lg" radius="md" withBorder>
-              <Group justify="space-between" mb="md">
-                <Text fw={600} size="lg">
-                  {pkg.name}
-                </Text>
-                <Group gap="xs">
-                  <ActionIcon
-                    variant="subtle"
-                    color="blue"
-                    onClick={() => handleEdit(pkg)}
-                  >
-                    <IconPencil size={18} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    onClick={() => handleDelete(pkg.id)}
-                  >
-                    <IconTrash size={18} />
-                  </ActionIcon>
-                </Group>
-              </Group>
+            <Card key={pkg.id}>
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-sm font-semibold">{pkg.name}</CardTitle>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(pkg)}
+                      className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(pkg.id)}
+                      className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {pkg.description && (
+                  <p className="text-xs text-zinc-500">{pkg.description}</p>
+                )}
 
-              {pkg.description && (
-                <Text size="sm" c="dimmed" mb="md">
-                  {pkg.description}
-                </Text>
-              )}
+                <p className="text-xl font-bold text-green-600">
+                  ${(pkg.price / 100).toFixed(2)}
+                </p>
 
-              <Text size="xl" fw={700} c="green" mb="md">
-                ${(pkg.price / 100).toFixed(2)}
-              </Text>
-
-              {pkg.services && pkg.services.length > 0 && (
-                <Stack gap="xs">
-                  <Text size="sm" fw={500}>
-                    Included Services:
-                  </Text>
-                  {pkg.services.map((service) => (
-                    <Badge key={service.id} variant="light">
-                      {service.name}
-                    </Badge>
-                  ))}
-                </Stack>
-              )}
+                {pkg.services && pkg.services.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[0.625rem] font-medium text-zinc-500 uppercase">
+                      Included Services
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {pkg.services.map((service) => (
+                        <Badge
+                          key={service.id}
+                          variant="secondary"
+                          className="text-[0.625rem]"
+                        >
+                          {service.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           ))}
-        </SimpleGrid>
+        </div>
       )}
 
-      <Modal
-        opened={opened}
-        onClose={handleCloseModal}
-        title={editingPackage ? "Edit Package" : "Add Package"}
-        size="lg"
-      >
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack>
-            <TextInput
-              label="Package Name"
-              placeholder="Wedding Photography Bundle"
-              required
-              {...form.getInputProps("name")}
-            />
-            <Textarea
-              label="Description"
-              placeholder="Describe what's included in this package..."
-              rows={3}
-              {...form.getInputProps("description")}
-            />
-            <NumberInput
-              label="Price"
-              placeholder="0.00"
-              prefix="$"
-              decimalScale={2}
-              required
-              {...form.getInputProps("price")}
-            />
-            <MultiSelect
-              label="Included Services"
-              placeholder="Select services"
-              data={services.map((s) => ({ value: s.id, label: s.name }))}
-              {...form.getInputProps("serviceIds")}
-            />
-            <Group justify="flex-end" mt="md">
-              <Button variant="subtle" onClick={handleCloseModal}>
+      {/* Package Modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-semibold">
+              {editingPackage ? "Edit Package" : "Add Package"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Package Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="Wedding Photography Bundle"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className={cn("text-xs", errors.name && "border-red-500")}
+                />
+                {errors.name && (
+                  <p className="text-[0.625rem] text-red-500">{errors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Description</Label>
+                <Textarea
+                  placeholder="Describe what's included in this package..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">
+                  Price <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500">
+                    $
+                  </span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    className={cn("text-xs pl-7", errors.price && "border-red-500")}
+                  />
+                </div>
+                {errors.price && (
+                  <p className="text-[0.625rem] text-red-500">{errors.price}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Included Services</Label>
+                <Popover open={serviceSelectOpen} onOpenChange={setServiceSelectOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "w-full justify-between text-xs font-normal h-9",
+                        formData.serviceIds.length === 0 && "text-zinc-500"
+                      )}
+                    >
+                      {formData.serviceIds.length > 0
+                        ? `${formData.serviceIds.length} service${formData.serviceIds.length > 1 ? "s" : ""} selected`
+                        : "Select services"}
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <div className="max-h-[200px] overflow-auto p-1">
+                      {services.length === 0 ? (
+                        <p className="text-xs text-zinc-500 p-2 text-center">
+                          No services available
+                        </p>
+                      ) : (
+                        services.map((service) => (
+                          <div
+                            key={service.id}
+                            className="flex items-center gap-2 p-2 rounded-md hover:bg-zinc-100 cursor-pointer"
+                            onClick={() => toggleService(service.id)}
+                          >
+                            <Checkbox
+                              checked={formData.serviceIds.includes(service.id)}
+                              onCheckedChange={() => toggleService(service.id)}
+                            />
+                            <span className="text-xs">{service.name}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {formData.serviceIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {getSelectedServiceNames().map((name) => (
+                      <Badge
+                        key={name}
+                        variant="secondary"
+                        className="text-[0.625rem] pr-1"
+                      >
+                        {name}
+                        <button
+                          type="button"
+                          className="ml-1 hover:bg-zinc-300 rounded-full p-0.5"
+                          onClick={() => {
+                            const service = services.find((s) => s.name === name);
+                            if (service) toggleService(service.id);
+                          }}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCloseModal}
+                className="text-xs"
+              >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" size="sm" disabled={saving} className="text-xs">
+                {saving && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
                 {editingPackage ? "Update" : "Create"}
               </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
-    </Container>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

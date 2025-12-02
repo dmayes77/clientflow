@@ -1,7 +1,7 @@
 "use client";
 
 import { Container, Text, Title } from '@mantine/core';
-import { Dots } from '@/components/Dots';
+import { Dots } from '../Dots';
 import classes from './HeroText.module.css';
 
 export function HeroText({

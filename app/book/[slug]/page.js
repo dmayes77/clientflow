@@ -1,47 +1,37 @@
 "use client";
 
-import {
-  Container,
-  Title,
-  Text,
-  Card,
-  Stack,
-  Group,
-  Button,
-  TextInput,
-  Textarea,
-  SimpleGrid,
-  Badge,
-  ThemeIcon,
-  Stepper,
-  Paper,
-  Loader,
-  Center,
-  Alert,
-  SegmentedControl,
-  Checkbox,
-  Divider,
-  Grid,
-  ActionIcon,
-  Box,
-} from "@mantine/core";
-import { DateInput, TimeInput } from "@mantine/dates";
-import {
-  IconCalendar,
-  IconUser,
-  IconCheck,
-  IconClock,
-  IconCurrencyDollar,
-  IconAlertCircle,
-  IconPackage,
-  IconList,
-  IconShoppingCart,
-  IconInfoCircle,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Badge,
+  Input,
+  Label,
+  Textarea,
+  Checkbox,
+} from "@/components/ui";
+import {
+  Calendar,
+  User,
+  Check,
+  Clock,
+  DollarSign,
+  AlertCircle,
+  Package,
+  List,
+  ShoppingCart,
+  Info,
+  Trash2,
+  X,
+  Loader2,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { notifications } from "@mantine/notifications";
 
 function formatCurrency(cents) {
@@ -52,7 +42,6 @@ function formatCurrency(cents) {
 }
 
 function formatDate(date, options) {
-  // Handle both Date objects and dayjs objects from Mantine
   const dateObj = date instanceof Date ? date : new Date(date);
   return dateObj.toLocaleDateString("en-US", options);
 }
@@ -66,7 +55,104 @@ function formatDuration(minutes) {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+// Simple date picker component
+function SimpleDatePicker({ value, onChange, minDate, excludeDate }) {
+  const [currentMonth, setCurrentMonth] = useState(value || new Date());
+
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const days = [];
+
+    // Add empty slots for days before the first day
+    for (let i = 0; i < firstDay.getDay(); i++) {
+      days.push(null);
+    }
+
+    // Add all days in the month
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      days.push(new Date(year, month, i));
+    }
+
+    return days;
+  };
+
+  const days = getDaysInMonth(currentMonth);
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  const isDateDisabled = (date) => {
+    if (!date) return true;
+    if (minDate && date < minDate) return true;
+    if (excludeDate && excludeDate(date)) return true;
+    return false;
+  };
+
+  const isSameDay = (d1, d2) => {
+    if (!d1 || !d2) return false;
+    return d1.getDate() === d2.getDate() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getFullYear() === d2.getFullYear();
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-3">
+        <Button variant="ghost" size="sm" onClick={prevMonth}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <span className="text-sm font-medium">
+          {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+        </span>
+        <Button variant="ghost" size="sm" onClick={nextMonth}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {weekDays.map((day) => (
+          <div key={day} className="text-center text-[0.625rem] font-medium text-zinc-500 py-1">
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((date, i) => (
+          <button
+            key={i}
+            disabled={isDateDisabled(date)}
+            onClick={() => date && !isDateDisabled(date) && onChange(date)}
+            className={cn(
+              "h-8 w-8 rounded text-xs font-medium transition-colors",
+              !date && "invisible",
+              date && isDateDisabled(date) && "text-zinc-300 cursor-not-allowed",
+              date && !isDateDisabled(date) && "hover:bg-zinc-100",
+              date && isSameDay(date, value) && "bg-zinc-900 text-white hover:bg-zinc-800",
+              date && isSameDay(date, new Date()) && !isSameDay(date, value) && "border border-zinc-300"
+            )}
+          >
+            {date?.getDate()}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const STEPS = [
+  { label: "Services", icon: ShoppingCart },
+  { label: "Date & Time", icon: Calendar },
+  { label: "Details", icon: User },
+  { label: "Complete", icon: Check },
+];
 
 export default function PublicBookingPage() {
   const { slug } = useParams();
@@ -77,7 +163,7 @@ export default function PublicBookingPage() {
 
   // Booking state
   const [active, setActive] = useState(0);
-  const [selectedItems, setSelectedItems] = useState([]); // Array of selected services/packages
+  const [selectedItems, setSelectedItems] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
   const [clientForm, setClientForm] = useState({
@@ -90,10 +176,15 @@ export default function PublicBookingPage() {
   const [bookingResult, setBookingResult] = useState(null);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [dayAvailability, setDayAvailability] = useState(null); // Holds hours and isClosed for selected date
-  const [weeklyAvailability, setWeeklyAvailability] = useState([]); // For multi-day spanning
+  const [dayAvailability, setDayAvailability] = useState(null);
+  const [weeklyAvailability, setWeeklyAvailability] = useState([]);
 
-  // Calculate combined totals from selected items
+  // Lead capture state
+  const [leadSaved, setLeadSaved] = useState(false);
+  const leadSaveAttempted = useRef(false);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Calculate combined totals
   const selectedTotal = selectedItems.reduce((sum, item) => sum + item.price, 0);
   const selectedDuration = selectedItems.reduce(
     (sum, item) => sum + (item.duration || item.totalDuration || 0),
@@ -104,18 +195,50 @@ export default function PublicBookingPage() {
     fetchBusinessData();
   }, [slug]);
 
-  // Fetch booked slots when date changes
+  useEffect(() => {
+    if (clientForm.email && emailRegex.test(clientForm.email) && !leadSaved && !leadSaveAttempted.current) {
+      const timeout = setTimeout(() => saveLeadData(), 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [clientForm, selectedItems, leadSaved]);
+
   useEffect(() => {
     if (selectedDate) {
       fetchBookedSlots(selectedDate);
     }
   }, [selectedDate, slug]);
 
+  const saveLeadData = async () => {
+    if (!emailRegex.test(clientForm.email) || leadSaveAttempted.current) return;
+    leadSaveAttempted.current = true;
+
+    try {
+      const serviceItem = selectedItems.find((i) => i.type === "service");
+      const packageItem = selectedItems.find((i) => i.type === "package");
+
+      await fetch(`/api/public/${slug}/lead`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: clientForm.name || undefined,
+          email: clientForm.email,
+          phone: clientForm.phone || undefined,
+          serviceId: serviceItem?.id || undefined,
+          packageId: packageItem?.id || undefined,
+          notes: clientForm.notes || undefined,
+          source: "booking_form",
+        }),
+      });
+      setLeadSaved(true);
+    } catch (err) {
+      console.error("Failed to save lead:", err);
+    }
+  };
+
   const fetchBookedSlots = async (date) => {
     try {
       setLoadingSlots(true);
       setDayAvailability(null);
-      // Ensure date is a proper Date object
       const dateObj = date instanceof Date ? date : new Date(date);
       const dateStr = dateObj.toISOString().split("T")[0];
       const response = await fetch(`/api/public/${slug}/availability?date=${dateStr}`);
@@ -154,7 +277,6 @@ export default function PublicBookingPage() {
 
       const data = await response.json();
       setBusinessData(data);
-      // Store weekly availability for multi-day spanning logic
       if (data.availability) {
         setWeeklyAvailability(data.availability);
       }
@@ -166,12 +288,9 @@ export default function PublicBookingPage() {
     }
   };
 
-  // Toggle item selection (checkbox behavior)
   const handleToggleItem = (item, type) => {
     const itemWithType = { ...item, type };
-    const exists = selectedItems.find(
-      (i) => i.id === item.id && i.type === type
-    );
+    const exists = selectedItems.find((i) => i.id === item.id && i.type === type);
 
     if (exists) {
       setSelectedItems(selectedItems.filter((i) => !(i.id === item.id && i.type === type)));
@@ -180,12 +299,10 @@ export default function PublicBookingPage() {
     }
   };
 
-  // Check if item is selected
   const isItemSelected = (item, type) => {
     return selectedItems.some((i) => i.id === item.id && i.type === type);
   };
 
-  // Proceed to next step
   const handleProceedToDateTime = () => {
     if (selectedItems.length === 0) {
       notifications.show({
@@ -223,18 +340,12 @@ export default function PublicBookingPage() {
     try {
       setSubmitting(true);
 
-      // Combine date and time
       const [hours, minutes] = selectedTime.split(":").map(Number);
       const scheduledAt = new Date(selectedDate);
       scheduledAt.setHours(hours, minutes, 0, 0);
 
-      // Separate services and packages
-      const serviceIds = selectedItems
-        .filter((i) => i.type === "service")
-        .map((i) => i.id);
-      const packageIds = selectedItems
-        .filter((i) => i.type === "package")
-        .map((i) => i.id);
+      const serviceIds = selectedItems.filter((i) => i.type === "service").map((i) => i.id);
+      const packageIds = selectedItems.filter((i) => i.type === "package").map((i) => i.id);
 
       const response = await fetch(`/api/public/${slug}/book`, {
         method: "POST",
@@ -242,7 +353,6 @@ export default function PublicBookingPage() {
         body: JSON.stringify({
           serviceIds: serviceIds.length > 0 ? serviceIds : undefined,
           packageIds: packageIds.length > 0 ? packageIds : undefined,
-          // For backward compatibility, also send single values if only one selected
           serviceId: serviceIds.length === 1 ? serviceIds[0] : null,
           packageId: packageIds.length === 1 && serviceIds.length === 0 ? packageIds[0] : null,
           scheduledAt: scheduledAt.toISOString(),
@@ -276,96 +386,46 @@ export default function PublicBookingPage() {
     }
   };
 
-  // Check if a date is available based on availability
   const isDateAvailable = (date) => {
     if (!businessData?.availability?.length) return true;
-
-    // Handle both Date objects and dayjs objects from Mantine
     const dateObj = date instanceof Date ? date : new Date(date);
     const dayOfWeek = dateObj.getDay();
-    const dayAvailability = businessData.availability.find(
-      (a) => a.dayOfWeek === dayOfWeek
-    );
-
-    return dayAvailability?.isOpen ?? false;
+    const dayAvail = businessData.availability.find((a) => a.dayOfWeek === dayOfWeek);
+    return dayAvail?.isOpen ?? false;
   };
 
-  // Check if a time slot conflicts with any booked appointment
   const isTimeSlotBooked = (timeString) => {
     if (!selectedDate || selectedItems.length === 0 || bookedSlots.length === 0) return false;
 
     const [hours, minutes] = timeString.split(":").map(Number);
     const slotStart = new Date(selectedDate);
     slotStart.setHours(hours, minutes, 0, 0);
-
-    // Use combined duration from all selected items
     const slotEnd = new Date(slotStart.getTime() + selectedDuration * 60000);
 
-    // Check if this slot overlaps with any booked slot
     return bookedSlots.some((booked) => {
       const bookedStart = new Date(booked.start);
       const bookedEnd = new Date(booked.end);
-
-      // Check for overlap: slot overlaps if it starts before booked ends AND ends after booked starts
       return slotStart < bookedEnd && slotEnd > bookedStart;
     });
   };
 
-  // Calculate available business hours across multiple days for multi-day spanning
   const getBusinessHoursForDate = (date) => {
     if (!weeklyAvailability.length) return null;
     const dayOfWeek = date.getDay();
     const dayAvail = weeklyAvailability.find((a) => a.dayOfWeek === dayOfWeek);
     if (!dayAvail?.isOpen) return null;
-    return {
-      startTime: dayAvail.startTime,
-      endTime: dayAvail.endTime,
-    };
+    return { startTime: dayAvail.startTime, endTime: dayAvail.endTime };
   };
 
-  // Calculate total available hours across consecutive business days
-  const calculateMultiDayAvailability = (startDate, requiredDuration) => {
-    let totalAvailableMinutes = 0;
-    let currentDate = new Date(startDate);
-    let daysSpanned = 0;
-    const maxDaysToCheck = 7; // Limit to prevent infinite loops
-
-    // First check today's remaining hours from the slot time
-    const todayHours = dayAvailability?.hours;
-    if (todayHours) {
-      const [endHour, endMin] = todayHours.endTime.split(":").map(Number);
-      const endMinutes = endHour * 60 + endMin;
-      // This will be calculated per-slot in getAvailableTimeSlots
-      return { canFit: true, endMinutes };
-    }
-
-    return { canFit: false, endMinutes: 0 };
-  };
-
-  // Get available time slots for the selected date
   const getAvailableTimeSlots = () => {
-    // Use dayAvailability from API if available (includes overrides)
-    if (dayAvailability?.isClosed || !dayAvailability?.hours) {
-      return [];
-    }
+    if (dayAvailability?.isClosed || !dayAvailability?.hours) return [];
 
     const slots = [];
     const [startHour, startMin] = dayAvailability.hours.startTime.split(":").map(Number);
     const [endHour, endMin] = dayAvailability.hours.endTime.split(":").map(Number);
-
-    // Use slot interval from API (default to 30 if not set)
     const interval = dayAvailability.slotInterval || 30;
-
-    // Use combined duration from selected items
     const totalDuration = selectedDuration || 60;
-
-    // Calculate today's available business hours in minutes
-    const todayStartMinutes = startHour * 60 + startMin;
     const todayEndMinutes = endHour * 60 + endMin;
-    const todayTotalMinutes = todayEndMinutes - todayStartMinutes;
-
-    // Check if appointment can span multiple days
-    const spanMultipleDays = totalDuration > todayTotalMinutes;
 
     let currentHour = startHour;
     let currentMin = startMin;
@@ -374,38 +434,9 @@ export default function PublicBookingPage() {
       const slotStartInMinutes = currentHour * 60 + currentMin;
       const remainingTodayMinutes = todayEndMinutes - slotStartInMinutes;
 
-      // If duration fits within today's hours, add the slot
       if (totalDuration <= remainingTodayMinutes) {
         const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
         slots.push(timeString);
-      } else if (spanMultipleDays && weeklyAvailability.length > 0) {
-        // Calculate if there's enough time across consecutive business days
-        let accumulatedMinutes = remainingTodayMinutes;
-        let checkDate = new Date(selectedDate);
-        let foundEnoughTime = false;
-        const maxDays = 7;
-
-        for (let i = 1; i < maxDays && !foundEnoughTime; i++) {
-          checkDate.setDate(checkDate.getDate() + 1);
-          const nextDayHours = getBusinessHoursForDate(checkDate);
-
-          if (nextDayHours) {
-            const [nextStartH, nextStartM] = nextDayHours.startTime.split(":").map(Number);
-            const [nextEndH, nextEndM] = nextDayHours.endTime.split(":").map(Number);
-            const nextDayMinutes = (nextEndH * 60 + nextEndM) - (nextStartH * 60 + nextStartM);
-
-            accumulatedMinutes += nextDayMinutes;
-
-            if (accumulatedMinutes >= totalDuration) {
-              foundEnoughTime = true;
-            }
-          }
-        }
-
-        if (foundEnoughTime) {
-          const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
-          slots.push(timeString);
-        }
       }
 
       currentMin += interval;
@@ -418,536 +449,597 @@ export default function PublicBookingPage() {
     return slots;
   };
 
-  // Get only available (not booked) time slots
-  const availableTimeSlots = getAvailableTimeSlots().filter(
-    (slot) => !isTimeSlotBooked(slot)
-  );
+  const availableTimeSlots = getAvailableTimeSlots().filter((slot) => !isTimeSlotBooked(slot));
+
+  const formatTimeSlot = (time) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes);
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  };
 
   if (loading) {
     return (
-      <Container size="md" py="xl">
-        <Center style={{ minHeight: 400 }}>
-          <Stack align="center" gap="md">
-            <Loader size="lg" />
-            <Text c="dimmed">Loading booking page...</Text>
-          </Stack>
-        </Center>
-      </Container>
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+          <p className="text-xs text-zinc-500">Loading booking page...</p>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container size="md" py="xl">
-        <Center style={{ minHeight: 400 }}>
-          <Alert icon={<IconAlertCircle size={16} />} title="Error" color="red">
-            {error}
-          </Alert>
-        </Center>
-      </Container>
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="flex flex-col items-center gap-3 py-8">
+            <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+              <AlertCircle className="h-6 w-6 text-red-500" />
+            </div>
+            <p className="text-sm font-medium text-zinc-900">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  // All items combined (both services and packages)
   const services = businessData.services || [];
   const packages = businessData.packages || [];
 
   return (
-    <Container size="xl" py="xl">
-      <Stack gap="xl">
+    <div className="min-h-screen bg-zinc-50 py-6 px-4">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div style={{ textAlign: "center" }}>
-          <Title order={1}>{businessData.business.name}</Title>
-          <Text size="lg" c="dimmed" mt="xs">
-            Book an appointment
-          </Text>
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-semibold text-zinc-900">{businessData.business.name}</h1>
+          <p className="text-xs text-zinc-500 mt-1">Book an appointment</p>
         </div>
 
-        {/* Stepper */}
-        <Stepper active={active} onStepClick={setActive} allowNextStepsSelect={false}>
-          <Stepper.Step label="Select Services" icon={<IconShoppingCart size={18} />}>
-            <Grid mt="lg" gutter="xl">
-              {/* Left Column - Services/Packages */}
-              <Grid.Col span={{ base: 12, md: 8 }}>
-                <Stack gap="lg">
-                  <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-                    Select one or more services. Duration and prices will be combined.
-                  </Alert>
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          {STEPS.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = index === active;
+            const isCompleted = index < active;
+            return (
+              <div key={step.label} className="flex items-center">
+                <div
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                    isActive && "bg-zinc-900 text-white",
+                    isCompleted && "bg-green-100 text-green-700",
+                    !isActive && !isCompleted && "bg-zinc-100 text-zinc-400"
+                  )}
+                >
+                  {isCompleted ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Icon className="h-3.5 w-3.5" />
+                  )}
+                  <span className="hidden sm:inline">{step.label}</span>
+                </div>
+                {index < STEPS.length - 1 && (
+                  <div className={cn("w-8 h-px mx-1", index < active ? "bg-green-300" : "bg-zinc-200")} />
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-              {/* Services Section */}
+        {/* Step 0: Select Services */}
+        {active === 0 && (
+          <div className="grid gap-4 lg:grid-cols-3">
+            {/* Services List */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Info Banner */}
+              <div className="flex items-center gap-2 rounded-md bg-blue-50 border border-blue-100 px-3 py-2">
+                <Info className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                <p className="text-xs text-blue-700">
+                  Select one or more services. Duration and prices will be combined.
+                </p>
+              </div>
+
+              {/* Services */}
               {services.length > 0 && (
-                <>
-                  <Text fw={600} size="lg">
-                    Services
-                  </Text>
-                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-zinc-900">Services</h3>
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {services.map((item) => (
                       <Card
                         key={item.id}
-                        shadow="sm"
-                        padding="lg"
-                        radius="md"
-                        withBorder
-                        style={{
-                          cursor: "pointer",
-                          borderColor: isItemSelected(item, "service") ? "var(--mantine-color-blue-5)" : undefined,
-                          backgroundColor: isItemSelected(item, "service") ? "var(--mantine-color-blue-0)" : undefined,
-                        }}
+                        className={cn(
+                          "cursor-pointer transition-all hover:shadow-md",
+                          isItemSelected(item, "service") && "border-blue-500 bg-blue-50/50"
+                        )}
                         onClick={() => handleToggleItem(item, "service")}
                       >
-                        <Group justify="space-between" mb="xs">
-                          <Group gap="sm">
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-2">
                             <Checkbox
                               checked={isItemSelected(item, "service")}
-                              onChange={() => {}}
-                              onClick={(e) => e.stopPropagation()}
+                              onCheckedChange={() => {}}
+                              className="mt-0.5"
                             />
-                            <Text fw={600}>{item.name}</Text>
-                          </Group>
-                          <ThemeIcon size="sm" variant="light" color="blue">
-                            <IconList size={14} />
-                          </ThemeIcon>
-                        </Group>
-
-                        {item.description && (
-                          <Text size="sm" c="dimmed" mb="md" ml={32}>
-                            {item.description}
-                          </Text>
-                        )}
-
-                        <Group justify="space-between" ml={32}>
-                          <Group gap="xs">
-                            <IconClock size={16} />
-                            <Text size="sm">{formatDuration(item.duration)}</Text>
-                          </Group>
-                          <Badge size="lg" variant="light" color="green">
-                            {formatCurrency(item.price)}
-                          </Badge>
-                        </Group>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-medium text-zinc-900">{item.name}</span>
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                  <List className="h-2.5 w-2.5 mr-1" />
+                                  Service
+                                </Badge>
+                              </div>
+                              {item.description && (
+                                <p className="text-[0.625rem] text-zinc-500 mt-1 line-clamp-2">
+                                  {item.description}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="flex items-center gap-1 text-[0.625rem] text-zinc-500">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(item.duration)}
+                                </span>
+                                <span className="text-xs font-semibold text-green-600">
+                                  {formatCurrency(item.price)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
                       </Card>
                     ))}
-                  </SimpleGrid>
-                </>
+                  </div>
+                </div>
               )}
 
-              {/* Packages Section */}
+              {/* Packages */}
               {packages.length > 0 && (
-                <>
-                  <Divider my="sm" />
-                  <Text fw={600} size="lg">
-                    Packages
-                  </Text>
-                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-zinc-900">Packages</h3>
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {packages.map((item) => (
                       <Card
                         key={item.id}
-                        shadow="sm"
-                        padding="lg"
-                        radius="md"
-                        withBorder
-                        style={{
-                          cursor: "pointer",
-                          borderColor: isItemSelected(item, "package") ? "var(--mantine-color-grape-5)" : undefined,
-                          backgroundColor: isItemSelected(item, "package") ? "var(--mantine-color-grape-0)" : undefined,
-                        }}
+                        className={cn(
+                          "cursor-pointer transition-all hover:shadow-md",
+                          isItemSelected(item, "package") && "border-violet-500 bg-violet-50/50"
+                        )}
                         onClick={() => handleToggleItem(item, "package")}
                       >
-                        <Group justify="space-between" mb="xs">
-                          <Group gap="sm">
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-2">
                             <Checkbox
                               checked={isItemSelected(item, "package")}
-                              onChange={() => {}}
-                              onClick={(e) => e.stopPropagation()}
+                              onCheckedChange={() => {}}
+                              className="mt-0.5"
                             />
-                            <Text fw={600}>{item.name}</Text>
-                          </Group>
-                          <ThemeIcon size="sm" variant="light" color="grape">
-                            <IconPackage size={14} />
-                          </ThemeIcon>
-                        </Group>
-
-                        {item.description && (
-                          <Text size="sm" c="dimmed" mb="md" ml={32}>
-                            {item.description}
-                          </Text>
-                        )}
-
-                        <Group justify="space-between" ml={32}>
-                          <Group gap="xs">
-                            <IconClock size={16} />
-                            <Text size="sm">{formatDuration(item.totalDuration)}</Text>
-                          </Group>
-                          <Badge size="lg" variant="light" color="green">
-                            {formatCurrency(item.price)}
-                          </Badge>
-                        </Group>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-medium text-zinc-900">{item.name}</span>
+                                <Badge variant="secondary" className="bg-violet-100 text-violet-700">
+                                  <Package className="h-2.5 w-2.5 mr-1" />
+                                  Package
+                                </Badge>
+                              </div>
+                              {item.description && (
+                                <p className="text-[0.625rem] text-zinc-500 mt-1 line-clamp-2">
+                                  {item.description}
+                                </p>
+                              )}
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="flex items-center gap-1 text-[0.625rem] text-zinc-500">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(item.totalDuration)}
+                                </span>
+                                <span className="text-xs font-semibold text-green-600">
+                                  {formatCurrency(item.price)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
                       </Card>
                     ))}
-                  </SimpleGrid>
-                </>
+                  </div>
+                </div>
               )}
 
               {services.length === 0 && packages.length === 0 && (
-                <Alert icon={<IconAlertCircle size={16} />} color="gray">
-                  No services or packages available at this time.
-                </Alert>
+                <Card>
+                  <CardContent className="flex flex-col items-center gap-3 py-8">
+                    <AlertCircle className="h-8 w-8 text-zinc-400" />
+                    <p className="text-xs text-zinc-500">No services or packages available at this time.</p>
+                  </CardContent>
+                </Card>
               )}
-                </Stack>
-              </Grid.Col>
+            </div>
 
-              {/* Right Column - Cart Sidebar */}
-              <Grid.Col span={{ base: 12, md: 4 }}>
-                <Box style={{ position: "sticky", top: 20 }}>
-                  <Paper p="lg" withBorder radius="md" shadow="sm">
-                    <Group justify="space-between" mb="md">
-                      <Group gap="xs">
-                        <IconShoppingCart size={20} />
-                        <Text fw={600} size="lg">Your Cart</Text>
-                      </Group>
+            {/* Cart Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <ShoppingCart className="h-4 w-4" />
+                        Your Cart
+                      </span>
                       {selectedItems.length > 0 && (
-                        <Badge size="lg" variant="filled" color="blue">
-                          {selectedItems.length}
-                        </Badge>
+                        <Badge>{selectedItems.length}</Badge>
                       )}
-                    </Group>
-
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     {selectedItems.length === 0 ? (
-                      <Stack align="center" gap="md" py="xl">
-                        <ThemeIcon size={60} variant="light" color="gray" radius="xl">
-                          <IconShoppingCart size={30} />
-                        </ThemeIcon>
-                        <Text c="dimmed" ta="center">
+                      <div className="flex flex-col items-center gap-3 py-6">
+                        <div className="h-12 w-12 rounded-full bg-zinc-100 flex items-center justify-center">
+                          <ShoppingCart className="h-6 w-6 text-zinc-400" />
+                        </div>
+                        <p className="text-xs text-zinc-500 text-center">
                           Select services or packages to get started
-                        </Text>
-                      </Stack>
+                        </p>
+                      </div>
                     ) : (
-                      <Stack gap="md">
+                      <div className="space-y-3">
                         {/* Cart Items */}
-                        <Stack gap="xs">
+                        <div className="space-y-2">
                           {selectedItems.map((item) => (
-                            <Paper key={`${item.type}-${item.id}`} p="sm" withBorder radius="sm">
-                              <Group justify="space-between" wrap="nowrap">
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <Group gap="xs" mb={4}>
-                                    <Badge size="xs" color={item.type === "package" ? "grape" : "blue"}>
-                                      {item.type}
-                                    </Badge>
-                                  </Group>
-                                  <Text size="sm" fw={500} lineClamp={1}>
-                                    {item.name}
-                                  </Text>
-                                  <Group gap="xs" mt={4}>
-                                    <Text size="xs" c="dimmed">
-                                      <IconClock size={12} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
-                                      {formatDuration(item.duration || item.totalDuration)}
-                                    </Text>
-                                  </Group>
-                                </div>
-                                <Group gap="xs" wrap="nowrap">
-                                  <Text size="sm" fw={600} c="green">
-                                    {formatCurrency(item.price)}
-                                  </Text>
-                                  <ActionIcon
-                                    variant="subtle"
-                                    color="red"
-                                    size="sm"
-                                    onClick={() => handleToggleItem(item, item.type)}
-                                  >
-                                    <IconX size={14} />
-                                  </ActionIcon>
-                                </Group>
-                              </Group>
-                            </Paper>
+                            <div
+                              key={`${item.type}-${item.id}`}
+                              className="flex items-start justify-between gap-2 p-2 rounded border border-zinc-100 bg-zinc-50"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "text-[0.5625rem] px-1 py-0 h-4 mb-1",
+                                    item.type === "package" ? "border-violet-200 text-violet-600" : "border-blue-200 text-blue-600"
+                                  )}
+                                >
+                                  {item.type}
+                                </Badge>
+                                <p className="text-xs font-medium text-zinc-900 truncate">{item.name}</p>
+                                <p className="text-[0.625rem] text-zinc-500">
+                                  {formatDuration(item.duration || item.totalDuration)}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-semibold text-green-600">
+                                  {formatCurrency(item.price)}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleItem(item, item.type);
+                                  }}
+                                  className="p-1 rounded hover:bg-red-100 text-zinc-400 hover:text-red-500"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
                           ))}
-                        </Stack>
+                        </div>
 
                         {/* Totals */}
-                        <Divider />
-                        <Stack gap="xs">
-                          <Group justify="space-between">
-                            <Text size="sm" c="dimmed">Duration</Text>
-                            <Text size="sm" fw={500}>
-                              {formatDuration(selectedDuration)}
-                            </Text>
-                          </Group>
-                          <Group justify="space-between">
-                            <Text size="lg" fw={600}>Total</Text>
-                            <Text size="lg" fw={700} c="green">
-                              {formatCurrency(selectedTotal)}
-                            </Text>
-                          </Group>
-                        </Stack>
+                        <div className="border-t border-zinc-100 pt-3 space-y-1">
+                          <div className="flex items-center justify-between text-xs text-zinc-500">
+                            <span>Duration</span>
+                            <span>{formatDuration(selectedDuration)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-zinc-900">Total</span>
+                            <span className="text-sm font-bold text-green-600">{formatCurrency(selectedTotal)}</span>
+                          </div>
+                        </div>
 
                         {/* Actions */}
-                        <Stack gap="xs">
-                          <Button
-                            fullWidth
-                            size="md"
-                            onClick={handleProceedToDateTime}
-                          >
+                        <div className="space-y-2 pt-2">
+                          <Button className="w-full" size="sm" onClick={handleProceedToDateTime}>
                             Continue
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
                           </Button>
                           <Button
-                            fullWidth
-                            variant="subtle"
-                            color="red"
-                            size="xs"
-                            leftSection={<IconTrash size={14} />}
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => setSelectedItems([])}
                           >
+                            <Trash2 className="h-3 w-3 mr-1" />
                             Clear Cart
                           </Button>
-                        </Stack>
-                      </Stack>
+                        </div>
+                      </div>
                     )}
-                  </Paper>
-                </Box>
-              </Grid.Col>
-            </Grid>
-          </Stepper.Step>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        )}
 
-          <Stepper.Step label="Choose Time" icon={<IconCalendar size={18} />}>
-            <Stack gap="lg" mt="lg">
-              {selectedItems.length > 0 && (
-                <Paper p="md" withBorder>
-                  <Group justify="space-between" mb="xs">
-                    <Text fw={600}>Selected Services ({selectedItems.length})</Text>
-                    <Button variant="subtle" size="xs" onClick={() => setActive(0)}>
-                      Change
-                    </Button>
-                  </Group>
-                  {selectedItems.map((item) => (
-                    <Text key={`${item.type}-${item.id}`} size="sm" c="dimmed">
-                      • {item.name} ({formatDuration(item.duration || item.totalDuration)})
-                    </Text>
-                  ))}
-                  <Divider my="xs" />
-                  <Group justify="space-between">
-                    <Text size="sm" fw={500}>Total: {formatDuration(selectedDuration)}</Text>
-                    <Badge size="lg" color="green">{formatCurrency(selectedTotal)}</Badge>
-                  </Group>
-                </Paper>
-              )}
+        {/* Step 1: Date & Time */}
+        {active === 1 && (
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Choose Date & Time</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Selected Services Summary */}
+              <div className="p-3 rounded-md bg-zinc-50 border border-zinc-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-zinc-900">
+                    Selected ({selectedItems.length})
+                  </span>
+                  <button onClick={() => setActive(0)} className="text-xs text-blue-600 hover:text-blue-700">
+                    Change
+                  </button>
+                </div>
+                {selectedItems.map((item) => (
+                  <p key={`${item.type}-${item.id}`} className="text-[0.625rem] text-zinc-500">
+                    • {item.name} ({formatDuration(item.duration || item.totalDuration)})
+                  </p>
+                ))}
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-200">
+                  <span className="text-xs text-zinc-600">{formatDuration(selectedDuration)}</span>
+                  <span className="text-xs font-semibold text-green-600">{formatCurrency(selectedTotal)}</span>
+                </div>
+              </div>
 
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-                <DateInput
-                  label="Select Date"
-                  placeholder="Pick a date"
-                  value={selectedDate}
-                  onChange={setSelectedDate}
-                  minDate={new Date()}
-                  excludeDate={(date) => !isDateAvailable(date)}
-                  size="md"
-                />
+              {/* Date & Time Selection */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Date Picker */}
+                <div>
+                  <Label className="text-xs mb-2 block">Select Date</Label>
+                  <Card>
+                    <CardContent className="p-3">
+                      <SimpleDatePicker
+                        value={selectedDate}
+                        onChange={setSelectedDate}
+                        minDate={new Date()}
+                        excludeDate={(date) => !isDateAvailable(date)}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
 
-                {selectedDate && (
-                  <div>
-                    <Text size="sm" fw={500} mb="xs">
-                      Available Times
-                    </Text>
-                    {loadingSlots ? (
-                      <Center py="md">
-                        <Loader size="sm" />
-                      </Center>
-                    ) : dayAvailability?.isClosed ? (
-                      <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
-                        <Text fw={500}>Closed on this date</Text>
+                {/* Time Slots */}
+                <div>
+                  <Label className="text-xs mb-2 block">Available Times</Label>
+                  {!selectedDate ? (
+                    <Card>
+                      <CardContent className="flex items-center justify-center py-8">
+                        <p className="text-xs text-zinc-400">Select a date first</p>
+                      </CardContent>
+                    </Card>
+                  ) : loadingSlots ? (
+                    <Card>
+                      <CardContent className="flex items-center justify-center py-8">
+                        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                      </CardContent>
+                    </Card>
+                  ) : dayAvailability?.isClosed ? (
+                    <Card>
+                      <CardContent className="py-4">
+                        <div className="flex items-center gap-2 text-red-600">
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="text-xs font-medium">Closed on this date</span>
+                        </div>
                         {dayAvailability?.override?.reason && (
-                          <Text size="sm" c="dimmed" mt={4}>
+                          <p className="text-[0.625rem] text-zinc-500 mt-1">
                             {dayAvailability.override.reason}
-                          </Text>
+                          </p>
                         )}
-                      </Alert>
-                    ) : (
-                      <>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardContent className="p-3">
                         {dayAvailability?.override?.type === "custom" && (
-                          <Alert icon={<IconClock size={16} />} color="blue" variant="light" mb="sm">
-                            <Text size="sm">
+                          <div className="flex items-center gap-1.5 mb-3 p-2 rounded bg-blue-50 text-blue-700">
+                            <Clock className="h-3 w-3" />
+                            <span className="text-[0.625rem]">
                               Special hours: {dayAvailability.hours?.startTime} - {dayAvailability.hours?.endTime}
-                              {dayAvailability.override?.reason && ` (${dayAvailability.override.reason})`}
-                            </Text>
-                          </Alert>
+                            </span>
+                          </div>
                         )}
-                        <SimpleGrid cols={3} spacing="xs">
-                          {availableTimeSlots.map((time) => (
-                            <Button
-                              key={time}
-                              variant={selectedTime === time ? "filled" : "light"}
-                              size="sm"
-                              onClick={() => setSelectedTime(time)}
-                            >
-                              {time}
-                            </Button>
-                          ))}
-                        </SimpleGrid>
-                        {availableTimeSlots.length === 0 && (
-                          <Text size="sm" c="dimmed">
+                        {availableTimeSlots.length === 0 ? (
+                          <p className="text-xs text-zinc-500 text-center py-4">
                             No available times on this date
-                          </Text>
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto">
+                            {availableTimeSlots.map((time) => (
+                              <button
+                                key={time}
+                                onClick={() => setSelectedTime(time)}
+                                className={cn(
+                                  "px-2 py-1.5 rounded text-xs font-medium transition-colors",
+                                  selectedTime === time
+                                    ? "bg-zinc-900 text-white"
+                                    : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                                )}
+                              >
+                                {formatTimeSlot(time)}
+                              </button>
+                            ))}
+                          </div>
                         )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </SimpleGrid>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
 
-              <Group justify="flex-end" mt="md">
-                <Button onClick={handleDateTimeConfirm} disabled={!selectedDate || !selectedTime}>
-                  Continue
-                </Button>
-              </Group>
-            </Stack>
-          </Stepper.Step>
-
-          <Stepper.Step label="Your Details" icon={<IconUser size={18} />}>
-            <Stack gap="lg" mt="lg">
-              {selectedItems.length > 0 && selectedDate && selectedTime && (
-                <Paper p="md" withBorder>
-                  <Group justify="space-between" mb="xs">
-                    <div>
-                      <Text fw={600}>Appointment Summary</Text>
-                      <Text size="sm" c="dimmed">
-                        {formatDate(selectedDate, {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}{" "}
-                        at {selectedTime}
-                      </Text>
-                    </div>
-                    <Badge size="lg" color="green">
-                      {formatCurrency(selectedTotal)}
-                    </Badge>
-                  </Group>
-                  <Divider my="xs" />
-                  {selectedItems.map((item) => (
-                    <Text key={`${item.type}-${item.id}`} size="sm" c="dimmed">
-                      • {item.name} ({formatDuration(item.duration || item.totalDuration)})
-                    </Text>
-                  ))}
-                  <Text size="sm" fw={500} mt="xs">
-                    Total Duration: {formatDuration(selectedDuration)}
-                  </Text>
-                </Paper>
-              )}
-
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                <TextInput
-                  label="Your Name"
-                  placeholder="John Doe"
-                  required
-                  value={clientForm.name}
-                  onChange={(e) =>
-                    setClientForm({ ...clientForm, name: e.target.value })
-                  }
-                />
-                <TextInput
-                  label="Email"
-                  placeholder="you@example.com"
-                  type="email"
-                  required
-                  value={clientForm.email}
-                  onChange={(e) =>
-                    setClientForm({ ...clientForm, email: e.target.value })
-                  }
-                />
-              </SimpleGrid>
-
-              <TextInput
-                label="Phone (optional)"
-                placeholder="+1 (555) 123-4567"
-                value={clientForm.phone}
-                onChange={(e) =>
-                  setClientForm({ ...clientForm, phone: e.target.value })
-                }
-              />
-
-              <Textarea
-                label="Notes (optional)"
-                placeholder="Any special requests or information..."
-                minRows={3}
-                value={clientForm.notes}
-                onChange={(e) =>
-                  setClientForm({ ...clientForm, notes: e.target.value })
-                }
-              />
-
-              <Group justify="space-between" mt="md">
-                <Button variant="light" onClick={() => setActive(1)}>
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-4">
+                <Button variant="ghost" size="sm" onClick={() => setActive(0)}>
+                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                   Back
                 </Button>
-                <Button onClick={handleSubmit} loading={submitting}>
-                  Confirm Booking
+                <Button size="sm" onClick={handleDateTimeConfirm} disabled={!selectedDate || !selectedTime}>
+                  Continue
+                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
-              </Group>
-            </Stack>
-          </Stepper.Step>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          <Stepper.Completed>
-            <Center py="xl">
-              <Stack align="center" gap="lg">
-                <ThemeIcon size={80} radius="xl" color="green">
-                  <IconCheck size={40} />
-                </ThemeIcon>
-                <Title order={2} ta="center">
-                  Booking Request Submitted!
-                </Title>
-                <Text size="lg" c="dimmed" ta="center" maw={400}>
-                  {bookingResult?.message ||
-                    "Thank you! We'll confirm your appointment shortly."}
-                </Text>
+        {/* Step 2: Your Details */}
+        {active === 2 && (
+          <Card className="max-w-lg mx-auto">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Your Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Appointment Summary */}
+              <div className="p-3 rounded-md bg-zinc-50 border border-zinc-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-zinc-900">Appointment Summary</span>
+                  <span className="text-xs font-semibold text-green-600">{formatCurrency(selectedTotal)}</span>
+                </div>
+                <p className="text-[0.625rem] text-zinc-500">
+                  {formatDate(selectedDate, { weekday: "long", month: "long", day: "numeric" })} at {formatTimeSlot(selectedTime)}
+                </p>
+                <div className="mt-2 pt-2 border-t border-zinc-200 space-y-0.5">
+                  {selectedItems.map((item) => (
+                    <p key={`${item.type}-${item.id}`} className="text-[0.625rem] text-zinc-500">
+                      • {item.name} ({formatDuration(item.duration || item.totalDuration)})
+                    </p>
+                  ))}
+                </div>
+              </div>
 
-                {bookingResult?.booking && (
-                  <Paper p="lg" withBorder radius="md" w="100%" maw={400}>
-                    <Stack gap="xs">
-                      <Group justify="space-between">
-                        <Text c="dimmed">Service</Text>
-                        <Text fw={500}>{bookingResult.booking.serviceName}</Text>
-                      </Group>
-                      <Group justify="space-between">
-                        <Text c="dimmed">Date & Time</Text>
-                        <Text fw={500}>
-                          {new Date(bookingResult.booking.scheduledAt).toLocaleString(
-                            "en-US",
-                            {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </Text>
-                      </Group>
-                      <Group justify="space-between">
-                        <Text c="dimmed">Total</Text>
-                        <Text fw={600} c="green">
-                          {formatCurrency(bookingResult.booking.totalPrice)}
-                        </Text>
-                      </Group>
-                    </Stack>
-                  </Paper>
-                )}
+              {/* Form Fields */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-xs">Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="John Doe"
+                    value={clientForm.name}
+                    onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={clientForm.email}
+                    onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
+                  />
+                </div>
+              </div>
 
-                <Button
-                  variant="light"
-                  onClick={() => {
-                    setActive(0);
-                    setSelectedItems([]);
-                    setSelectedDate(null);
-                    setSelectedTime("");
-                    setClientForm({ name: "", email: "", phone: "", notes: "" });
-                    setBookingComplete(false);
-                    setBookingResult(null);
-                  }}
-                >
-                  Book Another Appointment
+              <div className="space-y-1.5">
+                <Label htmlFor="phone" className="text-xs">Phone (optional)</Label>
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  value={clientForm.phone}
+                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="notes" className="text-xs">Notes (optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Any special requests or information..."
+                  rows={3}
+                  value={clientForm.notes}
+                  onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })}
+                />
+              </div>
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-4">
+                <Button variant="ghost" size="sm" onClick={() => setActive(1)}>
+                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                  Back
                 </Button>
-              </Stack>
-            </Center>
-          </Stepper.Completed>
-        </Stepper>
-      </Stack>
-    </Container>
+                <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Confirm Booking"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Complete */}
+        {active === 3 && (
+          <Card className="max-w-md mx-auto">
+            <CardContent className="flex flex-col items-center gap-4 py-8">
+              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                <Check className="h-8 w-8 text-green-600" />
+              </div>
+              <div className="text-center">
+                <h2 className="text-lg font-semibold text-zinc-900">Booking Request Submitted!</h2>
+                <p className="text-xs text-zinc-500 mt-1 max-w-xs">
+                  {bookingResult?.message || "Thank you! We'll confirm your appointment shortly."}
+                </p>
+              </div>
+
+              {bookingResult?.booking && (
+                <div className="w-full p-3 rounded-md bg-zinc-50 border border-zinc-100">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-500">Service</span>
+                      <span className="text-xs font-medium text-zinc-900">{bookingResult.booking.serviceName}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-500">Date & Time</span>
+                      <span className="text-xs font-medium text-zinc-900">
+                        {new Date(bookingResult.booking.scheduledAt).toLocaleString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-zinc-500">Total</span>
+                      <span className="text-xs font-semibold text-green-600">
+                        {formatCurrency(bookingResult.booking.totalPrice)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setActive(0);
+                  setSelectedItems([]);
+                  setSelectedDate(null);
+                  setSelectedTime("");
+                  setClientForm({ name: "", email: "", phone: "", notes: "" });
+                  setBookingComplete(false);
+                  setBookingResult(null);
+                  leadSaveAttempted.current = false;
+                  setLeadSaved(false);
+                }}
+              >
+                Book Another Appointment
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
   );
 }

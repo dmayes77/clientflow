@@ -1,5 +1,6 @@
 "use client";
 
+import "@/app/dashboard/dashboard.css";
 import { AppShell, Burger, Group, NavLink, Text, Box, Avatar, Menu, UnstyledButton } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -26,6 +27,7 @@ export default function AdminLayout({ children }) {
   const { user } = useUser();
 
   return (
+    <div className="dashboard-shell">
     <AppShell
       header={{ height: 60 }}
       navbar={{ width: 250, breakpoint: "sm", collapsed: { mobile: !opened } }}
@@ -72,5 +74,6 @@ export default function AdminLayout({ children }) {
 
       <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
+    </div>
   );
 }

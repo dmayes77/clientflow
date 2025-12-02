@@ -166,16 +166,47 @@ export async function POST(request, { params }) {
     });
 
     let isNewClient = false;
+    let wasConverted = false;
+
     if (!client) {
+      // Create new client (they're booking, so they're a client, not a lead)
       client = await prisma.client.create({
         data: {
           tenantId: tenant.id,
           name: clientName,
           email: clientEmail.toLowerCase(),
           phone: clientPhone || null,
+          type: "client",
+          leadStatus: "won",
+          source: "booking_form",
+          convertedAt: new Date(),
         },
       });
       isNewClient = true;
+    } else if (client.type === "lead") {
+      // Convert existing lead to client
+      client = await prisma.client.update({
+        where: { id: client.id },
+        data: {
+          name: clientName || client.name,
+          phone: clientPhone || client.phone,
+          type: "client",
+          leadStatus: "won",
+          convertedAt: new Date(),
+        },
+      });
+      wasConverted = true;
+    } else {
+      // Update existing client info if provided
+      if (clientName || clientPhone) {
+        client = await prisma.client.update({
+          where: { id: client.id },
+          data: {
+            name: clientName || client.name,
+            phone: clientPhone || client.phone,
+          },
+        });
+      }
     }
 
     // Create the booking
@@ -252,6 +283,15 @@ export async function POST(request, { params }) {
       dispatchClientCreated(tenant.id, client).catch((err) =>
         console.error("Failed to dispatch client.created webhook:", err)
       );
+    }
+
+    // Dispatch lead.converted webhook if a lead was converted
+    if (wasConverted) {
+      dispatchBookingCreated(tenant.id, {
+        type: "lead.converted",
+        client: { id: client.id, name: client.name, email: client.email, convertedAt: client.convertedAt },
+        bookingId: booking.id,
+      }).catch((err) => console.error("Failed to dispatch lead.converted webhook:", err));
     }
 
     return NextResponse.json({

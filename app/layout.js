@@ -1,10 +1,18 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
+import { Inter } from "next/font/google";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@mantine/dates/styles.css";
 import "./globals.css";
+
+// Inter - enterprise font for app (excludes marketing)
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://getclientflow.app";
 
@@ -65,7 +73,7 @@ export default function RootLayout({ children }) {
         <head>
           <ColorSchemeScript />
         </head>
-        <body>
+        <body className={`${inter.className} antialiased`}>
           <MantineProvider>
             <Notifications />
             {children}

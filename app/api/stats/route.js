@@ -64,7 +64,6 @@ export async function GET(request) {
       prisma.booking.findMany({
         where: {
           tenantId: tenant.id,
-          totalPrice: { not: null },
         },
         select: { totalPrice: true, scheduledAt: true },
       }),

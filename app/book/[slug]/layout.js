@@ -1,6 +1,7 @@
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "@mantine/notifications/styles.css";
+import "@/app/dashboard/dashboard.css";
 import { prisma } from "@/lib/prisma";
 
 // Helper to convert text to title case
@@ -135,5 +136,5 @@ export async function generateMetadata({ params }) {
 }
 
 export default function BookingLayout({ children }) {
-  return children;
+  return <div className="dashboard-shell">{children}</div>;
 }

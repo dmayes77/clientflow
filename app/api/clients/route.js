@@ -58,6 +58,23 @@ export async function GET(request) {
             status: true,
           },
         },
+        interestedInService: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        interestedInPackage: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -127,6 +144,9 @@ export async function POST(request) {
         name: validation.data.name,
         email: validation.data.email,
         phone: validation.data.phone || null,
+        type: validation.data.type || "client",
+        leadStatus: validation.data.leadStatus || "new",
+        source: validation.data.source || "manual",
       },
     });
 

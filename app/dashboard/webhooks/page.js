@@ -1,10 +1,46 @@
 "use client";
 
-import { Button, Card, Group, Text, Title, CopyButton, ActionIcon, Stack, Code, Modal, TextInput, Checkbox, Switch, Badge, Accordion, Paper, Tooltip, Loader, Center, Alert, Table } from "@mantine/core";
-import { IconCopy, IconCheck, IconWebhook, IconTrash, IconInfoCircle, IconPlayerPlay, IconExternalLink, IconAlertCircle } from "@tabler/icons-react";
 import { useState, useEffect } from "react";
 import { notifications } from "@mantine/notifications";
-import { useDisclosure } from "@mantine/hooks";
+import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Badge,
+  Input,
+  Label,
+  Switch,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Separator,
+} from "@/components/ui";
+import {
+  Webhook,
+  Copy,
+  Check,
+  Trash2,
+  Info,
+  Play,
+  ExternalLink,
+  AlertCircle,
+  Loader2,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 export default function WebhooksPage() {
   const [webhooks, setWebhooks] = useState([]);
@@ -15,7 +51,9 @@ export default function WebhooksPage() {
   const [deletingId, setDeletingId] = useState(null);
   const [webhookModalOpen, setWebhookModalOpen] = useState(false);
   const [selectedWebhook, setSelectedWebhook] = useState(null);
-  const [detailsOpened, { open: openDetails, close: closeDetails }] = useDisclosure(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [docsExpanded, setDocsExpanded] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
   const [newWebhook, setNewWebhook] = useState({
     url: "",
     description: "",
@@ -88,7 +126,7 @@ export default function WebhooksPage() {
       if (response.ok) {
         const data = await response.json();
         setSelectedWebhook(data);
-        openDetails();
+        setDetailsOpen(true);
       }
     } catch (error) {
       notifications.show({
@@ -142,7 +180,7 @@ export default function WebhooksPage() {
 
       // Show webhook details with secret
       setSelectedWebhook(webhook);
-      openDetails();
+      setDetailsOpen(true);
 
       // Refresh list (secret won't be in the list)
       await loadWebhooks();
@@ -228,374 +266,409 @@ export default function WebhooksPage() {
     }
   };
 
+  const copySecret = async (secret) => {
+    await navigator.clipboard.writeText(secret);
+    setCopiedSecret(true);
+    setTimeout(() => setCopiedSecret(false), 2000);
+  };
+
   if (loading) {
     return (
-      <Center py="xl">
-        <Loader size="lg" />
-      </Center>
+      <div className="flex flex-col items-center justify-center h-[400px] gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        <p className="text-xs text-zinc-500">Loading webhooks...</p>
+      </div>
     );
   }
 
   return (
-    <>
-      <Group justify="space-between" mb="xl">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <Title order={1}>Webhooks</Title>
-          <Text size="sm" c="dimmed" mt="xs">
+          <h1 className="text-lg font-semibold text-zinc-900">Webhooks</h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
             Receive real-time notifications when events occur in your account
-          </Text>
+          </p>
         </div>
-        <Button
-          leftSection={<IconWebhook size={16} />}
-          onClick={() => setWebhookModalOpen(true)}
-          size="md"
-        >
+        <Button size="sm" onClick={() => setWebhookModalOpen(true)} className="text-xs">
+          <Webhook className="h-3.5 w-3.5 mr-1.5" />
           Create Webhook
         </Button>
-      </Group>
+      </div>
 
-      <Stack gap="md">
-        {webhooks.length === 0 ? (
-          <Card shadow="sm" padding="xl" radius="md" withBorder>
-            <Stack align="center" gap="md" py="xl">
-              <IconWebhook size={48} style={{ opacity: 0.5 }} />
-              <div style={{ textAlign: "center" }}>
-                <Text fw={500} mb="xs">No webhooks configured</Text>
-                <Text size="sm" c="dimmed">
-                  Create a webhook to receive event notifications in real-time
-                </Text>
+      {/* Webhooks List */}
+      {webhooks.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="h-12 w-12 rounded-full bg-zinc-100 flex items-center justify-center">
+                <Webhook className="h-6 w-6 text-zinc-400" />
               </div>
-              <Button
-                leftSection={<IconWebhook size={16} />}
-                onClick={() => setWebhookModalOpen(true)}
-              >
+              <div>
+                <p className="text-sm font-medium text-zinc-900">No webhooks configured</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Create a webhook to receive event notifications in real-time
+                </p>
+              </div>
+              <Button size="sm" onClick={() => setWebhookModalOpen(true)} className="text-xs mt-2">
+                <Webhook className="h-3.5 w-3.5 mr-1.5" />
                 Create Your First Webhook
               </Button>
-            </Stack>
-          </Card>
-        ) : (
-          webhooks.map((webhook) => (
-            <Card key={webhook.id} shadow="sm" padding="lg" radius="md" withBorder>
-              <Group justify="space-between" align="flex-start">
-                <div style={{ flex: 1 }}>
-                  <Group gap="xs" mb="sm">
-                    <Text size="lg" fw={500}>{webhook.description || "Webhook"}</Text>
-                    <Badge size="sm" color={webhook.active ? "green" : "gray"}>
-                      {webhook.active ? "Active" : "Inactive"}
-                    </Badge>
-                  </Group>
-
-                  <Stack gap="sm">
-                    <div>
-                      <Text size="xs" c="dimmed" mb={4}>Endpoint URL</Text>
-                      <Code block>{webhook.url}</Code>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {webhooks.map((webhook) => (
+            <Card key={webhook.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-medium text-zinc-900 truncate">
+                        {webhook.description || "Webhook"}
+                      </span>
+                      <Badge className={cn(
+                        "text-[0.625rem]",
+                        webhook.active ? "bg-green-100 text-green-700" : "bg-zinc-100 text-zinc-600"
+                      )}>
+                        {webhook.active ? "Active" : "Inactive"}
+                      </Badge>
                     </div>
 
-                    {webhook.secret && (
+                    <div className="space-y-2">
                       <div>
-                        <Text size="xs" c="dimmed" mb={4}>Secret Key</Text>
-                        <Group gap="xs">
-                          <Code>{webhook.secret}</Code>
-                          <CopyButton value={webhook.secret}>
-                            {({ copied, copy }) => (
-                              <ActionIcon
-                                size="sm"
-                                color={copied ? "teal" : "gray"}
-                                variant="subtle"
-                                onClick={copy}
-                              >
-                                {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                              </ActionIcon>
-                            )}
-                          </CopyButton>
-                        </Group>
+                        <p className="text-[0.625rem] text-zinc-500 mb-1">Endpoint URL</p>
+                        <code className="text-xs bg-zinc-100 px-2 py-1 rounded block truncate">
+                          {webhook.url}
+                        </code>
                       </div>
-                    )}
 
-                    <div>
-                      <Text size="xs" c="dimmed" mb={4}>Subscribed Events</Text>
-                      <Group gap="xs">
-                        {webhook.events.map((event) => (
-                          <Badge key={event} size="sm" variant="light">
-                            {event}
-                          </Badge>
-                        ))}
-                      </Group>
+                      <div>
+                        <p className="text-[0.625rem] text-zinc-500 mb-1">Subscribed Events</p>
+                        <div className="flex flex-wrap gap-1">
+                          {webhook.events.map((event) => (
+                            <Badge key={event} variant="secondary" className="text-[0.625rem]">
+                              {event}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <p className="text-[0.625rem] text-zinc-400">
+                        Created: {new Date(webhook.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
+                  </div>
 
-                    <Text size="xs" c="dimmed">
-                      Created: {new Date(webhook.createdAt).toLocaleDateString()}
-                    </Text>
-                  </Stack>
-                </div>
-
-                <Group gap="xs">
-                  <Switch
-                    checked={webhook.active}
-                    onChange={() => toggleWebhook(webhook.id, webhook.active)}
-                    size="sm"
-                  />
-                  <Tooltip label="Test webhook">
-                    <ActionIcon
-                      variant="light"
-                      color="blue"
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Switch
+                      checked={webhook.active}
+                      onCheckedChange={() => toggleWebhook(webhook.id, webhook.active)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => testWebhook(webhook.id)}
-                      loading={testingId === webhook.id}
+                      disabled={testingId === webhook.id}
+                      className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     >
-                      <IconPlayerPlay size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label="View details">
-                    <ActionIcon
-                      variant="light"
+                      {testingId === webhook.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Play className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => viewDetails(webhook.id)}
+                      className="h-8 w-8 p-0"
                     >
-                      <IconExternalLink size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label="Delete webhook">
-                    <ActionIcon
-                      variant="light"
-                      color="red"
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => deleteWebhook(webhook.id)}
-                      loading={deletingId === webhook.id}
+                      disabled={deletingId === webhook.id}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Group>
-              </Group>
+                      {deletingId === webhook.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
             </Card>
-          ))
-        )}
-      </Stack>
+          ))}
+        </div>
+      )}
 
       {/* Create Webhook Modal */}
-      <Modal
-        opened={webhookModalOpen}
-        onClose={() => setWebhookModalOpen(false)}
-        title="Create Webhook"
-        size="lg"
-      >
-        <Stack gap="md">
-          <TextInput
-            label="Webhook URL"
-            placeholder="https://example.com/webhook"
-            value={newWebhook.url}
-            onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
-            required
-            description="The endpoint URL where webhook events will be sent"
-          />
-          <TextInput
-            label="Description"
-            placeholder="Production webhook"
-            value={newWebhook.description}
-            onChange={(e) => setNewWebhook({ ...newWebhook, description: e.target.value })}
-            description="A friendly name to identify this webhook"
-          />
-          <div>
-            <Text size="sm" fw={500} mb="xs">Events to Subscribe</Text>
-            <Text size="xs" c="dimmed" mb="md">Select which events will trigger this webhook</Text>
-            <Stack gap="sm">
-              {displayEvents.map((eventItem) => (
-                <Paper key={eventItem.event} p="sm" withBorder style={{ backgroundColor: newWebhook.events.includes(eventItem.event) ? 'rgba(34, 139, 230, 0.05)' : 'transparent' }}>
-                  <Group justify="space-between" wrap="nowrap">
-                    <Stack gap={4} style={{ flex: 1 }}>
+      <Dialog open={webhookModalOpen} onOpenChange={setWebhookModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-semibold">Create Webhook</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Webhook URL</Label>
+              <Input
+                placeholder="https://example.com/webhook"
+                value={newWebhook.url}
+                onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
+                className="text-xs"
+              />
+              <p className="text-[0.625rem] text-zinc-500">
+                The endpoint URL where webhook events will be sent
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Description</Label>
+              <Input
+                placeholder="Production webhook"
+                value={newWebhook.description}
+                onChange={(e) => setNewWebhook({ ...newWebhook, description: e.target.value })}
+                className="text-xs"
+              />
+              <p className="text-[0.625rem] text-zinc-500">
+                A friendly name to identify this webhook
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Events to Subscribe</Label>
+              <p className="text-[0.625rem] text-zinc-500 mb-2">
+                Select which events will trigger this webhook
+              </p>
+              <div className="space-y-2 max-h-[200px] overflow-auto">
+                {displayEvents.map((eventItem) => (
+                  <div
+                    key={eventItem.event}
+                    className={cn(
+                      "p-2 rounded-md border cursor-pointer transition-colors",
+                      newWebhook.events.includes(eventItem.event)
+                        ? "border-blue-200 bg-blue-50"
+                        : "border-zinc-200 hover:border-zinc-300"
+                    )}
+                    onClick={() => toggleEvent(eventItem.event)}
+                  >
+                    <div className="flex items-start gap-2">
                       <Checkbox
-                        label={eventItem.event}
                         checked={newWebhook.events.includes(eventItem.event)}
-                        onChange={() => toggleEvent(eventItem.event)}
-                        fw={500}
+                        onCheckedChange={() => toggleEvent(eventItem.event)}
+                        className="mt-0.5"
                       />
-                      <Text size="xs" c="dimmed" pl={28}>
-                        {eventItem.description}
-                      </Text>
-                    </Stack>
-                  </Group>
-                </Paper>
-              ))}
-            </Stack>
-          </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-900">{eventItem.event}</p>
+                        <p className="text-[0.625rem] text-zinc-500">{eventItem.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light">
-            Your signing secret will only be shown once after creation. Make sure to copy it!
-          </Alert>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="flex gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800">
+                  Your signing secret will only be shown once after creation. Make sure to copy it!
+                </p>
+              </div>
+            </div>
 
-          <Accordion variant="contained">
-            <Accordion.Item value="docs">
-              <Accordion.Control icon={<IconInfoCircle size={18} />}>
-                Webhook Documentation
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap="sm">
+            {/* Collapsible Documentation */}
+            <div className="border border-zinc-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setDocsExpanded(!docsExpanded)}
+                className="w-full flex items-center justify-between p-3 text-left hover:bg-zinc-50"
+              >
+                <div className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-zinc-500" />
+                  <span className="text-xs font-medium">Webhook Documentation</span>
+                </div>
+                {docsExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-zinc-400" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-zinc-400" />
+                )}
+              </button>
+              {docsExpanded && (
+                <div className="border-t border-zinc-200 p-3 space-y-3 bg-zinc-50">
                   <div>
-                    <Text size="sm" fw={500} mb="xs">Payload Structure</Text>
-                    <Text size="xs" c="dimmed" mb="sm">
+                    <p className="text-xs font-medium text-zinc-900 mb-1">Payload Structure</p>
+                    <p className="text-[0.625rem] text-zinc-500 mb-2">
                       All webhook payloads include an event type and data object:
-                    </Text>
-                    <Code block>
-                      {`{
+                    </p>
+                    <code className="text-[0.625rem] bg-zinc-100 p-2 rounded block whitespace-pre">
+{`{
   "event": "booking.created",
   "data": { ... },
   "timestamp": "2024-01-15T10:00:00Z",
   "signature": "sha256_hash_for_verification"
 }`}
-                    </Code>
+                    </code>
                   </div>
                   <div>
-                    <Text size="sm" fw={500} mb="xs">Security</Text>
-                    <Text size="xs" c="dimmed">
-                      Each webhook request includes an HMAC-SHA256 signature in the <Code>X-Webhook-Signature</Code> header.
+                    <p className="text-xs font-medium text-zinc-900 mb-1">Security</p>
+                    <p className="text-[0.625rem] text-zinc-500">
+                      Each webhook request includes an HMAC-SHA256 signature in the{" "}
+                      <code className="bg-zinc-200 px-1 rounded">X-Webhook-Signature</code> header.
                       Use your webhook secret to verify the authenticity of requests.
-                    </Text>
+                    </p>
                   </div>
                   <div>
-                    <Text size="sm" fw={500} mb="xs">Retry Policy</Text>
-                    <Text size="xs" c="dimmed">
+                    <p className="text-xs font-medium text-zinc-900 mb-1">Retry Policy</p>
+                    <p className="text-[0.625rem] text-zinc-500">
                       Failed webhook deliveries will be retried up to 3 times with exponential backoff.
                       Your endpoint should return a 200-299 status code to acknowledge receipt.
-                    </Text>
+                    </p>
                   </div>
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-          <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={() => setWebhookModalOpen(false)}>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setWebhookModalOpen(false)} className="text-xs">
               Cancel
             </Button>
-            <Button onClick={createWebhook} loading={creating}>
+            <Button size="sm" onClick={createWebhook} disabled={creating} className="text-xs">
+              {creating && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
               Create Webhook
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Webhook Details Modal */}
-      <Modal
-        opened={detailsOpened}
-        onClose={closeDetails}
-        title="Webhook Details"
-        size="lg"
-      >
-        {selectedWebhook && (
-          <Stack gap="md">
-            <div>
-              <Text size="sm" c="dimmed" mb={4}>
-                Endpoint URL
-              </Text>
-              <Code style={{ wordBreak: "break-all" }}>{selectedWebhook.url}</Code>
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-semibold">Webhook Details</DialogTitle>
+          </DialogHeader>
+          {selectedWebhook && (
+            <div className="space-y-4 py-4">
+              <div>
+                <p className="text-[0.625rem] text-zinc-500 mb-1">Endpoint URL</p>
+                <code className="text-xs bg-zinc-100 px-2 py-1 rounded block break-all">
+                  {selectedWebhook.url}
+                </code>
+              </div>
+
+              {selectedWebhook.secret && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2 mb-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-medium text-amber-900">Save Your Signing Secret</p>
+                      <p className="text-[0.625rem] text-amber-800 mt-0.5">
+                        This secret will not be shown again. Copy it now!
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs bg-white border border-amber-200 px-2 py-1 rounded flex-1 truncate">
+                      {selectedWebhook.secret}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copySecret(selectedWebhook.secret)}
+                      className={cn("h-7 px-2", copiedSecret && "text-green-600 border-green-300")}
+                    >
+                      {copiedSecret ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {selectedWebhook.secretPreview && !selectedWebhook.secret && (
+                <div>
+                  <p className="text-[0.625rem] text-zinc-500 mb-1">Signing Secret</p>
+                  <code className="text-xs bg-zinc-100 px-2 py-1 rounded">
+                    {selectedWebhook.secretPreview}...
+                  </code>
+                  <p className="text-[0.625rem] text-zinc-400 mt-1">
+                    Secret is hidden for security. Create a new webhook to get a new secret.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-[0.625rem] text-zinc-500 mb-1">Subscribed Events</p>
+                <div className="flex flex-wrap gap-1">
+                  {selectedWebhook.events?.map((event) => (
+                    <Badge key={event} variant="secondary" className="text-[0.625rem]">
+                      {event}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {selectedWebhook.description && (
+                <div>
+                  <p className="text-[0.625rem] text-zinc-500 mb-1">Description</p>
+                  <p className="text-xs text-zinc-900">{selectedWebhook.description}</p>
+                </div>
+              )}
+
+              {selectedWebhook.deliveries && selectedWebhook.deliveries.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-zinc-900 mb-2">Recent Deliveries</p>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Event</TableHead>
+                        <TableHead className="text-xs">Status</TableHead>
+                        <TableHead className="text-xs">Time</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedWebhook.deliveries.map((delivery) => (
+                        <TableRow key={delivery.id}>
+                          <TableCell className="text-xs">{delivery.event}</TableCell>
+                          <TableCell>
+                            <Badge
+                              className={cn(
+                                "text-[0.625rem]",
+                                delivery.statusCode >= 200 && delivery.statusCode < 300
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              )}
+                            >
+                              {delivery.statusCode || "Failed"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-zinc-500">
+                            {new Date(delivery.deliveredAt).toLocaleString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </div>
-
-            {selectedWebhook.secret && (
-              <Alert
-                icon={<IconAlertCircle size={16} />}
-                color="yellow"
-                variant="light"
-                title="Save Your Signing Secret"
-              >
-                <Text size="sm" mb="xs">
-                  This secret will not be shown again. Copy it now!
-                </Text>
-                <Group gap="xs">
-                  <Code>{selectedWebhook.secret}</Code>
-                  <CopyButton value={selectedWebhook.secret}>
-                    {({ copied, copy }) => (
-                      <ActionIcon
-                        size="sm"
-                        color={copied ? "teal" : "gray"}
-                        variant="subtle"
-                        onClick={copy}
-                      >
-                        {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                      </ActionIcon>
-                    )}
-                  </CopyButton>
-                </Group>
-              </Alert>
-            )}
-
-            {selectedWebhook.secretPreview && !selectedWebhook.secret && (
-              <div>
-                <Text size="sm" c="dimmed" mb={4}>
-                  Signing Secret
-                </Text>
-                <Code>{selectedWebhook.secretPreview}...</Code>
-                <Text size="xs" c="dimmed" mt={4}>
-                  Secret is hidden for security. Create a new webhook to get a new secret.
-                </Text>
-              </div>
-            )}
-
-            <div>
-              <Text size="sm" c="dimmed" mb={4}>
-                Subscribed Events
-              </Text>
-              <Group gap="xs">
-                {selectedWebhook.events?.map((event) => (
-                  <Badge key={event} variant="light">
-                    {event}
-                  </Badge>
-                ))}
-              </Group>
-            </div>
-
-            {selectedWebhook.description && (
-              <div>
-                <Text size="sm" c="dimmed" mb={4}>
-                  Description
-                </Text>
-                <Text>{selectedWebhook.description}</Text>
-              </div>
-            )}
-
-            {selectedWebhook.deliveries && selectedWebhook.deliveries.length > 0 && (
-              <div>
-                <Text size="sm" fw={500} mb="xs">
-                  Recent Deliveries
-                </Text>
-                <Table striped highlightOnHover>
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>Event</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                      <Table.Th>Time</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {selectedWebhook.deliveries.map((delivery) => (
-                      <Table.Tr key={delivery.id}>
-                        <Table.Td>{delivery.event}</Table.Td>
-                        <Table.Td>
-                          <Badge
-                            size="sm"
-                            color={
-                              delivery.statusCode >= 200 && delivery.statusCode < 300
-                                ? "green"
-                                : "red"
-                            }
-                          >
-                            {delivery.statusCode || "Failed"}
-                          </Badge>
-                        </Table.Td>
-                        <Table.Td>
-                          {new Date(delivery.deliveredAt).toLocaleString()}
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </div>
-            )}
-
-            <Group justify="flex-end" mt="md">
-              <Button variant="default" onClick={closeDetails}>
-                Close
-              </Button>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
-    </>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDetailsOpen(false)} className="text-xs">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

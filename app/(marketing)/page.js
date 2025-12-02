@@ -22,8 +22,7 @@ import {
   IconPhoto,
 } from "@tabler/icons-react";
 import Link from "next/link";
-import { HeroText } from "@/components/HeroText";
-import { HeroCTA, FeaturesGrid, FAQSection } from "./components";
+import { HeroText, HeroCTA, FeaturesGrid, FAQSection } from "./components";
 
 export const metadata = {
   title: "ClientFlow | Run Your Business. Power Your Website.",

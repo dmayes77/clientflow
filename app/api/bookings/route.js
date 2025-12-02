@@ -54,6 +54,13 @@ export async function GET(request) {
       include: {
         client: true,
         service: true,
+        package: {
+          include: {
+            services: {
+              include: { service: true },
+            },
+          },
+        },
         invoice: true,
       },
       orderBy: { scheduledAt: "desc" },

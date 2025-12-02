@@ -2,11 +2,12 @@
 
 import { Group, Text, Button, HoverCard, Anchor, Stack, Burger, Drawer, Divider, Box } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { SignInButton, SignUpButton, useUser, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
+// Dashboard URL - in production this will be the subdomain
+const DASHBOARD_URL = process.env.NEXT_PUBLIC_DASHBOARD_URL || "/dashboard";
+
 export function Navbar() {
-  const { isSignedIn, isLoaded } = useUser();
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
 
   return (
@@ -93,27 +94,14 @@ export function Navbar() {
           </Group>
         </Group>
 
-        {/* Desktop Auth Buttons */}
+        {/* Desktop Auth Buttons - Always static, links to dashboard */}
         <Group visibleFrom="sm">
-          {!isLoaded ? null : isSignedIn ? (
-            <>
-              <Link href="/dashboard">
-                <Button variant="subtle">Dashboard</Button>
-              </Link>
-              <UserButton />
-            </>
-          ) : (
-            <>
-              <SignInButton mode="modal">
-                <div>
-                  <Button variant="subtle">Sign In</Button>
-                </div>
-              </SignInButton>
-              <SignUpButton mode="redirect" forceRedirectUrl="/onboarding/create-org">
-                <Button>Get Started</Button>
-              </SignUpButton>
-            </>
-          )}
+          <Link href={`${DASHBOARD_URL}/sign-in`}>
+            <Button variant="subtle">Sign In</Button>
+          </Link>
+          <Link href={`${DASHBOARD_URL}/sign-up`}>
+            <Button>Get Started</Button>
+          </Link>
         </Group>
 
         {/* Mobile Hamburger */}
@@ -168,27 +156,14 @@ export function Navbar() {
           <Divider />
 
           <Box py="md">
-            {!isLoaded ? null : isSignedIn ? (
-              <Stack gap="md">
-                <Link href="/dashboard" onClick={closeDrawer}>
-                  <Button fullWidth variant="light">Dashboard</Button>
-                </Link>
-                <Group justify="center">
-                  <UserButton />
-                </Group>
-              </Stack>
-            ) : (
-              <Stack gap="md">
-                <SignInButton mode="modal">
-                  <div>
-                    <Button fullWidth variant="outline" onClick={closeDrawer}>Sign In</Button>
-                  </div>
-                </SignInButton>
-                <SignUpButton mode="redirect" forceRedirectUrl="/onboarding/create-org">
-                  <Button fullWidth onClick={closeDrawer}>Get Started</Button>
-                </SignUpButton>
-              </Stack>
-            )}
+            <Stack gap="md">
+              <Link href={`${DASHBOARD_URL}/sign-in`} onClick={closeDrawer}>
+                <Button fullWidth variant="outline">Sign In</Button>
+              </Link>
+              <Link href={`${DASHBOARD_URL}/sign-up`} onClick={closeDrawer}>
+                <Button fullWidth>Get Started</Button>
+              </Link>
+            </Stack>
           </Box>
         </Stack>
       </Drawer>

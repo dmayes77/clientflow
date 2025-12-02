@@ -18,6 +18,7 @@ import {
   NumberInput,
   Menu,
   ActionIcon,
+  SegmentedControl,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
@@ -45,9 +46,11 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
+  const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opened, { open, close }] = useDisclosure(false);
   const [editingBooking, setEditingBooking] = useState(null);
+  const [bookingType, setBookingType] = useState("service"); // "service" or "package"
   const router = useRouter();
 
   const form = useForm({
@@ -56,16 +59,18 @@ export default function BookingsPage() {
       clientEmail: "",
       clientPhone: "",
       serviceId: "",
-      date: new Date(),
+      packageId: "",
+      scheduledAt: new Date(),
       amount: "",
       notes: "",
-      status: "inquiry",
+      status: "booked",
     },
     validate: {
       clientName: (value) => (value.length < 2 ? "Name must be at least 2 characters" : null),
       clientEmail: (value) => (/^\S+@\S+$/.test(value) ? null : "Invalid email"),
-      serviceId: (value) => (!value ? "Please select a service" : null),
-      date: (value) => (!value ? "Please select a date" : null),
+      serviceId: (value, values) => (bookingType === "service" && !value ? "Please select a service" : null),
+      packageId: (value, values) => (bookingType === "package" && !value ? "Please select a package" : null),
+      scheduledAt: (value) => (!value ? "Please select a date" : null),
     },
   });
 
@@ -75,10 +80,11 @@ export default function BookingsPage() {
 
   const fetchData = async () => {
     try {
-      const [bookingsRes, clientsRes, servicesRes] = await Promise.all([
+      const [bookingsRes, clientsRes, servicesRes, packagesRes] = await Promise.all([
         fetch("/api/bookings"),
         fetch("/api/clients"),
         fetch("/api/services"),
+        fetch("/api/packages"),
       ]);
 
       if (bookingsRes.ok) {
@@ -92,6 +98,10 @@ export default function BookingsPage() {
       if (servicesRes.ok) {
         const servicesData = await servicesRes.json();
         setServices(servicesData);
+      }
+      if (packagesRes.ok) {
+        const packagesData = await packagesRes.json();
+        setPackages(packagesData);
       }
     } catch (error) {
       notifications.show({
@@ -109,13 +119,29 @@ export default function BookingsPage() {
       const url = editingBooking ? `/api/bookings/${editingBooking.id}` : "/api/bookings";
       const method = editingBooking ? "PATCH" : "POST";
 
+      const payload = {
+        clientName: values.clientName,
+        clientEmail: values.clientEmail,
+        clientPhone: values.clientPhone,
+        scheduledAt: values.scheduledAt,
+        notes: values.notes,
+        status: values.status,
+        amount: values.amount ? parseFloat(values.amount) : null,
+      };
+
+      // Add service or package based on booking type
+      if (bookingType === "service") {
+        payload.serviceId = values.serviceId;
+        payload.packageId = null;
+      } else {
+        payload.packageId = values.packageId;
+        payload.serviceId = null;
+      }
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...values,
-          amount: values.amount ? parseFloat(values.amount) : null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -175,13 +201,20 @@ export default function BookingsPage() {
 
   const handleEdit = (booking) => {
     setEditingBooking(booking);
+    // Determine if this is a service or package booking
+    if (booking.packageId) {
+      setBookingType("package");
+    } else {
+      setBookingType("service");
+    }
     form.setValues({
       clientName: booking.client?.name || "",
       clientEmail: booking.client?.email || "",
       clientPhone: booking.client?.phone || "",
       serviceId: booking.serviceId || "",
-      date: new Date(booking.date),
-      amount: booking.amount || "",
+      packageId: booking.packageId || "",
+      scheduledAt: new Date(booking.scheduledAt),
+      amount: booking.totalPrice || "",
       notes: booking.notes || "",
       status: booking.status,
     });
@@ -278,6 +311,7 @@ export default function BookingsPage() {
   const handleCloseModal = () => {
     close();
     setEditingBooking(null);
+    setBookingType("service");
     form.reset();
   };
 
@@ -331,15 +365,15 @@ export default function BookingsPage() {
                     <Text fw={500}>{booking.client?.name}</Text>
                     <Text size="xs" c="dimmed">{booking.client?.email}</Text>
                   </Table.Td>
-                  <Table.Td>{booking.service?.name}</Table.Td>
+                  <Table.Td>{booking.service?.name || booking.package?.name}</Table.Td>
                   <Table.Td>
-                    {new Date(booking.date).toLocaleDateString("en-US", {
+                    {new Date(booking.scheduledAt).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })}
                     <Text size="xs" c="dimmed">
-                      {new Date(booking.date).toLocaleTimeString("en-US", {
+                      {new Date(booking.scheduledAt).toLocaleTimeString("en-US", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -362,8 +396,8 @@ export default function BookingsPage() {
                     />
                   </Table.Td>
                   <Table.Td>
-                    {booking.amount ? (
-                      <Text fw={600} c="green">${booking.amount}</Text>
+                    {booking.totalPrice ? (
+                      <Text fw={600} c="green">${booking.totalPrice}</Text>
                     ) : (
                       <Text c="dimmed">-</Text>
                     )}
@@ -430,18 +464,40 @@ export default function BookingsPage() {
               placeholder="+1 (555) 123-4567"
               {...form.getInputProps("clientPhone")}
             />
-            <Select
-              label="Service"
-              placeholder="Select a service"
-              required
-              data={services.map((s) => ({ value: s.id, label: s.name }))}
-              {...form.getInputProps("serviceId")}
-            />
+            <div>
+              <Text size="sm" fw={500} mb="xs">Booking Type</Text>
+              <SegmentedControl
+                fullWidth
+                value={bookingType}
+                onChange={setBookingType}
+                data={[
+                  { label: "Service", value: "service" },
+                  { label: "Package", value: "package" },
+                ]}
+              />
+            </div>
+            {bookingType === "service" ? (
+              <Select
+                label="Service"
+                placeholder="Select a service"
+                required
+                data={services.map((s) => ({ value: s.id, label: `${s.name} - $${s.price}` }))}
+                {...form.getInputProps("serviceId")}
+              />
+            ) : (
+              <Select
+                label="Package"
+                placeholder="Select a package"
+                required
+                data={packages.map((p) => ({ value: p.id, label: `${p.name} - $${p.price / 100}` }))}
+                {...form.getInputProps("packageId")}
+              />
+            )}
             <DateTimePicker
               label="Date & Time"
               placeholder="Pick date and time"
               required
-              {...form.getInputProps("date")}
+              {...form.getInputProps("scheduledAt")}
             />
             <Select
               label="Status"

@@ -54,6 +54,7 @@ model Tenant {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
+  serviceCategories   ServiceCategory[]
   services            Service[]
   packages            Package[]
   clients             Client[]
@@ -66,28 +67,56 @@ model Tenant {
   images              Image[]
   videos              Video[]
   invoices            Invoice[]
+  tags                Tag[]
+  workflows           Workflow[]
 
   @@index([clerkOrgId])
 }
 
-model Service {
+model ServiceCategory {
   id          String    @id @default(cuid())
   tenantId    String
 
-  name        String
+  name        String    // e.g., "Ceramic Coating", "Paint Protection Film"
   description String?
-  duration    Int
-  price       Int
+  order       Int       @default(0) // For custom ordering
   active      Boolean   @default(true)
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  services    Service[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([order])
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  tenantId    String
+  categoryId  String?   // Optional category
+
+  name        String
+  description String?
+  duration    Int
+  price       Int
+  active      Boolean   @default(true)
+  order       Int       @default(0) // For custom ordering within category
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category    ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   bookings    Booking[]
   packageServices PackageService[]
+  interestedClients Client[] @relation("InterestedService")
 
   @@index([tenantId])
+  @@index([categoryId])
+  @@index([order])
 }
 
 model Package {
@@ -105,6 +134,7 @@ model Package {
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   services    PackageService[]
   bookings    Booking[]
+  interestedClients Client[] @relation("InterestedPackage")
 
   @@index([tenantId])
 }
@@ -129,15 +159,29 @@ model Client {
   phone     String?
   notes     String?
 
+  // Lead Management Fields
+  type                  String    @default("lead") // "lead" or "client"
+  leadStatus            String    @default("new") // new, contacted, quoted, won, lost
+  source                String?   // booking_form, api, manual, referral, etc.
+  interestedInServiceId String?   // Service they showed interest in
+  interestedInPackageId String?   // Package they showed interest in
+  convertedAt           DateTime? // When lead was converted to client
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bookings  Booking[]
-  invoices  Invoice[]
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings            Booking[]
+  invoices            Invoice[]
+  interestedInService Service?  @relation("InterestedService", fields: [interestedInServiceId], references: [id], onDelete: SetNull)
+  interestedInPackage Package?  @relation("InterestedPackage", fields: [interestedInPackageId], references: [id], onDelete: SetNull)
+  tags                ClientTag[]
+  workflowRuns        WorkflowRun[]
 
   @@index([tenantId])
   @@index([email])
+  @@index([type])
+  @@index([leadStatus])
 }
 
 model Booking {
@@ -407,6 +451,100 @@ model FeatureRequest {
   updatedAt   DateTime  @updatedAt
 
   @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================
+// Tags & Workflows System
+// ============================================
+
+model Tag {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String    // e.g., "hot-lead", "VIP", "follow-up"
+  color       String    @default("blue") // Mantine color name
+  description String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clients     ClientTag[]
+  workflows   Workflow[] // Workflows triggered by this tag
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model ClientTag {
+  id        String   @id @default(cuid())
+  clientId  String
+  tagId     String
+
+  addedAt   DateTime @default(now())
+  addedBy   String?  // User ID or "system" for automated tags
+
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, tagId])
+  @@index([clientId])
+  @@index([tagId])
+}
+
+model Workflow {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String    // e.g., "Hot Lead Follow-up"
+  description String?
+  active      Boolean   @default(true)
+
+  // Trigger configuration
+  triggerType String    // "tag_added", "tag_removed", "lead_created", "booking_created"
+  triggerTagId String?  // Tag that triggers this workflow (for tag_added/tag_removed)
+
+  // Actions stored as JSON array
+  // Each action: { type: "send_email" | "add_tag" | "remove_tag" | "update_status" | "send_notification" | "wait", config: {...} }
+  actions     Json
+
+  // Timing
+  delayMinutes Int      @default(0) // Delay before executing (0 = immediate)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  triggerTag  Tag?      @relation(fields: [triggerTagId], references: [id], onDelete: SetNull)
+  runs        WorkflowRun[]
+
+  @@index([tenantId])
+  @@index([triggerTagId])
+  @@index([active])
+}
+
+model WorkflowRun {
+  id          String    @id @default(cuid())
+  workflowId  String
+  clientId    String
+
+  status      String    @default("pending") // pending, running, completed, failed, cancelled
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String?
+
+  // Track which actions were executed
+  executedActions Json? // Array of { actionIndex, status, result, executedAt }
+
+  createdAt   DateTime  @default(now())
+
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([clientId])
   @@index([status])
   @@index([createdAt])
 }

@@ -1,28 +1,26 @@
 "use client";
 
-import {
-  Button,
-  Card,
-  Group,
-  Text,
-  Title,
-  Stack,
-  Badge,
-  Divider,
-  Alert,
-  Loader,
-  List,
-  ThemeIcon
-} from "@mantine/core";
-import {
-  IconCreditCard,
-  IconExternalLink,
-  IconInfoCircle,
-  IconCheck
-} from "@tabler/icons-react";
 import { useState, useEffect } from "react";
-import { notifications } from "@mantine/notifications";
 import { useAuth } from "@clerk/nextjs";
+import { notifications } from "@mantine/notifications";
+import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Badge,
+  Separator,
+} from "@/components/ui";
+import {
+  CreditCard,
+  ExternalLink,
+  Info,
+  Check,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 
 export default function BillingPage() {
   const { orgId } = useAuth();
@@ -33,14 +31,13 @@ export default function BillingPage() {
   const fetchTenant = async () => {
     try {
       const response = await fetch("/api/tenant", {
-        cache: 'no-store',
+        cache: "no-store",
         headers: {
-          'Cache-Control': 'no-cache'
-        }
+          "Cache-Control": "no-cache",
+        },
       });
       if (response.ok) {
         const data = await response.json();
-        console.log("📊 Fetched tenant data:", { planType: data.planType, subscriptionStatus: data.subscriptionStatus });
         setTenant(data);
       }
     } catch (error) {
@@ -80,15 +77,15 @@ export default function BillingPage() {
   const getStatusColor = (status) => {
     switch (status) {
       case "active":
-        return "green";
+        return "bg-green-100 text-green-700";
       case "trialing":
-        return "blue";
+        return "bg-blue-100 text-blue-700";
       case "past_due":
-        return "orange";
+        return "bg-amber-100 text-amber-700";
       case "canceled":
-        return "red";
+        return "bg-red-100 text-red-700";
       default:
-        return "gray";
+        return "bg-zinc-100 text-zinc-700";
     }
   };
 
@@ -121,133 +118,146 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <Stack align="center" justify="center" h={400}>
-        <Loader size="lg" />
-      </Stack>
+      <div className="flex flex-col items-center justify-center h-[400px] gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        <p className="text-xs text-zinc-500">Loading billing...</p>
+      </div>
     );
   }
 
   if (!tenant) {
     return (
-      <Alert icon={<IconInfoCircle />} title="No subscription found" color="blue">
-        You don't have an active subscription.
-      </Alert>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex gap-3">
+          <Info className="h-5 w-5 text-blue-600 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-blue-900">No subscription found</p>
+            <p className="text-xs text-blue-800 mt-1">
+              You don't have an active subscription.
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <Group justify="space-between" mb="xl">
-        <div>
-          <Title order={1}>Billing & Subscription</Title>
-          <Text size="sm" c="dimmed" mt="xs">
-            Manage your subscription, payment methods, and billing history
-          </Text>
-        </div>
-      </Group>
+    <div className="space-y-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-lg font-semibold text-zinc-900">Billing & Subscription</h1>
+        <p className="text-xs text-zinc-500 mt-0.5">
+          Manage your subscription, payment methods, and billing history
+        </p>
+      </div>
 
-      <Stack gap="lg">
-        {/* Current Plan Status */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Group justify="space-between">
+      {/* Current Plan Status */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
             <div>
-              <Text size="xs" c="dimmed" tt="uppercase" fw={700} mb={4}>
+              <p className="text-[0.625rem] font-medium text-zinc-500 uppercase tracking-wide mb-1">
                 Current Plan
-              </Text>
-              <Group gap="xs" align="center">
-                <Text size="xl" fw={700}>
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold text-zinc-900">
                   ClientFlow Professional
-                </Text>
-                <Badge color={getStatusColor(tenant.subscriptionStatus)} size="lg">
+                </span>
+                <Badge className={cn("text-[0.625rem]", getStatusColor(tenant.subscriptionStatus))}>
                   {getStatusLabel(tenant.subscriptionStatus)}
                 </Badge>
-              </Group>
+              </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <Text size="xs" c="dimmed" mb={4}>
-                Price
-              </Text>
-              <Text size="xl" fw={700}>
-                $149<Text span c="dimmed" size="sm">/month</Text>
-              </Text>
+            <div className="text-right">
+              <p className="text-[0.625rem] text-zinc-500 mb-1">Price</p>
+              <p className="text-base font-semibold text-zinc-900">
+                $149<span className="text-xs font-normal text-zinc-500">/month</span>
+              </p>
             </div>
-          </Group>
+          </div>
 
           {tenant.subscriptionStatus === "trialing" && (
             <>
-              <Divider my="md" />
-              <Alert icon={<IconInfoCircle />} color="blue" variant="light">
-                You're currently on a 14-day free trial. Your card will be charged when the trial ends.
-              </Alert>
+              <Separator className="my-4" />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex gap-2">
+                  <Info className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-800">
+                    You're currently on a 14-day free trial. Your card will be charged when the trial ends.
+                  </p>
+                </div>
+              </div>
             </>
           )}
-        </Card>
+        </CardContent>
+      </Card>
 
-        {/* Plan Features */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Text size="lg" fw={600} mb="md">
-            What's Included
-          </Text>
-          <List
-            spacing="sm"
-            size="sm"
-            center
-            icon={
-              <ThemeIcon color="blue" size={20} radius="xl">
-                <IconCheck size={12} />
-              </ThemeIcon>
-            }
-          >
+      {/* Plan Features */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold">What's Included</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {features.map((feature, index) => (
-              <List.Item key={index}>{feature}</List.Item>
+              <div key={index} className="flex items-center gap-2">
+                <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Check className="h-3 w-3 text-blue-600" />
+                </div>
+                <span className="text-xs text-zinc-600">{feature}</span>
+              </div>
             ))}
-          </List>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Billing Portal */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="mb-3">
+            <p className="text-xs font-medium text-zinc-900">Payment & Billing Management</p>
+            <p className="text-[0.625rem] text-zinc-500 mt-0.5">
+              Update your payment method, view billing history, download invoices, and manage your subscription
+            </p>
+          </div>
 
-        {/* Billing Portal */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Stack gap="md">
-            <div>
-              <Text size="sm" fw={600} mb={4}>
-                Payment & Billing Management
-              </Text>
-              <Text size="sm" c="dimmed">
-                Update your payment method, view billing history, download invoices, and manage your subscription
-              </Text>
-            </div>
-
-            <Button
-              leftSection={<IconCreditCard size={16} />}
-              rightSection={<IconExternalLink size={16} />}
-              onClick={openCustomerPortal}
-              loading={portalLoading}
-              variant="light"
-              fullWidth
-            >
-              Manage Payment Method & Invoices
-            </Button>
-          </Stack>
-        </Card>
-
-        {/* Additional Info */}
-        <Card shadow="sm" padding="lg" radius="md" withBorder>
-          <Text size="sm" fw={600} mb="sm">
-            Need to cancel?
-          </Text>
-          <Text size="sm" c="dimmed" mb="md">
-            You can cancel your subscription at any time from the billing portal. Your access will continue until the end of your current billing period.
-          </Text>
           <Button
-            variant="subtle"
-            color="red"
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
             onClick={openCustomerPortal}
-            loading={portalLoading}
+            disabled={portalLoading}
           >
+            {portalLoading ? (
+              <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+            )}
+            Manage Payment Method & Invoices
+            <ExternalLink className="h-3 w-3 ml-1.5" />
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Cancel Info */}
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-xs font-medium text-zinc-900 mb-1">Need to cancel?</p>
+          <p className="text-[0.625rem] text-zinc-500 mb-3">
+            You can cancel your subscription at any time from the billing portal. Your access will continue until the end of your current billing period.
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={openCustomerPortal}
+            disabled={portalLoading}
+          >
+            {portalLoading && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
             Go to Billing Portal
           </Button>
-        </Card>
-      </Stack>
-    </>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

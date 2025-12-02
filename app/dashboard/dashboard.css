@@ -1,0 +1,47 @@
+/**
+ * Dashboard-specific styles
+ * The enterprise theme is applied via the .enterprise-theme class on .dashboard-shell
+ * This file contains dashboard-specific overrides only
+ */
+
+/* Reset Mantine overrides for dashboard - use our compact sizing */
+.dashboard-shell p,
+.dashboard-shell .mantine-Text-root {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+.dashboard-shell h1,
+.dashboard-shell h2,
+.dashboard-shell h3,
+.dashboard-shell h4,
+.dashboard-shell h5,
+.dashboard-shell h6 {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Dashboard-specific scrollbar */
+.dashboard-shell ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dashboard-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-shell ::-webkit-scrollbar-thumb {
+  background: hsl(var(--et-border, 240 5.9% 90%));
+  border-radius: 3px;
+}
+
+.dashboard-shell ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--et-muted-foreground, 240 3.8% 46.1%) / 0.5);
+}
+
+/* Firefox scrollbar */
+.dashboard-shell {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--et-border, 240 5.9% 90%)) transparent;
+}

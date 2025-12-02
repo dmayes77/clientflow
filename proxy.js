@@ -78,6 +78,19 @@ export default clerkMiddleware(async (auth, req) => {
   const subdomain = getSubdomain(host)
   const pathname = req.nextUrl.pathname
 
+  // Redirect /dashboard/sign-in and /dashboard/sign-up to /sign-in and /sign-up
+  // This allows marketing site to link to /dashboard/sign-in while keeping auth pages outside DashboardShell
+  if (pathname.startsWith('/dashboard/sign-in')) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/sign-in'
+    return addSecurityHeaders(req, NextResponse.redirect(url))
+  }
+  if (pathname.startsWith('/dashboard/sign-up')) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/sign-up'
+    return addSecurityHeaders(req, NextResponse.redirect(url))
+  }
+
   // Allow API routes through (they handle their own auth)
   if (pathname.startsWith('/api/')) {
     if (!isPublicApiRoute(req)) {
