@@ -1,6 +1,6 @@
 {
   "name": "clientflow-saas",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "scripts": {
     "dev": "concurrently \"next dev --webpack\" \"prisma studio\"",
