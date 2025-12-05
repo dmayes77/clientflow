@@ -1,0 +1,533 @@
+/**
+ * ClientFlow Compact Enterprise Theme
+ * ====================================
+ * A dense, software-like UI theme optimized for dashboard interfaces.
+ *
+ * Usage:
+ * - Apply the `.enterprise-theme` class to any container to scope styles
+ * - Import this file in your layout: import "@/styles/enterprise-theme.css"
+ * - Use with Tailwind classes for components
+ *
+ * Design Principles:
+ * - Compact: Smaller fonts, tighter spacing for information density
+ * - Professional: Zinc-based neutral palette
+ * - Accessible: Proper contrast ratios, focus states
+ * - Consistent: Standardized sizing scales
+ */
+
+/* ============================================
+   CSS Custom Properties (Design Tokens)
+   ============================================ */
+
+.enterprise-theme,
+:root {
+  /* ===================
+     Color Palette
+     =================== */
+
+  /* Base Colors (HSL format for flexibility) */
+  --et-background: 240 5% 96%;
+  --et-foreground: 240 10% 3.9%;
+
+  /* Card/Surface Colors */
+  --et-card: 0 0% 100%;
+  --et-card-foreground: 240 10% 3.9%;
+
+  /* Popover/Dropdown Colors */
+  --et-popover: 0 0% 100%;
+  --et-popover-foreground: 240 10% 3.9%;
+
+  /* Primary Action Color */
+  --et-primary: 240 5.9% 10%;
+  --et-primary-foreground: 0 0% 98%;
+
+  /* Secondary/Subtle Color */
+  --et-secondary: 240 4.8% 95.9%;
+  --et-secondary-foreground: 240 5.9% 10%;
+
+  /* Muted/Disabled Color */
+  --et-muted: 240 4.8% 95.9%;
+  --et-muted-foreground: 240 3.8% 46.1%;
+
+  /* Accent/Highlight Color */
+  --et-accent: 240 4.8% 95.9%;
+  --et-accent-foreground: 240 5.9% 10%;
+
+  /* Destructive/Error Color */
+  --et-destructive: 0 84.2% 60.2%;
+  --et-destructive-foreground: 0 0% 98%;
+
+  /* Border/Divider Color */
+  --et-border: 240 5.9% 90%;
+
+  /* Input/Form Color */
+  --et-input: 240 5.9% 90%;
+
+  /* Focus Ring Color */
+  --et-ring: 240 5.9% 10%;
+
+  /* ===================
+     Semantic Colors
+     =================== */
+
+  /* Status Colors */
+  --et-success: 142 76% 36%;
+  --et-success-foreground: 0 0% 100%;
+  --et-warning: 38 92% 50%;
+  --et-warning-foreground: 0 0% 100%;
+  --et-error: 0 84% 60%;
+  --et-error-foreground: 0 0% 100%;
+  --et-info: 217 91% 60%;
+  --et-info-foreground: 0 0% 100%;
+
+  /* ===================
+     Typography Scale
+     =================== */
+
+  /* Font Families */
+  --et-font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --et-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Font Sizes - Compact Scale */
+  --et-text-2xs: 0.625rem;   /* 10px - tiny labels */
+  --et-text-xs: 0.6875rem;   /* 11px - small labels, badges */
+  --et-text-sm: 0.75rem;     /* 12px - body small, table cells */
+  --et-text-base: 0.8125rem; /* 13px - default body text */
+  --et-text-lg: 0.875rem;    /* 14px - emphasized text */
+  --et-text-xl: 1rem;        /* 16px - section headers */
+  --et-text-2xl: 1.125rem;   /* 18px - page titles */
+  --et-text-3xl: 1.25rem;    /* 20px - major headings */
+
+  /* Font Weights */
+  --et-font-normal: 400;
+  --et-font-medium: 500;
+  --et-font-semibold: 600;
+  --et-font-bold: 700;
+
+  /* Line Heights */
+  --et-leading-none: 1;
+  --et-leading-tight: 1.25;
+  --et-leading-snug: 1.375;
+  --et-leading-normal: 1.5;
+  --et-leading-relaxed: 1.625;
+
+  /* ===================
+     Spacing Scale
+     =================== */
+
+  --et-space-0: 0;
+  --et-space-px: 1px;
+  --et-space-2xs: 0.125rem;    /* 2px */
+  --et-space-xs: 0.25rem;      /* 4px */
+  --et-space-sm: 0.5rem;       /* 8px */
+  --et-space-md: 0.75rem;      /* 12px */
+  --et-space-lg: 1rem;         /* 16px */
+  --et-space-xl: 1.25rem;      /* 20px */
+  --et-space-2xl: 1.5rem;      /* 24px */
+  --et-space-3xl: 2rem;        /* 32px */
+  --et-space-4xl: 2.5rem;      /* 40px */
+  --et-space-5xl: 3rem;        /* 48px */
+
+  /* ===================
+     Border Radius
+     =================== */
+
+  --et-radius-none: 0;
+  --et-radius-sm: 0.25rem;   /* 4px */
+  --et-radius-md: 0.375rem;  /* 6px - default */
+  --et-radius-lg: 0.5rem;    /* 8px */
+  --et-radius-xl: 0.75rem;   /* 12px */
+  --et-radius-full: 9999px;
+
+  /* Default radius */
+  --radius: var(--et-radius-md);
+
+  /* ===================
+     Component Sizes
+     =================== */
+
+  /* Input/Button Heights */
+  --et-height-xs: 1.5rem;    /* 24px */
+  --et-height-sm: 1.75rem;   /* 28px */
+  --et-height-md: 2rem;      /* 32px - default */
+  --et-height-lg: 2.25rem;   /* 36px */
+  --et-height-xl: 2.5rem;    /* 40px */
+
+  /* Icon Sizes */
+  --et-icon-xs: 0.75rem;     /* 12px */
+  --et-icon-sm: 0.875rem;    /* 14px */
+  --et-icon-md: 1rem;        /* 16px */
+  --et-icon-lg: 1.25rem;     /* 20px */
+  --et-icon-xl: 1.5rem;      /* 24px */
+
+  /* ===================
+     Shadows
+     =================== */
+
+  --et-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --et-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --et-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* ===================
+     Transitions
+     =================== */
+
+  --et-transition-fast: 150ms;
+  --et-transition-normal: 200ms;
+  --et-transition-slow: 300ms;
+  --et-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   Dark Mode Variables
+   ============================================ */
+
+.enterprise-theme.dark,
+.dark .enterprise-theme {
+  --et-background: 240 10% 3.9%;
+  --et-foreground: 0 0% 98%;
+  --et-card: 240 10% 3.9%;
+  --et-card-foreground: 0 0% 98%;
+  --et-popover: 240 10% 3.9%;
+  --et-popover-foreground: 0 0% 98%;
+  --et-primary: 0 0% 98%;
+  --et-primary-foreground: 240 5.9% 10%;
+  --et-secondary: 240 3.7% 15.9%;
+  --et-secondary-foreground: 0 0% 98%;
+  --et-muted: 240 3.7% 15.9%;
+  --et-muted-foreground: 240 5% 64.9%;
+  --et-accent: 240 3.7% 15.9%;
+  --et-accent-foreground: 0 0% 98%;
+  --et-destructive: 0 62.8% 30.6%;
+  --et-destructive-foreground: 0 0% 98%;
+  --et-border: 240 3.7% 15.9%;
+  --et-input: 240 3.7% 15.9%;
+  --et-ring: 240 4.9% 83.9%;
+}
+
+/* ============================================
+   Base Styles (Applied to .enterprise-theme)
+   ============================================ */
+
+.enterprise-theme {
+  font-family: var(--et-font-sans);
+  font-size: var(--et-text-base);
+  line-height: var(--et-leading-normal);
+  color: hsl(var(--et-foreground));
+  background-color: hsl(var(--et-background));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reset Mantine overrides within enterprise theme */
+.enterprise-theme p,
+.enterprise-theme .mantine-Text-root {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+.enterprise-theme h1,
+.enterprise-theme h2,
+.enterprise-theme h3,
+.enterprise-theme h4,
+.enterprise-theme h5,
+.enterprise-theme h6 {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+
+.enterprise-theme h1 {
+  font-size: var(--et-text-3xl) !important;
+  font-weight: var(--et-font-semibold);
+  line-height: var(--et-leading-tight) !important;
+  letter-spacing: -0.025em;
+}
+
+.enterprise-theme h2 {
+  font-size: var(--et-text-2xl) !important;
+  font-weight: var(--et-font-semibold);
+  line-height: var(--et-leading-tight) !important;
+  letter-spacing: -0.02em;
+}
+
+.enterprise-theme h3 {
+  font-size: var(--et-text-xl) !important;
+  font-weight: var(--et-font-semibold);
+  line-height: var(--et-leading-snug) !important;
+}
+
+.enterprise-theme h4 {
+  font-size: var(--et-text-lg) !important;
+  font-weight: var(--et-font-semibold);
+  line-height: var(--et-leading-snug) !important;
+}
+
+.enterprise-theme h5,
+.enterprise-theme h6 {
+  font-size: var(--et-text-base) !important;
+  font-weight: var(--et-font-semibold);
+  line-height: var(--et-leading-normal) !important;
+}
+
+.enterprise-theme p {
+  font-size: var(--et-text-base);
+  line-height: var(--et-leading-relaxed);
+}
+
+.enterprise-theme small {
+  font-size: var(--et-text-xs);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* Text Sizes */
+.enterprise-theme .et-text-2xs { font-size: var(--et-text-2xs); }
+.enterprise-theme .et-text-xs { font-size: var(--et-text-xs); }
+.enterprise-theme .et-text-sm { font-size: var(--et-text-sm); }
+.enterprise-theme .et-text-base { font-size: var(--et-text-base); }
+.enterprise-theme .et-text-lg { font-size: var(--et-text-lg); }
+.enterprise-theme .et-text-xl { font-size: var(--et-text-xl); }
+
+/* Text Colors */
+.enterprise-theme .et-text-muted { color: hsl(var(--et-muted-foreground)); }
+.enterprise-theme .et-text-primary { color: hsl(var(--et-primary)); }
+.enterprise-theme .et-text-success { color: hsl(var(--et-success)); }
+.enterprise-theme .et-text-warning { color: hsl(var(--et-warning)); }
+.enterprise-theme .et-text-error { color: hsl(var(--et-error)); }
+
+/* Background Colors */
+.enterprise-theme .et-bg-muted { background-color: hsl(var(--et-muted)); }
+.enterprise-theme .et-bg-card { background-color: hsl(var(--et-card)); }
+.enterprise-theme .et-bg-success { background-color: hsl(var(--et-success) / 0.1); }
+.enterprise-theme .et-bg-warning { background-color: hsl(var(--et-warning) / 0.1); }
+.enterprise-theme .et-bg-error { background-color: hsl(var(--et-error) / 0.1); }
+.enterprise-theme .et-bg-info { background-color: hsl(var(--et-info) / 0.1); }
+
+/* ============================================
+   Purpose-Driven Button Variants
+   ============================================ */
+
+/* Success Button - for add/create actions */
+.enterprise-theme .btn-success,
+.enterprise-theme button.btn-success {
+  background-color: hsl(var(--et-success)) !important;
+  color: hsl(var(--et-success-foreground)) !important;
+  border-color: hsl(var(--et-success)) !important;
+}
+.enterprise-theme .btn-success:hover,
+.enterprise-theme button.btn-success:hover {
+  background-color: hsl(142 76% 30%) !important;
+}
+
+/* Info Button - for functional/active states */
+.enterprise-theme .btn-info,
+.enterprise-theme button.btn-info {
+  background-color: hsl(var(--et-info)) !important;
+  color: hsl(var(--et-info-foreground)) !important;
+  border-color: hsl(var(--et-info)) !important;
+}
+.enterprise-theme .btn-info:hover,
+.enterprise-theme button.btn-info:hover {
+  background-color: hsl(217 91% 50%) !important;
+}
+
+/* Warning Button - for caution actions */
+.enterprise-theme .btn-warning,
+.enterprise-theme button.btn-warning {
+  background-color: hsl(var(--et-warning)) !important;
+  color: hsl(var(--et-warning-foreground)) !important;
+  border-color: hsl(var(--et-warning)) !important;
+}
+.enterprise-theme .btn-warning:hover,
+.enterprise-theme button.btn-warning:hover {
+  background-color: hsl(38 92% 45%) !important;
+}
+
+/* Error/Destructive Button - for delete/remove actions */
+.enterprise-theme .btn-error,
+.enterprise-theme button.btn-error {
+  background-color: hsl(var(--et-error)) !important;
+  color: hsl(var(--et-error-foreground)) !important;
+  border-color: hsl(var(--et-error)) !important;
+}
+.enterprise-theme .btn-error:hover,
+.enterprise-theme button.btn-error:hover {
+  background-color: hsl(0 84% 50%) !important;
+}
+
+/* Outline variants */
+.enterprise-theme .btn-success-outline {
+  border: 1px solid hsl(var(--et-success));
+  color: hsl(var(--et-success));
+  background-color: transparent;
+}
+.enterprise-theme .btn-success-outline:hover {
+  background-color: hsl(var(--et-success) / 0.1);
+}
+
+.enterprise-theme .btn-info-outline {
+  border: 1px solid hsl(var(--et-info));
+  color: hsl(var(--et-info));
+  background-color: transparent;
+}
+.enterprise-theme .btn-info-outline:hover {
+  background-color: hsl(var(--et-info) / 0.1);
+}
+
+.enterprise-theme .btn-warning-outline {
+  border: 1px solid hsl(var(--et-warning));
+  color: hsl(var(--et-warning));
+  background-color: transparent;
+}
+.enterprise-theme .btn-warning-outline:hover {
+  background-color: hsl(var(--et-warning) / 0.1);
+}
+
+.enterprise-theme .btn-error-outline {
+  border: 1px solid hsl(var(--et-error));
+  color: hsl(var(--et-error));
+  background-color: transparent;
+}
+.enterprise-theme .btn-error-outline:hover {
+  background-color: hsl(var(--et-error) / 0.1);
+}
+
+/* Active state for tabs/toggles using info color */
+.enterprise-theme .tab-active {
+  background-color: hsl(var(--et-info));
+  color: hsl(var(--et-info-foreground));
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+
+.enterprise-theme ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.enterprise-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.enterprise-theme ::-webkit-scrollbar-thumb {
+  background: hsl(var(--et-border));
+  border-radius: 3px;
+}
+
+.enterprise-theme ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--et-muted-foreground) / 0.5);
+}
+
+/* Firefox scrollbar */
+.enterprise-theme {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--et-border)) transparent;
+}
+
+/* ============================================
+   Focus States
+   ============================================ */
+
+.enterprise-theme *:focus-visible {
+  outline: 2px solid hsl(var(--et-ring));
+  outline-offset: 2px;
+}
+
+.enterprise-theme button:focus-visible,
+.enterprise-theme [role="button"]:focus-visible {
+  outline: 2px solid hsl(var(--et-ring));
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes et-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes et-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes et-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes et-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.enterprise-theme .et-animate-fade-in {
+  animation: et-fade-in var(--et-transition-normal) var(--et-easing);
+}
+
+.enterprise-theme .et-animate-slide-up {
+  animation: et-slide-up var(--et-transition-normal) var(--et-easing);
+}
+
+.enterprise-theme .et-animate-slide-down {
+  animation: et-slide-down var(--et-transition-normal) var(--et-easing);
+}
+
+.enterprise-theme .et-animate-scale-in {
+  animation: et-scale-in var(--et-transition-normal) var(--et-easing);
+}
+
+/* ============================================
+   Component Overrides for shadcn/ui
+   ============================================ */
+
+/* Map CSS variables to shadcn expected names */
+.enterprise-theme {
+  --background: hsl(var(--et-background));
+  --foreground: hsl(var(--et-foreground));
+  --card: hsl(var(--et-card));
+  --card-foreground: hsl(var(--et-card-foreground));
+  --popover: hsl(var(--et-popover));
+  --popover-foreground: hsl(var(--et-popover-foreground));
+  --primary: hsl(var(--et-primary));
+  --primary-foreground: hsl(var(--et-primary-foreground));
+  --secondary: hsl(var(--et-secondary));
+  --secondary-foreground: hsl(var(--et-secondary-foreground));
+  --muted: hsl(var(--et-muted));
+  --muted-foreground: hsl(var(--et-muted-foreground));
+  --accent: hsl(var(--et-accent));
+  --accent-foreground: hsl(var(--et-accent-foreground));
+  --destructive: hsl(var(--et-destructive));
+  --destructive-foreground: hsl(var(--et-destructive-foreground));
+  --border: hsl(var(--et-border));
+  --input: hsl(var(--et-input));
+  --ring: hsl(var(--et-ring));
+}
