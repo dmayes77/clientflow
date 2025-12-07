@@ -29,7 +29,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Users, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Phone, Calendar, Search } from "lucide-react";
+import { Users, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Phone, Calendar, Search, Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const initialFormState = {
   name: "",
@@ -39,6 +40,7 @@ const initialFormState = {
 };
 
 export function ContactsList() {
+  const router = useRouter();
   const [clients, setClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -284,6 +286,10 @@ export function ContactsList() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/contacts/${client.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleOpenDialog(client)}>
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit

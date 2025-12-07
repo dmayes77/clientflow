@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { updateClientSchema, validateRequest } from "@/lib/validations";
 
-// GET /api/clients/[id] - Get a single client with bookings
+// GET /api/clients/[id] - Get a single client with bookings and stats
 export async function GET(request, { params }) {
   try {
     const { tenant, error, status } = await getAuthenticatedTenant(request);
@@ -22,8 +22,8 @@ export async function GET(request, { params }) {
       include: {
         bookings: {
           include: {
-            service: true,
-            package: true,
+            service: { select: { name: true } },
+            package: { select: { name: true } },
           },
           orderBy: { scheduledAt: "desc" },
         },
@@ -37,7 +37,25 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    return NextResponse.json(client);
+    // Calculate stats
+    const now = new Date();
+    const totalBookings = client.bookings.length;
+    const completedBookings = client.bookings.filter((b) => b.status === "completed").length;
+    const upcomingBookings = client.bookings.filter(
+      (b) => new Date(b.scheduledAt) > now && !["completed", "cancelled"].includes(b.status)
+    ).length;
+    const totalSpent = client.bookings
+      .filter((b) => b.paymentStatus === "paid")
+      .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+
+    const stats = {
+      totalBookings,
+      completedBookings,
+      upcomingBookings,
+      totalSpent,
+    };
+
+    return NextResponse.json({ client, stats });
   } catch (error) {
     console.error("Error fetching client:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
