@@ -322,25 +322,25 @@ export function InvoicesList() {
         <Card>
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
-            <p className="et-text-xs text-muted-foreground">Total Collected</p>
+            <p className="et-caption text-muted-foreground">Total Collected</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold">{formatPrice(stats.outstandingAmount)}</div>
-            <p className="et-text-xs text-muted-foreground">Outstanding</p>
+            <p className="et-caption text-muted-foreground">Outstanding</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold">{stats.paid}</div>
-            <p className="et-text-xs text-muted-foreground">Paid Invoices</p>
+            <p className="et-caption text-muted-foreground">Paid Invoices</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold text-red-600">{stats.overdue}</div>
-            <p className="et-text-xs text-muted-foreground">Overdue</p>
+            <p className="et-caption text-muted-foreground">Overdue</p>
           </CardContent>
         </Card>
       </div>
@@ -348,11 +348,11 @@ export function InvoicesList() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 et-text-lg">
+            <CardTitle className="flex items-center gap-2 et-h4">
               <DollarSign className="h-5 w-5 text-green-500" />
               Invoices
             </CardTitle>
-            <p className="et-text-sm text-muted-foreground mt-1">
+            <p className="et-small text-muted-foreground mt-1">
               {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -368,7 +368,7 @@ export function InvoicesList() {
                 <FileText className="h-6 w-6 text-green-600" />
               </div>
               <h3 className="font-medium text-zinc-900 mb-1">No invoices yet</h3>
-              <p className="et-text-sm text-muted-foreground mb-4">
+              <p className="et-small text-muted-foreground mb-4">
                 Create your first invoice to track payments
               </p>
               <Button size="sm" onClick={() => handleOpenDialog()}>
@@ -400,7 +400,7 @@ export function InvoicesList() {
                         <TableCell className="hidden sm:table-cell">
                           <div>
                             <p className="font-medium">{invoice.clientName}</p>
-                            <p className="et-text-sm text-muted-foreground">{invoice.clientEmail}</p>
+                            <p className="et-small text-muted-foreground">{invoice.clientEmail}</p>
                           </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
@@ -610,11 +610,11 @@ export function InvoicesList() {
               {/* Totals */}
               <div className="flex justify-end">
                 <div className="w-[250px] space-y-2">
-                  <div className="flex justify-between et-text-sm">
+                  <div className="flex justify-between et-small">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center justify-between et-text-sm">
+                  <div className="flex items-center justify-between et-small">
                     <span className="text-muted-foreground">Tax Rate (%)</span>
                     <Input
                       type="number"
@@ -626,7 +626,7 @@ export function InvoicesList() {
                       onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) || 0 })}
                     />
                   </div>
-                  <div className="flex justify-between et-text-sm">
+                  <div className="flex justify-between et-small">
                     <span className="text-muted-foreground">Tax Amount</span>
                     <span>${taxAmount.toFixed(2)}</span>
                   </div>

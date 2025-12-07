@@ -407,10 +407,10 @@ export default function APIReferencePage() {
           <Badge variant="outline" className="et-text-2xs px-1.5 py-0">Reference</Badge>
           <Badge variant="outline" className="et-text-2xs px-1.5 py-0 font-mono">v1</Badge>
         </div>
-        <h1 className="et-text-xl font-semibold text-zinc-900 mb-2">
+        <h1 className="et-h3 font-semibold text-zinc-900 mb-2">
           REST API Reference
         </h1>
-        <p className="et-text-sm text-zinc-500 mb-3">
+        <p className="et-small text-zinc-500 mb-3">
           Build custom booking experiences with full programmatic access to your data.
         </p>
         <div className="flex flex-wrap gap-3 et-text-2xs">
@@ -437,7 +437,7 @@ export default function APIReferencePage() {
             <a
               key={item.id}
               href={`#${item.id}`}
-              className="px-2 py-1 et-text-xs text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded transition-colors"
+              className="px-2 py-1 et-caption text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded transition-colors"
             >
               {item.label}
             </a>
@@ -447,28 +447,28 @@ export default function APIReferencePage() {
 
       {/* Base URL */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-2">Base URL</h2>
-        <div className="p-2.5 bg-zinc-900 rounded font-mono et-text-xs">
+        <h2 className="et-body font-semibold text-zinc-900 mb-2">Base URL</h2>
+        <div className="p-2.5 bg-zinc-900 rounded font-mono et-caption">
           <span className="text-emerald-400">{baseUrl}</span>
         </div>
       </section>
 
       {/* Authentication Section */}
       <section id="authentication" className="scroll-mt-20">
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-2">Authentication</h2>
-        <p className="et-text-sm text-zinc-500 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-2">Authentication</h2>
+        <p className="et-small text-zinc-500 mb-3">
           All API requests require two headers for authentication:
         </p>
 
         <div className="border rounded divide-y mb-3">
           <div className="flex items-center gap-2 p-2.5">
             <code className="et-text-2xs font-mono bg-zinc-100 px-1.5 py-0.5 rounded font-medium">X-API-Key</code>
-            <span className="et-text-xs text-zinc-500">Your secret API key</span>
+            <span className="et-caption text-zinc-500">Your secret API key</span>
             <Badge variant="outline" className="ml-auto et-text-2xs h-4 px-1">required</Badge>
           </div>
           <div className="flex items-center gap-2 p-2.5">
             <code className="et-text-2xs font-mono bg-zinc-100 px-1.5 py-0.5 rounded font-medium">X-Tenant-ID</code>
-            <span className="et-text-xs text-zinc-500">Your tenant identifier</span>
+            <span className="et-caption text-zinc-500">Your tenant identifier</span>
             <Badge variant="outline" className="ml-auto et-text-2xs h-4 px-1">required</Badge>
           </div>
         </div>
@@ -530,8 +530,8 @@ export default function APIReferencePage() {
 
       {/* Error Handling */}
       <section id="errors" className="scroll-mt-20">
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-2">Errors</h2>
-        <p className="et-text-sm text-zinc-500 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-2">Errors</h2>
+        <p className="et-small text-zinc-500 mb-3">
           Standard HTTP status codes with JSON error details.
         </p>
 
@@ -556,7 +556,7 @@ export default function APIReferencePage() {
               }`}>
                 {item.code}
               </code>
-              <span className="et-text-xs font-medium text-zinc-700 w-28">{item.status}</span>
+              <span className="et-caption font-medium text-zinc-700 w-28">{item.status}</span>
               <span className="et-text-2xs text-zinc-400">{item.desc}</span>
             </div>
           ))}
@@ -576,14 +576,14 @@ export default function APIReferencePage() {
 
       {/* Rate Limits */}
       <section id="rate-limits" className="scroll-mt-20">
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-2">Rate Limits</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-2">Rate Limits</h2>
         <div className="border rounded divide-y">
           <div className="flex items-center justify-between p-2.5">
-            <span className="et-text-xs text-zinc-700">Request Limit</span>
-            <span className="et-text-xs text-zinc-400">1,000 / minute</span>
+            <span className="et-caption text-zinc-700">Request Limit</span>
+            <span className="et-caption text-zinc-400">1,000 / minute</span>
           </div>
           <div className="flex items-center justify-between p-2.5">
-            <span className="et-text-xs text-zinc-700">Header</span>
+            <span className="et-caption text-zinc-700">Header</span>
             <code className="et-text-2xs font-mono bg-zinc-100 px-1.5 py-0.5 rounded">X-RateLimit-Remaining</code>
           </div>
         </div>
@@ -594,13 +594,13 @@ export default function APIReferencePage() {
         <div className="border rounded p-4 bg-zinc-50">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="et-text-sm font-semibold text-zinc-900 mb-1">Ready to integrate?</h3>
-              <p className="et-text-xs text-zinc-500">
+              <h3 className="et-small font-semibold text-zinc-900 mb-1">Ready to integrate?</h3>
+              <p className="et-caption text-zinc-500">
                 Start your free trial and get API credentials.
               </p>
             </div>
             <Link href="/pricing">
-              <Button size="sm" className="h-8 et-text-xs">
+              <Button size="sm" className="h-8 et-caption">
                 Get API Access
                 <ArrowRight className="w-3 h-3 ml-1" />
               </Button>

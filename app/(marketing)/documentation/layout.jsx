@@ -44,7 +44,7 @@ export default function DocumentationLayout({ children }) {
           <div className="flex items-center h-12">
             <div className="flex items-center gap-2">
               <Book className="w-4 h-4 text-zinc-900" />
-              <Link href="/documentation" className="font-semibold text-zinc-900 et-text-sm hover:text-primary">
+              <Link href="/documentation" className="font-semibold text-zinc-900 et-small hover:text-primary">
                 Documentation
               </Link>
             </div>
@@ -53,7 +53,7 @@ export default function DocumentationLayout({ children }) {
             {!isDocsHome && (
               <div className="flex items-center gap-1 ml-2 text-zinc-400">
                 <ChevronRight className="w-3 h-3" />
-                <span className="et-text-xs text-zinc-600">
+                <span className="et-caption text-zinc-600">
                   {navItems.find(item => pathname.startsWith(item.href))?.title || ""}
                 </span>
               </div>
@@ -70,7 +70,7 @@ export default function DocumentationLayout({ children }) {
               {/* Home link */}
               <Link
                 href="/documentation"
-                className={`flex items-center gap-2 px-3 py-2 et-text-xs rounded transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 et-caption rounded transition-colors ${
                   isDocsHome
                     ? "bg-zinc-100 text-zinc-900 font-medium"
                     : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
@@ -91,7 +91,7 @@ export default function DocumentationLayout({ children }) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-2 px-3 py-2 et-text-xs rounded transition-colors ${
+                      className={`flex items-center gap-2 px-3 py-2 et-caption rounded transition-colors ${
                         isActive
                           ? "bg-zinc-100 text-zinc-900 font-medium"
                           : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
@@ -110,7 +110,7 @@ export default function DocumentationLayout({ children }) {
                 </p>
                 <Link
                   href="/support"
-                  className="flex items-center gap-2 px-3 py-2 et-text-xs text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 et-caption text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded transition-colors"
                 >
                   Get Help
                 </Link>
@@ -123,7 +123,7 @@ export default function DocumentationLayout({ children }) {
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/documentation"
-                className={`flex items-center gap-1.5 px-3 py-1.5 et-text-xs rounded-full border transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 et-caption rounded-full border transition-colors ${
                   isDocsHome
                     ? "bg-zinc-900 text-white border-zinc-900"
                     : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-400"
@@ -139,7 +139,7 @@ export default function DocumentationLayout({ children }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 et-text-xs rounded-full border transition-colors ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 et-caption rounded-full border transition-colors ${
                       isActive
                         ? "bg-zinc-900 text-white border-zinc-900"
                         : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-400"

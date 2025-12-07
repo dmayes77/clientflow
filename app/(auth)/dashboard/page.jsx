@@ -194,7 +194,7 @@ export default function DashboardPage() {
       <div className="flex h-[500px] items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
-          <span className="et-text-xs text-zinc-500">Loading analytics...</span>
+          <span className="et-caption text-zinc-500">Loading analytics...</span>
         </div>
       </div>
     );
@@ -217,8 +217,8 @@ export default function DashboardPage() {
       {/* Page Header with Quick Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="et-text-lg font-semibold text-zinc-900">Overview</h1>
-          <p className="et-text-xs text-zinc-500">Welcome back! Here's what's happening with your business.</p>
+          <h1 className="et-h4 font-semibold text-zinc-900">Overview</h1>
+          <p className="et-caption text-zinc-500">Welcome back! Here's what's happening with your business.</p>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="success" onClick={() => router.push("/dashboard/calendar")}>
@@ -329,7 +329,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500" />
-            <CardTitle className="et-text-sm font-medium">Revenue Trend (30 Days)</CardTitle>
+            <CardTitle className="et-small font-medium">Revenue Trend (30 Days)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[240px]">
@@ -370,7 +370,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-blue-500" />
-            <CardTitle className="et-text-sm font-medium">Booking Status</CardTitle>
+            <CardTitle className="et-small font-medium">Booking Status</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[200px]">
@@ -423,7 +423,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-indigo-500" />
-            <CardTitle className="et-text-sm font-medium">Weekly Activity</CardTitle>
+            <CardTitle className="et-small font-medium">Weekly Activity</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[200px]">
@@ -451,12 +451,12 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-amber-500" />
-            <CardTitle className="et-text-sm font-medium">Top Services</CardTitle>
+            <CardTitle className="et-small font-medium">Top Services</CardTitle>
           </CardHeader>
           <CardContent>
             {topServices.length === 0 ? (
               <div className="flex h-[200px] items-center justify-center">
-                <p className="et-text-xs text-zinc-400">No booking data yet</p>
+                <p className="et-caption text-zinc-400">No booking data yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -464,7 +464,7 @@ export default function DashboardPage() {
                   <div key={service.name} className="flex items-center gap-3">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-100 text-[0.625rem] font-bold text-amber-600">{index + 1}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="et-text-xs font-medium text-zinc-900 truncate">{service.name}</p>
+                      <p className="et-caption font-medium text-zinc-900 truncate">{service.name}</p>
                       <div className="mt-1 h-1.5 rounded-full bg-amber-100 overflow-hidden">
                         <div
                           className="h-full bg-amber-500 rounded-full"
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                         />
                       </div>
                     </div>
-                    <span className="et-text-xs font-semibold text-amber-600">{service.bookings}</span>
+                    <span className="et-caption font-semibold text-amber-600">{service.bookings}</span>
                   </div>
                 ))}
               </div>
@@ -490,7 +490,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-blue-500" />
-              <CardTitle className="et-text-sm font-medium">Upcoming Bookings</CardTitle>
+              <CardTitle className="et-small font-medium">Upcoming Bookings</CardTitle>
             </div>
             <Button
               variant="ghost"
@@ -508,7 +508,7 @@ export default function DashboardPage() {
                 <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
                   <Calendar className="h-6 w-6 text-blue-400" />
                 </div>
-                <p className="et-text-xs text-zinc-400">No upcoming bookings</p>
+                <p className="et-caption text-zinc-400">No upcoming bookings</p>
                 <Button size="sm" className="mt-2 bg-blue-500 hover:bg-blue-600" onClick={() => router.push("/dashboard/calendar")}>
                   Create Booking
                 </Button>
@@ -528,11 +528,11 @@ export default function DashboardPage() {
                       <Clock className="h-4 w-4 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="et-text-xs font-medium text-zinc-900 truncate">{booking.client?.name}</p>
+                      <p className="et-caption font-medium text-zinc-900 truncate">{booking.client?.name}</p>
                       <p className="text-[0.625rem] text-zinc-500">{booking.service?.name || booking.package?.name}</p>
                     </div>
                     <div className="text-right">
-                      <p className="et-text-xs font-medium text-zinc-900">{format(parseISO(booking.scheduledAt), "MMM d")}</p>
+                      <p className="et-caption font-medium text-zinc-900">{format(parseISO(booking.scheduledAt), "MMM d")}</p>
                       <p className="text-[0.625rem] text-zinc-500">{format(parseISO(booking.scheduledAt), "h:mm a")}</p>
                     </div>
                   </div>
@@ -547,7 +547,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-violet-500" />
-              <CardTitle className="et-text-sm font-medium">Recent Contacts</CardTitle>
+              <CardTitle className="et-small font-medium">Recent Contacts</CardTitle>
             </div>
             <Button
               variant="ghost"
@@ -565,7 +565,7 @@ export default function DashboardPage() {
                 <div className="h-12 w-12 rounded-full bg-violet-50 flex items-center justify-center">
                   <Users className="h-6 w-6 text-violet-400" />
                 </div>
-                <p className="et-text-xs text-zinc-400">No contacts yet</p>
+                <p className="et-caption text-zinc-400">No contacts yet</p>
                 <Button size="sm" className="mt-2 bg-violet-500 hover:bg-violet-600" onClick={() => router.push("/dashboard/contacts")}>
                   Add Contact
                 </Button>
@@ -582,7 +582,7 @@ export default function DashboardPage() {
                       {client.name?.charAt(0)?.toUpperCase() || "?"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="et-text-xs font-medium text-zinc-900 truncate">{client.name}</p>
+                      <p className="et-caption font-medium text-zinc-900 truncate">{client.name}</p>
                       <p className="text-[0.625rem] text-zinc-500 truncate">{client.email}</p>
                     </div>
                     <Badge

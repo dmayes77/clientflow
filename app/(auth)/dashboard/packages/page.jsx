@@ -10,7 +10,7 @@ export default function PackagesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Packages</h1>
-        <p className="et-text-sm text-muted-foreground">Bundle services into packages for your clients</p>
+        <p className="et-small text-muted-foreground">Bundle services into packages for your clients</p>
       </div>
       <PackagesList />
     </div>

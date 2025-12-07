@@ -389,11 +389,11 @@ export function PackagesList() {
       <Card className="py-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 et-text-lg">
+            <CardTitle className="flex items-center gap-2 et-h4">
               <Package className="h-5 w-5 text-amber-500" />
               Packages
             </CardTitle>
-            <p className="et-text-sm text-muted-foreground mt-1">
+            <p className="et-small text-muted-foreground mt-1">
               {packages.length} package{packages.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -413,12 +413,12 @@ export function PackagesList() {
                 <Package className="h-6 w-6 text-amber-600" />
               </div>
               <h3 className="font-medium text-zinc-900 mb-1">Create services first</h3>
-              <p className="et-text-sm text-muted-foreground mb-4 max-w-sm">
+              <p className="et-small text-muted-foreground mb-4 max-w-sm">
                 Packages are bundles of services sold at a discount. Switch to the Services tab to create individual services, then return here to bundle them into packages.
               </p>
               <Alert className="max-w-md text-left">
                 <Lightbulb className="h-4 w-4" />
-                <AlertDescription className="et-text-xs">
+                <AlertDescription className="et-caption">
                   <strong>How it works:</strong> Create services like "Consultation", "Photo Session", or "Follow-up" first. Then combine them here with a 5-20% discount to encourage larger bookings.
                 </AlertDescription>
               </Alert>
@@ -429,7 +429,7 @@ export function PackagesList() {
                 <Package className="h-6 w-6 text-amber-600" />
               </div>
               <h3 className="font-medium text-zinc-900 mb-1">Ready to create packages!</h3>
-              <p className="et-text-sm text-muted-foreground mb-4 max-w-sm">
+              <p className="et-small text-muted-foreground mb-4 max-w-sm">
                 You have {services.length} service{services.length !== 1 ? "s" : ""} available. Bundle them together with a discount to encourage larger bookings.
               </p>
               <Button size="sm" onClick={() => handleOpenDialog()}>
@@ -457,7 +457,7 @@ export function PackagesList() {
                         <div>
                           <p className="font-medium">{pkg.name}</p>
                           {pkg.category && (
-                            <Badge variant="outline" className="mt-1 et-text-xs">
+                            <Badge variant="outline" className="mt-1 et-caption">
                               <Tag className="h-2.5 w-2.5 mr-1" />
                               {pkg.category.name}
                             </Badge>
@@ -465,7 +465,7 @@ export function PackagesList() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        <div className="flex items-center gap-1 text-muted-foreground et-text-sm">
+                        <div className="flex items-center gap-1 text-muted-foreground et-small">
                           {pkg.serviceCount} service{pkg.serviceCount !== 1 ? "s" : ""}
                           <span className="mx-1">•</span>
                           <Clock className="h-3 w-3" />
@@ -476,7 +476,7 @@ export function PackagesList() {
                         <div>
                           <span className="font-medium">{formatPrice(pkg.price)}</span>
                           {pkg.savings > 0 && (
-                            <p className="et-text-xs text-green-600">
+                            <p className="et-caption text-green-600">
                               Save {formatPrice(pkg.savings)}
                             </p>
                           )}
@@ -539,7 +539,7 @@ export function PackagesList() {
                   : "Select the services you want to include and choose a discount percentage"}
               </DialogDescription>
               <div className="flex items-center gap-2 shrink-0">
-                <Label htmlFor="active" className="et-text-sm font-normal text-muted-foreground">
+                <Label htmlFor="active" className="et-small font-normal text-muted-foreground">
                   {formData.active ? "Active" : "Inactive"}
                 </Label>
                 <Switch
@@ -703,7 +703,7 @@ export function PackagesList() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>Select Services *</Label>
-                      <span className="et-text-xs text-muted-foreground">
+                      <span className="et-caption text-muted-foreground">
                         {formData.serviceIds.length} selected
                       </span>
                     </div>
@@ -763,7 +763,7 @@ export function PackagesList() {
                             open={expandedCategories[group.id] !== false}
                             onOpenChange={() => toggleCategory(group.id)}
                           >
-                            <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 et-text-sm font-medium bg-muted/50 hover:bg-muted border-b">
+                            <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 et-small font-medium bg-muted/50 hover:bg-muted border-b">
                               <ChevronRight
                                 className={`h-4 w-4 transition-transform ${
                                   expandedCategories[group.id] !== false ? "rotate-90" : ""
@@ -771,7 +771,7 @@ export function PackagesList() {
                               />
                               <Tag className="h-3.5 w-3.5 text-muted-foreground" />
                               {group.name}
-                              <span className="et-text-xs text-muted-foreground ml-auto mr-1">
+                              <span className="et-caption text-muted-foreground ml-auto mr-1">
                                 {group.services.filter((s) => formData.serviceIds.includes(s.id)).length}/
                                 {group.services.length}
                               </span>
@@ -787,8 +787,8 @@ export function PackagesList() {
                                     onCheckedChange={() => handleServiceToggle(service.id)}
                                   />
                                   <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                                    <span className="et-text-sm truncate">{service.name}</span>
-                                    <span className="et-text-xs text-muted-foreground whitespace-nowrap">
+                                    <span className="et-small truncate">{service.name}</span>
+                                    <span className="et-caption text-muted-foreground whitespace-nowrap">
                                       {formatDuration(service.duration)} • {formatPrice(service.price)}
                                     </span>
                                   </div>
@@ -807,21 +807,21 @@ export function PackagesList() {
                   <div className="rounded-lg border bg-muted/30 p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                       <div>
-                        <p className="et-text-xs text-muted-foreground">Services</p>
+                        <p className="et-caption text-muted-foreground">Services</p>
                         <p className="font-semibold">{pricePreview.serviceCount}</p>
                       </div>
                       <div>
-                        <p className="et-text-xs text-muted-foreground">Duration</p>
+                        <p className="et-caption text-muted-foreground">Duration</p>
                         <p className="font-semibold">{formatDuration(pricePreview.totalDuration)}</p>
                       </div>
                       <div>
-                        <p className="et-text-xs text-muted-foreground">Original</p>
+                        <p className="et-caption text-muted-foreground">Original</p>
                         <p className="font-semibold line-through text-muted-foreground">{formatPrice(pricePreview.originalPrice)}</p>
                       </div>
                       <div>
-                        <p className="et-text-xs text-muted-foreground">Package Price</p>
+                        <p className="et-caption text-muted-foreground">Package Price</p>
                         <p className="font-bold text-lg text-green-600">{formatPrice(pricePreview.finalPrice)}</p>
-                        <p className="et-text-xs text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
+                        <p className="et-caption text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
                       </div>
                     </div>
                   </div>

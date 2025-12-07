@@ -10,7 +10,7 @@ export default function MediaPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Media Library</h1>
-        <p className="et-text-sm text-muted-foreground">Upload and manage your images</p>
+        <p className="et-small text-muted-foreground">Upload and manage your images</p>
       </div>
       <MediaLibrary />
     </div>

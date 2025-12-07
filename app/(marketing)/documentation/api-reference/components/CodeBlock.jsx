@@ -30,7 +30,7 @@ export function CodeBlock({ code, language = "bash", title }) {
         </div>
       )}
       <pre className="p-3 overflow-x-auto">
-        <code className="text-zinc-100 font-mono et-text-xs leading-relaxed whitespace-pre">
+        <code className="text-zinc-100 font-mono et-caption leading-relaxed whitespace-pre">
           {code}
         </code>
       </pre>

@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 1. Information We Collect
               </h2>
               <div className="space-y-2.5 et-text-muted">
@@ -59,7 +59,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 2. Cookies and Tracking Technologies
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 3. How We Use Your Information
               </h2>
               <div className="et-text-muted">
@@ -98,7 +98,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 4. Information Sharing and Disclosure
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -115,7 +115,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 5. Data Retention
               </h2>
               <p className="et-text-muted">
@@ -127,7 +127,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 6. Data Security
               </h2>
               <p className="et-text-muted">
@@ -139,7 +139,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 7. Your Privacy Rights
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 8. California Privacy Rights (CCPA)
               </h2>
               <p className="et-text-muted">
@@ -171,7 +171,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 9. International Data Transfers
               </h2>
               <p className="et-text-muted">
@@ -182,7 +182,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 10. Children&apos;s Privacy
               </h2>
               <p className="et-text-muted">
@@ -193,7 +193,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 11. Changes to This Policy
               </h2>
               <p className="et-text-muted">
@@ -204,7 +204,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 12. Contact Us
               </h2>
               <div className="et-text-muted">

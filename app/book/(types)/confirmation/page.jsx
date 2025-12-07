@@ -66,8 +66,8 @@ export default function ConfirmationPage() {
             <Sparkles className="w-2.5 h-2.5 text-white" />
           </div>
         </div>
-        <h1 className="et-text-xl font-bold mb-1.5">You&apos;re All Set!</h1>
-        <p className="et-text-sm text-muted-foreground mb-4">
+        <h1 className="et-h3 font-bold mb-1.5">You&apos;re All Set!</h1>
+        <p className="et-small text-muted-foreground mb-4">
           Your call has been scheduled. Check your email for the details.
         </p>
         <Link href="/">
@@ -128,8 +128,8 @@ export default function ConfirmationPage() {
             <Sparkles className="w-2.5 h-2.5 text-white" />
           </div>
         </motion.div>
-        <h1 className="et-text-xl font-bold mb-0.5">You&apos;re All Set!</h1>
-        <p className="et-text-sm text-muted-foreground">
+        <h1 className="et-h3 font-bold mb-0.5">You&apos;re All Set!</h1>
+        <p className="et-small text-muted-foreground">
           {name ? `Thanks, ${name}!` : "Thanks!"} Your call is confirmed.
         </p>
       </motion.div>
@@ -144,8 +144,8 @@ export default function ConfirmationPage() {
                 <Icon className={`w-4 h-4 ${callType.color}`} />
               </div>
               <div>
-                <p className="font-semibold et-text-sm">{callType.title}</p>
-                <p className="et-text-xs text-muted-foreground">{callType.duration} minute video call</p>
+                <p className="font-semibold et-small">{callType.title}</p>
+                <p className="et-caption text-muted-foreground">{callType.duration} minute video call</p>
               </div>
             </div>
 
@@ -155,8 +155,8 @@ export default function ConfirmationPage() {
                   <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="et-text-xs text-muted-foreground">Date</p>
-                  <p className="et-text-xs font-medium">
+                  <p className="et-caption text-muted-foreground">Date</p>
+                  <p className="et-caption font-medium">
                     {date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                   </p>
                 </div>
@@ -166,8 +166,8 @@ export default function ConfirmationPage() {
                   <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="et-text-xs text-muted-foreground">Time</p>
-                  <p className="et-text-xs font-medium">{formatTime(time)}</p>
+                  <p className="et-caption text-muted-foreground">Time</p>
+                  <p className="et-caption font-medium">{formatTime(time)}</p>
                 </div>
               </div>
             </div>
@@ -184,8 +184,8 @@ export default function ConfirmationPage() {
                 <Mail className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="font-medium et-text-sm mb-0.5">Check Your Email</p>
-                <p className="et-text-xs text-muted-foreground">
+                <p className="font-medium et-small mb-0.5">Check Your Email</p>
+                <p className="et-caption text-muted-foreground">
                   We&apos;ve sent a confirmation with the meeting link and all the details.
                 </p>
               </div>
@@ -205,7 +205,7 @@ export default function ConfirmationPage() {
       </motion.div>
 
       {/* Help text */}
-      <motion.p variants={itemVariants} className="et-text-xs text-muted-foreground text-center mt-3">
+      <motion.p variants={itemVariants} className="et-caption text-muted-foreground text-center mt-3">
         Need to reschedule? Reply to your confirmation email or contact{" "}
         <a href="mailto:support@getclientflow.app" className="text-primary hover:underline font-medium">
           support@getclientflow.app

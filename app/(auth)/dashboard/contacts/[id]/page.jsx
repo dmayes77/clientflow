@@ -243,7 +243,7 @@ export default function ClientDetailPage({ params }) {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
-          <p className="et-text-sm text-muted-foreground">Loading client details...</p>
+          <p className="et-small text-muted-foreground">Loading client details...</p>
         </div>
       </div>
     );
@@ -262,7 +262,7 @@ export default function ClientDetailPage({ params }) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="et-h2 font-bold">
               {["lead", "prospect"].includes(formData.status) ? "Lead" : "Contact"} #{client.id.slice(-6).toUpperCase()}
             </h1>
           </div>
@@ -406,20 +406,20 @@ export default function ClientDetailPage({ params }) {
               <CardContent className="p-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-center p-3 rounded-lg border bg-blue-50/50 border-blue-100">
-                    <p className="text-2xl font-bold text-blue-600">{stats.totalBookings}</p>
-                    <p className="et-text-xs text-blue-600/70">Total Bookings</p>
+                    <p className="et-h2 font-bold text-blue-600">{stats.totalBookings}</p>
+                    <p className="et-caption text-blue-600/70">Total Bookings</p>
                   </div>
                   <div className="text-center p-3 rounded-lg border bg-green-50/50 border-green-100">
-                    <p className="text-2xl font-bold text-green-600">{stats.completedBookings}</p>
-                    <p className="et-text-xs text-green-600/70">Completed</p>
+                    <p className="et-h2 font-bold text-green-600">{stats.completedBookings}</p>
+                    <p className="et-caption text-green-600/70">Completed</p>
                   </div>
                   <div className="text-center p-3 rounded-lg border bg-amber-50/50 border-amber-100">
-                    <p className="text-2xl font-bold text-amber-600">{stats.upcomingBookings}</p>
-                    <p className="et-text-xs text-amber-600/70">Upcoming</p>
+                    <p className="et-h2 font-bold text-amber-600">{stats.upcomingBookings}</p>
+                    <p className="et-caption text-amber-600/70">Upcoming</p>
                   </div>
                   <div className="text-center p-3 rounded-lg border bg-teal-50/50 border-teal-100">
-                    <p className="text-2xl font-bold text-teal-600">{formatCurrency(stats.totalSpent)}</p>
-                    <p className="et-text-xs text-teal-600/70">Total Spent</p>
+                    <p className="et-h2 font-bold text-teal-600">{formatCurrency(stats.totalSpent)}</p>
+                    <p className="et-caption text-teal-600/70">Total Spent</p>
                   </div>
                 </div>
               </CardContent>
@@ -438,7 +438,7 @@ export default function ClientDetailPage({ params }) {
           </div>
 
           {/* Timestamps */}
-          <div className="space-y-1 pt-2 et-text-sm text-muted-foreground">
+          <div className="space-y-1 pt-2 et-small text-muted-foreground">
             <p className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Date Added: {formatFullDateTime(client.createdAt)}
@@ -475,7 +475,7 @@ export default function ClientDetailPage({ params }) {
                     <Calendar className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="font-medium mb-1">No bookings yet</h3>
-                  <p className="et-text-sm text-muted-foreground mb-4">
+                  <p className="et-small text-muted-foreground mb-4">
                     This client hasn't made any bookings.
                   </p>
                   <Button variant="outline" onClick={() => router.push(`/dashboard/calendar?clientId=${id}`)}>
@@ -498,16 +498,16 @@ export default function ClientDetailPage({ params }) {
                     <TableBody>
                       {client.bookings.map((booking) => (
                         <TableRow key={booking.id}>
-                          <TableCell className="et-text-sm">
+                          <TableCell className="et-small">
                             {formatDateTime(booking.scheduledAt)}
                           </TableCell>
-                          <TableCell className="et-text-sm">
+                          <TableCell className="et-small">
                             {booking.service?.name || booking.package?.name || "—"}
                           </TableCell>
                           <TableCell>
                             <BookingStatusBadge status={booking.status} />
                           </TableCell>
-                          <TableCell className="et-text-sm font-medium">
+                          <TableCell className="et-small font-medium">
                             {formatCurrency(booking.totalPrice)}
                           </TableCell>
                           <TableCell>
@@ -537,7 +537,7 @@ export default function ClientDetailPage({ params }) {
                     <FileText className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="font-medium mb-1">No invoices yet</h3>
-                  <p className="et-text-sm text-muted-foreground mb-4">
+                  <p className="et-small text-muted-foreground mb-4">
                     No invoices have been created for this client.
                   </p>
                   <Button variant="outline" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
@@ -560,16 +560,16 @@ export default function ClientDetailPage({ params }) {
                     <TableBody>
                       {client.invoices.map((invoice) => (
                         <TableRow key={invoice.id}>
-                          <TableCell className="et-text-sm font-medium">
+                          <TableCell className="et-small font-medium">
                             {invoice.invoiceNumber}
                           </TableCell>
-                          <TableCell className="et-text-sm">
+                          <TableCell className="et-small">
                             {formatDate(invoice.issueDate)}
                           </TableCell>
-                          <TableCell className="et-text-sm">
+                          <TableCell className="et-small">
                             {formatDate(invoice.dueDate)}
                           </TableCell>
-                          <TableCell className="et-text-sm font-medium">
+                          <TableCell className="et-small font-medium">
                             {formatCurrency(invoice.total)}
                           </TableCell>
                           <TableCell>

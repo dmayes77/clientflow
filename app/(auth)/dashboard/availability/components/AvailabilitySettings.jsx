@@ -479,7 +479,7 @@ export function AvailabilitySettings() {
                       </Select>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground et-text-sm">Closed</span>
+                    <span className="text-muted-foreground et-small">Closed</span>
                   )}
                 </div>
               ))}
@@ -489,7 +489,7 @@ export function AvailabilitySettings() {
           {/* Quick Presets */}
           <Card>
             <CardHeader>
-              <CardTitle className="et-text-base">Quick Presets</CardTitle>
+              <CardTitle className="et-body">Quick Presets</CardTitle>
               <CardDescription>Apply common schedule templates</CardDescription>
             </CardHeader>
             <CardContent>
@@ -530,8 +530,8 @@ export function AvailabilitySettings() {
               {overrides.length === 0 ? (
                 <div className="text-center py-8">
                   <CalendarOff className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="et-text-sm text-muted-foreground">No date overrides set</p>
-                  <p className="et-text-xs text-muted-foreground mt-1">Add one for holidays or special events</p>
+                  <p className="et-small text-muted-foreground">No date overrides set</p>
+                  <p className="et-caption text-muted-foreground mt-1">Add one for holidays or special events</p>
                 </div>
               ) : (
                 <div className="rounded-md border">
@@ -623,7 +623,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="et-text-xs text-muted-foreground">All appointments will be scheduled in this timezone</p>
+                  <p className="et-caption text-muted-foreground">All appointments will be scheduled in this timezone</p>
                 </div>
 
                 <div className="space-y-2">
@@ -640,7 +640,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="et-text-xs text-muted-foreground">How often booking slots are offered to clients</p>
+                  <p className="et-caption text-muted-foreground">How often booking slots are offered to clients</p>
                 </div>
               </div>
             </CardContent>
@@ -669,7 +669,7 @@ export function AvailabilitySettings() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="et-text-xs text-muted-foreground">
+                <p className="et-caption text-muted-foreground">
                   The calendar will open to this view by default
                 </p>
               </div>

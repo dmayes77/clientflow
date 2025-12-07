@@ -380,7 +380,7 @@ export function CalendarView() {
         {/* Day headers */}
         <div className="grid grid-cols-7 border-b">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <div key={day} className="p-2 text-center et-text-sm font-medium text-muted-foreground">
+            <div key={day} className="p-2 text-center et-small font-medium text-muted-foreground">
               {day}
             </div>
           ))}
@@ -402,7 +402,7 @@ export function CalendarView() {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span
-                    className={`et-text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${
+                    className={`et-small font-medium w-7 h-7 flex items-center justify-center rounded-full ${
                       isToday(day) ? "bg-blue-600 text-white" : !isCurrentMonth ? "text-muted-foreground" : ""
                     }`}
                   >
@@ -413,7 +413,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 3).map((booking) => (
                     <div
                       key={booking.id}
-                      className={`et-text-xs px-1.5 py-0.5 rounded text-white truncate cursor-pointer ${statusColors[booking.status]}`}
+                      className={`et-caption px-1.5 py-0.5 rounded text-white truncate cursor-pointer ${statusColors[booking.status]}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOpenDialog(booking);
@@ -423,7 +423,7 @@ export function CalendarView() {
                     </div>
                   ))}
                   {dayBookings.length > 3 && (
-                    <div className="et-text-xs text-muted-foreground px-1">+{dayBookings.length - 3} more</div>
+                    <div className="et-caption text-muted-foreground px-1">+{dayBookings.length - 3} more</div>
                   )}
                 </div>
               </div>
@@ -446,9 +446,9 @@ export function CalendarView() {
           <div className="w-16 flex-shrink-0 border-r" />
           {weekDays.map((day) => (
             <div key={day.toISOString()} className="flex-1 text-center py-2 border-r">
-              <div className="et-text-xs text-muted-foreground">{format(day, "EEE")}</div>
+              <div className="et-caption text-muted-foreground">{format(day, "EEE")}</div>
               <div
-                className={`et-text-lg font-semibold w-10 h-10 flex items-center justify-center mx-auto rounded-full ${
+                className={`et-h4 font-semibold w-10 h-10 flex items-center justify-center mx-auto rounded-full ${
                   isToday(day) ? "bg-blue-600 text-white" : ""
                 }`}
               >
@@ -464,7 +464,7 @@ export function CalendarView() {
             {/* Time labels */}
             <div className="w-16 flex-shrink-0">
               {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => (
-                <div key={hour} className="h-14 border-b text-right pr-2 et-text-xs text-muted-foreground">
+                <div key={hour} className="h-14 border-b text-right pr-2 et-caption text-muted-foreground">
                   {format(setHours(new Date(), hour), "h a")}
                 </div>
               ))}
@@ -489,7 +489,7 @@ export function CalendarView() {
                         return (
                           <div
                             key={booking.id}
-                            className={`absolute left-0.5 right-0.5 rounded px-1 text-white et-text-xs overflow-hidden cursor-pointer z-10 ${statusColors[booking.status]}`}
+                            className={`absolute left-0.5 right-0.5 rounded px-1 text-white et-caption overflow-hidden cursor-pointer z-10 ${statusColors[booking.status]}`}
                             style={{
                               top: `${topOffset}px`,
                               height: `${Math.max(height, 20)}px`,
@@ -530,7 +530,7 @@ export function CalendarView() {
         <div className="flex border-b sticky top-0 bg-background z-10">
           <div className="w-16 flex-shrink-0 border-r" />
           <div className="flex-1 text-center py-3">
-            <div className="et-text-sm text-muted-foreground">{format(currentDate, "EEEE")}</div>
+            <div className="et-small text-muted-foreground">{format(currentDate, "EEEE")}</div>
             <div
               className={`et-text-2xl font-semibold w-12 h-12 flex items-center justify-center mx-auto rounded-full ${
                 isToday(currentDate) ? "bg-blue-600 text-white" : ""
@@ -547,7 +547,7 @@ export function CalendarView() {
             {/* Time labels */}
             <div className="w-16 flex-shrink-0">
               {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => (
-                <div key={hour} className="h-16 border-b text-right pr-2 et-text-xs text-muted-foreground">
+                <div key={hour} className="h-16 border-b text-right pr-2 et-caption text-muted-foreground">
                   {format(setHours(new Date(), hour), "h a")}
                 </div>
               ))}
@@ -630,10 +630,10 @@ export function CalendarView() {
                           </div>
                           {height > 40 && (
                             <>
-                              <div className="et-text-sm opacity-90">
+                              <div className="et-small opacity-90">
                                 {format(new Date(booking.scheduledAt), "h:mm a")} - {booking.duration}min
                               </div>
-                              <div className="et-text-sm opacity-90">
+                              <div className="et-small opacity-90">
                                 {booking.service?.name || booking.package?.name || "Custom"}
                               </div>
                             </>
@@ -668,7 +668,7 @@ export function CalendarView() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <h2 className="et-text-xl font-semibold ml-2">{getHeaderTitle()}</h2>
+            <h2 className="et-h3 font-semibold ml-2">{getHeaderTitle()}</h2>
           </div>
 
           <div className="flex items-center gap-2">
@@ -703,7 +703,7 @@ export function CalendarView() {
       </Card>
 
       {/* Status Legend */}
-      <div className="flex items-center gap-4 mt-4 et-text-sm">
+      <div className="flex items-center gap-4 mt-4 et-small">
         <span className="text-muted-foreground">Status:</span>
         {Object.entries(statusConfig).map(([key, config]) => (
           <div key={key} className="flex items-center gap-1.5">
@@ -742,7 +742,7 @@ export function CalendarView() {
                   </SelectContent>
                 </Select>
                 {clients.length === 0 && (
-                  <p className="et-text-xs text-muted-foreground">No clients yet. Add a client first.</p>
+                  <p className="et-caption text-muted-foreground">No clients yet. Add a client first.</p>
                 )}
               </div>
 

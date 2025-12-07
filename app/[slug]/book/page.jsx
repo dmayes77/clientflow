@@ -190,10 +190,10 @@ function VerticalStepper({ currentStep, selectedItems, selectedDate, selectedTim
 
             {/* Step content */}
             <div className={`pb-6 ${isLast ? 'pb-0' : ''}`}>
-              <p className={`font-medium et-text-sm ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+              <p className={`font-medium et-small ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {step.label}
               </p>
-              <p className={`et-text-xs ${isComplete ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <p className={`et-caption ${isComplete ? 'text-green-600' : 'text-muted-foreground'}`}>
                 {step.description}
               </p>
             </div>
@@ -265,7 +265,7 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
       )}
 
       {/* Title */}
-      <h3 className="font-semibold et-text-base pr-8">{item.name}</h3>
+      <h3 className="font-semibold et-body pr-8">{item.name}</h3>
 
       {/* Category */}
       {category && (
@@ -274,13 +274,13 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: category.color }}
           />
-          <span className="et-text-xs text-muted-foreground">{category.name}</span>
+          <span className="et-caption text-muted-foreground">{category.name}</span>
         </div>
       )}
 
       {/* Description */}
       {item.description && (
-        <p className="et-text-sm text-muted-foreground mt-2 line-clamp-2">
+        <p className="et-small text-muted-foreground mt-2 line-clamp-2">
           {item.description}
         </p>
       )}
@@ -289,16 +289,16 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-muted">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Clock className="w-3.5 h-3.5" />
-          <span className="et-text-sm">
+          <span className="et-small">
             {formatDuration(item.duration || item.totalDuration)}
           </span>
           {isPackage && item.services?.length > 0 && (
-            <span className="et-text-xs ml-1">
+            <span className="et-caption ml-1">
               • {item.services.length} services
             </span>
           )}
         </div>
-        <span className={`font-bold et-text-base ${isPackage ? 'text-violet-600' : 'text-green-600'}`}>
+        <span className={`font-bold et-body ${isPackage ? 'text-violet-600' : 'text-green-600'}`}>
           {formatPrice(item.price)}
         </span>
       </div>
@@ -326,7 +326,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
       <button
         onClick={() => onSelect(null)}
         className={`
-          shrink-0 px-4 py-2 rounded-full et-text-sm font-medium transition-all
+          shrink-0 px-4 py-2 rounded-full et-small font-medium transition-all
           ${selectedCategory === null
             ? "bg-primary text-primary-foreground shadow-sm"
             : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -340,7 +340,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
           key={cat.id}
           onClick={() => onSelect(cat.id)}
           className={`
-            shrink-0 px-4 py-2 rounded-full et-text-sm font-medium transition-all flex items-center gap-2
+            shrink-0 px-4 py-2 rounded-full et-small font-medium transition-all flex items-center gap-2
             ${selectedCategory === cat.id
               ? "text-white shadow-sm"
               : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -361,7 +361,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
         <button
           onClick={() => onSelect("uncategorized")}
           className={`
-            shrink-0 px-4 py-2 rounded-full et-text-sm font-medium transition-all
+            shrink-0 px-4 py-2 rounded-full et-small font-medium transition-all
             ${selectedCategory === "uncategorized"
               ? "bg-gray-600 text-white shadow-sm"
               : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -382,12 +382,12 @@ function CartSummary({ items, total, duration, onContinue, onClear }) {
   return (
     <div className="border-t pt-4 mt-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="et-text-sm text-muted-foreground">
+        <span className="et-small text-muted-foreground">
           {items.length} service{items.length > 1 ? 's' : ''} • {formatDuration(duration)}
         </span>
         <button
           onClick={onClear}
-          className="et-text-xs text-destructive hover:underline"
+          className="et-caption text-destructive hover:underline"
         >
           Clear
         </button>
@@ -395,7 +395,7 @@ function CartSummary({ items, total, duration, onContinue, onClear }) {
 
       <div className="space-y-1.5 max-h-32 overflow-y-auto">
         {items.map((item) => (
-          <div key={`${item.type}-${item.id}`} className="flex justify-between et-text-sm">
+          <div key={`${item.type}-${item.id}`} className="flex justify-between et-small">
             <span className="truncate pr-2">{item.name}</span>
             <span className="text-green-600 font-medium shrink-0">{formatPrice(item.price)}</span>
           </div>
@@ -423,12 +423,12 @@ function MobileCartButton({ items, total, onClick }) {
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-linear-to-t from-background via-background to-transparent lg:hidden">
       <Button
         onClick={onClick}
-        className="w-full h-14 et-text-base shadow-xl"
+        className="w-full h-14 et-body shadow-xl"
         size="lg"
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <div className="bg-white/20 rounded-full w-6 h-6 flex items-center justify-center et-text-sm font-bold">
+            <div className="bg-white/20 rounded-full w-6 h-6 flex items-center justify-center et-small font-bold">
               {items.length}
             </div>
             <span>Continue</span>
@@ -452,7 +452,7 @@ function BookingCalendar({ currentMonth, calendarDays, selectedDate, onDateSelec
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h3 className="font-semibold et-text-base">
+        <h3 className="font-semibold et-body">
           {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h3>
         <button
@@ -466,7 +466,7 @@ function BookingCalendar({ currentMonth, calendarDays, selectedDate, onDateSelec
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {DAYS.map((day) => (
-          <div key={day} className="text-center et-text-xs text-muted-foreground font-medium py-2">
+          <div key={day} className="text-center et-caption text-muted-foreground font-medium py-2">
             {day}
           </div>
         ))}
@@ -484,7 +484,7 @@ function BookingCalendar({ currentMonth, calendarDays, selectedDate, onDateSelec
               disabled={!day.isAvailable}
               onClick={() => day.isAvailable && onDateSelect(day)}
               className={`
-                aspect-square flex items-center justify-center rounded-lg et-text-sm font-medium transition-all
+                aspect-square flex items-center justify-center rounded-lg et-small font-medium transition-all
                 ${!day.isCurrentMonth ? "invisible" : ""}
                 ${!day.isAvailable ? "text-muted-foreground/30 cursor-not-allowed" : ""}
                 ${day.isAvailable && !isSelected ? "hover:bg-primary/10 hover:text-primary" : ""}
@@ -508,7 +508,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        <span className="ml-2 et-text-sm text-muted-foreground">Loading times...</span>
+        <span className="ml-2 et-small text-muted-foreground">Loading times...</span>
       </div>
     );
   }
@@ -517,7 +517,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="text-center py-12">
         <Calendar className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-        <p className="et-text-sm text-muted-foreground">
+        <p className="et-small text-muted-foreground">
           Select a date to see available times
         </p>
       </div>
@@ -528,7 +528,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="text-center py-12">
         <X className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-        <p className="et-text-sm text-muted-foreground">
+        <p className="et-small text-muted-foreground">
           {availabilityData.reason || "Closed on this day"}
         </p>
       </div>
@@ -539,7 +539,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="text-center py-12">
         <Clock className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-        <p className="et-text-sm text-muted-foreground">
+        <p className="et-small text-muted-foreground">
           No available times on this date
         </p>
       </div>
@@ -560,7 +560,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
 
         return (
           <div key={key}>
-            <p className="et-text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <p className="et-caption font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{icon}</span> {label}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -569,7 +569,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
                   key={time}
                   onClick={() => onTimeSelect(time)}
                   className={`
-                    py-2.5 px-3 rounded-lg et-text-sm font-medium border transition-all
+                    py-2.5 px-3 rounded-lg et-small font-medium border transition-all
                     ${selectedTime === time
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
                       : "hover:border-primary hover:bg-primary/5"
@@ -856,7 +856,7 @@ export default function TenantBookingPage({ params }) {
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="et-text-sm text-muted-foreground">Loading booking page...</p>
+          <p className="et-small text-muted-foreground">Loading booking page...</p>
         </div>
       </div>
     );
@@ -870,8 +870,8 @@ export default function TenantBookingPage({ params }) {
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
               <X className="w-6 h-6 text-destructive" />
             </div>
-            <h1 className="et-text-lg font-bold mb-2">Error</h1>
-            <p className="et-text-sm text-muted-foreground mb-4">{error}</p>
+            <h1 className="et-h4 font-bold mb-2">Error</h1>
+            <p className="et-small text-muted-foreground mb-4">{error}</p>
             <Link href="/">
               <Button>Go Home</Button>
             </Link>
@@ -901,15 +901,15 @@ export default function TenantBookingPage({ params }) {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </motion.div>
 
-              <h1 className="et-text-xl font-bold mb-2">Booking Confirmed!</h1>
-              <p className="et-text-sm text-muted-foreground mb-6">
+              <h1 className="et-h3 font-bold mb-2">Booking Confirmed!</h1>
+              <p className="et-small text-muted-foreground mb-6">
                 {bookingResult?.message || "We've sent a confirmation to your email."}
               </p>
 
               <div className="bg-muted/50 rounded-xl p-4 mb-6 text-left space-y-3">
                 <div className="flex justify-between">
-                  <span className="et-text-sm text-muted-foreground">Date & Time</span>
-                  <span className="et-text-sm font-medium">
+                  <span className="et-small text-muted-foreground">Date & Time</span>
+                  <span className="et-small font-medium">
                     {selectedDate?.toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
@@ -919,8 +919,8 @@ export default function TenantBookingPage({ params }) {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="et-text-sm text-muted-foreground">Duration</span>
-                  <span className="et-text-sm font-medium">{formatDuration(selectedDuration)}</span>
+                  <span className="et-small text-muted-foreground">Duration</span>
+                  <span className="et-small font-medium">{formatDuration(selectedDuration)}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t">
                   <span className="font-semibold">Total</span>
@@ -959,8 +959,8 @@ export default function TenantBookingPage({ params }) {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="font-semibold et-text-base">{business?.name}</h1>
-              <p className="et-text-xs text-muted-foreground">Book an appointment</p>
+              <h1 className="font-semibold et-body">{business?.name}</h1>
+              <p className="et-caption text-muted-foreground">Book an appointment</p>
             </div>
           </div>
           <MobileProgressDots currentStep={step} />
@@ -974,7 +974,7 @@ export default function TenantBookingPage({ params }) {
             {/* Back link */}
             <Link
               href={`/${slug}`}
-              className="inline-flex items-center gap-2 et-text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors"
+              className="inline-flex items-center gap-2 et-small text-muted-foreground hover:text-foreground mb-8 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to website
@@ -996,7 +996,7 @@ export default function TenantBookingPage({ params }) {
                 </div>
               )}
               <h1 className="text-xl font-bold mb-1">{business?.name}</h1>
-              <p className="et-text-sm text-muted-foreground">Book an appointment</p>
+              <p className="et-small text-muted-foreground">Book an appointment</p>
             </div>
 
             {/* Vertical Stepper */}
@@ -1021,7 +1021,7 @@ export default function TenantBookingPage({ params }) {
           {business && (
             <div className="p-6 border-t space-y-2">
               {(business.address?.street || business.address?.city) && (
-                <div className="flex items-center gap-2 et-text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 et-caption text-muted-foreground">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>
                     {[
@@ -1033,13 +1033,13 @@ export default function TenantBookingPage({ params }) {
                 </div>
               )}
               {business.phone && (
-                <div className="flex items-center gap-2 et-text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 et-caption text-muted-foreground">
                   <Phone className="w-3.5 h-3.5" />
                   <span>{business.phone}</span>
                 </div>
               )}
               {business.email && (
-                <div className="flex items-center gap-2 et-text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 et-caption text-muted-foreground">
                   <Mail className="w-3.5 h-3.5" />
                   <span>{business.email}</span>
                 </div>
@@ -1062,7 +1062,7 @@ export default function TenantBookingPage({ params }) {
                   transition={{ duration: 0.2 }}
                 >
                   <h2 className="text-xl font-bold mb-1 hidden lg:block">Select Services</h2>
-                  <p className="et-text-sm text-muted-foreground mb-6 hidden lg:block">
+                  <p className="et-small text-muted-foreground mb-6 hidden lg:block">
                     Choose the services you'd like to book
                   </p>
 
@@ -1078,7 +1078,7 @@ export default function TenantBookingPage({ params }) {
                   {/* Services Grid */}
                   {filteredServices.length > 0 && (
                     <div className="mt-6">
-                      <h3 className="font-semibold et-text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                      <h3 className="font-semibold et-small text-muted-foreground mb-3 flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-primary" />
                         Services
                       </h3>
@@ -1100,7 +1100,7 @@ export default function TenantBookingPage({ params }) {
                   {/* Packages Grid */}
                   {filteredPackages.length > 0 && (
                     <div className="mt-6">
-                      <h3 className="font-semibold et-text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                      <h3 className="font-semibold et-small text-muted-foreground mb-3 flex items-center gap-2">
                         <Package className="w-4 h-4 text-violet-500" />
                         Packages
                       </h3>
@@ -1123,7 +1123,7 @@ export default function TenantBookingPage({ params }) {
                   {filteredServices.length === 0 && filteredPackages.length === 0 && (
                     <div className="text-center py-16">
                       <Calendar className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                      <p className="et-text-base text-muted-foreground">
+                      <p className="et-body text-muted-foreground">
                         {selectedCategory
                           ? "No services in this category"
                           : "No services available"}
@@ -1162,7 +1162,7 @@ export default function TenantBookingPage({ params }) {
                     </Button>
                     <div>
                       <h2 className="text-xl font-bold">Pick a Date & Time</h2>
-                      <p className="et-text-sm text-muted-foreground">
+                      <p className="et-small text-muted-foreground">
                         {selectedItems.length} service{selectedItems.length > 1 ? 's' : ''} • {formatDuration(selectedDuration)}
                       </p>
                     </div>
@@ -1185,7 +1185,7 @@ export default function TenantBookingPage({ params }) {
                     {/* Time Slots */}
                     <Card>
                       <CardContent className="p-4">
-                        <h3 className="font-semibold et-text-base mb-4 flex items-center gap-2">
+                        <h3 className="font-semibold et-body mb-4 flex items-center gap-2">
                           <Clock className="w-4 h-4 text-primary" />
                           {selectedDate
                             ? selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
@@ -1242,7 +1242,7 @@ export default function TenantBookingPage({ params }) {
                     </Button>
                     <div>
                       <h2 className="text-xl font-bold">Your Details</h2>
-                      <p className="et-text-sm text-muted-foreground">
+                      <p className="et-small text-muted-foreground">
                         Almost done! We just need a few details.
                       </p>
                     </div>
@@ -1253,14 +1253,14 @@ export default function TenantBookingPage({ params }) {
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-medium et-text-sm">
+                          <p className="font-medium et-small">
                             {selectedDate?.toLocaleDateString("en-US", {
                               weekday: "long",
                               month: "long",
                               day: "numeric",
                             })}
                           </p>
-                          <p className="et-text-sm text-muted-foreground">
+                          <p className="et-small text-muted-foreground">
                             {formatTime(selectedTime)} • {formatDuration(selectedDuration)}
                           </p>
                         </div>
@@ -1268,7 +1268,7 @@ export default function TenantBookingPage({ params }) {
                           <p className="text-lg font-bold text-green-600">{formatPrice(selectedTotal)}</p>
                           <button
                             onClick={() => handleBack("date")}
-                            className="et-text-xs text-primary hover:underline"
+                            className="et-caption text-primary hover:underline"
                           >
                             Change
                           </button>
@@ -1283,7 +1283,7 @@ export default function TenantBookingPage({ params }) {
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="name" className="et-text-sm font-medium">
+                            <Label htmlFor="name" className="et-small font-medium">
                               Full Name <span className="text-destructive">*</span>
                             </Label>
                             <Input
@@ -1296,7 +1296,7 @@ export default function TenantBookingPage({ params }) {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="email" className="et-text-sm font-medium">
+                            <Label htmlFor="email" className="et-small font-medium">
                               Email <span className="text-destructive">*</span>
                             </Label>
                             <Input
@@ -1312,7 +1312,7 @@ export default function TenantBookingPage({ params }) {
                         </div>
 
                         <div>
-                          <Label htmlFor="phone" className="et-text-sm font-medium">
+                          <Label htmlFor="phone" className="et-small font-medium">
                             Phone Number <span className="text-muted-foreground font-normal">(optional)</span>
                           </Label>
                           <Input
@@ -1326,7 +1326,7 @@ export default function TenantBookingPage({ params }) {
                         </div>
 
                         <div>
-                          <Label htmlFor="notes" className="et-text-sm font-medium">
+                          <Label htmlFor="notes" className="et-small font-medium">
                             Notes <span className="text-muted-foreground font-normal">(optional)</span>
                           </Label>
                           <Textarea

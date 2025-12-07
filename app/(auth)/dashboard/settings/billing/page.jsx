@@ -10,7 +10,7 @@ export default function BillingPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Billing</h1>
-        <p className="et-text-sm text-muted-foreground">Manage your subscription and payment methods</p>
+        <p className="et-small text-muted-foreground">Manage your subscription and payment methods</p>
       </div>
       <BillingSettings />
     </div>

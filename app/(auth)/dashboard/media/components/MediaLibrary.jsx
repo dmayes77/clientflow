@@ -403,11 +403,11 @@ export function MediaLibrary() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <TabsList className="h-8">
-                <TabsTrigger value="images" className="h-7 gap-1.5 px-3 et-text-xs">
+                <TabsTrigger value="images" className="h-7 gap-1.5 px-3 et-caption">
                   <FileImage className="h-3.5 w-3.5" />
                   Images ({images.length})
                 </TabsTrigger>
-                <TabsTrigger value="videos" className="h-7 gap-1.5 px-3 et-text-xs">
+                <TabsTrigger value="videos" className="h-7 gap-1.5 px-3 et-caption">
                   <FileVideo className="h-3.5 w-3.5" />
                   Videos ({videos.length})
                 </TabsTrigger>
@@ -415,7 +415,7 @@ export function MediaLibrary() {
 
               <div className="flex items-center gap-2">
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="h-8 w-32 et-text-xs">
+                  <SelectTrigger className="h-8 w-32 et-caption">
                     <Filter className="mr-1.5 h-3 w-3" />
                     <SelectValue placeholder="Filter" />
                   </SelectTrigger>
@@ -450,7 +450,7 @@ export function MediaLibrary() {
 
                 <Button
                   size="sm"
-                  className="h-8 et-text-xs"
+                  className="h-8 et-caption"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="mr-1.5 h-3.5 w-3.5" />
@@ -515,7 +515,7 @@ export function MediaLibrary() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{image.name}</p>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant="outline" className="et-text-xs">
+                              <Badge variant="outline" className="et-caption">
                                 {currentTypes.find((t) => t.value === image.type)?.label || image.type}
                               </Badge>
                               <span>
@@ -588,7 +588,7 @@ export function MediaLibrary() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{video.name}</p>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant="outline" className="et-text-xs">
+                              <Badge variant="outline" className="et-caption">
                                 {VIDEO_TYPES.find((t) => t.value === video.type)?.label || video.type}
                               </Badge>
                               {video.duration && (
@@ -652,7 +652,7 @@ export function MediaLibrary() {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{uploadForm.file.name}</p>
-                  <p className="et-text-xs text-muted-foreground">
+                  <p className="et-caption text-muted-foreground">
                     {formatFileSize(uploadForm.file.size)}
                   </p>
                 </div>
@@ -712,7 +712,7 @@ export function MediaLibrary() {
 
             {uploading && (
               <div className="space-y-2">
-                <div className="flex justify-between et-text-sm">
+                <div className="flex justify-between et-small">
                   <span>Uploading...</span>
                   <span>{uploadProgress}%</span>
                 </div>
@@ -851,7 +851,7 @@ export function MediaLibrary() {
             ) : null}
 
             {previewItem && (
-              <div className="mt-4 grid grid-cols-2 gap-4 et-text-sm">
+              <div className="mt-4 grid grid-cols-2 gap-4 et-small">
                 <div>
                   <p className="text-muted-foreground">Dimensions</p>
                   <p className="font-medium">

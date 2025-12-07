@@ -10,7 +10,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">API Keys</h1>
-        <p className="et-text-sm text-muted-foreground">Manage your API keys for integrations</p>
+        <p className="et-small text-muted-foreground">Manage your API keys for integrations</p>
       </div>
       <APIKeysSettings />
     </div>

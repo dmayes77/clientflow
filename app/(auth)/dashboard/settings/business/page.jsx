@@ -10,7 +10,7 @@ export default function BusinessSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Business Settings</h1>
-        <p className="et-text-sm text-muted-foreground">Configure your business information</p>
+        <p className="et-small text-muted-foreground">Configure your business information</p>
       </div>
       <BusinessSettings />
     </div>

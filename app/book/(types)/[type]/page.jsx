@@ -117,8 +117,8 @@ export default function BookingTypePage({ params }) {
         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
           <Calendar className="w-6 h-6 text-muted-foreground" />
         </div>
-        <h1 className="et-text-lg font-semibold mb-1.5">Call Type Not Found</h1>
-        <p className="et-text-sm text-muted-foreground mb-4">The requested call type doesn&apos;t exist.</p>
+        <h1 className="et-h4 font-semibold mb-1.5">Call Type Not Found</h1>
+        <p className="et-small text-muted-foreground mb-4">The requested call type doesn&apos;t exist.</p>
         <Link href="/book">
           <Button size="sm">Back to Booking</Button>
         </Link>
@@ -243,7 +243,7 @@ export default function BookingTypePage({ params }) {
   return (
     <div className="h-full flex flex-col container max-w-3xl mx-auto px-4 py-3">
       {/* Back link */}
-      <Link href="/book" className="inline-flex items-center gap-1 et-text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors w-fit">
+      <Link href="/book" className="inline-flex items-center gap-1 et-caption text-muted-foreground hover:text-foreground mb-3 transition-colors w-fit">
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to call types
       </Link>
@@ -259,12 +259,12 @@ export default function BookingTypePage({ params }) {
                 <div className={`w-10 h-10 rounded-lg ${callType.bgColor} flex items-center justify-center mb-3 ring-1 ${callType.ringColor}`}>
                   <Icon className={`w-5 h-5 ${callType.color}`} />
                 </div>
-                <h2 className="et-text-base font-semibold mb-0.5">{callType.title}</h2>
-                <div className="flex items-center gap-1 et-text-xs text-muted-foreground mb-3">
+                <h2 className="et-body font-semibold mb-0.5">{callType.title}</h2>
+                <div className="flex items-center gap-1 et-caption text-muted-foreground mb-3">
                   <Clock className="w-3.5 h-3.5" />
                   {callType.duration} minutes
                 </div>
-                <p className="et-text-xs text-muted-foreground">
+                <p className="et-caption text-muted-foreground">
                   Select a date and time that works for you. All times shown in your local timezone.
                 </p>
               </CardContent>
@@ -286,7 +286,7 @@ export default function BookingTypePage({ params }) {
                       exit="exit"
                       transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <h3 className="font-semibold et-text-sm mb-3 flex items-center gap-1.5">
+                      <h3 className="font-semibold et-small mb-3 flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-primary" />
                         Select a Date & Time
                       </h3>
@@ -302,7 +302,7 @@ export default function BookingTypePage({ params }) {
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                            <span className="font-medium et-text-xs">
+                            <span className="font-medium et-caption">
                               {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                             </span>
                             <button
@@ -316,7 +316,7 @@ export default function BookingTypePage({ params }) {
                           {/* Day headers */}
                           <div className="grid grid-cols-7 gap-0.5 mb-0.5">
                             {DAYS.map((day) => (
-                              <div key={day} className="text-center et-text-xs text-muted-foreground py-1 font-medium">
+                              <div key={day} className="text-center et-caption text-muted-foreground py-1 font-medium">
                                 {day}
                               </div>
                             ))}
@@ -330,7 +330,7 @@ export default function BookingTypePage({ params }) {
                                 disabled={!day.isAvailable}
                                 onClick={() => handleDateSelect(day)}
                                 className={`
-                                  aspect-square flex items-center justify-center rounded-md et-text-xs font-medium transition-all
+                                  aspect-square flex items-center justify-center rounded-md et-caption font-medium transition-all
                                   ${!day.isCurrentMonth ? "invisible" : ""}
                                   ${day.isTooSoon || day.isSunday ? "text-muted-foreground/30 cursor-not-allowed" : ""}
                                   ${day.isAvailable && !isDateSelected(day) ? "hover:bg-primary/10 hover:text-primary cursor-pointer" : ""}
@@ -345,7 +345,7 @@ export default function BookingTypePage({ params }) {
 
                         {/* Time slots */}
                         <div>
-                          <p className="et-text-xs text-muted-foreground mb-2">
+                          <p className="et-caption text-muted-foreground mb-2">
                             {selectedDate
                               ? `Times for ${selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`
                               : "Select a date to see times"
@@ -355,11 +355,11 @@ export default function BookingTypePage({ params }) {
                           {loadingSlots ? (
                             <div className="flex items-center justify-center py-6">
                               <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                              <span className="ml-2 et-text-xs text-muted-foreground">Loading...</span>
+                              <span className="ml-2 et-caption text-muted-foreground">Loading...</span>
                             </div>
                           ) : selectedDate && timeSlots.length === 0 ? (
                             <div className="py-6 text-center">
-                              <p className="et-text-xs text-muted-foreground">No availability</p>
+                              <p className="et-caption text-muted-foreground">No availability</p>
                             </div>
                           ) : (
                             <div className="grid grid-cols-2 gap-1.5 max-h-[180px] overflow-y-auto pr-1">
@@ -368,7 +368,7 @@ export default function BookingTypePage({ params }) {
                                   key={time}
                                   onClick={() => handleTimeSelect(time)}
                                   className={`
-                                    px-2 py-2 rounded-md et-text-xs font-medium border transition-all
+                                    px-2 py-2 rounded-md et-caption font-medium border transition-all
                                     ${selectedTime === time
                                       ? "bg-primary text-primary-foreground border-primary shadow-sm"
                                       : "hover:border-primary hover:bg-primary/5 hover:text-primary"
@@ -412,7 +412,7 @@ export default function BookingTypePage({ params }) {
                         >
                           <ArrowLeft className="w-3.5 h-3.5" />
                         </button>
-                        <h3 className="font-semibold et-text-sm flex items-center gap-1.5">
+                        <h3 className="font-semibold et-small flex items-center gap-1.5">
                           <User className="w-3.5 h-3.5 text-primary" />
                           Your Details
                         </h3>
@@ -425,8 +425,8 @@ export default function BookingTypePage({ params }) {
                             <Icon className={`w-4 h-4 ${callType.color}`} />
                           </div>
                           <div>
-                            <p className="font-medium et-text-sm">{callType.title}</p>
-                            <p className="et-text-xs text-muted-foreground">
+                            <p className="font-medium et-small">{callType.title}</p>
+                            <p className="et-caption text-muted-foreground">
                               {selectedDate?.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {formatTime(selectedTime)}
                             </p>
                           </div>
@@ -436,18 +436,18 @@ export default function BookingTypePage({ params }) {
                       <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor="name" className="et-text-xs font-medium">Name *</Label>
+                            <Label htmlFor="name" className="et-caption font-medium">Name *</Label>
                             <Input
                               id="name"
                               required
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                               placeholder="Your full name"
-                              className="mt-1 h-8 et-text-sm"
+                              className="mt-1 h-8 et-small"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="email" className="et-text-xs font-medium">Email *</Label>
+                            <Label htmlFor="email" className="et-caption font-medium">Email *</Label>
                             <Input
                               id="email"
                               type="email"
@@ -455,31 +455,31 @@ export default function BookingTypePage({ params }) {
                               value={formData.email}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                               placeholder="you@company.com"
-                              className="mt-1 h-8 et-text-sm"
+                              className="mt-1 h-8 et-small"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="company" className="et-text-xs font-medium">Company</Label>
+                          <Label htmlFor="company" className="et-caption font-medium">Company</Label>
                           <Input
                             id="company"
                             value={formData.company}
                             onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                             placeholder="Your company (optional)"
-                            className="mt-1 h-8 et-text-sm"
+                            className="mt-1 h-8 et-small"
                           />
                         </div>
 
                         <div>
-                          <Label htmlFor="notes" className="et-text-xs font-medium">Notes</Label>
+                          <Label htmlFor="notes" className="et-caption font-medium">Notes</Label>
                           <Textarea
                             id="notes"
                             value={formData.notes}
                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                             placeholder="Anything you'd like us to know?"
                             rows={2}
-                            className="mt-1 et-text-sm"
+                            className="mt-1 et-small"
                           />
                         </div>
 

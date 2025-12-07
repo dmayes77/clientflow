@@ -164,8 +164,8 @@ export function APIKeysSettings() {
           {apiKeys.length === 0 ? (
             <div className="text-center py-8">
               <Key className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="et-text-sm text-muted-foreground">No API keys generated yet</p>
-              <p className="et-text-xs text-muted-foreground mt-1">
+              <p className="et-small text-muted-foreground">No API keys generated yet</p>
+              <p className="et-caption text-muted-foreground mt-1">
                 Generate your first API key to start integrating
               </p>
             </div>
@@ -187,7 +187,7 @@ export function APIKeysSettings() {
                     <TableRow key={apiKey.id}>
                       <TableCell className="font-medium">{apiKey.name}</TableCell>
                       <TableCell>
-                        <code className="bg-muted px-2 py-1 rounded et-text-sm font-mono">
+                        <code className="bg-muted px-2 py-1 rounded et-small font-mono">
                           {apiKey.key}
                         </code>
                       </TableCell>
@@ -239,8 +239,8 @@ export function APIKeysSettings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="et-text-sm mb-2">Include your API key in the Authorization header:</p>
-            <pre className="bg-muted p-4 rounded-lg overflow-x-auto et-text-sm">
+            <p className="et-small mb-2">Include your API key in the Authorization header:</p>
+            <pre className="bg-muted p-4 rounded-lg overflow-x-auto et-small">
               <code>{`curl -X GET "https://api.clientflow.com/v1/bookings" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json"`}</code>
@@ -304,7 +304,7 @@ export function APIKeysSettings() {
             </Alert>
             <Label>API Key</Label>
             <div className="flex items-center gap-2 mt-2">
-              <code className="flex-1 bg-muted px-3 py-2 rounded et-text-sm font-mono break-all">
+              <code className="flex-1 bg-muted px-3 py-2 rounded et-small font-mono break-all">
                 {newlyCreatedKey?.key}
               </code>
               <Button

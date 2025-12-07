@@ -143,47 +143,47 @@ export function IntegrationsList() {
               {/* Account Details */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-1">
-                  <p className="et-text-sm text-muted-foreground">Charges</p>
+                  <p className="et-small text-muted-foreground">Charges</p>
                   <div className="flex items-center gap-1">
                     {account.chargesEnabled ? (
                       <>
                         <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="et-text-sm font-medium">Enabled</span>
+                        <span className="et-small font-medium">Enabled</span>
                       </>
                     ) : (
                       <>
                         <XCircle className="h-4 w-4 text-red-500" />
-                        <span className="et-text-sm font-medium">Disabled</span>
+                        <span className="et-small font-medium">Disabled</span>
                       </>
                     )}
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <p className="et-text-sm text-muted-foreground">Payouts</p>
+                  <p className="et-small text-muted-foreground">Payouts</p>
                   <div className="flex items-center gap-1">
                     {account.payoutsEnabled ? (
                       <>
                         <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="et-text-sm font-medium">Enabled</span>
+                        <span className="et-small font-medium">Enabled</span>
                       </>
                     ) : (
                       <>
                         <XCircle className="h-4 w-4 text-red-500" />
-                        <span className="et-text-sm font-medium">Disabled</span>
+                        <span className="et-small font-medium">Disabled</span>
                       </>
                     )}
                   </div>
                 </div>
                 {account.country && (
                   <div className="space-y-1">
-                    <p className="et-text-sm text-muted-foreground">Country</p>
-                    <p className="et-text-sm font-medium">{account.country}</p>
+                    <p className="et-small text-muted-foreground">Country</p>
+                    <p className="et-small font-medium">{account.country}</p>
                   </div>
                 )}
                 {account.defaultCurrency && (
                   <div className="space-y-1">
-                    <p className="et-text-sm text-muted-foreground">Currency</p>
-                    <p className="et-text-sm font-medium">{account.defaultCurrency}</p>
+                    <p className="et-small text-muted-foreground">Currency</p>
+                    <p className="et-small font-medium">{account.defaultCurrency}</p>
                   </div>
                 )}
               </div>
@@ -237,7 +237,7 @@ export function IntegrationsList() {
               <Alert>
                 <AlertTitle className="mb-2">What you'll need to connect:</AlertTitle>
                 <AlertDescription>
-                  <ul className="list-disc list-inside space-y-1 et-text-sm">
+                  <ul className="list-disc list-inside space-y-1 et-small">
                     <li>Valid government-issued ID</li>
                     <li>Business information (name, address)</li>
                     <li>Bank account for receiving payouts</li>
@@ -262,7 +262,7 @@ export function IntegrationsList() {
       {/* Features Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="et-text-base">Payment Features</CardTitle>
+          <CardTitle className="et-body">Payment Features</CardTitle>
           <CardDescription>What you can do with Stripe payments</CardDescription>
         </CardHeader>
         <CardContent>
@@ -270,7 +270,7 @@ export function IntegrationsList() {
             {STRIPE_FEATURES.map((feature, index) => (
               <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <feature.icon className="h-5 w-5 text-purple-500 shrink-0" />
-                <span className="et-text-sm">{feature.label}</span>
+                <span className="et-small">{feature.label}</span>
               </div>
             ))}
           </div>
@@ -280,7 +280,7 @@ export function IntegrationsList() {
       {/* More Integrations Coming Soon */}
       <Card>
         <CardHeader>
-          <CardTitle className="et-text-base">More Integrations Coming Soon</CardTitle>
+          <CardTitle className="et-body">More Integrations Coming Soon</CardTitle>
           <CardDescription>We're working on adding more integrations</CardDescription>
         </CardHeader>
         <CardContent>
@@ -288,7 +288,7 @@ export function IntegrationsList() {
             {["Google Calendar", "Zoom", "QuickBooks", "Mailchimp"].map((name) => (
               <div
                 key={name}
-                className="flex items-center justify-center p-4 rounded-lg border border-dashed text-muted-foreground et-text-sm"
+                className="flex items-center justify-center p-4 rounded-lg border border-dashed text-muted-foreground et-small"
               >
                 {name}
               </div>

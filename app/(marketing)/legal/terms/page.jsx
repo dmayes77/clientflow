@@ -29,7 +29,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 1. Acceptance of Terms
               </h2>
               <p className="et-text-muted">
@@ -41,7 +41,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 2. Eligibility
               </h2>
               <p className="et-text-muted">
@@ -53,7 +53,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 3. Description of Service
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -77,7 +77,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 4. Account Registration and Security
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -100,7 +100,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 5. User Content and Data
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -129,7 +129,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 6. Payment Terms
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -162,7 +162,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 7. Acceptable Use Policy
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -186,7 +186,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 8. Third-Party Services
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -203,7 +203,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 9. Intellectual Property
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -227,7 +227,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 10. Service Availability
               </h2>
               <p className="et-text-muted">
@@ -239,7 +239,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 11. Disclaimers
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -257,7 +257,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 12. Limitation of Liability
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -276,7 +276,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 13. Indemnification
               </h2>
               <p className="et-text-muted">
@@ -289,7 +289,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 14. Termination
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -313,7 +313,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 15. Dispute Resolution
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -337,7 +337,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 16. Changes to Terms
               </h2>
               <p className="et-text-muted">
@@ -350,7 +350,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 17. General Provisions
               </h2>
               <div className="space-y-2 et-text-muted">
@@ -378,7 +378,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="et-text-base font-semibold mb-1.5">
+              <h2 className="et-body font-semibold mb-1.5">
                 18. Contact Us
               </h2>
               <div className="et-text-muted">

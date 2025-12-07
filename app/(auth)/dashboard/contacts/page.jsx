@@ -10,7 +10,7 @@ export default function ContactsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Contacts</h1>
-        <p className="et-text-sm text-muted-foreground">Manage your client database</p>
+        <p className="et-small text-muted-foreground">Manage your client database</p>
       </div>
       <ContactsList />
     </div>

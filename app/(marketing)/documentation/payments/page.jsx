@@ -41,10 +41,10 @@ export default function PaymentsPage() {
           <Badge variant="outline" className="et-text-2xs px-1.5 py-0">Guide</Badge>
           <span className="et-text-2xs text-zinc-400">15 min read</span>
         </div>
-        <h1 className="et-text-xl font-semibold text-zinc-900 mb-2">
+        <h1 className="et-h3 font-semibold text-zinc-900 mb-2">
           Payment Integration
         </h1>
-        <p className="et-text-sm text-zinc-500 max-w-2xl">
+        <p className="et-small text-zinc-500 max-w-2xl">
           ClientFlow integrates with Stripe to provide secure payment processing.
           Accept deposits, process payments at booking time, or invoice clients after services.
         </p>
@@ -61,8 +61,8 @@ export default function PaymentsPage() {
                   <Icon className="w-4 h-4 text-zinc-700" />
                 </div>
                 <div>
-                  <h3 className="et-text-sm font-medium text-zinc-900 mb-1">{feature.title}</h3>
-                  <p className="et-text-xs text-zinc-500">{feature.description}</p>
+                  <h3 className="et-small font-medium text-zinc-900 mb-1">{feature.title}</h3>
+                  <p className="et-caption text-zinc-500">{feature.description}</p>
                 </div>
               </div>
             );
@@ -72,15 +72,15 @@ export default function PaymentsPage() {
 
       {/* Connecting Stripe */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">
           <Zap className="w-4 h-4 inline-block mr-2" />
           Connecting Your Stripe Account
         </h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <p className="et-small text-zinc-600 mb-3">
           Connect your Stripe account through the dashboard to start accepting payments:
         </p>
 
-        <ol className="space-y-2 et-text-xs text-zinc-600 mb-4">
+        <ol className="space-y-2 et-caption text-zinc-600 mb-4">
           <li className="flex gap-2">
             <span className="text-zinc-400">1.</span>
             <span>Go to <strong>Settings → Payments</strong> in your dashboard</span>
@@ -100,7 +100,7 @@ export default function PaymentsPage() {
         </ol>
 
         <div className="p-3 border border-blue-200 bg-blue-50 rounded-lg">
-          <p className="et-text-xs text-blue-800">
+          <p className="et-caption text-blue-800">
             <strong>Note:</strong> You need a Stripe account to accept payments.
             <Link href="https://stripe.com" className="underline ml-1">Create one for free</Link> if you don't have one.
           </p>
@@ -109,8 +109,8 @@ export default function PaymentsPage() {
 
       {/* Creating a Payment Link */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Creating a Payment Link</h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Creating a Payment Link</h2>
+        <p className="et-small text-zinc-600 mb-3">
           Generate a payment link for a booking via the API:
         </p>
 
@@ -144,7 +144,7 @@ export default function PaymentsPage() {
 }`}
         />
 
-        <p className="et-text-xs text-zinc-500 mt-3">
+        <p className="et-caption text-zinc-500 mt-3">
           Send the <code className="bg-zinc-100 px-1 py-0.5 rounded">payment_url</code> to your client.
           They'll be redirected to Stripe's secure checkout page.
         </p>
@@ -152,11 +152,11 @@ export default function PaymentsPage() {
 
       {/* Collecting Deposits */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">
           <DollarSign className="w-4 h-4 inline-block mr-2" />
           Collecting Deposits
         </h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <p className="et-small text-zinc-600 mb-3">
           Require a deposit when clients book. The remaining balance can be collected later:
         </p>
 
@@ -178,38 +178,38 @@ export default function PaymentsPage() {
         <div className="mt-4 border rounded-lg divide-y">
           <div className="flex items-center gap-3 p-3">
             <code className="et-text-2xs font-mono bg-zinc-100 px-2 py-1 rounded">type: "deposit"</code>
-            <span className="et-text-xs text-zinc-500">Partial payment, tracks remaining balance</span>
+            <span className="et-caption text-zinc-500">Partial payment, tracks remaining balance</span>
           </div>
           <div className="flex items-center gap-3 p-3">
             <code className="et-text-2xs font-mono bg-zinc-100 px-2 py-1 rounded">type: "full"</code>
-            <span className="et-text-xs text-zinc-500">Full payment for the booking</span>
+            <span className="et-caption text-zinc-500">Full payment for the booking</span>
           </div>
           <div className="flex items-center gap-3 p-3">
             <code className="et-text-2xs font-mono bg-zinc-100 px-2 py-1 rounded">type: "invoice"</code>
-            <span className="et-text-xs text-zinc-500">Invoice to be paid later</span>
+            <span className="et-caption text-zinc-500">Invoice to be paid later</span>
           </div>
         </div>
       </section>
 
       {/* Payment Webhooks */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Payment Webhooks</h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Payment Webhooks</h2>
+        <p className="et-small text-zinc-600 mb-3">
           Receive notifications when payment events occur:
         </p>
 
         <div className="border rounded-lg divide-y mb-4">
           <div className="flex items-center gap-3 p-2.5">
             <code className="et-text-2xs font-mono bg-emerald-100 text-emerald-700 px-2 py-1 rounded">payment.received</code>
-            <span className="et-text-xs text-zinc-500">Payment was successfully processed</span>
+            <span className="et-caption text-zinc-500">Payment was successfully processed</span>
           </div>
           <div className="flex items-center gap-3 p-2.5">
             <code className="et-text-2xs font-mono bg-red-100 text-red-700 px-2 py-1 rounded">payment.failed</code>
-            <span className="et-text-xs text-zinc-500">Payment attempt failed</span>
+            <span className="et-caption text-zinc-500">Payment attempt failed</span>
           </div>
           <div className="flex items-center gap-3 p-2.5">
             <code className="et-text-2xs font-mono bg-amber-100 text-amber-700 px-2 py-1 rounded">payment.refunded</code>
-            <span className="et-text-xs text-zinc-500">Payment was refunded</span>
+            <span className="et-caption text-zinc-500">Payment was refunded</span>
           </div>
         </div>
 
@@ -238,11 +238,11 @@ export default function PaymentsPage() {
 
       {/* Processing Refunds */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">
           <RefreshCw className="w-4 h-4 inline-block mr-2" />
           Processing Refunds
         </h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <p className="et-small text-zinc-600 mb-3">
           Issue full or partial refunds for completed payments:
         </p>
 
@@ -270,7 +270,7 @@ export default function PaymentsPage() {
         />
 
         <div className="mt-3 p-3 border border-amber-200 bg-amber-50 rounded-lg">
-          <p className="et-text-xs text-amber-800">
+          <p className="et-caption text-amber-800">
             <strong>Note:</strong> Refunds are processed through Stripe and typically take 5-10 business days
             to appear on the customer's statement.
           </p>
@@ -279,8 +279,8 @@ export default function PaymentsPage() {
 
       {/* Checking Payment Status */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Checking Payment Status</h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Checking Payment Status</h2>
+        <p className="et-small text-zinc-600 mb-3">
           Retrieve payment details for a booking:
         </p>
 
@@ -315,15 +315,15 @@ export default function PaymentsPage() {
 
       {/* Best Practices */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Best Practices</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Best Practices</h2>
         <div className="space-y-3">
           <div className="flex gap-3 p-3 border rounded-lg">
             <div className="p-1.5 bg-emerald-100 rounded h-fit">
               <Check className="w-3 h-3 text-emerald-600" />
             </div>
             <div>
-              <h3 className="et-text-xs font-medium text-zinc-900 mb-1">Use webhooks for payment status</h3>
-              <p className="et-text-xs text-zinc-500">
+              <h3 className="et-caption font-medium text-zinc-900 mb-1">Use webhooks for payment status</h3>
+              <p className="et-caption text-zinc-500">
                 Don't rely solely on redirect URLs. Use webhooks to confirm payment status server-side.
               </p>
             </div>
@@ -333,8 +333,8 @@ export default function PaymentsPage() {
               <Check className="w-3 h-3 text-emerald-600" />
             </div>
             <div>
-              <h3 className="et-text-xs font-medium text-zinc-900 mb-1">Set up refund policies</h3>
-              <p className="et-text-xs text-zinc-500">
+              <h3 className="et-caption font-medium text-zinc-900 mb-1">Set up refund policies</h3>
+              <p className="et-caption text-zinc-500">
                 Clearly communicate your cancellation and refund policies to clients before booking.
               </p>
             </div>
@@ -344,8 +344,8 @@ export default function PaymentsPage() {
               <Check className="w-3 h-3 text-emerald-600" />
             </div>
             <div>
-              <h3 className="et-text-xs font-medium text-zinc-900 mb-1">Use descriptive payment descriptions</h3>
-              <p className="et-text-xs text-zinc-500">
+              <h3 className="et-caption font-medium text-zinc-900 mb-1">Use descriptive payment descriptions</h3>
+              <p className="et-caption text-zinc-500">
                 Include service name and date in payment descriptions for clear bank statements.
               </p>
             </div>
@@ -355,8 +355,8 @@ export default function PaymentsPage() {
               <Check className="w-3 h-3 text-emerald-600" />
             </div>
             <div>
-              <h3 className="et-text-xs font-medium text-zinc-900 mb-1">Test in Stripe test mode first</h3>
-              <p className="et-text-xs text-zinc-500">
+              <h3 className="et-caption font-medium text-zinc-900 mb-1">Test in Stripe test mode first</h3>
+              <p className="et-caption text-zinc-500">
                 Use Stripe's test mode and test cards to verify your integration before going live.
               </p>
             </div>
@@ -366,23 +366,23 @@ export default function PaymentsPage() {
 
       {/* Stripe Test Cards */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Testing with Stripe</h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Testing with Stripe</h2>
+        <p className="et-small text-zinc-600 mb-3">
           Use these test card numbers in Stripe test mode:
         </p>
 
         <div className="border rounded-lg divide-y">
           <div className="flex justify-between items-center p-2.5">
-            <code className="et-text-xs font-mono">4242 4242 4242 4242</code>
-            <span className="et-text-xs text-emerald-600">Success</span>
+            <code className="et-caption font-mono">4242 4242 4242 4242</code>
+            <span className="et-caption text-emerald-600">Success</span>
           </div>
           <div className="flex justify-between items-center p-2.5">
-            <code className="et-text-xs font-mono">4000 0000 0000 9995</code>
-            <span className="et-text-xs text-red-600">Declined</span>
+            <code className="et-caption font-mono">4000 0000 0000 9995</code>
+            <span className="et-caption text-red-600">Declined</span>
           </div>
           <div className="flex justify-between items-center p-2.5">
-            <code className="et-text-xs font-mono">4000 0025 0000 3155</code>
-            <span className="et-text-xs text-amber-600">Requires authentication</span>
+            <code className="et-caption font-mono">4000 0025 0000 3155</code>
+            <span className="et-caption text-amber-600">Requires authentication</span>
           </div>
         </div>
 
@@ -393,15 +393,15 @@ export default function PaymentsPage() {
 
       {/* Next Steps */}
       <section className="border-t pt-6">
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-4">Next Steps</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-4">Next Steps</h2>
         <div className="grid sm:grid-cols-2 gap-3">
           <Link
             href="/documentation/webhooks"
             className="group flex items-center justify-between p-4 border rounded-lg hover:border-zinc-400 transition-colors"
           >
             <div>
-              <h3 className="et-text-sm font-medium text-zinc-900 group-hover:text-primary mb-1">Set Up Webhooks</h3>
-              <p className="et-text-xs text-zinc-500">Handle payment events in real-time</p>
+              <h3 className="et-small font-medium text-zinc-900 group-hover:text-primary mb-1">Set Up Webhooks</h3>
+              <p className="et-caption text-zinc-500">Handle payment events in real-time</p>
             </div>
             <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 transition-transform" />
           </Link>
@@ -410,8 +410,8 @@ export default function PaymentsPage() {
             className="group flex items-center justify-between p-4 border rounded-lg hover:border-zinc-400 transition-colors"
           >
             <div>
-              <h3 className="et-text-sm font-medium text-zinc-900 group-hover:text-primary mb-1">API Reference</h3>
-              <p className="et-text-xs text-zinc-500">Explore all payment endpoints</p>
+              <h3 className="et-small font-medium text-zinc-900 group-hover:text-primary mb-1">API Reference</h3>
+              <p className="et-caption text-zinc-500">Explore all payment endpoints</p>
             </div>
             <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 transition-transform" />
           </Link>

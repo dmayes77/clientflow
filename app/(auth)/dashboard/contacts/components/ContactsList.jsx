@@ -378,7 +378,7 @@ export function ContactsList() {
     <TooltipProvider>
       <div className="space-y-4">
         {/* Status Filter Tabs */}
-        <div className="flex flex-wrap gap-2 text-sm">
+        <div className="flex flex-wrap gap-2 et-small">
           <span className="text-primary font-medium">Filtering results by:</span>
           <span className="text-muted-foreground">
             {statusFilter === "all" ? "All Contacts" :
@@ -393,7 +393,7 @@ export function ContactsList() {
             <div className="flex flex-col gap-4">
               {/* Title and Actions Row */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <CardTitle className="flex items-center gap-2 text-xl">
+                <CardTitle className="flex items-center gap-2 et-h3">
                   {statusFilter === "all" || statusFilter === "active" ? "Contacts" : "Leads"}
                 </CardTitle>
                 <div className="flex items-center gap-2">
@@ -419,7 +419,7 @@ export function ContactsList() {
                   variant={statusFilter === "all" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("all")}
-                  className="h-7 text-xs"
+                  className="et-caption"
                 >
                   All ({statusCounts.all})
                 </Button>
@@ -427,7 +427,7 @@ export function ContactsList() {
                   variant={statusFilter === "lead" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("lead")}
-                  className={`h-7 text-xs ${statusFilter === "lead" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                  className={`et-caption ${statusFilter === "lead" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
                 >
                   <Flame className="h-3 w-3 mr-1" />
                   Leads ({statusCounts.lead})
@@ -436,7 +436,7 @@ export function ContactsList() {
                   variant={statusFilter === "prospect" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("prospect")}
-                  className={`h-7 text-xs ${statusFilter === "prospect" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+                  className={`et-caption ${statusFilter === "prospect" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
                 >
                   Prospects ({statusCounts.prospect})
                 </Button>
@@ -444,7 +444,7 @@ export function ContactsList() {
                   variant={statusFilter === "active" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("active")}
-                  className={`h-7 text-xs ${statusFilter === "active" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                  className={`et-caption ${statusFilter === "active" ? "bg-green-600 hover:bg-green-700" : ""}`}
                 >
                   Active ({statusCounts.active})
                 </Button>
@@ -452,7 +452,7 @@ export function ContactsList() {
                   variant={statusFilter === "inactive" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("inactive")}
-                  className="h-7 text-xs"
+                  className="et-caption"
                 >
                   Inactive ({statusCounts.inactive})
                 </Button>
@@ -488,7 +488,7 @@ export function ContactsList() {
             {selectedIds.size > 0 && (
               <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">
+                  <span className="et-small font-medium">
                     {selectedIds.size} selected
                   </span>
                   <Button
@@ -518,7 +518,7 @@ export function ContactsList() {
                     variant="outline"
                     size="sm"
                     onClick={handleExport}
-                    className="h-8 text-xs"
+                    className="et-caption"
                   >
                     <Download className="h-3 w-3 mr-1" />
                     Export CSV
@@ -528,7 +528,7 @@ export function ContactsList() {
                     size="sm"
                     onClick={handleBulkDelete}
                     disabled={bulkDeleting}
-                    className="h-8 text-xs"
+                    className="et-caption"
                   >
                     {bulkDeleting ? (
                       <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -547,7 +547,7 @@ export function ContactsList() {
                   <Users className="h-6 w-6 text-violet-600" />
                 </div>
                 <h3 className="font-medium text-zinc-900 mb-1">No contacts yet</h3>
-                <p className="et-text-sm text-muted-foreground mb-4">
+                <p className="et-et-small text-muted-foreground mb-4">
                   Add your first client or lead to get started
                 </p>
                 <Button size="sm" onClick={() => handleOpenDialog()} className="bg-green-600 hover:bg-green-700">
@@ -557,7 +557,7 @@ export function ContactsList() {
               </div>
             ) : filteredClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="et-text-sm text-muted-foreground">
+                <p className="et-et-small text-muted-foreground">
                   No contacts match your filters
                 </p>
                 <Button
@@ -621,7 +621,7 @@ export function ContactsList() {
                               </span>
                             </div>
                             {client.phone && (
-                              <div className="flex items-center gap-2 text-sm">
+                              <div className="flex items-center gap-2 et-small">
                                 <a
                                   href={`tel:${client.phone}`}
                                   onClick={(e) => e.stopPropagation()}
@@ -631,14 +631,14 @@ export function ContactsList() {
                                 </a>
                               </div>
                             )}
-                            <div className="text-sm text-muted-foreground">
+                            <div className="et-small text-muted-foreground">
                               {client.email}
                             </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2 et-caption text-muted-foreground">
                               <Calendar className="h-3 w-3" />
                               added {formatDate(client.createdAt)}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="et-caption text-muted-foreground">
                               ID# {client.id.slice(-6).toUpperCase()}
                             </div>
                           </div>
@@ -646,7 +646,7 @@ export function ContactsList() {
 
                         {/* Insights Column */}
                         <TableCell className="hidden lg:table-cell py-3">
-                          <div className="space-y-1 text-sm">
+                          <div className="space-y-1 et-small">
                             <div>
                               <span className="font-medium">Source:</span>{" "}
                               <span className="text-muted-foreground">{getSourceLabel(client.source)}</span>
@@ -656,7 +656,7 @@ export function ContactsList() {
                               <span className="text-muted-foreground">{client.bookingCount || 0}</span>
                             </div>
                             {client.notes && (
-                              <div className="text-xs text-muted-foreground line-clamp-1">
+                              <div className="et-caption text-muted-foreground line-clamp-1">
                                 {client.notes}
                               </div>
                             )}

@@ -48,8 +48,8 @@ export default function BookPage() {
         <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 mb-3 ring-1 ring-primary/10">
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
-        <h1 className="et-text-xl font-bold mb-1">Let&apos;s Connect</h1>
-        <p className="et-text-sm text-muted-foreground">
+        <h1 className="et-h3 font-bold mb-1">Let&apos;s Connect</h1>
+        <p className="et-small text-muted-foreground">
           Choose how you&apos;d like to meet with our team
         </p>
       </div>
@@ -71,13 +71,13 @@ export default function BookPage() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <h3 className="font-semibold et-text-sm">{callType.title}</h3>
-                        <span className="flex items-center gap-1 et-text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">
+                        <h3 className="font-semibold et-small">{callType.title}</h3>
+                        <span className="flex items-center gap-1 et-caption text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">
                           <Clock className="w-3 h-3" />
                           {callType.duration}m
                         </span>
                       </div>
-                      <p className="et-text-xs text-muted-foreground line-clamp-1">
+                      <p className="et-caption text-muted-foreground line-clamp-1">
                         {callType.description}
                       </p>
                     </div>
@@ -95,7 +95,7 @@ export default function BookPage() {
       </div>
 
       {/* Footer note */}
-      <p className="text-center et-text-xs text-muted-foreground mt-4">
+      <p className="text-center et-caption text-muted-foreground mt-4">
         Can&apos;t find a time that works?{" "}
         <Link href="/support" className="text-primary hover:underline font-medium">
           Contact us directly

@@ -25,7 +25,7 @@ export function EndpointCard({ method, path, description, request, response, par
         <Badge className={`${methodColors[method]} border font-mono et-text-2xs px-1.5 py-0`}>
           {method}
         </Badge>
-        <code className="et-text-xs font-mono font-medium text-zinc-900">{path}</code>
+        <code className="et-caption font-mono font-medium text-zinc-900">{path}</code>
         <span className="et-text-2xs text-zinc-400 ml-auto mr-1 hidden sm:block truncate max-w-[200px]">
           {description}
         </span>
@@ -38,11 +38,11 @@ export function EndpointCard({ method, path, description, request, response, par
 
       {isOpen && (
         <div className="border-t bg-zinc-50 p-3 space-y-3">
-          <p className="et-text-xs text-zinc-500 sm:hidden">{description}</p>
+          <p className="et-caption text-zinc-500 sm:hidden">{description}</p>
 
           {params && params.length > 0 && (
             <div>
-              <h4 className="et-text-xs font-semibold text-zinc-700 mb-1.5">Parameters</h4>
+              <h4 className="et-caption font-semibold text-zinc-700 mb-1.5">Parameters</h4>
               <div className="space-y-1">
                 {params.map((param, idx) => (
                   <div key={idx} className="flex items-center gap-2 et-text-2xs">
@@ -68,14 +68,14 @@ export function EndpointCard({ method, path, description, request, response, par
 
           {request && (
             <div>
-              <h4 className="et-text-xs font-semibold text-zinc-700 mb-1.5">Request</h4>
+              <h4 className="et-caption font-semibold text-zinc-700 mb-1.5">Request</h4>
               <CodeBlock code={request} title="Request Body" />
             </div>
           )}
 
           {response && (
             <div>
-              <h4 className="et-text-xs font-semibold text-zinc-700 mb-1.5">Response</h4>
+              <h4 className="et-caption font-semibold text-zinc-700 mb-1.5">Response</h4>
               <CodeBlock code={response} title="200 OK" />
             </div>
           )}

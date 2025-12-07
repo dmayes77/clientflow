@@ -10,7 +10,7 @@ export default function IntegrationsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Integrations</h1>
-        <p className="et-text-sm text-muted-foreground">Connect third-party services to ClientFlow</p>
+        <p className="et-small text-muted-foreground">Connect third-party services to ClientFlow</p>
       </div>
       <IntegrationsList />
     </div>

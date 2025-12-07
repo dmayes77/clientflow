@@ -9,9 +9,9 @@ export default function BookingLayout({ children }) {
         <div className="container max-w-5xl mx-auto px-4 py-3">
           <Link href="/" className="flex items-center gap-2 w-fit group">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-              <span className="text-primary-foreground font-bold et-text-xs">CF</span>
+              <span className="text-primary-foreground font-bold et-caption">CF</span>
             </div>
-            <span className="font-semibold et-text-base">ClientFlow</span>
+            <span className="font-semibold et-body">ClientFlow</span>
           </Link>
         </div>
       </header>
@@ -24,7 +24,7 @@ export default function BookingLayout({ children }) {
       {/* Footer */}
       <footer className="border-t bg-card py-2.5">
         <div className="container max-w-5xl mx-auto px-4 text-center">
-          <p className="et-text-xs text-muted-foreground">
+          <p className="et-caption text-muted-foreground">
             <Link href="/" className="hover:text-foreground transition-colors">
               ClientFlow
             </Link>

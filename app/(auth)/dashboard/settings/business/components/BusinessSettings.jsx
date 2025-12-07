@@ -182,7 +182,7 @@ export function BusinessSettings() {
               <LinkIcon className="h-5 w-5 text-blue-500" />
               Public Booking Link
               {!formData.slug && (
-                <Badge variant="secondary" className="ml-2 et-text-xs">Preview</Badge>
+                <Badge variant="secondary" className="ml-2 et-caption">Preview</Badge>
               )}
             </CardTitle>
             <CardDescription>
@@ -193,7 +193,7 @@ export function BusinessSettings() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Input value={bookingUrl} readOnly className="font-mono et-text-sm" />
+              <Input value={bookingUrl} readOnly className="font-mono et-small" />
               <Button
                 variant="outline"
                 size="icon"

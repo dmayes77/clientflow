@@ -36,10 +36,10 @@ export default function GettingStartedPage() {
           <Badge variant="outline" className="et-text-2xs px-1.5 py-0">Guide</Badge>
           <span className="et-text-2xs text-zinc-400">5 min read</span>
         </div>
-        <h1 className="et-text-xl font-semibold text-zinc-900 mb-2">
+        <h1 className="et-h3 font-semibold text-zinc-900 mb-2">
           Getting Started with ClientFlow API
         </h1>
-        <p className="et-text-sm text-zinc-500 max-w-2xl">
+        <p className="et-small text-zinc-500 max-w-2xl">
           This guide will walk you through setting up your account, obtaining API credentials,
           and making your first API call to the ClientFlow platform.
         </p>
@@ -47,14 +47,14 @@ export default function GettingStartedPage() {
 
       {/* Prerequisites */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Prerequisites</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Prerequisites</h2>
         <div className="border rounded-lg divide-y">
           <div className="flex items-center gap-3 p-3">
             <div className="p-1.5 bg-emerald-100 rounded">
               <Check className="w-3 h-3 text-emerald-600" />
             </div>
             <div>
-              <p className="et-text-xs font-medium text-zinc-900">A ClientFlow account</p>
+              <p className="et-caption font-medium text-zinc-900">A ClientFlow account</p>
               <p className="et-text-2xs text-zinc-500">
                 <Link href="/pricing" className="text-primary hover:underline">Sign up for free</Link> if you don't have one
               </p>
@@ -65,7 +65,7 @@ export default function GettingStartedPage() {
               <Check className="w-3 h-3 text-emerald-600" />
             </div>
             <div>
-              <p className="et-text-xs font-medium text-zinc-900">Basic knowledge of REST APIs</p>
+              <p className="et-caption font-medium text-zinc-900">Basic knowledge of REST APIs</p>
               <p className="et-text-2xs text-zinc-500">Familiarity with HTTP requests and JSON</p>
             </div>
           </div>
@@ -74,7 +74,7 @@ export default function GettingStartedPage() {
               <Check className="w-3 h-3 text-emerald-600" />
             </div>
             <div>
-              <p className="et-text-xs font-medium text-zinc-900">A tool for making HTTP requests</p>
+              <p className="et-caption font-medium text-zinc-900">A tool for making HTTP requests</p>
               <p className="et-text-2xs text-zinc-500">cURL, Postman, or your preferred HTTP client</p>
             </div>
           </div>
@@ -83,16 +83,16 @@ export default function GettingStartedPage() {
 
       {/* Quick Start Steps */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Quick Start</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Quick Start</h2>
         <div className="space-y-4">
           {steps.map((step, idx) => (
             <div key={step.number} className="flex gap-4">
-              <div className="flex-shrink-0 w-6 h-6 bg-zinc-900 text-white rounded-full flex items-center justify-center et-text-xs font-medium">
+              <div className="flex-shrink-0 w-6 h-6 bg-zinc-900 text-white rounded-full flex items-center justify-center et-caption font-medium">
                 {step.number}
               </div>
               <div className="flex-1 pt-0.5">
-                <h3 className="et-text-sm font-medium text-zinc-900 mb-1">{step.title}</h3>
-                <p className="et-text-xs text-zinc-500">{step.description}</p>
+                <h3 className="et-small font-medium text-zinc-900 mb-1">{step.title}</h3>
+                <p className="et-caption text-zinc-500">{step.description}</p>
               </div>
             </div>
           ))}
@@ -101,16 +101,16 @@ export default function GettingStartedPage() {
 
       {/* Getting API Credentials */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">
           <Key className="w-4 h-4 inline-block mr-2" />
           Getting Your API Credentials
         </h2>
         <div className="space-y-3">
-          <p className="et-text-sm text-zinc-600">
+          <p className="et-small text-zinc-600">
             After creating your account, navigate to your dashboard to obtain your API credentials:
           </p>
 
-          <ol className="space-y-2 et-text-xs text-zinc-600">
+          <ol className="space-y-2 et-caption text-zinc-600">
             <li className="flex gap-2">
               <span className="text-zinc-400">1.</span>
               <span>Log in to your <Link href="/dashboard" className="text-primary hover:underline">ClientFlow Dashboard</Link></span>
@@ -134,7 +134,7 @@ export default function GettingStartedPage() {
           </ol>
 
           <div className="p-3 border border-amber-200 bg-amber-50 rounded-lg">
-            <p className="et-text-xs text-amber-800">
+            <p className="et-caption text-amber-800">
               <strong>Important:</strong> Store your API key securely. It won't be shown again after you leave the page.
               Never expose your API key in client-side code.
             </p>
@@ -144,23 +144,23 @@ export default function GettingStartedPage() {
 
       {/* Authentication */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">
           <Server className="w-4 h-4 inline-block mr-2" />
           Authentication
         </h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <p className="et-small text-zinc-600 mb-3">
           All API requests require two headers for authentication:
         </p>
 
         <div className="border rounded-lg divide-y mb-4">
           <div className="flex items-center gap-3 p-3">
             <code className="et-text-2xs font-mono bg-zinc-100 px-2 py-1 rounded font-medium">X-API-Key</code>
-            <span className="et-text-xs text-zinc-500">Your secret API key</span>
+            <span className="et-caption text-zinc-500">Your secret API key</span>
             <Badge variant="outline" className="ml-auto et-text-2xs h-5 px-1.5">required</Badge>
           </div>
           <div className="flex items-center gap-3 p-3">
             <code className="et-text-2xs font-mono bg-zinc-100 px-2 py-1 rounded font-medium">X-Tenant-ID</code>
-            <span className="et-text-xs text-zinc-500">Your unique tenant identifier</span>
+            <span className="et-caption text-zinc-500">Your unique tenant identifier</span>
             <Badge variant="outline" className="ml-auto et-text-2xs h-5 px-1.5">required</Badge>
           </div>
         </div>
@@ -168,11 +168,11 @@ export default function GettingStartedPage() {
 
       {/* First API Call */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">
           <Terminal className="w-4 h-4 inline-block mr-2" />
           Making Your First API Call
         </h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <p className="et-small text-zinc-600 mb-3">
           Let's make a simple request to list your services. Replace the placeholder values with your actual credentials:
         </p>
 
@@ -184,7 +184,7 @@ export default function GettingStartedPage() {
   -H "Content-Type: application/json"`}
         />
 
-        <p className="et-text-xs text-zinc-500 mt-3 mb-3">
+        <p className="et-caption text-zinc-500 mt-3 mb-3">
           If successful, you'll receive a response like this:
         </p>
 
@@ -208,11 +208,11 @@ export default function GettingStartedPage() {
 
       {/* Create a Booking */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">
           <Code className="w-4 h-4 inline-block mr-2" />
           Creating Your First Booking
         </h2>
-        <p className="et-text-sm text-zinc-600 mb-3">
+        <p className="et-small text-zinc-600 mb-3">
           Now let's create a booking. You'll need a client ID and service ID:
         </p>
 
@@ -249,32 +249,32 @@ export default function GettingStartedPage() {
 
       {/* Common Errors */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-3">Troubleshooting</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-3">Troubleshooting</h2>
         <div className="border rounded-lg divide-y">
           <div className="p-3">
             <div className="flex items-center gap-2 mb-1">
               <code className="et-text-2xs font-mono bg-red-100 text-red-700 px-1.5 py-0.5 rounded">401</code>
-              <span className="et-text-xs font-medium text-zinc-900">Unauthorized</span>
+              <span className="et-caption font-medium text-zinc-900">Unauthorized</span>
             </div>
-            <p className="et-text-xs text-zinc-500">
+            <p className="et-caption text-zinc-500">
               Check that your API key is correct and hasn't expired. Make sure both X-API-Key and X-Tenant-ID headers are included.
             </p>
           </div>
           <div className="p-3">
             <div className="flex items-center gap-2 mb-1">
               <code className="et-text-2xs font-mono bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">403</code>
-              <span className="et-text-xs font-medium text-zinc-900">Forbidden</span>
+              <span className="et-caption font-medium text-zinc-900">Forbidden</span>
             </div>
-            <p className="et-text-xs text-zinc-500">
+            <p className="et-caption text-zinc-500">
               Your API key doesn't have permission for this action. Check your key's permissions in the dashboard.
             </p>
           </div>
           <div className="p-3">
             <div className="flex items-center gap-2 mb-1">
               <code className="et-text-2xs font-mono bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">429</code>
-              <span className="et-text-xs font-medium text-zinc-900">Rate Limited</span>
+              <span className="et-caption font-medium text-zinc-900">Rate Limited</span>
             </div>
-            <p className="et-text-xs text-zinc-500">
+            <p className="et-caption text-zinc-500">
               You've exceeded the rate limit. Wait a moment and try again. Check the X-RateLimit-Remaining header.
             </p>
           </div>
@@ -283,15 +283,15 @@ export default function GettingStartedPage() {
 
       {/* Next Steps */}
       <section className="border-t pt-6">
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-4">Next Steps</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-4">Next Steps</h2>
         <div className="grid sm:grid-cols-2 gap-3">
           <Link
             href="/documentation/api-reference"
             className="group flex items-center justify-between p-4 border rounded-lg hover:border-zinc-400 transition-colors"
           >
             <div>
-              <h3 className="et-text-sm font-medium text-zinc-900 group-hover:text-primary mb-1">API Reference</h3>
-              <p className="et-text-xs text-zinc-500">Explore all available endpoints</p>
+              <h3 className="et-small font-medium text-zinc-900 group-hover:text-primary mb-1">API Reference</h3>
+              <p className="et-caption text-zinc-500">Explore all available endpoints</p>
             </div>
             <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 transition-transform" />
           </Link>
@@ -300,8 +300,8 @@ export default function GettingStartedPage() {
             className="group flex items-center justify-between p-4 border rounded-lg hover:border-zinc-400 transition-colors"
           >
             <div>
-              <h3 className="et-text-sm font-medium text-zinc-900 group-hover:text-primary mb-1">Set Up Webhooks</h3>
-              <p className="et-text-xs text-zinc-500">Receive real-time notifications</p>
+              <h3 className="et-small font-medium text-zinc-900 group-hover:text-primary mb-1">Set Up Webhooks</h3>
+              <p className="et-caption text-zinc-500">Receive real-time notifications</p>
             </div>
             <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 transition-transform" />
           </Link>

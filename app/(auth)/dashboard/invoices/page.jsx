@@ -10,7 +10,7 @@ export default function InvoicesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Financials</h1>
-        <p className="et-text-sm text-muted-foreground">Manage invoices and track payments</p>
+        <p className="et-small text-muted-foreground">Manage invoices and track payments</p>
       </div>
       <InvoicesList />
     </div>

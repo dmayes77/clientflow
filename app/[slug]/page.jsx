@@ -93,7 +93,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
       <button
         onClick={() => onSelect(null)}
         className={`
-          shrink-0 px-4 py-2.5 rounded-full et-text-sm font-medium transition-all
+          shrink-0 px-4 py-2.5 rounded-full et-small font-medium transition-all
           ${selectedCategory === null ? "bg-primary text-primary-foreground shadow-md" : "bg-card border hover:bg-muted text-muted-foreground"}
         `}
       >
@@ -104,7 +104,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
           key={cat.id}
           onClick={() => onSelect(cat.id)}
           className={`
-            shrink-0 px-4 py-2.5 rounded-full et-text-sm font-medium transition-all flex items-center gap-2
+            shrink-0 px-4 py-2.5 rounded-full et-small font-medium transition-all flex items-center gap-2
             ${selectedCategory === cat.id ? "text-white shadow-md" : "bg-card border hover:bg-muted text-muted-foreground"}
           `}
           style={{
@@ -120,7 +120,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
         <button
           onClick={() => onSelect("uncategorized")}
           className={`
-            shrink-0 px-4 py-2.5 rounded-full et-text-sm font-medium transition-all
+            shrink-0 px-4 py-2.5 rounded-full et-small font-medium transition-all
             ${selectedCategory === "uncategorized" ? "bg-gray-600 text-white shadow-md" : "bg-card border hover:bg-muted text-muted-foreground"}
           `}
         >
@@ -188,12 +188,12 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                 {/* Price & Duration */}
                 <div className={`flex items-center gap-4 p-4 rounded-xl ${isPackage ? "bg-violet-50 border border-violet-100" : "bg-muted/50"}`}>
                   <div className="flex-1">
-                    <p className="et-text-xs text-muted-foreground uppercase tracking-wide">Price</p>
+                    <p className="et-caption text-muted-foreground uppercase tracking-wide">Price</p>
                     <p className={`text-2xl font-bold ${isPackage ? "text-violet-600" : "text-primary"}`}>{formatPrice(item.price)}</p>
                   </div>
                   <div className={`border-l pl-4 ${isPackage ? "border-violet-200" : ""}`}>
-                    <p className="et-text-xs text-muted-foreground uppercase tracking-wide">Duration</p>
-                    <p className="et-text-base font-medium flex items-center gap-1.5">
+                    <p className="et-caption text-muted-foreground uppercase tracking-wide">Duration</p>
+                    <p className="et-body font-medium flex items-center gap-1.5">
                       <Clock className="w-4 h-4" />
                       {formatDuration(isPackage ? item.totalDuration : item.duration)}
                     </p>
@@ -201,19 +201,19 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                 </div>
 
                 {/* Description */}
-                {item.description && <p className="et-text-sm text-muted-foreground leading-relaxed">{item.description}</p>}
+                {item.description && <p className="et-small text-muted-foreground leading-relaxed">{item.description}</p>}
 
                 {/* What's Included (service) */}
                 {item.includes && item.includes.length > 0 && (
                   <div>
-                    <h4 className="font-semibold et-text-sm mb-3">What's Included</h4>
+                    <h4 className="font-semibold et-small mb-3">What's Included</h4>
                     <div className="space-y-2">
                       {item.includes.map((inc, index) => (
                         <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                           <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                             <Check className="w-3.5 h-3.5 text-green-600" />
                           </div>
-                          <span className="et-text-sm">{inc}</span>
+                          <span className="et-small">{inc}</span>
                         </div>
                       ))}
                     </div>
@@ -223,7 +223,7 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                 {/* Included Services (package) */}
                 {isPackage && item.services && item.services.length > 0 && (
                   <div>
-                    <h4 className="font-semibold et-text-sm mb-3">{item.services.length} Services Included</h4>
+                    <h4 className="font-semibold et-small mb-3">{item.services.length} Services Included</h4>
                     <div className="space-y-2">
                       {item.services.map((service) => (
                         <div key={service.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
@@ -231,9 +231,9 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                             <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
                               <Check className="w-3.5 h-3.5 text-green-600" />
                             </div>
-                            <span className="et-text-sm font-medium">{service.name}</span>
+                            <span className="et-small font-medium">{service.name}</span>
                           </div>
-                          <span className="et-text-xs text-muted-foreground">{formatDuration(service.duration)}</span>
+                          <span className="et-caption text-muted-foreground">{formatDuration(service.duration)}</span>
                         </div>
                       ))}
                     </div>
@@ -263,7 +263,7 @@ function QuickActionButton({ icon: Icon, label, href, onClick }) {
       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
         <Icon className="w-5 h-5 text-primary" />
       </div>
-      <span className="et-text-xs font-medium">{label}</span>
+      <span className="et-caption font-medium">{label}</span>
     </div>
   );
 
@@ -295,14 +295,14 @@ function ServiceCard({ service, onClick }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold et-text-base truncate">{service.name}</h3>
-        {service.description && <p className="et-text-sm text-muted-foreground line-clamp-1 mt-0.5">{service.description}</p>}
+        <h3 className="font-semibold et-body truncate">{service.name}</h3>
+        {service.description && <p className="et-small text-muted-foreground line-clamp-1 mt-0.5">{service.description}</p>}
         <div className="flex items-center gap-3 mt-2">
-          <span className="flex items-center gap-1 et-text-xs text-muted-foreground">
+          <span className="flex items-center gap-1 et-caption text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
             {formatDuration(service.duration)}
           </span>
-          <span className="font-bold et-text-base text-green-600">{formatPrice(service.price)}</span>
+          <span className="font-bold et-body text-green-600">{formatPrice(service.price)}</span>
         </div>
       </div>
 
@@ -325,12 +325,12 @@ function PackageCard({ pkg, onClick }) {
               <Package className="w-3 h-3 mr-1" />
               Package
             </Badge>
-            <h3 className="font-semibold et-text-base">{pkg.name}</h3>
-            {pkg.description && <p className="et-text-sm text-muted-foreground line-clamp-2 mt-1">{pkg.description}</p>}
+            <h3 className="font-semibold et-body">{pkg.name}</h3>
+            {pkg.description && <p className="et-small text-muted-foreground line-clamp-2 mt-1">{pkg.description}</p>}
           </div>
           <div className="text-right shrink-0">
             <p className="text-xl font-bold text-violet-600">{formatPrice(pkg.price)}</p>
-            <p className="et-text-xs text-muted-foreground">{formatDuration(pkg.totalDuration)}</p>
+            <p className="et-caption text-muted-foreground">{formatDuration(pkg.totalDuration)}</p>
           </div>
         </div>
 
@@ -338,13 +338,13 @@ function PackageCard({ pkg, onClick }) {
         {pkg.services && pkg.services.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {pkg.services.slice(0, 3).map((service) => (
-              <span key={service.id} className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-full et-text-xs">
+              <span key={service.id} className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-full et-caption">
                 <Check className="w-3 h-3 text-green-500" />
                 {service.name}
               </span>
             ))}
             {pkg.services.length > 3 && (
-              <span className="inline-flex items-center px-2 py-1 bg-muted rounded-full et-text-xs text-muted-foreground">+{pkg.services.length - 3} more</span>
+              <span className="inline-flex items-center px-2 py-1 bg-muted rounded-full et-caption text-muted-foreground">+{pkg.services.length - 3} more</span>
             )}
           </div>
         )}
@@ -410,7 +410,7 @@ export default function TenantLandingPage({ params }) {
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-          <p className="et-text-sm text-muted-foreground">Loading...</p>
+          <p className="et-small text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -425,7 +425,7 @@ export default function TenantLandingPage({ params }) {
               <Building2 className="w-8 h-8 text-muted-foreground" />
             </div>
             <h1 className="text-xl font-bold mb-2">Business Not Found</h1>
-            <p className="et-text-sm text-muted-foreground mb-6">The business you&apos;re looking for doesn&apos;t exist or may have been removed.</p>
+            <p className="et-small text-muted-foreground mb-6">The business you&apos;re looking for doesn&apos;t exist or may have been removed.</p>
             <Link href="/">
               <Button className="w-full">Go Home</Button>
             </Link>
@@ -464,7 +464,7 @@ export default function TenantLandingPage({ params }) {
 
                 {/* Location */}
                 {hasAddress && (
-                  <p className="et-text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <p className="et-small text-muted-foreground mt-0.5 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">{[toTitleCase(business.address?.city), business.address?.state?.toUpperCase()].filter(Boolean).join(", ")}</span>
                   </p>
@@ -473,7 +473,7 @@ export default function TenantLandingPage({ params }) {
             </div>
 
             {/* Description */}
-            {business.description && <p className="et-text-sm text-muted-foreground mt-4 leading-relaxed">{business.description}</p>}
+            {business.description && <p className="et-small text-muted-foreground mt-4 leading-relaxed">{business.description}</p>}
 
             {/* Quick Actions - Mobile */}
             <div className="grid grid-cols-3 gap-2 mt-5">
@@ -515,8 +515,8 @@ export default function TenantLandingPage({ params }) {
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="font-bold et-text-lg">Services</h2>
-                  <p className="et-text-xs text-muted-foreground">
+                  <h2 className="font-bold et-h4">Services</h2>
+                  <p className="et-caption text-muted-foreground">
                     {filteredServices.length} available
                     {selectedCategory && services.length !== filteredServices.length && <span className="text-muted-foreground/60"> of {services.length}</span>}
                   </p>
@@ -541,8 +541,8 @@ export default function TenantLandingPage({ params }) {
                   <Package className="w-5 h-5 text-violet-500" />
                 </div>
                 <div>
-                  <h2 className="font-bold et-text-lg">Packages</h2>
-                  <p className="et-text-xs text-muted-foreground">
+                  <h2 className="font-bold et-h4">Packages</h2>
+                  <p className="et-caption text-muted-foreground">
                     {filteredPackages.length} bundle{filteredPackages.length !== 1 ? "s" : ""} available
                     {selectedCategory && packages.length !== filteredPackages.length && <span className="text-muted-foreground/60"> of {packages.length}</span>}
                   </p>
@@ -565,7 +565,7 @@ export default function TenantLandingPage({ params }) {
               <Calendar className="w-8 h-8 text-muted-foreground" />
             </div>
             <h2 className="text-lg font-bold mb-2">No Services Yet</h2>
-            <p className="et-text-sm text-muted-foreground max-w-xs mx-auto">This business hasn&apos;t added any services yet. Check back soon!</p>
+            <p className="et-small text-muted-foreground max-w-xs mx-auto">This business hasn&apos;t added any services yet. Check back soon!</p>
           </div>
         )}
 
@@ -576,7 +576,7 @@ export default function TenantLandingPage({ params }) {
               <Sparkles className="w-7 h-7 text-muted-foreground" />
             </div>
             <h2 className="text-lg font-bold mb-2">No Results</h2>
-            <p className="et-text-sm text-muted-foreground max-w-xs mx-auto mb-4">No services found in this category.</p>
+            <p className="et-small text-muted-foreground max-w-xs mx-auto mb-4">No services found in this category.</p>
             <Button variant="outline" size="sm" onClick={() => setSelectedCategory(null)}>
               View All Services
             </Button>
@@ -587,7 +587,7 @@ export default function TenantLandingPage({ params }) {
       {/* Footer */}
       <footer className="bg-card border-t">
         <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 et-text-xs text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 et-caption text-muted-foreground">
             <span>
               {business.name} &copy; {new Date().getFullYear()}
             </span>

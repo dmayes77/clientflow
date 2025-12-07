@@ -310,7 +310,7 @@ export function WebhooksList() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 et-text-lg">
+            <CardTitle className="flex items-center gap-2 et-h4">
               <Webhook className="h-5 w-5 text-purple-500" />
               Webhook Endpoints
             </CardTitle>
@@ -330,7 +330,7 @@ export function WebhooksList() {
                 <Webhook className="h-6 w-6 text-purple-600" />
               </div>
               <h3 className="font-medium text-zinc-900 mb-1">No webhooks yet</h3>
-              <p className="et-text-sm text-muted-foreground mb-4 max-w-sm">
+              <p className="et-small text-muted-foreground mb-4 max-w-sm">
                 Webhooks allow external applications to receive real-time data when events happen in
                 your ClientFlow account.
               </p>
@@ -353,13 +353,13 @@ export function WebhooksList() {
                         <div className="flex items-center gap-2 mb-1">
                           <Badge
                             variant={webhook.active ? "default" : "secondary"}
-                            className="et-text-xs"
+                            className="et-caption"
                           >
                             {webhook.active ? "Active" : "Disabled"}
                           </Badge>
                           <Badge
                             variant="outline"
-                            className={`et-text-xs ${
+                            className={`et-caption ${
                               deliveryStatus.status === "success"
                                 ? "border-green-200 bg-green-50 text-green-700"
                                 : deliveryStatus.status === "error"
@@ -383,21 +383,21 @@ export function WebhooksList() {
                         </div>
                         <div className="flex items-center gap-2 mb-2">
                           <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                          <code className="et-text-sm font-mono truncate">{webhook.url}</code>
+                          <code className="et-small font-mono truncate">{webhook.url}</code>
                         </div>
                         {webhook.description && (
-                          <p className="et-text-sm text-muted-foreground mb-2">
+                          <p className="et-small text-muted-foreground mb-2">
                             {webhook.description}
                           </p>
                         )}
                         <div className="flex flex-wrap gap-1">
                           {webhook.events?.slice(0, 4).map((event) => (
-                            <Badge key={event} variant="outline" className="et-text-xs">
+                            <Badge key={event} variant="outline" className="et-caption">
                               {event}
                             </Badge>
                           ))}
                           {webhook.events?.length > 4 && (
-                            <Badge variant="outline" className="et-text-xs">
+                            <Badge variant="outline" className="et-caption">
                               +{webhook.events.length - 4} more
                             </Badge>
                           )}
@@ -443,8 +443,8 @@ export function WebhooksList() {
                     <div className="mt-3 pt-3 border-t">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="et-text-xs text-muted-foreground">Signing Secret:</span>
-                          <code className="et-text-xs font-mono bg-muted px-2 py-0.5 rounded">
+                          <span className="et-caption text-muted-foreground">Signing Secret:</span>
+                          <code className="et-caption font-mono bg-muted px-2 py-0.5 rounded">
                             {showSecrets[webhook.id]
                               ? webhook.secret
                               : "whsec_" + "•".repeat(24)}
@@ -505,7 +505,7 @@ export function WebhooksList() {
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                   required
                 />
-                <p className="et-text-xs text-muted-foreground">
+                <p className="et-caption text-muted-foreground">
                   The HTTPS URL that will receive webhook payloads
                 </p>
               </div>
@@ -548,9 +548,9 @@ export function WebhooksList() {
                             ) : (
                               <ChevronRight className="h-4 w-4" />
                             )}
-                            <span className="font-medium et-text-sm">{category}</span>
+                            <span className="font-medium et-small">{category}</span>
                             {selectedCount > 0 && (
-                              <Badge variant="secondary" className="et-text-xs">
+                              <Badge variant="secondary" className="et-caption">
                                 {selectedCount}
                               </Badge>
                             )}
@@ -559,7 +559,7 @@ export function WebhooksList() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="h-6 et-text-xs"
+                            className="h-6 et-caption"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleCategoryToggle(category);
@@ -579,7 +579,7 @@ export function WebhooksList() {
                                 />
                                 <label
                                   htmlFor={event.id}
-                                  className="et-text-sm cursor-pointer flex-1"
+                                  className="et-small cursor-pointer flex-1"
                                 >
                                   {event.label}
                                 </label>
@@ -591,7 +591,7 @@ export function WebhooksList() {
                     );
                   })}
                 </ScrollArea>
-                <p className="et-text-xs text-muted-foreground">
+                <p className="et-caption text-muted-foreground">
                   {formData.events.length} event{formData.events.length !== 1 ? "s" : ""} selected
                 </p>
               </div>
@@ -601,7 +601,7 @@ export function WebhooksList() {
                   <Label htmlFor="active" className="font-medium">
                     Active
                   </Label>
-                  <p className="et-text-sm text-muted-foreground">
+                  <p className="et-small text-muted-foreground">
                     Disabled webhooks won't receive events
                   </p>
                 </div>
@@ -654,7 +654,7 @@ export function WebhooksList() {
             <DialogTitle>Webhook Delivery History</DialogTitle>
             <DialogDescription>
               {selectedWebhook?.url && (
-                <code className="et-text-xs">{selectedWebhook.url}</code>
+                <code className="et-caption">{selectedWebhook.url}</code>
               )}
             </DialogDescription>
           </DialogHeader>
@@ -687,15 +687,15 @@ export function WebhooksList() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <code className="et-text-xs">{delivery.event}</code>
+                          <code className="et-caption">{delivery.event}</code>
                         </TableCell>
                         <TableCell>
-                          <code className="et-text-xs">{delivery.statusCode || "—"}</code>
+                          <code className="et-caption">{delivery.statusCode || "—"}</code>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span className="et-text-xs">
+                            <span className="et-caption">
                               {format(new Date(delivery.createdAt), "MMM d, h:mm a")}
                             </span>
                           </div>
@@ -708,8 +708,8 @@ export function WebhooksList() {
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Activity className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="et-text-sm text-muted-foreground">No deliveries yet</p>
-                <p className="et-text-xs text-muted-foreground mt-1">
+                <p className="et-small text-muted-foreground">No deliveries yet</p>
+                <p className="et-caption text-muted-foreground mt-1">
                   Deliveries will appear here when events are triggered
                 </p>
               </div>

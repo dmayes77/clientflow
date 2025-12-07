@@ -199,11 +199,11 @@ export function PackagesList() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 et-text-lg">
+            <CardTitle className="flex items-center gap-2 et-h4">
               <Boxes className="h-5 w-5 text-emerald-500" />
               Packages
             </CardTitle>
-            <p className="et-text-sm text-muted-foreground mt-1">
+            <p className="et-small text-muted-foreground mt-1">
               {packages.length} package{packages.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -219,7 +219,7 @@ export function PackagesList() {
                 <Boxes className="h-6 w-6 text-emerald-600" />
               </div>
               <h3 className="font-medium text-zinc-900 mb-1">No packages yet</h3>
-              <p className="et-text-sm text-muted-foreground mb-4">
+              <p className="et-small text-muted-foreground mb-4">
                 Bundle your services into packages for clients
               </p>
               <Button size="sm" onClick={() => handleOpenDialog()}>
@@ -247,7 +247,7 @@ export function PackagesList() {
                         <div>
                           <p className="font-medium">{pkg.name}</p>
                           {pkg.description && (
-                            <p className="et-text-sm text-muted-foreground truncate max-w-[200px]">
+                            <p className="et-small text-muted-foreground truncate max-w-[200px]">
                               {pkg.description}
                             </p>
                           )}
@@ -257,15 +257,15 @@ export function PackagesList() {
                         <div className="flex flex-wrap gap-1">
                           {pkg.services?.length > 0 ? (
                             pkg.services.slice(0, 2).map((service) => (
-                              <Badge key={service.id} variant="outline" className="et-text-xs">
+                              <Badge key={service.id} variant="outline" className="et-caption">
                                 {service.name}
                               </Badge>
                             ))
                           ) : (
-                            <span className="text-muted-foreground et-text-sm">No services</span>
+                            <span className="text-muted-foreground et-small">No services</span>
                           )}
                           {pkg.services?.length > 2 && (
-                            <Badge variant="outline" className="et-text-xs">
+                            <Badge variant="outline" className="et-caption">
                               +{pkg.services.length - 2}
                             </Badge>
                           )}
@@ -382,7 +382,7 @@ export function PackagesList() {
                         />
                         <label
                           htmlFor={`service-${service.id}`}
-                          className="et-text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                          className="et-small font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
                         >
                           {service.name}
                           <span className="text-muted-foreground ml-2">
@@ -392,7 +392,7 @@ export function PackagesList() {
                       </div>
                     ))}
                   </div>
-                  <p className="et-text-xs text-muted-foreground">
+                  <p className="et-caption text-muted-foreground">
                     {formData.serviceIds.length} service{formData.serviceIds.length !== 1 ? "s" : ""} selected
                   </p>
                 </div>
@@ -401,7 +401,7 @@ export function PackagesList() {
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <div>
                   <Label htmlFor="active" className="font-medium">Active</Label>
-                  <p className="et-text-sm text-muted-foreground">
+                  <p className="et-small text-muted-foreground">
                     Inactive packages won't appear in booking options
                   </p>
                 </div>

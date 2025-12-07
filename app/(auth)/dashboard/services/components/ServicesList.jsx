@@ -57,7 +57,7 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
         <GripVertical className="h-4 w-4" />
       </button>
       <Check className="h-4 w-4 text-green-600 shrink-0" />
-      <span className="flex-1 et-text-sm">{item}</span>
+      <span className="flex-1 et-small">{item}</span>
       <Button
         type="button"
         variant="ghost"
@@ -478,11 +478,11 @@ Format the includes list so I can easily copy each item individually.`;
       <Card className="py-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 et-text-lg">
+            <CardTitle className="flex items-center gap-2 et-h4">
               <Wrench className="h-5 w-5 text-amber-500" />
               Services
             </CardTitle>
-            <p className="et-text-sm text-muted-foreground mt-1">
+            <p className="et-small text-muted-foreground mt-1">
               {services.length} service{services.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -498,7 +498,7 @@ Format the includes list so I can easily copy each item individually.`;
                 <Wrench className="h-6 w-6 text-amber-600" />
               </div>
               <h3 className="font-medium text-zinc-900 mb-1">No services yet</h3>
-              <p className="et-text-sm text-muted-foreground mb-4">Create your first service to start booking clients</p>
+              <p className="et-small text-muted-foreground mb-4">Create your first service to start booking clients</p>
               <Button size="sm" onClick={() => handleOpenDialog()}>
                 <Plus className="h-4 w-4 mr-1" />
                 Create Service
@@ -525,7 +525,7 @@ Format the includes list so I can easily copy each item individually.`;
                           {service.images?.[0] && <img src={service.images[0].url} alt={service.name} className="h-10 w-10 rounded-md object-cover" />}
                           <div>
                             <p className="font-medium">{service.name}</p>
-                            {service.description && <p className="et-text-sm text-muted-foreground truncate max-w-[200px]">{service.description}</p>}
+                            {service.description && <p className="et-small text-muted-foreground truncate max-w-[200px]">{service.description}</p>}
                           </div>
                         </div>
                       </TableCell>
@@ -536,7 +536,7 @@ Format the includes list so I can easily copy each item individually.`;
                             {service.category.name}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground et-text-sm">—</span>
+                          <span className="text-muted-foreground et-small">—</span>
                         )}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
@@ -588,7 +588,7 @@ Format the includes list so I can easily copy each item individually.`;
                 {editingService ? "Update your service details" : "Add a new service offering for your clients"}
               </DialogDescription>
               <div className="flex items-center gap-2 shrink-0">
-                <Label htmlFor="active" className="et-text-sm font-normal text-muted-foreground">
+                <Label htmlFor="active" className="et-small font-normal text-muted-foreground">
                   {formData.active ? "Active" : "Inactive"}
                 </Label>
                 <Switch id="active" checked={formData.active} onCheckedChange={(checked) => setFormData({ ...formData, active: checked })} />
@@ -620,14 +620,14 @@ Format the includes list so I can easily copy each item individually.`;
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-7 et-text-xs gap-1.5 text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                          className="h-7 et-caption gap-1.5 text-violet-600 hover:text-violet-700 hover:bg-violet-50"
                           onClick={() => setAiPromptDialogOpen(true)}
                         >
                           <Sparkles className="h-3.5 w-3.5" />
                           Need help? Use AI
                         </Button>
                       </div>
-                      <p className="et-text-xs text-muted-foreground -mt-1">Marketing copy describing the end result your client will achieve</p>
+                      <p className="et-caption text-muted-foreground -mt-1">Marketing copy describing the end result your client will achieve</p>
                       <Textarea
                         id="description"
                         placeholder="e.g., Walk away with a fresh, confident look that turns heads and lasts for weeks"
@@ -755,12 +755,12 @@ Format the includes list so I can easily copy each item individually.`;
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>What's Included</Label>
-                      <span className="et-text-xs text-muted-foreground">{formData.includes.length}/20</span>
+                      <span className="et-caption text-muted-foreground">{formData.includes.length}/20</span>
                     </div>
 
                     <Alert className="bg-amber-50 border-amber-200">
                       <Lightbulb className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="et-text-xs text-amber-800">
+                      <AlertDescription className="et-caption text-amber-800">
                         We recommend adding 6-8 items that describe what clients receive with this service.
                       </AlertDescription>
                     </Alert>
@@ -790,8 +790,8 @@ Format the includes list so I can easily copy each item individually.`;
                       {formData.includes.length === 0 ? (
                         <div className="p-6 text-center text-muted-foreground">
                           <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                          <p className="et-text-sm">No items added yet</p>
-                          <p className="et-text-xs mt-1">Add items that describe what's included in this service</p>
+                          <p className="et-small">No items added yet</p>
+                          <p className="et-caption mt-1">Add items that describe what's included in this service</p>
                         </div>
                       ) : (
                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -841,7 +841,7 @@ Format the includes list so I can easily copy each item individually.`;
               <div className="py-8 text-center text-muted-foreground">
                 <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p>No images in your library</p>
-                <p className="et-text-sm">Upload an image to get started</p>
+                <p className="et-small">Upload an image to get started</p>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-3 p-1">
@@ -908,7 +908,7 @@ Format the includes list so I can easily copy each item individually.`;
           <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <Alert className="bg-violet-50 border-violet-200">
               <Lightbulb className="h-4 w-4 text-violet-600" />
-              <AlertDescription className="et-text-sm text-violet-800">
+              <AlertDescription className="et-small text-violet-800">
                 {formData.includes.length > 0 ? (
                   <>
                     <strong>Mode:</strong> Generating marketing description only (you already have includes added).
@@ -923,9 +923,9 @@ Format the includes list so I can easily copy each item individually.`;
             </Alert>
 
             <div className="flex-1 overflow-hidden">
-              <Label className="et-text-sm font-medium mb-2 block">Your Customized Prompt:</Label>
+              <Label className="et-small font-medium mb-2 block">Your Customized Prompt:</Label>
               <ScrollArea className="h-64 rounded-md border bg-muted/30">
-                <pre className="p-4 et-text-sm whitespace-pre-wrap font-mono text-muted-foreground">{generateAiPrompt()}</pre>
+                <pre className="p-4 et-small whitespace-pre-wrap font-mono text-muted-foreground">{generateAiPrompt()}</pre>
               </ScrollArea>
             </div>
 
@@ -955,7 +955,7 @@ Format the includes list so I can easily copy each item individually.`;
           </div>
 
           <DialogFooter className="border-t pt-4 mt-4">
-            <p className="et-text-xs text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
+            <p className="et-caption text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
             <Button variant="outline" onClick={() => setAiPromptDialogOpen(false)}>
               Close
             </Button>

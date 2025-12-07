@@ -61,10 +61,10 @@ export default function DocumentationPage() {
     <div className="space-y-10">
       {/* Hero */}
       <section>
-        <h1 className="et-text-xl font-semibold text-zinc-900 mb-2">
+        <h1 className="et-h3 font-semibold text-zinc-900 mb-2">
           ClientFlow Documentation
         </h1>
-        <p className="et-text-sm text-zinc-500 max-w-2xl">
+        <p className="et-small text-zinc-500 max-w-2xl">
           Everything you need to integrate ClientFlow into your website and build custom booking experiences.
           Our REST API gives you full access to manage bookings, clients, services, and payments.
         </p>
@@ -74,13 +74,13 @@ export default function DocumentationPage() {
       <section className="border rounded-lg p-4 bg-zinc-50">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="flex-1">
-            <h2 className="et-text-sm font-semibold text-zinc-900 mb-1">New to ClientFlow?</h2>
-            <p className="et-text-xs text-zinc-500">
+            <h2 className="et-small font-semibold text-zinc-900 mb-1">New to ClientFlow?</h2>
+            <p className="et-caption text-zinc-500">
               Start with our Getting Started guide to set up your account and make your first API call.
             </p>
           </div>
           <Link href="/documentation/getting-started">
-            <Button size="sm" className="h-8 et-text-xs group">
+            <Button size="sm" className="h-8 et-caption group">
               Get Started
               <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
             </Button>
@@ -90,7 +90,7 @@ export default function DocumentationPage() {
 
       {/* Guides Grid */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-4">Guides</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-4">Guides</h2>
         <div className="grid sm:grid-cols-2 gap-3">
           {guides.map((guide) => {
             const Icon = guide.icon;
@@ -106,12 +106,12 @@ export default function DocumentationPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="et-text-sm font-medium text-zinc-900 group-hover:text-primary transition-colors">
+                      <h3 className="et-small font-medium text-zinc-900 group-hover:text-primary transition-colors">
                         {guide.title}
                       </h3>
                       <span className="et-text-2xs text-zinc-400 shrink-0">{guide.time}</span>
                     </div>
-                    <p className="et-text-xs text-zinc-500 mt-1">{guide.description}</p>
+                    <p className="et-caption text-zinc-500 mt-1">{guide.description}</p>
                   </div>
                 </div>
               </Link>
@@ -122,7 +122,7 @@ export default function DocumentationPage() {
 
       {/* Features */}
       <section>
-        <h2 className="et-text-base font-semibold text-zinc-900 mb-4">Why ClientFlow API?</h2>
+        <h2 className="et-body font-semibold text-zinc-900 mb-4">Why ClientFlow API?</h2>
         <div className="grid sm:grid-cols-3 gap-4">
           {features.map((feature) => {
             const Icon = feature.icon;
@@ -131,7 +131,7 @@ export default function DocumentationPage() {
                 <div className="inline-flex p-2 bg-zinc-100 rounded-lg mb-2">
                   <Icon className="w-4 h-4 text-zinc-700" />
                 </div>
-                <h3 className="et-text-xs font-medium text-zinc-900 mb-1">{feature.title}</h3>
+                <h3 className="et-caption font-medium text-zinc-900 mb-1">{feature.title}</h3>
                 <p className="et-text-2xs text-zinc-500">{feature.description}</p>
               </div>
             );
@@ -143,13 +143,13 @@ export default function DocumentationPage() {
       <section className="border-t pt-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <h3 className="et-text-sm font-semibold text-zinc-900 mb-1">Need help?</h3>
-            <p className="et-text-xs text-zinc-500">
+            <h3 className="et-small font-semibold text-zinc-900 mb-1">Need help?</h3>
+            <p className="et-caption text-zinc-500">
               Our support team is here to help you integrate ClientFlow.
             </p>
           </div>
           <Link href="/support">
-            <Button variant="outline" size="sm" className="h-8 et-text-xs">
+            <Button variant="outline" size="sm" className="h-8 et-caption">
               Contact Support
             </Button>
           </Link>

@@ -10,7 +10,7 @@ export default function WebhooksPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Webhooks</h1>
-        <p className="et-text-sm text-muted-foreground">Configure webhook endpoints for real-time notifications</p>
+        <p className="et-small text-muted-foreground">Configure webhook endpoints for real-time notifications</p>
       </div>
       <WebhooksList />
     </div>

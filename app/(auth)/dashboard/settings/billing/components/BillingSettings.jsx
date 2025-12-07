@@ -178,7 +178,7 @@ export function BillingSettings() {
             </div>
             {subscription?.currentPeriodEnd && (
               <div className="text-right">
-                <p className="et-text-sm text-muted-foreground">
+                <p className="et-small text-muted-foreground">
                   {subscription.cancelAtPeriodEnd ? "Access until" : "Next billing date"}
                 </p>
                 <p className="font-medium">
@@ -195,7 +195,7 @@ export function BillingSettings() {
             <h4 className="font-medium mb-4">Plan includes:</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {PLAN_FEATURES.map((feature, index) => (
-                <div key={index} className="flex items-center gap-2 et-text-sm">
+                <div key={index} className="flex items-center gap-2 et-small">
                   <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                   <span>{feature.label}</span>
                 </div>
@@ -217,7 +217,7 @@ export function BillingSettings() {
         <CardContent className="space-y-4">
           {tenant?.stripeCustomerId ? (
             <>
-              <p className="et-text-sm text-muted-foreground">
+              <p className="et-small text-muted-foreground">
                 Access the billing portal to update your payment method, view invoices, and manage your subscription.
               </p>
               <Button onClick={openCustomerPortal} disabled={portalLoading}>
@@ -248,7 +248,7 @@ export function BillingSettings() {
           <CardTitle className="text-base">Need to cancel?</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="et-text-sm text-muted-foreground mb-4">
+          <p className="et-small text-muted-foreground mb-4">
             You can cancel your subscription at any time through the billing portal. If you cancel, you'll continue
             to have access until the end of your current billing period.
           </p>
