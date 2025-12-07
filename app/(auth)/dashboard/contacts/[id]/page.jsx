@@ -262,7 +262,9 @@ export default function ClientDetailPage({ params }) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Contact #{client.id.slice(-6).toUpperCase()}</h1>
+            <h1 className="text-2xl font-bold">
+              {["lead", "prospect"].includes(formData.status) ? "Lead" : "Contact"} #{client.id.slice(-6).toUpperCase()}
+            </h1>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
