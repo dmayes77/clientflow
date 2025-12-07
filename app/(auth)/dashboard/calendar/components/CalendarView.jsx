@@ -232,10 +232,11 @@ export function CalendarView() {
   };
 
   const handleServiceChange = (serviceId) => {
-    const service = services.find((s) => s.id === serviceId);
+    const actualId = serviceId === "none" ? "" : serviceId;
+    const service = services.find((s) => s.id === actualId);
     setFormData({
       ...formData,
-      serviceId,
+      serviceId: actualId,
       packageId: "",
       duration: service?.duration || 60,
       totalPrice: service ? service.price / 100 : 0,
@@ -243,10 +244,11 @@ export function CalendarView() {
   };
 
   const handlePackageChange = (packageId) => {
-    const pkg = packages.find((p) => p.id === packageId);
+    const actualId = packageId === "none" ? "" : packageId;
+    const pkg = packages.find((p) => p.id === actualId);
     setFormData({
       ...formData,
-      packageId,
+      packageId: actualId,
       serviceId: "",
       totalPrice: pkg ? pkg.price / 100 : 0,
     });
@@ -747,12 +749,12 @@ export function CalendarView() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="service">Service</Label>
-                  <Select value={formData.serviceId} onValueChange={handleServiceChange}>
+                  <Select value={formData.serviceId || "none"} onValueChange={handleServiceChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select service" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {services
                         .filter((s) => s.active)
                         .map((service) => (
@@ -766,12 +768,12 @@ export function CalendarView() {
 
                 <div className="space-y-2">
                   <Label htmlFor="package">Package</Label>
-                  <Select value={formData.packageId} onValueChange={handlePackageChange}>
+                  <Select value={formData.packageId || "none"} onValueChange={handlePackageChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select package" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {packages
                         .filter((p) => p.active)
                         .map((pkg) => (
