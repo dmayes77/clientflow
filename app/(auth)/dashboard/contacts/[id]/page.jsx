@@ -402,24 +402,24 @@ export default function ClientDetailPage({ params }) {
 
           {/* Stats Summary */}
           {stats && (
-            <Card className="bg-muted/30">
+            <Card className="border shadow-sm">
               <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-background rounded-lg">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 rounded-lg border bg-blue-50/50 border-blue-100">
                     <p className="text-2xl font-bold text-blue-600">{stats.totalBookings}</p>
-                    <p className="et-text-xs text-muted-foreground">Total Bookings</p>
+                    <p className="et-text-xs text-blue-600/70">Total Bookings</p>
                   </div>
-                  <div className="text-center p-3 bg-background rounded-lg">
+                  <div className="text-center p-3 rounded-lg border bg-green-50/50 border-green-100">
                     <p className="text-2xl font-bold text-green-600">{stats.completedBookings}</p>
-                    <p className="et-text-xs text-muted-foreground">Completed</p>
+                    <p className="et-text-xs text-green-600/70">Completed</p>
                   </div>
-                  <div className="text-center p-3 bg-background rounded-lg">
-                    <p className="text-2xl font-bold text-yellow-600">{stats.upcomingBookings}</p>
-                    <p className="et-text-xs text-muted-foreground">Upcoming</p>
+                  <div className="text-center p-3 rounded-lg border bg-amber-50/50 border-amber-100">
+                    <p className="text-2xl font-bold text-amber-600">{stats.upcomingBookings}</p>
+                    <p className="et-text-xs text-amber-600/70">Upcoming</p>
                   </div>
-                  <div className="text-center p-3 bg-background rounded-lg">
+                  <div className="text-center p-3 rounded-lg border bg-teal-50/50 border-teal-100">
                     <p className="text-2xl font-bold text-teal-600">{formatCurrency(stats.totalSpent)}</p>
-                    <p className="et-text-xs text-muted-foreground">Total Spent</p>
+                    <p className="et-text-xs text-teal-600/70">Total Spent</p>
                   </div>
                 </div>
               </CardContent>
