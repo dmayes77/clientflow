@@ -328,6 +328,21 @@
 }
 
 /* ============================================
+   Typography Reset - Remove browser defaults
+   ============================================ */
+
+.enterprise-theme h1,
+.enterprise-theme h2,
+.enterprise-theme h3,
+.enterprise-theme h4,
+.enterprise-theme h5,
+.enterprise-theme h6,
+.enterprise-theme p {
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================
    Typography Components
    ============================================ */
 
