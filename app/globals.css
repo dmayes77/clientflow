@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../styles/enterprise-theme.css";
+@import "../styles/marketing-theme.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -154,6 +156,42 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans), system-ui, sans-serif;
   }
+
+  /* Global cursor pointer for interactive elements */
+  button,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  a[href],
+  select,
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="checkbox"],
+  [role="switch"],
+  [role="radio"],
+  [role="link"],
+  label[for],
+  summary,
+  [data-slot="accordion-trigger"],
+  [data-slot="tabs-trigger"],
+  [data-slot="select-trigger"],
+  [data-slot="dropdown-menu-item"],
+  [data-slot="dropdown-menu-checkbox-item"],
+  [data-slot="dropdown-menu-radio-item"],
+  [data-slot="navigation-menu-trigger"],
+  [data-slot="navigation-menu-link"],
+  [data-slot="dialog-close"],
+  [data-slot="sheet-close"] {
+    cursor: pointer;
+  }
+
+  /* Ensure disabled elements don't show pointer */
+  [disabled],
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* Compact scrollbars */
@@ -171,4 +209,13 @@
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

@@ -9,8 +9,8 @@ export default function InvoicesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Financials</h1>
-        <p className="text-sm text-muted-foreground">Manage invoices and track payments</p>
+        <h1 className="et-text-2xl font-semibold">Financials</h1>
+        <p className="et-text-sm text-muted-foreground">Manage invoices and track payments</p>
       </div>
       <InvoicesList />
     </div>

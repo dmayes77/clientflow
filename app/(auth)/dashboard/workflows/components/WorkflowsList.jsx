@@ -18,7 +18,7 @@ export function WorkflowsList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">
+        <p className="et-text-sm text-muted-foreground">
           Automate your business processes. Create workflows to send emails, update statuses, and trigger actions.
         </p>
       </CardContent>

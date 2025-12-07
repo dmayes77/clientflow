@@ -22,63 +22,63 @@
 .enterprise-theme,
 :root {
   /* ===================
-     Color Palette
+     Color Palette (OKLCH format for Tailwind v4)
      =================== */
 
-  /* Base Colors (HSL format for flexibility) */
-  --et-background: 240 5% 96%;
-  --et-foreground: 240 10% 3.9%;
+  /* Base Colors */
+  --et-background: oklch(0.97 0.002 250);
+  --et-foreground: oklch(0.15 0.02 260);
 
   /* Card/Surface Colors */
-  --et-card: 0 0% 100%;
-  --et-card-foreground: 240 10% 3.9%;
+  --et-card: oklch(1 0 0);
+  --et-card-foreground: oklch(0.15 0.02 260);
 
   /* Popover/Dropdown Colors */
-  --et-popover: 0 0% 100%;
-  --et-popover-foreground: 240 10% 3.9%;
+  --et-popover: oklch(1 0 0);
+  --et-popover-foreground: oklch(0.15 0.02 260);
 
   /* Primary Action Color */
-  --et-primary: 240 5.9% 10%;
-  --et-primary-foreground: 0 0% 98%;
+  --et-primary: oklch(0.2 0.02 260);
+  --et-primary-foreground: oklch(0.98 0 0);
 
   /* Secondary/Subtle Color */
-  --et-secondary: 240 4.8% 95.9%;
-  --et-secondary-foreground: 240 5.9% 10%;
+  --et-secondary: oklch(0.97 0.004 250);
+  --et-secondary-foreground: oklch(0.2 0.02 260);
 
   /* Muted/Disabled Color */
-  --et-muted: 240 4.8% 95.9%;
-  --et-muted-foreground: 240 3.8% 46.1%;
+  --et-muted: oklch(0.97 0.004 250);
+  --et-muted-foreground: oklch(0.55 0.01 260);
 
   /* Accent/Highlight Color */
-  --et-accent: 240 4.8% 95.9%;
-  --et-accent-foreground: 240 5.9% 10%;
+  --et-accent: oklch(0.97 0.004 250);
+  --et-accent-foreground: oklch(0.2 0.02 260);
 
   /* Destructive/Error Color */
-  --et-destructive: 0 84.2% 60.2%;
-  --et-destructive-foreground: 0 0% 98%;
+  --et-destructive: oklch(0.62 0.22 25);
+  --et-destructive-foreground: oklch(0.98 0 0);
 
   /* Border/Divider Color */
-  --et-border: 240 5.9% 90%;
+  --et-border: oklch(0.92 0.005 250);
 
   /* Input/Form Color */
-  --et-input: 240 5.9% 90%;
+  --et-input: oklch(0.92 0.005 250);
 
   /* Focus Ring Color */
-  --et-ring: 240 5.9% 10%;
+  --et-ring: oklch(0.2 0.02 260);
 
   /* ===================
      Semantic Colors
      =================== */
 
   /* Status Colors */
-  --et-success: 142 76% 36%;
-  --et-success-foreground: 0 0% 100%;
-  --et-warning: 38 92% 50%;
-  --et-warning-foreground: 0 0% 100%;
-  --et-error: 0 84% 60%;
-  --et-error-foreground: 0 0% 100%;
-  --et-info: 217 91% 60%;
-  --et-info-foreground: 0 0% 100%;
+  --et-success: oklch(0.52 0.15 155);
+  --et-success-foreground: oklch(1 0 0);
+  --et-warning: oklch(0.75 0.16 70);
+  --et-warning-foreground: oklch(0.2 0.02 60);
+  --et-error: oklch(0.62 0.22 25);
+  --et-error-foreground: oklch(1 0 0);
+  --et-info: oklch(0.62 0.18 250);
+  --et-info-foreground: oklch(1 0 0);
 
   /* ===================
      Typography Scale
@@ -89,14 +89,16 @@
   --et-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   /* Font Sizes - Compact Scale */
-  --et-text-2xs: 0.625rem;   /* 10px - tiny labels */
-  --et-text-xs: 0.6875rem;   /* 11px - small labels, badges */
-  --et-text-sm: 0.75rem;     /* 12px - body small, table cells */
+  --et-text-2xs: 0.625rem; /* 10px - tiny labels */
+  --et-text-xs: 0.6875rem; /* 11px - small labels, badges */
+  --et-text-sm: 0.75rem; /* 12px - body small, table cells */
   --et-text-base: 0.8125rem; /* 13px - default body text */
-  --et-text-lg: 0.875rem;    /* 14px - emphasized text */
-  --et-text-xl: 1rem;        /* 16px - section headers */
-  --et-text-2xl: 1.125rem;   /* 18px - page titles */
-  --et-text-3xl: 1.25rem;    /* 20px - major headings */
+  --et-text-lg: 0.875rem; /* 14px - emphasized text */
+  --et-text-xl: 1rem; /* 16px - section headers */
+  --et-text-2xl: 1.125rem; /* 18px - page titles */
+  --et-text-3xl: 1.25rem; /* 20px - major headings */
+  --et-text-4xl: 1.5rem; /* 24px - hero subheadings */
+  --et-text-5xl: 1.875rem; /* 30px - hero headings */
 
   /* Font Weights */
   --et-font-normal: 400;
@@ -117,26 +119,26 @@
 
   --et-space-0: 0;
   --et-space-px: 1px;
-  --et-space-2xs: 0.125rem;    /* 2px */
-  --et-space-xs: 0.25rem;      /* 4px */
-  --et-space-sm: 0.5rem;       /* 8px */
-  --et-space-md: 0.75rem;      /* 12px */
-  --et-space-lg: 1rem;         /* 16px */
-  --et-space-xl: 1.25rem;      /* 20px */
-  --et-space-2xl: 1.5rem;      /* 24px */
-  --et-space-3xl: 2rem;        /* 32px */
-  --et-space-4xl: 2.5rem;      /* 40px */
-  --et-space-5xl: 3rem;        /* 48px */
+  --et-space-2xs: 0.125rem; /* 2px */
+  --et-space-xs: 0.25rem; /* 4px */
+  --et-space-sm: 0.5rem; /* 8px */
+  --et-space-md: 0.75rem; /* 12px */
+  --et-space-lg: 1rem; /* 16px */
+  --et-space-xl: 1.25rem; /* 20px */
+  --et-space-2xl: 1.5rem; /* 24px */
+  --et-space-3xl: 2rem; /* 32px */
+  --et-space-4xl: 2.5rem; /* 40px */
+  --et-space-5xl: 3rem; /* 48px */
 
   /* ===================
      Border Radius
      =================== */
 
   --et-radius-none: 0;
-  --et-radius-sm: 0.25rem;   /* 4px */
-  --et-radius-md: 0.375rem;  /* 6px - default */
-  --et-radius-lg: 0.5rem;    /* 8px */
-  --et-radius-xl: 0.75rem;   /* 12px */
+  --et-radius-sm: 0.25rem; /* 4px */
+  --et-radius-md: 0.375rem; /* 6px - default */
+  --et-radius-lg: 0.5rem; /* 8px */
+  --et-radius-xl: 0.75rem; /* 12px */
   --et-radius-full: 9999px;
 
   /* Default radius */
@@ -147,18 +149,18 @@
      =================== */
 
   /* Input/Button Heights */
-  --et-height-xs: 1.5rem;    /* 24px */
-  --et-height-sm: 1.75rem;   /* 28px */
-  --et-height-md: 2rem;      /* 32px - default */
-  --et-height-lg: 2.25rem;   /* 36px */
-  --et-height-xl: 2.5rem;    /* 40px */
+  --et-height-xs: 1.5rem; /* 24px */
+  --et-height-sm: 1.75rem; /* 28px */
+  --et-height-md: 2rem; /* 32px - default */
+  --et-height-lg: 2.25rem; /* 36px */
+  --et-height-xl: 2.5rem; /* 40px */
 
   /* Icon Sizes */
-  --et-icon-xs: 0.75rem;     /* 12px */
-  --et-icon-sm: 0.875rem;    /* 14px */
-  --et-icon-md: 1rem;        /* 16px */
-  --et-icon-lg: 1.25rem;     /* 20px */
-  --et-icon-xl: 1.5rem;      /* 24px */
+  --et-icon-xs: 0.75rem; /* 12px */
+  --et-icon-sm: 0.875rem; /* 14px */
+  --et-icon-md: 1rem; /* 16px */
+  --et-icon-lg: 1.25rem; /* 20px */
+  --et-icon-xl: 1.5rem; /* 24px */
 
   /* ===================
      Shadows
@@ -184,25 +186,25 @@
 
 .enterprise-theme.dark,
 .dark .enterprise-theme {
-  --et-background: 240 10% 3.9%;
-  --et-foreground: 0 0% 98%;
-  --et-card: 240 10% 3.9%;
-  --et-card-foreground: 0 0% 98%;
-  --et-popover: 240 10% 3.9%;
-  --et-popover-foreground: 0 0% 98%;
-  --et-primary: 0 0% 98%;
-  --et-primary-foreground: 240 5.9% 10%;
-  --et-secondary: 240 3.7% 15.9%;
-  --et-secondary-foreground: 0 0% 98%;
-  --et-muted: 240 3.7% 15.9%;
-  --et-muted-foreground: 240 5% 64.9%;
-  --et-accent: 240 3.7% 15.9%;
-  --et-accent-foreground: 0 0% 98%;
-  --et-destructive: 0 62.8% 30.6%;
-  --et-destructive-foreground: 0 0% 98%;
-  --et-border: 240 3.7% 15.9%;
-  --et-input: 240 3.7% 15.9%;
-  --et-ring: 240 4.9% 83.9%;
+  --et-background: oklch(0.14 0.015 260);
+  --et-foreground: oklch(0.98 0 0);
+  --et-card: oklch(0.18 0.015 260);
+  --et-card-foreground: oklch(0.98 0 0);
+  --et-popover: oklch(0.18 0.015 260);
+  --et-popover-foreground: oklch(0.98 0 0);
+  --et-primary: oklch(0.98 0 0);
+  --et-primary-foreground: oklch(0.2 0.02 260);
+  --et-secondary: oklch(0.24 0.015 260);
+  --et-secondary-foreground: oklch(0.98 0 0);
+  --et-muted: oklch(0.24 0.015 260);
+  --et-muted-foreground: oklch(0.7 0.01 260);
+  --et-accent: oklch(0.24 0.015 260);
+  --et-accent-foreground: oklch(0.98 0 0);
+  --et-destructive: oklch(0.5 0.18 25);
+  --et-destructive-foreground: oklch(0.98 0 0);
+  --et-border: oklch(0.24 0.015 260);
+  --et-input: oklch(0.24 0.015 260);
+  --et-ring: oklch(0.85 0.005 250);
 }
 
 /* ============================================
@@ -213,27 +215,265 @@
   font-family: var(--et-font-sans);
   font-size: var(--et-text-base);
   line-height: var(--et-leading-normal);
-  color: hsl(var(--et-foreground));
-  background-color: hsl(var(--et-background));
+  color: var(--et-foreground);
+  background-color: var(--et-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ============================================
+   COMPREHENSIVE TAILWIND RESET
+   Override ALL Tailwind utilities within enterprise theme
+   to ensure only enterprise theme styles are applied
+   ============================================ */
+
+/* Text Size Reset - Neutralize Tailwind text-* classes */
+.enterprise-theme .text-xs,
+.enterprise-theme .text-sm,
+.enterprise-theme .text-base,
+.enterprise-theme .text-lg,
+.enterprise-theme .text-xl,
+.enterprise-theme .text-2xl,
+.enterprise-theme .text-3xl,
+.enterprise-theme .text-4xl,
+.enterprise-theme .text-5xl,
+.enterprise-theme .text-6xl,
+.enterprise-theme .text-7xl,
+.enterprise-theme .text-8xl,
+.enterprise-theme .text-9xl {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Font Weight Reset */
+.enterprise-theme .font-thin,
+.enterprise-theme .font-extralight,
+.enterprise-theme .font-light,
+.enterprise-theme .font-normal,
+.enterprise-theme .font-medium,
+.enterprise-theme .font-semibold,
+.enterprise-theme .font-bold,
+.enterprise-theme .font-extrabold,
+.enterprise-theme .font-black {
+  font-weight: inherit;
+}
+
+/* Re-apply font weights with enterprise values */
+.enterprise-theme .font-normal {
+  font-weight: var(--et-font-normal);
+}
+.enterprise-theme .font-medium {
+  font-weight: var(--et-font-medium);
+}
+.enterprise-theme .font-semibold {
+  font-weight: var(--et-font-semibold);
+}
+.enterprise-theme .font-bold {
+  font-weight: var(--et-font-bold);
+}
+
+/* Leading/Line Height Reset */
+.enterprise-theme .leading-none,
+.enterprise-theme .leading-tight,
+.enterprise-theme .leading-snug,
+.enterprise-theme .leading-normal,
+.enterprise-theme .leading-relaxed,
+.enterprise-theme .leading-loose {
+  line-height: inherit;
+}
+
+/* Re-apply line heights with enterprise values */
+.enterprise-theme .leading-tight {
+  line-height: var(--et-leading-tight);
+}
+.enterprise-theme .leading-snug {
+  line-height: var(--et-leading-snug);
+}
+.enterprise-theme .leading-normal {
+  line-height: var(--et-leading-normal);
+}
+.enterprise-theme .leading-relaxed {
+  line-height: var(--et-leading-relaxed);
+}
+
 /* Reset Mantine overrides within enterprise theme */
-.enterprise-theme p,
 .enterprise-theme .mantine-Text-root {
   font-size: inherit !important;
   line-height: inherit !important;
 }
 
-.enterprise-theme h1,
-.enterprise-theme h2,
-.enterprise-theme h3,
-.enterprise-theme h4,
-.enterprise-theme h5,
-.enterprise-theme h6 {
-  font-size: inherit !important;
-  line-height: inherit !important;
+/* Default element styling - compact */
+.enterprise-theme span {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.enterprise-theme a {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.enterprise-theme li {
+  font-size: var(--et-text-sm);
+  line-height: var(--et-leading-normal);
+}
+
+/* ============================================
+   Shadcn Component Overrides - Compact Styling
+   ============================================ */
+
+/* Card - compact padding */
+.enterprise-theme [data-slot="card"] {
+  padding: 0;
+}
+
+.enterprise-theme [data-slot="card-header"] {
+  padding: 0.75rem 1rem;
+  gap: 0.25rem;
+}
+
+.enterprise-theme [data-slot="card-title"] {
+  font-size: var(--et-text-base);
+  line-height: var(--et-leading-snug);
+}
+
+.enterprise-theme [data-slot="card-description"] {
+  font-size: var(--et-text-xs);
+}
+
+.enterprise-theme [data-slot="card-content"] {
+  padding: 0.75rem 1rem;
+}
+
+.enterprise-theme [data-slot="card-footer"] {
+  padding: 0.75rem 1rem;
+}
+
+/* Button - compact text */
+.enterprise-theme button,
+.enterprise-theme [role="button"] {
+  font-size: var(--et-text-sm);
+}
+
+.enterprise-theme button[data-size="sm"],
+.enterprise-theme [data-slot="button"][data-size="sm"] {
+  font-size: var(--et-text-xs);
+}
+
+/* Badge - compact */
+.enterprise-theme [data-slot="badge"] {
+  font-size: var(--et-text-2xs);
+  padding: 0.125rem 0.375rem;
+}
+
+/* Input - compact */
+.enterprise-theme input,
+.enterprise-theme textarea,
+.enterprise-theme select {
+  font-size: var(--et-text-sm);
+}
+
+.enterprise-theme input::placeholder,
+.enterprise-theme textarea::placeholder {
+  font-size: var(--et-text-sm);
+}
+
+/* Label - compact */
+.enterprise-theme label,
+.enterprise-theme [data-slot="label"] {
+  font-size: var(--et-text-xs);
+}
+
+/* Dialog/Sheet - compact */
+.enterprise-theme [data-slot="dialog-title"],
+.enterprise-theme [data-slot="sheet-title"] {
+  font-size: var(--et-text-lg);
+}
+
+.enterprise-theme [data-slot="dialog-description"],
+.enterprise-theme [data-slot="sheet-description"] {
+  font-size: var(--et-text-xs);
+}
+
+/* Tabs - compact */
+.enterprise-theme [data-slot="tabs-list"] {
+  gap: 0.25rem;
+}
+
+.enterprise-theme [data-slot="tabs-trigger"] {
+  font-size: var(--et-text-xs);
+  padding: 0.375rem 0.75rem;
+}
+
+/* Select - compact */
+.enterprise-theme [data-slot="select-trigger"] {
+  font-size: var(--et-text-sm);
+  height: 2rem;
+  padding: 0 0.5rem;
+}
+
+.enterprise-theme [data-slot="select-item"] {
+  font-size: var(--et-text-sm);
+  padding: 0.375rem 0.5rem;
+}
+
+/* Dropdown Menu - compact */
+.enterprise-theme [data-slot="dropdown-menu-item"],
+.enterprise-theme [data-slot="dropdown-menu-checkbox-item"],
+.enterprise-theme [data-slot="dropdown-menu-radio-item"] {
+  font-size: var(--et-text-sm);
+  padding: 0.375rem 0.5rem;
+}
+
+.enterprise-theme [data-slot="dropdown-menu-label"] {
+  font-size: var(--et-text-xs);
+  padding: 0.375rem 0.5rem;
+}
+
+/* Accordion - compact */
+.enterprise-theme [data-slot="accordion-trigger"] {
+  font-size: var(--et-text-sm);
+  padding: 0.5rem 0;
+}
+
+.enterprise-theme [data-slot="accordion-content"] {
+  font-size: var(--et-text-sm);
+  padding-bottom: 0.5rem;
+}
+
+/* Table - compact */
+.enterprise-theme table {
+  font-size: var(--et-text-sm);
+}
+
+.enterprise-theme th {
+  font-size: var(--et-text-xs);
+  padding: 0.5rem 0.75rem;
+}
+
+.enterprise-theme td {
+  font-size: var(--et-text-sm);
+  padding: 0.5rem 0.75rem;
+}
+
+/* Alert - compact */
+.enterprise-theme [data-slot="alert"] {
+  padding: 0.625rem 0.75rem;
+}
+
+.enterprise-theme [data-slot="alert-title"] {
+  font-size: var(--et-text-sm);
+}
+
+.enterprise-theme [data-slot="alert-description"] {
+  font-size: var(--et-text-xs);
+}
+
+/* Checkbox/Switch/Radio - ensure compact labels */
+.enterprise-theme [data-slot="checkbox"] + label,
+.enterprise-theme [data-slot="switch"] + label,
+.enterprise-theme [data-slot="radio"] + label {
+  font-size: var(--et-text-sm);
 }
 
 /* ============================================
@@ -274,8 +514,8 @@
 }
 
 .enterprise-theme p {
-  font-size: var(--et-text-base);
-  line-height: var(--et-leading-relaxed);
+  font-size: var(--et-text-sm);
+  line-height: var(--et-leading-normal);
 }
 
 .enterprise-theme small {
@@ -286,28 +526,108 @@
    Utility Classes
    ============================================ */
 
-/* Text Sizes */
-.enterprise-theme .et-text-2xs { font-size: var(--et-text-2xs); }
-.enterprise-theme .et-text-xs { font-size: var(--et-text-xs); }
-.enterprise-theme .et-text-sm { font-size: var(--et-text-sm); }
-.enterprise-theme .et-text-base { font-size: var(--et-text-base); }
-.enterprise-theme .et-text-lg { font-size: var(--et-text-lg); }
-.enterprise-theme .et-text-xl { font-size: var(--et-text-xl); }
+/* Text Sizes - Direct values with max specificity */
+.et-text-2xs {
+  font-size: 0.625rem !important; /* 10px */
+  line-height: 1.5 !important;
+}
+
+.et-text-xs {
+  font-size: 0.6875rem !important; /* 11px */
+  line-height: 1.5 !important;
+}
+
+.et-text-sm {
+  font-size: 0.75rem !important; /* 12px */
+  line-height: 1.5 !important;
+}
+
+.et-text-base {
+  font-size: 0.8125rem !important; /* 13px */
+  line-height: 1.5 !important;
+}
+
+.et-text-lg {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.375 !important;
+}
+
+.et-text-xl {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.375 !important;
+}
+
+.et-text-2xl {
+  font-size: 1.125rem !important; /* 18px */
+  line-height: 1.25 !important;
+}
+
+.et-text-3xl {
+  font-size: 1.25rem !important; /* 20px */
+  line-height: 1.25 !important;
+}
+
+.et-text-4xl {
+  font-size: 1.5rem !important; /* 24px */
+  line-height: 1.25 !important;
+}
+
+.et-text-5xl {
+  font-size: 1.875rem !important; /* 30px */
+  line-height: 1.25 !important;
+}
+
+/* Responsive text size modifiers */
+@media (min-width: 768px) {
+  .md\:et-text-4xl {
+    font-size: 1.5rem !important;
+  }
+  .md\:et-text-5xl {
+    font-size: 1.875rem !important;
+  }
+}
+@media (min-width: 1024px) {
+  .lg\:et-text-5xl {
+    font-size: 1.875rem !important;
+  }
+}
 
 /* Text Colors */
-.enterprise-theme .et-text-muted { color: hsl(var(--et-muted-foreground)); }
-.enterprise-theme .et-text-primary { color: hsl(var(--et-primary)); }
-.enterprise-theme .et-text-success { color: hsl(var(--et-success)); }
-.enterprise-theme .et-text-warning { color: hsl(var(--et-warning)); }
-.enterprise-theme .et-text-error { color: hsl(var(--et-error)); }
+.enterprise-theme .et-text-muted {
+  color: var(--et-muted-foreground);
+}
+.enterprise-theme .et-text-primary {
+  color: var(--et-primary);
+}
+.enterprise-theme .et-text-success {
+  color: var(--et-success);
+}
+.enterprise-theme .et-text-warning {
+  color: var(--et-warning);
+}
+.enterprise-theme .et-text-error {
+  color: var(--et-error);
+}
 
 /* Background Colors */
-.enterprise-theme .et-bg-muted { background-color: hsl(var(--et-muted)); }
-.enterprise-theme .et-bg-card { background-color: hsl(var(--et-card)); }
-.enterprise-theme .et-bg-success { background-color: hsl(var(--et-success) / 0.1); }
-.enterprise-theme .et-bg-warning { background-color: hsl(var(--et-warning) / 0.1); }
-.enterprise-theme .et-bg-error { background-color: hsl(var(--et-error) / 0.1); }
-.enterprise-theme .et-bg-info { background-color: hsl(var(--et-info) / 0.1); }
+.enterprise-theme .et-bg-muted {
+  background-color: var(--et-muted);
+}
+.enterprise-theme .et-bg-card {
+  background-color: var(--et-card);
+}
+.enterprise-theme .et-bg-success {
+  background-color: oklch(0.52 0.15 155 / 0.1);
+}
+.enterprise-theme .et-bg-warning {
+  background-color: oklch(0.75 0.16 70 / 0.1);
+}
+.enterprise-theme .et-bg-error {
+  background-color: oklch(0.62 0.22 25 / 0.1);
+}
+.enterprise-theme .et-bg-info {
+  background-color: oklch(0.62 0.18 250 / 0.1);
+}
 
 /* ============================================
    Purpose-Driven Button Variants
@@ -316,92 +636,92 @@
 /* Success Button - for add/create actions */
 .enterprise-theme .btn-success,
 .enterprise-theme button.btn-success {
-  background-color: hsl(var(--et-success)) !important;
-  color: hsl(var(--et-success-foreground)) !important;
-  border-color: hsl(var(--et-success)) !important;
+  background-color: var(--et-success) !important;
+  color: var(--et-success-foreground) !important;
+  border-color: var(--et-success) !important;
 }
 .enterprise-theme .btn-success:hover,
 .enterprise-theme button.btn-success:hover {
-  background-color: hsl(142 76% 30%) !important;
+  background-color: oklch(0.45 0.14 155) !important;
 }
 
 /* Info Button - for functional/active states */
 .enterprise-theme .btn-info,
 .enterprise-theme button.btn-info {
-  background-color: hsl(var(--et-info)) !important;
-  color: hsl(var(--et-info-foreground)) !important;
-  border-color: hsl(var(--et-info)) !important;
+  background-color: var(--et-info) !important;
+  color: var(--et-info-foreground) !important;
+  border-color: var(--et-info) !important;
 }
 .enterprise-theme .btn-info:hover,
 .enterprise-theme button.btn-info:hover {
-  background-color: hsl(217 91% 50%) !important;
+  background-color: oklch(0.55 0.17 250) !important;
 }
 
 /* Warning Button - for caution actions */
 .enterprise-theme .btn-warning,
 .enterprise-theme button.btn-warning {
-  background-color: hsl(var(--et-warning)) !important;
-  color: hsl(var(--et-warning-foreground)) !important;
-  border-color: hsl(var(--et-warning)) !important;
+  background-color: var(--et-warning) !important;
+  color: var(--et-warning-foreground) !important;
+  border-color: var(--et-warning) !important;
 }
 .enterprise-theme .btn-warning:hover,
 .enterprise-theme button.btn-warning:hover {
-  background-color: hsl(38 92% 45%) !important;
+  background-color: oklch(0.68 0.15 70) !important;
 }
 
 /* Error/Destructive Button - for delete/remove actions */
 .enterprise-theme .btn-error,
 .enterprise-theme button.btn-error {
-  background-color: hsl(var(--et-error)) !important;
-  color: hsl(var(--et-error-foreground)) !important;
-  border-color: hsl(var(--et-error)) !important;
+  background-color: var(--et-error) !important;
+  color: var(--et-error-foreground) !important;
+  border-color: var(--et-error) !important;
 }
 .enterprise-theme .btn-error:hover,
 .enterprise-theme button.btn-error:hover {
-  background-color: hsl(0 84% 50%) !important;
+  background-color: oklch(0.55 0.2 25) !important;
 }
 
 /* Outline variants */
 .enterprise-theme .btn-success-outline {
-  border: 1px solid hsl(var(--et-success));
-  color: hsl(var(--et-success));
+  border: 1px solid var(--et-success);
+  color: var(--et-success);
   background-color: transparent;
 }
 .enterprise-theme .btn-success-outline:hover {
-  background-color: hsl(var(--et-success) / 0.1);
+  background-color: oklch(0.52 0.15 155 / 0.1);
 }
 
 .enterprise-theme .btn-info-outline {
-  border: 1px solid hsl(var(--et-info));
-  color: hsl(var(--et-info));
+  border: 1px solid var(--et-info);
+  color: var(--et-info);
   background-color: transparent;
 }
 .enterprise-theme .btn-info-outline:hover {
-  background-color: hsl(var(--et-info) / 0.1);
+  background-color: oklch(0.62 0.18 250 / 0.1);
 }
 
 .enterprise-theme .btn-warning-outline {
-  border: 1px solid hsl(var(--et-warning));
-  color: hsl(var(--et-warning));
+  border: 1px solid var(--et-warning);
+  color: var(--et-warning);
   background-color: transparent;
 }
 .enterprise-theme .btn-warning-outline:hover {
-  background-color: hsl(var(--et-warning) / 0.1);
+  background-color: oklch(0.75 0.16 70 / 0.1);
 }
 
 .enterprise-theme .btn-error-outline {
-  border: 1px solid hsl(var(--et-error));
-  color: hsl(var(--et-error));
+  border: 1px solid var(--et-error);
+  color: var(--et-error);
   background-color: transparent;
 }
 .enterprise-theme .btn-error-outline:hover {
-  background-color: hsl(var(--et-error) / 0.1);
+  background-color: oklch(0.62 0.22 25 / 0.1);
 }
 
 /* Active state for tabs/toggles using info color */
 .enterprise-theme .tab-active {
-  background-color: hsl(var(--et-info));
-  color: hsl(var(--et-info-foreground));
+  background-color: var(--et-info);
+  color: var(--et-info-foreground);
 }
 
 /* ============================================
@@ -418,18 +738,18 @@
 }
 
 .enterprise-theme ::-webkit-scrollbar-thumb {
-  background: hsl(var(--et-border));
+  background: var(--et-border);
   border-radius: 3px;
 }
 
 .enterprise-theme ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--et-muted-foreground) / 0.5);
+  background: oklch(0.55 0.01 260 / 0.5);
 }
 
 /* Firefox scrollbar */
 .enterprise-theme {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--et-border)) transparent;
+  scrollbar-color: var(--et-border) transparent;
 }
 
 /* ============================================
@@ -437,13 +757,13 @@
    ============================================ */
 
 .enterprise-theme *:focus-visible {
-  outline: 2px solid hsl(var(--et-ring));
+  outline: 2px solid var(--et-ring);
   outline-offset: 2px;
 }
 
 .enterprise-theme button:focus-visible,
 .enterprise-theme [role="button"]:focus-visible {
-  outline: 2px solid hsl(var(--et-ring));
+  outline: 2px solid var(--et-ring);
   outline-offset: 2px;
 }
 
@@ -452,8 +772,12 @@
    ============================================ */
 
 @keyframes et-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes et-slide-up {
@@ -511,23 +835,257 @@
 
 /* Map CSS variables to shadcn expected names */
 .enterprise-theme {
-  --background: hsl(var(--et-background));
-  --foreground: hsl(var(--et-foreground));
-  --card: hsl(var(--et-card));
-  --card-foreground: hsl(var(--et-card-foreground));
-  --popover: hsl(var(--et-popover));
-  --popover-foreground: hsl(var(--et-popover-foreground));
-  --primary: hsl(var(--et-primary));
-  --primary-foreground: hsl(var(--et-primary-foreground));
-  --secondary: hsl(var(--et-secondary));
-  --secondary-foreground: hsl(var(--et-secondary-foreground));
-  --muted: hsl(var(--et-muted));
-  --muted-foreground: hsl(var(--et-muted-foreground));
-  --accent: hsl(var(--et-accent));
-  --accent-foreground: hsl(var(--et-accent-foreground));
-  --destructive: hsl(var(--et-destructive));
-  --destructive-foreground: hsl(var(--et-destructive-foreground));
-  --border: hsl(var(--et-border));
-  --input: hsl(var(--et-input));
-  --ring: hsl(var(--et-ring));
+  --background: var(--et-background);
+  --foreground: var(--et-foreground);
+  --card: var(--et-card);
+  --card-foreground: var(--et-card-foreground);
+  --popover: var(--et-popover);
+  --popover-foreground: var(--et-popover-foreground);
+  --primary: var(--et-primary);
+  --primary-foreground: var(--et-primary-foreground);
+  --secondary: var(--et-secondary);
+  --secondary-foreground: var(--et-secondary-foreground);
+  --muted: var(--et-muted);
+  --muted-foreground: var(--et-muted-foreground);
+  --accent: var(--et-accent);
+  --accent-foreground: var(--et-accent-foreground);
+  --destructive: var(--et-destructive);
+  --destructive-foreground: var(--et-destructive-foreground);
+  --border: var(--et-border);
+  --input: var(--et-input);
+  --ring: var(--et-ring);
+}
+
+/* ============================================
+   Media Library Compact Styles
+   ============================================ */
+
+/* Compact media grid - mobile-first balanced enterprise layout */
+.enterprise-theme .et-media-grid {
+  display: grid;
+  gap: var(--et-space-xs);
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 640px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--et-space-sm);
+  }
+}
+
+@media (min-width: 768px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+/* Compact media card */
+.enterprise-theme .et-media-card {
+  border-radius: var(--et-radius-sm);
+  overflow: hidden;
+  background: var(--et-card);
+  border: 1px solid var(--et-border);
+  transition: box-shadow var(--et-transition-fast) var(--et-easing), border-color var(--et-transition-fast) var(--et-easing);
+  cursor: pointer;
+}
+
+.enterprise-theme .et-media-card:hover {
+  box-shadow: var(--et-shadow-md);
+  border-color: oklch(0.55 0.01 260 / 0.3);
+}
+
+/* Square aspect ratio for compact thumbnails */
+.enterprise-theme .et-media-thumb {
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--et-muted);
+}
+
+.enterprise-theme .et-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--et-transition-normal) var(--et-easing);
+}
+
+.enterprise-theme .et-media-card:hover .et-media-thumb img {
+  transform: scale(1.05);
+}
+
+/* Compact media info section - mobile-first */
+.enterprise-theme .et-media-info {
+  padding: var(--et-space-2xs) var(--et-space-xs);
+  background: var(--et-card);
+}
+
+@media (min-width: 480px) {
+  .enterprise-theme .et-media-info {
+    padding: var(--et-space-xs) var(--et-space-sm);
+  }
+}
+
+.enterprise-theme .et-media-name {
+  font-size: var(--et-text-2xs);
+  font-weight: var(--et-font-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--et-leading-snug);
+  color: var(--et-foreground);
+}
+
+@media (min-width: 480px) {
+  .enterprise-theme .et-media-name {
+    font-size: var(--et-text-xs);
+  }
+}
+
+.enterprise-theme .et-media-meta {
+  font-size: 9px;
+  color: var(--et-muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--et-leading-tight);
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .enterprise-theme .et-media-meta {
+    display: block;
+    font-size: var(--et-text-2xs);
+  }
+}
+
+/* Hover overlay for media cards */
+.enterprise-theme .et-media-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity var(--et-transition-fast) var(--et-easing);
+}
+
+.enterprise-theme .et-media-card:hover .et-media-overlay {
+  opacity: 1;
+}
+
+.enterprise-theme .et-media-overlay button {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  min-width: 0;
+}
+
+.enterprise-theme .et-media-overlay svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Compact drop zone */
+.enterprise-theme .et-drop-zone {
+  padding: var(--et-space-md);
+  border: 1px dashed var(--et-border);
+  border-radius: var(--et-radius-md);
+  text-align: center;
+  transition: border-color var(--et-transition-fast) var(--et-easing), background-color var(--et-transition-fast) var(--et-easing);
+}
+
+.enterprise-theme .et-drop-zone.dragging {
+  border-color: var(--et-info);
+  background-color: oklch(0.62 0.18 250 / 0.05);
+}
+
+.enterprise-theme .et-drop-zone-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--et-muted-foreground);
+  margin: 0 auto;
+}
+
+.enterprise-theme .et-drop-zone-text {
+  font-size: var(--et-text-xs);
+  color: var(--et-muted-foreground);
+  margin-top: var(--et-space-2xs);
+}
+
+/* Video play icon overlay */
+.enterprise-theme .et-video-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enterprise-theme .et-video-icon svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--et-primary);
+}
+
+/* Duration badge for videos */
+.enterprise-theme .et-duration-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  padding: 1px 4px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 2px;
+  font-size: 9px;
+  color: white;
+  font-weight: var(--et-font-medium);
+}
+
+/* Compact list view */
+.enterprise-theme .et-media-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--et-space-sm);
+  padding: var(--et-space-xs) var(--et-space-sm);
+  border-radius: var(--et-radius-sm);
+  border: 1px solid var(--et-border);
+  transition: background-color var(--et-transition-fast) var(--et-easing);
+}
+
+.enterprise-theme .et-media-list-item:hover {
+  background-color: var(--et-muted);
+}
+
+.enterprise-theme .et-media-list-thumb {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--et-radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.enterprise-theme .et-media-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }

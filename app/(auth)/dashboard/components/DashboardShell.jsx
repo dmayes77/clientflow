@@ -42,7 +42,7 @@ export function DashboardShell({ children }) {
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard, color: "text-zinc-600" },
     { label: "Calendar", href: "/dashboard/calendar", icon: Calendar, color: "text-blue-500" },
     { label: "Contacts", href: "/dashboard/contacts", icon: Users, color: "text-violet-500" },
-    { label: "Services & Pricing", href: "/dashboard/services", icon: Package, color: "text-amber-500" },
+    { label: "Services & Packages", href: "/dashboard/services", icon: Package, color: "text-amber-500" },
     { label: "Financials", href: "/dashboard/invoices", icon: DollarSign, color: "text-green-500" },
     { label: "Tags", href: "/dashboard/tags", icon: Tag, color: "text-rose-500" },
     { label: "Workflows", href: "/dashboard/workflows", icon: Workflow, color: "text-indigo-500" },
@@ -97,7 +97,7 @@ export function DashboardShell({ children }) {
         {/* Sidebar Header */}
         <div className="flex h-11 items-center justify-between border-b border-zinc-200 px-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-zinc-800">ClientFlow</span>
+            <span className="et-text-sm font-semibold text-zinc-800">ClientFlow</span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -139,7 +139,7 @@ export function DashboardShell({ children }) {
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-r-md px-2.5 py-2 text-xs font-medium transition-all",
+                    "flex items-center gap-2.5 rounded-r-md px-2.5 py-2 et-text-xs font-medium transition-all",
                     isActive
                       ? "et-bg-info text-[hsl(217,91%,60%)] border-l-2 border-[hsl(217,91%,60%)]"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 border-l-2 border-transparent"
@@ -159,7 +159,7 @@ export function DashboardShell({ children }) {
             href="/dashboard/whats-new"
             onClick={() => setSidebarOpen(false)}
             className={cn(
-              "flex items-center gap-2 rounded-r-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+              "flex items-center gap-2 rounded-r-md px-2.5 py-1.5 et-text-xs font-medium transition-colors",
               pathname === "/dashboard/whats-new"
                 ? "et-bg-info text-[hsl(217,91%,60%)] border-l-2 border-[hsl(217,91%,60%)]"
                 : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 border-l-2 border-transparent"
@@ -169,7 +169,7 @@ export function DashboardShell({ children }) {
             What's New
           </Link>
           <SignOutButton>
-            <button className="mt-0.5 flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900">
+            <button className="mt-0.5 flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 et-text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900">
               <LogOut className="h-4 w-4" />
               Sign Out
             </button>

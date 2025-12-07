@@ -329,3 +329,79 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
+
+/* ===================
+   Text Size Utility Classes - Direct values override Tailwind
+   =================== */
+
+.mt-text-xs {
+  font-size: 0.75rem !important; /* 12px */
+  line-height: 1.5 !important;
+}
+
+.mt-text-sm {
+  font-size: 0.8125rem !important; /* 13px */
+  line-height: 1.5 !important;
+}
+
+.mt-text-base {
+  font-size: 0.9375rem !important; /* 15px */
+  line-height: 1.5 !important;
+}
+
+.mt-text-lg {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.5 !important;
+}
+
+.mt-text-xl {
+  font-size: 1.125rem !important; /* 18px */
+  line-height: 1.375 !important;
+}
+
+.mt-text-2xl {
+  font-size: 1.25rem !important; /* 20px */
+  line-height: 1.3 !important;
+}
+
+.mt-text-3xl {
+  font-size: 1.5rem !important; /* 24px */
+  line-height: 1.25 !important;
+}
+
+.mt-text-4xl {
+  font-size: 1.875rem !important; /* 30px */
+  line-height: 1.2 !important;
+}
+
+.mt-text-5xl {
+  font-size: 2.25rem !important; /* 36px */
+  line-height: 1.15 !important;
+}
+
+.mt-text-6xl {
+  font-size: 2.75rem !important; /* 44px */
+  line-height: 1.1 !important;
+}
+
+/* Responsive marketing text modifiers */
+@media (min-width: 768px) {
+  .md\:mt-text-4xl {
+    font-size: 1.875rem !important;
+  }
+  .md\:mt-text-5xl {
+    font-size: 2.25rem !important;
+  }
+  .md\:mt-text-6xl {
+    font-size: 2.75rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:mt-text-5xl {
+    font-size: 2.25rem !important;
+  }
+  .lg\:mt-text-6xl {
+    font-size: 2.75rem !important;
+  }
+}

@@ -1,0 +1,438 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id                  String    @id @default(cuid())
+  clerkOrgId          String    @unique
+  name                String
+  email               String
+  slug                String?   @unique
+
+  stripeCustomerId    String?   @unique
+  stripeAccountId     String?   @unique
+  stripeSubscriptionId String?  @unique
+  stripeAccountStatus String?   @default("pending")
+  stripeOnboardingComplete Boolean @default(false)
+  subscriptionStatus  String?   @default("trialing")
+  planType            String?   @default("basic")
+  currentPeriodEnd    DateTime?
+
+  businessName        String?
+  businessAddress     String?
+  businessCity        String?
+  businessState       String?
+  businessZip         String?
+  businessCountry     String?
+  businessPhone       String?
+  contactPerson       String?
+  businessWebsite     String?
+  businessDescription String?
+  logoUrl             String?
+
+  timezone            String    @default("America/New_York")
+  slotInterval        Int       @default(30)
+  defaultCalendarView String    @default("week")
+
+  facebookUrl         String?
+  twitterUrl          String?
+  instagramUrl        String?
+  linkedinUrl         String?
+  youtubeUrl          String?
+
+  metadata            Json?
+  setupComplete       Boolean   @default(false)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  services            Service[]
+  packages            Package[]
+  serviceCategories   ServiceCategory[]
+  clients             Client[]
+  bookings            Booking[]
+  apiKeys             ApiKey[]
+  availability        Availability[]
+  availabilityOverrides AvailabilityOverride[]
+  webhooks            Webhook[]
+  payments            Payment[]
+  images              Image[]
+  videos              Video[]
+  invoices            Invoice[]
+
+  @@index([clerkOrgId])
+}
+
+model ServiceCategory {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String
+  description String?
+  color       String?   @default("#6366f1") // Indigo default
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  services    Service[]
+  packages    Package[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  tenantId    String
+  categoryId  String?
+
+  name        String
+  description String?
+  duration    Int
+  price       Int
+  active      Boolean   @default(true)
+  includes    String[]  @default([])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category    ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  bookings    Booking[]
+  packageServices PackageService[]
+  images      Image[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+}
+
+model Package {
+  id              String    @id @default(cuid())
+  tenantId        String
+  categoryId      String?
+
+  name            String
+  description     String?
+  price           Int       // Final price after discount (in cents)
+  discountPercent Int       @default(15) // 5, 10, 15, or 20
+  active          Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category        ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  services        PackageService[]
+  bookings        Booking[]
+  images          Image[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+}
+
+model PackageService {
+  id        String  @id @default(cuid())
+  packageId String
+  serviceId String
+
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, serviceId])
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  tenantId  String
+
+  name      String
+  email     String
+  phone     String?
+  notes     String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+  invoices  Invoice[]
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+model Booking {
+  id              String    @id @default(cuid())
+  tenantId        String
+  clientId        String
+  serviceId       String?
+  packageId       String?
+
+  scheduledAt     DateTime
+  status          String    @default("inquiry")
+  notes           String?
+  totalPrice      Int
+  duration        Int
+
+  paymentStatus   String?   @default("unpaid")
+  paymentId       String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  service         Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  package         Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  invoice         Invoice?
+
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model ApiKey {
+  id        String    @id @default(cuid())
+  tenantId  String
+
+  name      String?
+  key       String    @unique
+  lastUsed  DateTime?
+
+  createdAt DateTime  @default(now())
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([key])
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  tenantId  String
+
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  active    Boolean  @default(true)
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dayOfWeek])
+  @@index([tenantId])
+}
+
+model AvailabilityOverride {
+  id        String   @id @default(cuid())
+  tenantId  String
+
+  date      DateTime @db.Date
+  type      String
+  startTime String?
+  endTime   String?
+  reason    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, date])
+  @@index([tenantId])
+  @@index([date])
+}
+
+model Webhook {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  url         String
+  events      String[]
+  secret      String
+  active      Boolean   @default(true)
+  description String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deliveries  WebhookDelivery[]
+
+  @@index([tenantId])
+  @@index([active])
+}
+
+model WebhookDelivery {
+  id          String    @id @default(cuid())
+  webhookId   String
+
+  event       String
+  payload     String
+  response    String?
+  statusCode  Int?
+  success     Boolean   @default(false)
+  attempts    Int       @default(1)
+
+  createdAt   DateTime  @default(now())
+
+  webhook     Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([event])
+  @@index([createdAt])
+}
+
+model Payment {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  bookingId             String?
+
+  stripePaymentIntentId String    @unique
+  stripeAccountId       String
+
+  amount                Int
+  currency              String    @default("usd")
+  status                String
+
+  clientEmail           String
+  clientName            String
+
+  metadata              String?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings              Booking[]
+
+  @@index([tenantId])
+  @@index([stripePaymentIntentId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Image {
+  id          String    @id @default(cuid())
+  tenantId    String
+  serviceId   String?
+  packageId   String?
+
+  url         String
+  key         String
+  name        String
+  alt         String
+  type        String    @default("general")
+  size        Int
+  width       Int?
+  height      Int?
+  mimeType    String
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  service     Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  package     Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([serviceId])
+  @@index([packageId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model Video {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  url         String
+  thumbnailUrl String?
+  key         String
+  name        String
+  alt         String
+  type        String    @default("general")
+  size        Int
+  width       Int?
+  height      Int?
+  duration    Float?
+  mimeType    String
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model Invoice {
+  id              String    @id @default(cuid())
+  tenantId        String
+  clientId        String?
+  bookingId       String?   @unique
+
+  invoiceNumber   String
+  status          String    @default("draft")
+
+  issueDate       DateTime  @default(now())
+  dueDate         DateTime
+  sentAt          DateTime?
+  paidAt          DateTime?
+  viewedAt        DateTime?
+
+  subtotal        Int
+  taxRate         Float     @default(0)
+  taxAmount       Int       @default(0)
+  total           Int
+  currency        String    @default("usd")
+
+  lineItems       Json
+
+  clientName      String
+  clientEmail     String
+  clientAddress   String?
+
+  stripeCheckoutSessionId String?   @unique
+  stripePaymentIntentId   String?   @unique
+
+  notes           String?
+  terms           String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([clientId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([createdAt])
+}
+
+model FeatureRequest {
+  id          String    @id @default(cuid())
+
+  email       String
+  feature     String
+  status      String    @default("new")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}

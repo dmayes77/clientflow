@@ -67,10 +67,10 @@ function formatTime(time) {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-export default function BookingSlugPage({ params }) {
-  const { slug } = use(params);
+export default function BookingTypePage({ params }) {
+  const { type } = use(params);
   const router = useRouter();
-  const callType = callTypes[slug];
+  const callType = callTypes[type];
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
@@ -113,14 +113,14 @@ export default function BookingSlugPage({ params }) {
 
   if (!callType) {
     return (
-      <div className="h-full flex flex-col justify-center items-center container max-w-md mx-auto px-4 text-center">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-          <Calendar className="w-8 h-8 text-muted-foreground" />
+      <div className="h-full flex flex-col justify-center items-center container max-w-sm mx-auto px-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+          <Calendar className="w-6 h-6 text-muted-foreground" />
         </div>
-        <h1 className="text-xl font-semibold mb-2">Call Type Not Found</h1>
-        <p className="text-muted-foreground mb-6">The requested call type doesn&apos;t exist.</p>
+        <h1 className="et-text-lg font-semibold mb-1.5">Call Type Not Found</h1>
+        <p className="et-text-sm text-muted-foreground mb-4">The requested call type doesn&apos;t exist.</p>
         <Link href="/book">
-          <Button>Back to Booking</Button>
+          <Button size="sm">Back to Booking</Button>
         </Link>
       </div>
     );
@@ -204,7 +204,7 @@ export default function BookingSlugPage({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: slug,
+          type: type,
           date: selectedDate.toISOString(),
           time: selectedTime,
           name: formData.name,
@@ -221,7 +221,7 @@ export default function BookingSlugPage({ params }) {
       }
 
       const searchParams = new URLSearchParams({
-        type: slug,
+        type: type,
         date: selectedDate.toISOString(),
         time: selectedTime,
         name: formData.name,
@@ -241,30 +241,30 @@ export default function BookingSlugPage({ params }) {
   };
 
   return (
-    <div className="h-full flex flex-col container max-w-4xl mx-auto px-4 py-4">
+    <div className="h-full flex flex-col container max-w-3xl mx-auto px-4 py-3">
       {/* Back link */}
-      <Link href="/book" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors w-fit">
-        <ArrowLeft className="w-4 h-4" />
+      <Link href="/book" className="inline-flex items-center gap-1 et-text-xs text-muted-foreground hover:text-foreground mb-3 transition-colors w-fit">
+        <ArrowLeft className="w-3.5 h-3.5" />
         Back to call types
       </Link>
 
       <div className="flex-1 flex items-center">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Left sidebar - Call info */}
           <div className="lg:col-span-1">
             <Card className="overflow-hidden py-0">
               {/* Colored accent bar */}
-              <div className={`h-1.5 ${callType.accentColor}`} />
-              <CardContent className="p-5 pt-4">
-                <div className={`w-12 h-12 rounded-xl ${callType.bgColor} flex items-center justify-center mb-4 ring-1 ${callType.ringColor}`}>
-                  <Icon className={`w-6 h-6 ${callType.color}`} />
+              <div className={`h-1 ${callType.accentColor}`} />
+              <CardContent className="p-4 pt-3">
+                <div className={`w-10 h-10 rounded-lg ${callType.bgColor} flex items-center justify-center mb-3 ring-1 ${callType.ringColor}`}>
+                  <Icon className={`w-5 h-5 ${callType.color}`} />
                 </div>
-                <h2 className="text-lg font-semibold mb-1">{callType.title}</h2>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-                  <Clock className="w-4 h-4" />
+                <h2 className="et-text-base font-semibold mb-0.5">{callType.title}</h2>
+                <div className="flex items-center gap-1 et-text-xs text-muted-foreground mb-3">
+                  <Clock className="w-3.5 h-3.5" />
                   {callType.duration} minutes
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="et-text-xs text-muted-foreground">
                   Select a date and time that works for you. All times shown in your local timezone.
                 </p>
               </CardContent>
@@ -273,8 +273,8 @@ export default function BookingSlugPage({ params }) {
 
           {/* Right side - Calendar or Form */}
           <div className="lg:col-span-2">
-            <Card className="overflow-hidden">
-              <CardContent className="p-5">
+            <Card className="overflow-hidden py-0">
+              <CardContent className="p-4">
                 <AnimatePresence mode="wait" custom={direction}>
                   {step === "date" ? (
                     <motion.div
@@ -286,51 +286,51 @@ export default function BookingSlugPage({ params }) {
                       exit="exit"
                       transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <h3 className="font-semibold mb-4 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-primary" />
+                      <h3 className="font-semibold et-text-sm mb-3 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-primary" />
                         Select a Date & Time
                       </h3>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         {/* Calendar */}
                         <div>
                           {/* Month navigation */}
-                          <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center justify-between mb-2">
                             <button
                               onClick={handlePrevMonth}
-                              className="p-2 hover:bg-muted rounded-lg transition-colors"
+                              className="p-1.5 hover:bg-muted rounded-md transition-colors"
                             >
-                              <ChevronLeft className="w-4 h-4" />
+                              <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                            <span className="font-medium text-sm">
+                            <span className="font-medium et-text-xs">
                               {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                             </span>
                             <button
                               onClick={handleNextMonth}
-                              className="p-2 hover:bg-muted rounded-lg transition-colors"
+                              className="p-1.5 hover:bg-muted rounded-md transition-colors"
                             >
-                              <ChevronRight className="w-4 h-4" />
+                              <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                           </div>
 
                           {/* Day headers */}
-                          <div className="grid grid-cols-7 gap-1 mb-1">
+                          <div className="grid grid-cols-7 gap-0.5 mb-0.5">
                             {DAYS.map((day) => (
-                              <div key={day} className="text-center text-xs text-muted-foreground py-1 font-medium">
+                              <div key={day} className="text-center et-text-xs text-muted-foreground py-1 font-medium">
                                 {day}
                               </div>
                             ))}
                           </div>
 
                           {/* Calendar grid */}
-                          <div className="grid grid-cols-7 gap-1">
+                          <div className="grid grid-cols-7 gap-0.5">
                             {calendarDays.map((day, i) => (
                               <button
                                 key={i}
                                 disabled={!day.isAvailable}
                                 onClick={() => handleDateSelect(day)}
                                 className={`
-                                  aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all
+                                  aspect-square flex items-center justify-center rounded-md et-text-xs font-medium transition-all
                                   ${!day.isCurrentMonth ? "invisible" : ""}
                                   ${day.isTooSoon || day.isSunday ? "text-muted-foreground/30 cursor-not-allowed" : ""}
                                   ${day.isAvailable && !isDateSelected(day) ? "hover:bg-primary/10 hover:text-primary cursor-pointer" : ""}
@@ -345,7 +345,7 @@ export default function BookingSlugPage({ params }) {
 
                         {/* Time slots */}
                         <div>
-                          <p className="text-sm text-muted-foreground mb-3">
+                          <p className="et-text-xs text-muted-foreground mb-2">
                             {selectedDate
                               ? `Times for ${selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`
                               : "Select a date to see times"
@@ -353,22 +353,22 @@ export default function BookingSlugPage({ params }) {
                           </p>
 
                           {loadingSlots ? (
-                            <div className="flex items-center justify-center py-8">
-                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                              <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                            <div className="flex items-center justify-center py-6">
+                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                              <span className="ml-2 et-text-xs text-muted-foreground">Loading...</span>
                             </div>
                           ) : selectedDate && timeSlots.length === 0 ? (
-                            <div className="py-8 text-center">
-                              <p className="text-sm text-muted-foreground">No availability</p>
+                            <div className="py-6 text-center">
+                              <p className="et-text-xs text-muted-foreground">No availability</p>
                             </div>
                           ) : (
-                            <div className="grid grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                            <div className="grid grid-cols-2 gap-1.5 max-h-[180px] overflow-y-auto pr-1">
                               {timeSlots.map((time) => (
                                 <button
                                   key={time}
                                   onClick={() => handleTimeSelect(time)}
                                   className={`
-                                    px-3 py-2.5 rounded-lg text-sm font-medium border transition-all
+                                    px-2 py-2 rounded-md et-text-xs font-medium border transition-all
                                     ${selectedTime === time
                                       ? "bg-primary text-primary-foreground border-primary shadow-sm"
                                       : "hover:border-primary hover:bg-primary/5 hover:text-primary"
@@ -384,14 +384,14 @@ export default function BookingSlugPage({ params }) {
                       </div>
 
                       {/* Continue button */}
-                      <div className="mt-5 pt-4 border-t flex justify-end">
+                      <div className="mt-4 pt-3 border-t flex justify-end">
                         <Button
                           onClick={handleContinue}
                           disabled={!selectedDate || !selectedTime}
-                          size="lg"
+                          size="sm"
                         >
                           Continue
-                          <ChevronRight className="w-4 h-4 ml-1" />
+                          <ChevronRight className="w-3.5 h-3.5 ml-1" />
                         </Button>
                       </div>
                     </motion.div>
@@ -405,49 +405,49 @@ export default function BookingSlugPage({ params }) {
                       exit="exit"
                       transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-center gap-2 mb-3">
                         <button
                           onClick={handleBack}
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
+                          className="p-1.5 hover:bg-muted rounded-md transition-colors"
                         >
-                          <ArrowLeft className="w-4 h-4" />
+                          <ArrowLeft className="w-3.5 h-3.5" />
                         </button>
-                        <h3 className="font-semibold flex items-center gap-2">
-                          <User className="w-4 h-4 text-primary" />
+                        <h3 className="font-semibold et-text-sm flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-primary" />
                           Your Details
                         </h3>
                       </div>
 
                       {/* Selected date/time summary */}
-                      <div className="bg-linear-to-r from-primary/5 to-transparent rounded-xl p-4 mb-5 border border-primary/10">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg ${callType.bgColor} flex items-center justify-center`}>
-                            <Icon className={`w-5 h-5 ${callType.color}`} />
+                      <div className="bg-muted/50 rounded-md p-3 mb-4 border border-primary/10">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-9 h-9 rounded-lg ${callType.bgColor} flex items-center justify-center`}>
+                            <Icon className={`w-4 h-4 ${callType.color}`} />
                           </div>
                           <div>
-                            <p className="font-medium">{callType.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {selectedDate?.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })} at {formatTime(selectedTime)}
+                            <p className="font-medium et-text-sm">{callType.title}</p>
+                            <p className="et-text-xs text-muted-foreground">
+                              {selectedDate?.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {formatTime(selectedTime)}
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <form onSubmit={handleSubmit} className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor="name" className="text-sm font-medium">Name *</Label>
+                            <Label htmlFor="name" className="et-text-xs font-medium">Name *</Label>
                             <Input
                               id="name"
                               required
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                               placeholder="Your full name"
-                              className="mt-1.5"
+                              className="mt-1 h-8 et-text-sm"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
+                            <Label htmlFor="email" className="et-text-xs font-medium">Email *</Label>
                             <Input
                               id="email"
                               type="email"
@@ -455,39 +455,39 @@ export default function BookingSlugPage({ params }) {
                               value={formData.email}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                               placeholder="you@company.com"
-                              className="mt-1.5"
+                              className="mt-1 h-8 et-text-sm"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="company" className="text-sm font-medium">Company</Label>
+                          <Label htmlFor="company" className="et-text-xs font-medium">Company</Label>
                           <Input
                             id="company"
                             value={formData.company}
                             onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                             placeholder="Your company (optional)"
-                            className="mt-1.5"
+                            className="mt-1 h-8 et-text-sm"
                           />
                         </div>
 
                         <div>
-                          <Label htmlFor="notes" className="text-sm font-medium">Notes</Label>
+                          <Label htmlFor="notes" className="et-text-xs font-medium">Notes</Label>
                           <Textarea
                             id="notes"
                             value={formData.notes}
                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                             placeholder="Anything you'd like us to know?"
-                            rows={3}
-                            className="mt-1.5"
+                            rows={2}
+                            className="mt-1 et-text-sm"
                           />
                         </div>
 
-                        <div className="pt-2">
-                          <Button type="submit" disabled={submitting} size="lg" className="w-full md:w-auto">
+                        <div className="pt-1.5">
+                          <Button type="submit" disabled={submitting} size="sm" className="w-full md:w-auto">
                             {submitting ? (
                               <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                                 Booking...
                               </>
                             ) : (

@@ -13,7 +13,7 @@ export function ChangelogList() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">
+        <p className="et-text-sm text-muted-foreground">
           Stay up to date with the latest features, improvements, and bug fixes in ClientFlow.
         </p>
       </CardContent>

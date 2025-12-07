@@ -9,8 +9,8 @@ export default function WhatsNewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">What&apos;s New</h1>
-        <p className="text-sm text-muted-foreground">Latest updates and features</p>
+        <h1 className="et-text-2xl font-semibold">What&apos;s New</h1>
+        <p className="et-text-sm text-muted-foreground">Latest updates and features</p>
       </div>
       <ChangelogList />
     </div>

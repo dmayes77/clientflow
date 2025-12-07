@@ -18,7 +18,7 @@ export function TagsList() {
         </Button>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">
+        <p className="et-text-sm text-muted-foreground">
           Organize contacts and bookings with custom tags. Create categories to filter and segment your data.
         </p>
       </CardContent>

@@ -57,23 +57,23 @@ export default function ConfirmationPage() {
   // If missing data, show a fallback
   if (!callType || !date || !time) {
     return (
-      <div className="h-full flex flex-col justify-center items-center container max-w-md mx-auto px-4 text-center">
-        <div className="relative mb-6">
-          <div className="w-20 h-20 rounded-full bg-linear-to-br from-green-100 to-emerald-50 flex items-center justify-center">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
+      <div className="h-full flex flex-col justify-center items-center container max-w-sm mx-auto px-4 text-center">
+        <div className="relative mb-4">
+          <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+            <CheckCircle2 className="w-7 h-7 text-green-600" />
           </div>
-          <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-            <Sparkles className="w-3 h-3 text-white" />
+          <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+            <Sparkles className="w-2.5 h-2.5 text-white" />
           </div>
         </div>
-        <h1 className="text-2xl font-bold mb-2">You&apos;re All Set!</h1>
-        <p className="text-muted-foreground mb-6">
+        <h1 className="et-text-xl font-bold mb-1.5">You&apos;re All Set!</h1>
+        <p className="et-text-sm text-muted-foreground mb-4">
           Your call has been scheduled. Check your email for the details.
         </p>
         <Link href="/">
-          <Button size="lg">
+          <Button size="sm">
             Back to Home
-            <ArrowRight className="w-4 h-4 ml-2" />
+            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
           </Button>
         </Link>
       </div>
@@ -113,61 +113,61 @@ export default function ConfirmationPage() {
 
   return (
     <motion.div
-      className="h-full flex flex-col justify-center container max-w-md mx-auto px-4"
+      className="h-full flex flex-col justify-center container max-w-sm mx-auto px-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Success animation area */}
-      <motion.div className="text-center mb-6" variants={itemVariants}>
-        <motion.div className="relative inline-block mb-4" variants={checkmarkVariants}>
-          <div className="w-20 h-20 rounded-full bg-linear-to-br from-green-100 to-emerald-50 flex items-center justify-center ring-4 ring-green-100/50">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
+      <motion.div className="text-center mb-4" variants={itemVariants}>
+        <motion.div className="relative inline-block mb-3" variants={checkmarkVariants}>
+          <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center ring-4 ring-green-100/50">
+            <CheckCircle2 className="w-7 h-7 text-green-600" />
           </div>
-          <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-linear-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow-lg">
+            <Sparkles className="w-2.5 h-2.5 text-white" />
           </div>
         </motion.div>
-        <h1 className="text-2xl font-bold mb-1">You&apos;re All Set!</h1>
-        <p className="text-muted-foreground">
+        <h1 className="et-text-xl font-bold mb-0.5">You&apos;re All Set!</h1>
+        <p className="et-text-sm text-muted-foreground">
           {name ? `Thanks, ${name}!` : "Thanks!"} Your call is confirmed.
         </p>
       </motion.div>
 
       {/* Booking summary card */}
       <motion.div variants={itemVariants}>
-        <Card className="mb-4 overflow-hidden py-0">
-          <div className={`h-1.5 bg-linear-to-r ${callType.accentColor}`} />
-          <CardContent className="p-4 pt-3">
-            <div className="flex items-center gap-3 pb-3 border-b mb-3">
-              <div className={`w-11 h-11 rounded-xl ${callType.bgColor} flex items-center justify-center ring-1 ring-black/5`}>
-                <Icon className={`w-5 h-5 ${callType.color}`} />
+        <Card className="mb-3 overflow-hidden py-0">
+          <div className={`h-1 bg-linear-to-r ${callType.accentColor}`} />
+          <CardContent className="p-3 pt-2.5">
+            <div className="flex items-center gap-2.5 pb-2.5 border-b mb-2.5">
+              <div className={`w-9 h-9 rounded-lg ${callType.bgColor} flex items-center justify-center ring-1 ring-black/5`}>
+                <Icon className={`w-4 h-4 ${callType.color}`} />
               </div>
               <div>
-                <p className="font-semibold">{callType.title}</p>
-                <p className="text-sm text-muted-foreground">{callType.duration} minute video call</p>
+                <p className="font-semibold et-text-sm">{callType.title}</p>
+                <p className="et-text-xs text-muted-foreground">{callType.duration} minute video call</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Date</p>
-                  <p className="text-sm font-medium">
+                  <p className="et-text-xs text-muted-foreground">Date</p>
+                  <p className="et-text-xs font-medium">
                     {date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-muted/50 flex items-center justify-center">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Time</p>
-                  <p className="text-sm font-medium">{formatTime(time)}</p>
+                  <p className="et-text-xs text-muted-foreground">Time</p>
+                  <p className="et-text-xs font-medium">{formatTime(time)}</p>
                 </div>
               </div>
             </div>
@@ -177,15 +177,15 @@ export default function ConfirmationPage() {
 
       {/* Email confirmation card */}
       <motion.div variants={itemVariants}>
-        <Card className="mb-6 border-primary/20 bg-linear-to-r from-primary/5 to-transparent">
-          <CardContent className="p-4">
-            <div className="flex gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/10">
-                <Mail className="w-5 h-5 text-primary" />
+        <Card className="mb-4 border-primary/20 bg-primary/5 py-0">
+          <CardContent className="p-3">
+            <div className="flex gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/10">
+                <Mail className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="font-medium mb-0.5">Check Your Email</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="font-medium et-text-sm mb-0.5">Check Your Email</p>
+                <p className="et-text-xs text-muted-foreground">
                   We&apos;ve sent a confirmation with the meeting link and all the details.
                 </p>
               </div>
@@ -197,15 +197,15 @@ export default function ConfirmationPage() {
       {/* Action button */}
       <motion.div variants={itemVariants}>
         <Link href="/" className="w-full block">
-          <Button className="w-full" size="lg">
+          <Button className="w-full" size="sm">
             Back to Home
-            <ArrowRight className="w-4 h-4 ml-2" />
+            <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
           </Button>
         </Link>
       </motion.div>
 
       {/* Help text */}
-      <motion.p variants={itemVariants} className="text-xs text-muted-foreground text-center mt-4">
+      <motion.p variants={itemVariants} className="et-text-xs text-muted-foreground text-center mt-3">
         Need to reschedule? Reply to your confirmation email or contact{" "}
         <a href="mailto:support@getclientflow.app" className="text-primary hover:underline font-medium">
           support@getclientflow.app
