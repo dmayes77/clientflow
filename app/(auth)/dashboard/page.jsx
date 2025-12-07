@@ -217,7 +217,7 @@ export default function DashboardPage() {
       {/* Page Header with Quick Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="et-h4 font-semibold text-zinc-900">Overview</h1>
+          <h1 className="et-h4 text-zinc-900">Overview</h1>
           <p className="et-caption text-zinc-500">Welcome back! Here's what's happening with your business.</p>
         </div>
         <div className="flex gap-2">

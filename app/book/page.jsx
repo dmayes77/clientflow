@@ -48,7 +48,7 @@ export default function BookPage() {
         <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 mb-3 ring-1 ring-primary/10">
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
-        <h1 className="et-h3 font-bold mb-1">Let&apos;s Connect</h1>
+        <h1 className="et-h3 mb-1">Let&apos;s Connect</h1>
         <p className="et-small text-muted-foreground">
           Choose how you&apos;d like to meet with our team
         </p>

@@ -448,7 +448,7 @@ export function CalendarView() {
             <div key={day.toISOString()} className="flex-1 text-center py-2 border-r">
               <div className="et-caption text-muted-foreground">{format(day, "EEE")}</div>
               <div
-                className={`et-h4 font-semibold w-10 h-10 flex items-center justify-center mx-auto rounded-full ${
+                className={`et-h4 w-10 h-10 flex items-center justify-center mx-auto rounded-full ${
                   isToday(day) ? "bg-blue-600 text-white" : ""
                 }`}
               >
@@ -668,7 +668,7 @@ export function CalendarView() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <h2 className="et-h3 font-semibold ml-2">{getHeaderTitle()}</h2>
+            <h2 className="et-h3 ml-2">{getHeaderTitle()}</h2>
           </div>
 
           <div className="flex items-center gap-2">

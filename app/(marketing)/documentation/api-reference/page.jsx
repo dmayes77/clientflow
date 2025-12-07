@@ -407,7 +407,7 @@ export default function APIReferencePage() {
           <Badge variant="outline" className="et-text-2xs px-1.5 py-0">Reference</Badge>
           <Badge variant="outline" className="et-text-2xs px-1.5 py-0 font-mono">v1</Badge>
         </div>
-        <h1 className="et-h3 font-semibold text-zinc-900 mb-2">
+        <h1 className="et-h3 text-zinc-900 mb-2">
           REST API Reference
         </h1>
         <p className="et-small text-zinc-500 mb-3">

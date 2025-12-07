@@ -9,7 +9,7 @@ export default function ServicesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="et-h3 font-semibold">Services & Packages</h1>
+        <h1 className="et-h3">Services & Packages</h1>
         <p className="et-small text-muted-foreground">Manage your services and create packages</p>
       </div>
 

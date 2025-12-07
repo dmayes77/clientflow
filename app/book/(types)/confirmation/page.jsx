@@ -66,7 +66,7 @@ export default function ConfirmationPage() {
             <Sparkles className="w-2.5 h-2.5 text-white" />
           </div>
         </div>
-        <h1 className="et-h3 font-bold mb-1.5">You&apos;re All Set!</h1>
+        <h1 className="et-h3 mb-1.5">You&apos;re All Set!</h1>
         <p className="et-small text-muted-foreground mb-4">
           Your call has been scheduled. Check your email for the details.
         </p>
@@ -128,7 +128,7 @@ export default function ConfirmationPage() {
             <Sparkles className="w-2.5 h-2.5 text-white" />
           </div>
         </motion.div>
-        <h1 className="et-h3 font-bold mb-0.5">You&apos;re All Set!</h1>
+        <h1 className="et-h3 mb-0.5">You&apos;re All Set!</h1>
         <p className="et-small text-muted-foreground">
           {name ? `Thanks, ${name}!` : "Thanks!"} Your call is confirmed.
         </p>

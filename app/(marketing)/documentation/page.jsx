@@ -61,7 +61,7 @@ export default function DocumentationPage() {
     <div className="space-y-10">
       {/* Hero */}
       <section>
-        <h1 className="et-h3 font-semibold text-zinc-900 mb-2">
+        <h1 className="et-h3 text-zinc-900 mb-2">
           ClientFlow Documentation
         </h1>
         <p className="et-small text-zinc-500 max-w-2xl">

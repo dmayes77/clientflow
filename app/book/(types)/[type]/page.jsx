@@ -117,7 +117,7 @@ export default function BookingTypePage({ params }) {
         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
           <Calendar className="w-6 h-6 text-muted-foreground" />
         </div>
-        <h1 className="et-h4 font-semibold mb-1.5">Call Type Not Found</h1>
+        <h1 className="et-h4 mb-1.5">Call Type Not Found</h1>
         <p className="et-small text-muted-foreground mb-4">The requested call type doesn&apos;t exist.</p>
         <Link href="/book">
           <Button size="sm">Back to Booking</Button>

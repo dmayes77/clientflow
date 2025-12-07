@@ -870,7 +870,7 @@ export default function TenantBookingPage({ params }) {
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
               <X className="w-6 h-6 text-destructive" />
             </div>
-            <h1 className="et-h4 font-bold mb-2">Error</h1>
+            <h1 className="et-h4 mb-2">Error</h1>
             <p className="et-small text-muted-foreground mb-4">{error}</p>
             <Link href="/">
               <Button>Go Home</Button>
@@ -901,7 +901,7 @@ export default function TenantBookingPage({ params }) {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </motion.div>
 
-              <h1 className="et-h3 font-bold mb-2">Booking Confirmed!</h1>
+              <h1 className="et-h3 mb-2">Booking Confirmed!</h1>
               <p className="et-small text-muted-foreground mb-6">
                 {bookingResult?.message || "We've sent a confirmation to your email."}
               </p>

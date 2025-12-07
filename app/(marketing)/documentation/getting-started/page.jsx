@@ -36,7 +36,7 @@ export default function GettingStartedPage() {
           <Badge variant="outline" className="et-text-2xs px-1.5 py-0">Guide</Badge>
           <span className="et-text-2xs text-zinc-400">5 min read</span>
         </div>
-        <h1 className="et-h3 font-semibold text-zinc-900 mb-2">
+        <h1 className="et-h3 text-zinc-900 mb-2">
           Getting Started with ClientFlow API
         </h1>
         <p className="et-small text-zinc-500 max-w-2xl">

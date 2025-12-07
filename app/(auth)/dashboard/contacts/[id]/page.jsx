@@ -262,7 +262,7 @@ export default function ClientDetailPage({ params }) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="et-h2 font-bold">
+            <h1 className="et-h2">
               {["lead", "prospect"].includes(formData.status) ? "Lead" : "Contact"} #{client.id.slice(-6).toUpperCase()}
             </h1>
           </div>
@@ -406,19 +406,19 @@ export default function ClientDetailPage({ params }) {
               <CardContent className="p-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-center p-3 rounded-lg border bg-blue-50/50 border-blue-100">
-                    <p className="et-h2 font-bold text-blue-600">{stats.totalBookings}</p>
+                    <p className="et-h2 text-blue-600">{stats.totalBookings}</p>
                     <p className="et-caption text-blue-600/70">Total Bookings</p>
                   </div>
                   <div className="text-center p-3 rounded-lg border bg-green-50/50 border-green-100">
-                    <p className="et-h2 font-bold text-green-600">{stats.completedBookings}</p>
+                    <p className="et-h2 text-green-600">{stats.completedBookings}</p>
                     <p className="et-caption text-green-600/70">Completed</p>
                   </div>
                   <div className="text-center p-3 rounded-lg border bg-amber-50/50 border-amber-100">
-                    <p className="et-h2 font-bold text-amber-600">{stats.upcomingBookings}</p>
+                    <p className="et-h2 text-amber-600">{stats.upcomingBookings}</p>
                     <p className="et-caption text-amber-600/70">Upcoming</p>
                   </div>
                   <div className="text-center p-3 rounded-lg border bg-teal-50/50 border-teal-100">
-                    <p className="et-h2 font-bold text-teal-600">{formatCurrency(stats.totalSpent)}</p>
+                    <p className="et-h2 text-teal-600">{formatCurrency(stats.totalSpent)}</p>
                     <p className="et-caption text-teal-600/70">Total Spent</p>
                   </div>
                 </div>
