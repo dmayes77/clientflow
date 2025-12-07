@@ -11,13 +11,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -32,13 +41,17 @@ import {
   Check,
   Clock,
   DollarSign,
-  Edit,
   FileText,
   Loader2,
   Mail,
   Phone,
-  StickyNote,
+  Save,
+  Trash2,
   User,
+  Building,
+  Globe,
+  MessageSquare,
+  CalendarPlus,
 } from "lucide-react";
 
 function formatCurrency(cents) {
@@ -64,6 +77,18 @@ function formatDateTime(dateString) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatFullDateTime(dateString) {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }) + " @ " + new Date(dateString).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).toLowerCase();
 }
 
 function BookingStatusBadge({ status }) {
@@ -100,35 +125,26 @@ function InvoiceStatusBadge({ status }) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, className }) {
-  return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="et-text-xs text-muted-foreground uppercase font-medium tracking-wide">
-              {title}
-            </p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
-          </div>
-          <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${className}`}>
-            <Icon className="h-6 w-6" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function ClientDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [client, setClient] = useState(null);
   const [stats, setStats] = useState(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", notes: "" });
+  const [hasChanges, setHasChanges] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    status: "active",
+    source: "",
+    website: "",
+    notes: "",
+  });
 
   useEffect(() => {
     fetchClient();
@@ -151,12 +167,17 @@ export default function ClientDetailPage({ params }) {
       const data = await response.json();
       setClient(data.client);
       setStats(data.stats);
-      setEditForm({
-        name: data.client.name,
-        email: data.client.email,
+      setFormData({
+        name: data.client.name || "",
+        email: data.client.email || "",
         phone: data.client.phone || "",
+        company: data.client.company || "",
+        status: data.client.status || "active",
+        source: data.client.source || "",
+        website: data.client.website || "",
         notes: data.client.notes || "",
       });
+      setHasChanges(false);
     } catch (error) {
       console.error("Error fetching client:", error);
       toast.error("Failed to load client details");
@@ -165,13 +186,18 @@ export default function ClientDetailPage({ params }) {
     }
   };
 
-  const handleSaveEdit = async () => {
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
     try {
       setSaving(true);
       const response = await fetch(`/api/clients/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -180,23 +206,36 @@ export default function ClientDetailPage({ params }) {
 
       const updatedClient = await response.json();
       setClient((prev) => ({ ...prev, ...updatedClient }));
-      setEditDialogOpen(false);
-      toast.success("Client updated successfully");
+      setHasChanges(false);
+      toast.success("Client saved successfully");
     } catch (error) {
       console.error("Error updating client:", error);
-      toast.error("Failed to update client");
+      toast.error("Failed to save client");
     } finally {
       setSaving(false);
     }
   };
 
-  const getInitials = (name) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      const response = await fetch(`/api/clients/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete client");
+      }
+
+      toast.success("Client deleted");
+      router.push("/dashboard/contacts");
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast.error("Failed to delete client");
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
   };
 
   if (loading) {
@@ -216,93 +255,201 @@ export default function ClientDetailPage({ params }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header with Action Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/contacts")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{client.name}</h1>
-            <p className="et-text-sm text-muted-foreground">
-              Client since {formatDate(client.createdAt)}
-            </p>
+            <h1 className="text-2xl font-bold">Contact #{client.id.slice(-6).toUpperCase()}</h1>
           </div>
         </div>
-        <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Client
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            onClick={handleSave}
+            disabled={saving || !hasChanges}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Save
+          </Button>
+          <Button variant="outline" onClick={() => router.push(`/dashboard/calendar?clientId=${id}`)}>
+            <CalendarPlus className="h-4 w-4 mr-2" />
+            Book
+          </Button>
+          <Button variant="outline" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
+            <FileText className="h-4 w-4 mr-2" />
+            Invoice
+          </Button>
+          <Button variant="ghost" onClick={() => router.push("/dashboard/contacts")}>
+            Back
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Contact Card */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row items-start gap-6">
-            <div className="h-20 w-20 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-2xl font-bold shrink-0">
-              {getInitials(client.name)}
-            </div>
-            <div className="space-y-3 flex-1">
-              <div className="flex flex-wrap gap-x-6 gap-y-2">
+      {/* Two Column Form Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column - Contact Info */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Customer Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter customer name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone</Label>
+            <div className="relative">
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                placeholder="(555) 123-4567"
+              />
+              {formData.phone && (
                 <a
-                  href={`mailto:${client.email}`}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  href={`tel:${formData.phone}`}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-muted text-primary"
                 >
-                  <Mail className="h-4 w-4" />
-                  {client.email}
+                  <Phone className="h-4 w-4" />
                 </a>
-                {client.phone && (
-                  <a
-                    href={`tel:${client.phone}`}
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <Phone className="h-4 w-4" />
-                    {client.phone}
-                  </a>
-                )}
-              </div>
-              {client.notes && (
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <StickyNote className="h-4 w-4 mt-0.5 shrink-0" />
-                  <p>{client.notes}</p>
-                </div>
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Bookings"
-            value={stats.totalBookings}
-            icon={Calendar}
-            className="bg-blue-100 text-blue-600"
-          />
-          <StatCard
-            title="Completed"
-            value={stats.completedBookings}
-            icon={Check}
-            className="bg-green-100 text-green-600"
-          />
-          <StatCard
-            title="Upcoming"
-            value={stats.upcomingBookings}
-            icon={Clock}
-            className="bg-yellow-100 text-yellow-600"
-          />
-          <StatCard
-            title="Total Spent"
-            value={formatCurrency(stats.totalSpent)}
-            icon={DollarSign}
-            className="bg-teal-100 text-teal-600"
-          />
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              placeholder="customer@example.com"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company">Company Name</Label>
+            <Input
+              id="company"
+              value={formData.company}
+              onChange={(e) => handleInputChange("company", e.target.value)}
+              placeholder="Company name (optional)"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Contact Status</Label>
+            <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="lead">Lead</SelectItem>
+                <SelectItem value="prospect">Prospect</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="website">Website</Label>
+            <Input
+              id="website"
+              value={formData.website}
+              onChange={(e) => handleInputChange("website", e.target.value)}
+              placeholder="https://example.com"
+            />
+          </div>
         </div>
-      )}
 
-      {/* Tabs for Bookings and Invoices */}
+        {/* Right Column - Additional Info */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="source">Lead Source</Label>
+            <Select value={formData.source || "none"} onValueChange={(value) => handleInputChange("source", value === "none" ? "" : value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">--</SelectItem>
+                <SelectItem value="website">Website</SelectItem>
+                <SelectItem value="referral">Referral</SelectItem>
+                <SelectItem value="social">Social Media</SelectItem>
+                <SelectItem value="google">Google</SelectItem>
+                <SelectItem value="booking-form">Booking Form</SelectItem>
+                <SelectItem value="walk-in">Walk-in</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Stats Summary */}
+          {stats && (
+            <Card className="bg-muted/30">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-background rounded-lg">
+                    <p className="text-2xl font-bold text-blue-600">{stats.totalBookings}</p>
+                    <p className="et-text-xs text-muted-foreground">Total Bookings</p>
+                  </div>
+                  <div className="text-center p-3 bg-background rounded-lg">
+                    <p className="text-2xl font-bold text-green-600">{stats.completedBookings}</p>
+                    <p className="et-text-xs text-muted-foreground">Completed</p>
+                  </div>
+                  <div className="text-center p-3 bg-background rounded-lg">
+                    <p className="text-2xl font-bold text-yellow-600">{stats.upcomingBookings}</p>
+                    <p className="et-text-xs text-muted-foreground">Upcoming</p>
+                  </div>
+                  <div className="text-center p-3 bg-background rounded-lg">
+                    <p className="text-2xl font-bold text-teal-600">{formatCurrency(stats.totalSpent)}</p>
+                    <p className="et-text-xs text-muted-foreground">Total Spent</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
+              placeholder="Add notes about this contact..."
+              rows={4}
+            />
+          </div>
+
+          {/* Timestamps */}
+          <div className="space-y-1 pt-2 et-text-sm text-muted-foreground">
+            <p className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Date Added: {formatFullDateTime(client.createdAt)}
+            </p>
+            <p className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Last Updated: {formatDate(client.updatedAt)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bookings & Invoices Tabs */}
       <Card>
         <Tabs defaultValue="bookings">
           <CardHeader className="pb-0">
@@ -326,9 +473,13 @@ export default function ClientDetailPage({ params }) {
                     <Calendar className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="font-medium mb-1">No bookings yet</h3>
-                  <p className="et-text-sm text-muted-foreground">
+                  <p className="et-text-sm text-muted-foreground mb-4">
                     This client hasn't made any bookings.
                   </p>
+                  <Button variant="outline" onClick={() => router.push(`/dashboard/calendar?clientId=${id}`)}>
+                    <CalendarPlus className="h-4 w-4 mr-2" />
+                    Create Booking
+                  </Button>
                 </div>
               ) : (
                 <div className="rounded-md border">
@@ -384,9 +535,13 @@ export default function ClientDetailPage({ params }) {
                     <FileText className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="font-medium mb-1">No invoices yet</h3>
-                  <p className="et-text-sm text-muted-foreground">
+                  <p className="et-text-sm text-muted-foreground mb-4">
                     No invoices have been created for this client.
                   </p>
+                  <Button variant="outline" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Create Invoice
+                  </Button>
                 </div>
               ) : (
                 <div className="rounded-md border">
@@ -429,62 +584,28 @@ export default function ClientDetailPage({ params }) {
         </Tabs>
       </Card>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Client</DialogTitle>
-            <DialogDescription>Update client information</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Name</Label>
-              <Input
-                id="edit-name"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-phone">Phone</Label>
-              <Input
-                id="edit-phone"
-                value={editForm.phone}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-notes">Notes</Label>
-              <Textarea
-                id="edit-notes"
-                value={editForm.notes}
-                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEdit} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contact</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{client.name}"? This will also delete all associated bookings and invoices. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -210,7 +210,7 @@ export function ContactsList() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button size="sm" onClick={() => handleOpenDialog()}>
+            <Button size="sm" onClick={() => handleOpenDialog()} className="bg-green-600 hover:bg-green-700">
               <Plus className="h-4 w-4 mr-1" />
               Add Contact
             </Button>
@@ -226,7 +226,7 @@ export function ContactsList() {
               <p className="et-text-sm text-muted-foreground mb-4">
                 Add your first client or lead to get started
               </p>
-              <Button size="sm" onClick={() => handleOpenDialog()}>
+              <Button size="sm" onClick={() => handleOpenDialog()} className="bg-green-600 hover:bg-green-700">
                 <Plus className="h-4 w-4 mr-1" />
                 Add Contact
               </Button>
@@ -250,7 +250,11 @@ export function ContactsList() {
                 </TableHeader>
                 <TableBody>
                   {filteredClients.map((client) => (
-                    <TableRow key={client.id}>
+                    <TableRow
+                      key={client.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => router.push(`/dashboard/contacts/${client.id}`)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-violet-700 et-text-sm font-medium">
@@ -281,21 +285,23 @@ export function ContactsList() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/dashboard/contacts/${client.id}`)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleOpenDialog(client)}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenDialog(client); }}>
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setClientToDelete(client);
                                 setDeleteDialogOpen(true);
                               }}
