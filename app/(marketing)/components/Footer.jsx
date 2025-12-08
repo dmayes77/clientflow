@@ -37,13 +37,13 @@ export function Footer() {
                 ClientFlow
               </span>
             </Link>
-            <p className="mt-4 text-sm text-muted-foreground max-w-xs leading-relaxed">
+            <p className="mt-4 mft-small text-muted-foreground max-w-xs leading-relaxed">
               Modern booking and client management for service businesses.
               Built with the technology that powers the world's best apps.
             </p>
             <Link
               href="/founders"
-              className="inline-flex items-center gap-1 mt-3 text-sm text-muted-foreground hover:text-primary transition-colors group"
+              className="inline-flex items-center gap-1 mt-3 mft-small text-muted-foreground hover:text-primary transition-colors group"
             >
               Meet the founders
               <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
@@ -85,16 +85,16 @@ export function Footer() {
           <div>
             <p className="font-semibold mb-4">Product</p>
             <div className="flex flex-col gap-3">
-              <Link href="/#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/#features" className="mft-small text-muted-foreground hover:text-primary transition-colors">
                 Features
               </Link>
-              <Link href="/pricing" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/pricing" className="mft-small text-muted-foreground hover:text-primary transition-colors">
                 Pricing
               </Link>
-              <Link href="/website-development" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/website-development" className="mft-small text-muted-foreground hover:text-primary transition-colors">
                 Custom Development
               </Link>
-              <Link href="/roadmap" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/roadmap" className="mft-small text-muted-foreground hover:text-primary transition-colors">
                 Roadmap
               </Link>
             </div>
@@ -104,13 +104,13 @@ export function Footer() {
           <div>
             <p className="font-semibold mb-4">Developers</p>
             <div className="flex flex-col gap-3">
-              <Link href="/documentation" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/documentation" className="mft-small text-muted-foreground hover:text-primary transition-colors">
                 Documentation
               </Link>
-              <Link href="/documentation/api-reference" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/documentation/api-reference" className="mft-small text-muted-foreground hover:text-primary transition-colors">
                 API Reference
               </Link>
-              <Link href="/support" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/support" className="mft-small text-muted-foreground hover:text-primary transition-colors">
                 Support
               </Link>
             </div>
@@ -120,14 +120,14 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-16 pt-8 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="mft-small text-muted-foreground">
             © {new Date().getFullYear()} ClientFlow. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <Link href="/legal/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/legal/privacy" className="mft-small text-muted-foreground hover:text-primary transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/legal/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/legal/terms" className="mft-small text-muted-foreground hover:text-primary transition-colors">
               Terms of Service
             </Link>
           </div>

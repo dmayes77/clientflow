@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { createClientSchema, validateRequest } from "@/lib/validations";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
 // GET /api/clients - List all clients
 export async function GET(request) {
@@ -60,6 +61,14 @@ export async function POST(request) {
         phone: data.phone,
         notes: data.notes,
       },
+    });
+
+    // Trigger lead_created workflows (async, don't wait)
+    triggerWorkflows("lead_created", {
+      tenant,
+      client,
+    }).catch((err) => {
+      console.error("Error triggering workflows:", err);
     });
 
     return NextResponse.json(client, { status: 201 });

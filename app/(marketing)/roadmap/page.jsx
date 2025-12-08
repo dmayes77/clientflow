@@ -296,8 +296,8 @@ export default function RoadmapPage() {
           <Badge variant="secondary" className="bg-primary/10 text-primary">
             Product Roadmap
           </Badge>
-          <h1 className="text-2xl md:text-3xl font-semibold">What We&apos;re Building</h1>
-          <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+          <h1>What We&apos;re Building</h1>
+          <p className="mft-lead max-w-xl mx-auto">
             See what&apos;s been shipped and what&apos;s coming next. We&apos;re constantly improving ClientFlow based on customer feedback.
           </p>
 
@@ -331,8 +331,8 @@ export default function RoadmapPage() {
                     <PhaseIcon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="font-semibold text-xl">{config.label}</h2>
-                    <p className="text-sm text-muted-foreground">{config.description}</p>
+                    <h2 className="font-semibold mft-text-xl">{config.label}</h2>
+                    <p className="mft-small text-muted-foreground">{config.description}</p>
                   </div>
                   <div className="hidden sm:block flex-1 h-px bg-border ml-4" />
                 </div>
@@ -347,8 +347,8 @@ export default function RoadmapPage() {
                             <item.icon className="h-5 w-5" />
                           </div>
                           <div className="min-w-0 pt-0.5">
-                            <p className="font-medium text-sm leading-tight">{item.title}</p>
-                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            <p className="font-medium mft-small leading-tight">{item.title}</p>
+                            <p className="mft-caption text-muted-foreground mt-1 leading-relaxed">
                               {item.description}
                             </p>
                           </div>
@@ -374,10 +374,10 @@ export default function RoadmapPage() {
       <section className="py-16 md:py-20 border-t">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
+            <h2 className="mb-4">
               Ready to get started?
             </h2>
-            <p className="text-muted-foreground mb-8">
+            <p className="mft-lead mb-8">
               Join service professionals using ClientFlow to manage bookings and grow their business.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

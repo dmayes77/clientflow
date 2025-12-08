@@ -26,8 +26,8 @@ export default function SupportPage() {
       <div className="container mx-auto px-4 max-w-3xl">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Support</h1>
-          <p className="text-lg text-muted-foreground">
+          <h1 className="mb-4">Support</h1>
+          <p className="mft-lead">
             Get help with ClientFlow - we&apos;re here to assist you
           </p>
         </div>
@@ -41,13 +41,13 @@ export default function SupportPage() {
               <div className="flex items-start gap-4 mb-4">
                 <HelpCircle className="h-8 w-8 text-primary shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-lg">Help Center</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold mft-text-lg">Help Center</h3>
+                  <p className="mft-small text-muted-foreground">
                     Find answers to common questions
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="mft-small text-muted-foreground mb-4">
                 Check out our comprehensive documentation and API reference for detailed guides and examples.
               </p>
               {/* Mobile: Stack buttons */}
@@ -77,8 +77,8 @@ export default function SupportPage() {
               <div className="flex items-start gap-4 mb-4">
                 <MessageSquare className="h-8 w-8 text-primary shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-lg">Contact Us</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold mft-text-lg">Contact Us</h3>
+                  <p className="mft-small text-muted-foreground">
                     Send us a message and we&apos;ll get back to you
                   </p>
                 </div>
@@ -93,13 +93,13 @@ export default function SupportPage() {
               <div className="flex items-start gap-4 mb-4">
                 <Github className="h-8 w-8 shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-lg">Report a Bug</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold mft-text-lg">Report a Bug</h3>
+                  <p className="mft-small text-muted-foreground">
                     Found a bug? Let us know on GitHub
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="mft-small text-muted-foreground mb-4">
                 If you&apos;ve encountered a technical issue or bug, please report it on our GitHub repository with detailed steps to reproduce.
               </p>
               <Button variant="outline" asChild>
@@ -114,15 +114,15 @@ export default function SupportPage() {
           {/* Response Times Card */}
           <Card>
             <CardContent className="pt-6">
-              <h3 className="font-semibold text-lg mb-4">Response Times</h3>
+              <h3 className="font-semibold mft-text-lg mb-4">Response Times</h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Standard Plan</span>
-                  <span className="text-sm text-muted-foreground">24-48 hours</span>
+                  <span className="mft-small font-medium">Standard Plan</span>
+                  <span className="mft-small text-muted-foreground">24-48 hours</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Professional Plan</span>
-                  <span className="text-sm text-muted-foreground">12-24 hours (Priority)</span>
+                  <span className="mft-small font-medium">Professional Plan</span>
+                  <span className="mft-small text-muted-foreground">12-24 hours (Priority)</span>
                 </div>
               </div>
             </CardContent>
@@ -131,7 +131,7 @@ export default function SupportPage() {
 
         {/* CTA Section */}
         <div className="text-center mt-16 pt-12 border-t">
-          <h2 className="text-2xl font-bold mb-4">
+          <h2 className="mb-4">
             New to ClientFlow?
           </h2>
           <p className="text-muted-foreground mb-8">

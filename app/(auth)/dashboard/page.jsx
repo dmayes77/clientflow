@@ -3,10 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/(auth)/components/ui/card";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/(auth)/components/ui/table";
 import { Calendar, Users, DollarSign, TrendingUp, TrendingDown, Clock, ArrowRight, FileText, Package, Loader2, BarChart3 } from "lucide-react";
 import {
   LineChart,
@@ -26,13 +26,6 @@ import {
   Legend,
 } from "recharts";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isSameDay, isWithinInterval, subMonths } from "date-fns";
-
-const STATUS_COLORS = {
-  inquiry: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-200" },
-  booked: { bg: "bg-green-100", text: "text-green-700", border: "border-green-200" },
-  completed: { bg: "bg-zinc-100", text: "text-zinc-600", border: "border-zinc-200" },
-  cancelled: { bg: "bg-red-100", text: "text-red-700", border: "border-red-200" },
-};
 
 const CHART_COLORS = ["#3b82f6", "#22c55e", "#71717a", "#ef4444", "#f59e0b", "#8b5cf6"];
 
@@ -226,11 +219,7 @@ export default function DashboardPage() {
             <span className="hidden sm:inline">New Booking</span>
             <span className="sm:hidden">Booking</span>
           </Button>
-          <Button
-            size="sm"
-            className="bg-violet-500 text-white hover:bg-violet-600"
-            onClick={() => router.push("/dashboard/contacts")}
-          >
+          <Button size="sm" className="bg-blue-500 text-white hover:bg-blue-600" onClick={() => router.push("/dashboard/contacts")}>
             <Users className="h-3.5 w-3.5 mr-1.5" />
             <span className="hidden sm:inline">Add Contact</span>
             <span className="sm:hidden">Contact</span>
@@ -291,15 +280,15 @@ export default function DashboardPage() {
         </Card>
 
         {/* Clients Card */}
-        <Card className="border-l-4 border-l-violet-500 bg-linear-to-r from-violet-50/50 to-transparent">
+        <Card className="border-l-4 border-l-blue-500 bg-linear-to-r from-blue-50/50 to-transparent">
           <CardContent className="p-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[0.625rem] font-medium text-violet-600 uppercase tracking-wide">Total Contacts</p>
+                <p className="text-[0.625rem] font-medium text-blue-600 uppercase tracking-wide">Total Contacts</p>
                 <p className="mt-1 text-xl font-bold text-zinc-900">{clients.length}</p>
                 <p className="mt-1 text-[0.625rem] text-zinc-400">{clients.filter((c) => c.status === "active").length} active clients</p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500 shadow-lg shadow-violet-500/25">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-500/25">
                 <Users className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -326,13 +315,13 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Revenue Trend Chart */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 py-4 md:py-6">
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500" />
             <CardTitle className="et-small font-medium">Revenue Trend (30 Days)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px]">
+            <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenueChartData}>
                   <defs>
@@ -367,7 +356,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Booking Status Distribution */}
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-blue-500" />
             <CardTitle className="et-small font-medium">Booking Status</CardTitle>
@@ -420,9 +409,9 @@ export default function DashboardPage() {
       {/* Second Row: Weekly Activity & Top Services */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Weekly Booking Activity */}
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-indigo-500" />
+            <div className="h-2 w-2 rounded-full bg-blue-500" />
             <CardTitle className="et-small font-medium">Weekly Activity</CardTitle>
           </CardHeader>
           <CardContent>
@@ -440,7 +429,7 @@ export default function DashboardPage() {
                       fontSize: "11px",
                     }}
                   />
-                  <Bar dataKey="bookings" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="bookings" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -448,7 +437,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Top Services */}
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardHeader className="pb-2 flex flex-row items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-amber-500" />
             <CardTitle className="et-small font-medium">Top Services</CardTitle>
@@ -486,7 +475,7 @@ export default function DashboardPage() {
       {/* Third Row: Upcoming Bookings & Recent Contacts */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Upcoming Bookings */}
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-blue-500" />
@@ -509,7 +498,7 @@ export default function DashboardPage() {
                   <Calendar className="h-6 w-6 text-blue-400" />
                 </div>
                 <p className="et-caption text-zinc-400">No upcoming bookings</p>
-                <Button size="sm" className="mt-2 bg-blue-500 hover:bg-blue-600" onClick={() => router.push("/dashboard/calendar")}>
+                <Button size="sm" variant="success" className="mt-2" onClick={() => router.push("/dashboard/calendar")}>
                   Create Booking
                 </Button>
               </div>
@@ -543,16 +532,16 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Contacts */}
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-violet-500" />
+              <div className="h-2 w-2 rounded-full bg-blue-500" />
               <CardTitle className="et-small font-medium">Recent Contacts</CardTitle>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 text-xs text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+              className="h-7 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               onClick={() => router.push("/dashboard/contacts")}
             >
               View All
@@ -562,11 +551,11 @@ export default function DashboardPage() {
           <CardContent>
             {recentClients.length === 0 ? (
               <div className="flex h-[180px] flex-col items-center justify-center gap-2">
-                <div className="h-12 w-12 rounded-full bg-violet-50 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-violet-400" />
+                <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-400" />
                 </div>
                 <p className="et-caption text-zinc-400">No contacts yet</p>
-                <Button size="sm" className="mt-2 bg-violet-500 hover:bg-violet-600" onClick={() => router.push("/dashboard/contacts")}>
+                <Button size="sm" className="mt-2 bg-blue-500 hover:bg-blue-600" onClick={() => router.push("/dashboard/contacts")}>
                   Add Contact
                 </Button>
               </div>
@@ -575,26 +564,17 @@ export default function DashboardPage() {
                 {recentClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center gap-3 rounded-lg border border-violet-100 bg-violet-50/30 p-2.5 hover:bg-violet-50 transition-colors cursor-pointer"
+                    className="flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/30 p-2.5 hover:bg-blue-50 transition-colors cursor-pointer"
                     onClick={() => router.push(`/dashboard/contacts/${client.type === "lead" ? "leads" : "clients"}/${client.id}`)}
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-500 text-white text-xs font-medium shadow-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-medium shadow-sm">
                       {client.name?.charAt(0)?.toUpperCase() || "?"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="et-caption font-medium text-zinc-900 truncate">{client.name}</p>
                       <p className="text-[0.625rem] text-zinc-500 truncate">{client.email}</p>
                     </div>
-                    <Badge
-                      className={cn(
-                        "text-[0.5625rem]",
-                        client.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : client.status === "lead"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-zinc-100 text-zinc-600"
-                      )}
-                    >
+                    <Badge variant={client.status === "active" ? "success" : client.status === "lead" ? "info" : "secondary"} className="text-[0.5625rem]">
                       {client.status || "lead"}
                     </Badge>
                   </div>

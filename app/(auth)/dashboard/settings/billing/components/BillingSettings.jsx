@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/app/(auth)/components/ui/alert";
+import { Separator } from "@/app/(auth)/components/ui/separator";
 import {
   Receipt,
   CreditCard,
@@ -37,19 +37,19 @@ const PLAN_FEATURES = [
   { icon: Headphones, label: "Priority support" },
 ];
 
-const getStatusColor = (status) => {
+const getStatusVariant = (status) => {
   switch (status) {
     case "active":
-      return "bg-green-100 text-green-800";
+      return "success";
     case "trialing":
-      return "bg-blue-100 text-blue-800";
+      return "info";
     case "past_due":
-      return "bg-yellow-100 text-yellow-800";
+      return "warning";
     case "canceled":
     case "cancelled":
-      return "bg-red-100 text-red-800";
+      return "destructive";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "secondary";
   }
 };
 
@@ -162,7 +162,7 @@ export function BillingSettings() {
               </CardTitle>
               <CardDescription>Your subscription and billing details</CardDescription>
             </div>
-            <Badge className={getStatusColor(subscriptionStatus)}>
+            <Badge variant={getStatusVariant(subscriptionStatus)}>
               {getStatusLabel(subscriptionStatus)}
             </Badge>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/(auth)/components/ui/tabs";
 import { Package, Wrench } from "lucide-react";
 import { ServicesList } from "./components/ServicesList";
 import { PackagesList } from "./components/PackagesList";

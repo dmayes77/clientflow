@@ -3,35 +3,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/(auth)/components/ui/tabs";
+import { ScrollArea } from "@/app/(auth)/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/(auth)/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/(auth)/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/app/(auth)/components/ui/dropdown-menu";
 import {
   Image as ImageIcon,
   Video,
@@ -368,13 +349,34 @@ export function MediaLibrary() {
           )}
 
           <div className="et-media-overlay">
-            <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); openPreviewDialog(item); }}>
+            <Button
+              size="icon"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                openPreviewDialog(item);
+              }}
+            >
               <Eye />
             </Button>
-            <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); copyToClipboard(item.url); }}>
+            <Button
+              size="icon"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(item.url);
+              }}
+            >
               <Copy />
             </Button>
-            <Button size="icon" variant="secondary" onClick={(e) => { e.stopPropagation(); openEditDialog(item); }}>
+            <Button
+              size="icon"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                openEditDialog(item);
+              }}
+            >
               <Pencil />
             </Button>
           </div>
@@ -392,13 +394,7 @@ export function MediaLibrary() {
     <div className="space-y-3">
       {/* Main Content */}
       <Card>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*,video/*"
-          onChange={(e) => handleFileSelect(e.target.files?.[0])}
-        />
+        <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => handleFileSelect(e.target.files?.[0])} />
         <CardContent className="p-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -415,11 +411,11 @@ export function MediaLibrary() {
 
               <div className="flex items-center gap-2">
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="h-8 w-32 et-caption">
-                    <Filter className="mr-1.5 h-3 w-3" />
+                  <SelectTrigger size="sm" className="et-select-compact">
+                    <Filter className="h-3 w-3 shrink-0" />
                     <SelectValue placeholder="Filter" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="et-select-compact-content">
                     <SelectItem value="all">All Types</SelectItem>
                     {currentTypes.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
@@ -447,15 +443,6 @@ export function MediaLibrary() {
                     <List className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-
-                <Button
-                  size="sm"
-                  className="h-8 et-caption"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="mr-1.5 h-3.5 w-3.5" />
-                  Upload
-                </Button>
               </div>
             </div>
 
@@ -476,9 +463,7 @@ export function MediaLibrary() {
                 </button>
               </p>
               <p className="mt-1 text-xs text-muted-foreground/70">
-                {activeTab === "images"
-                  ? "Supports: JPG, PNG, GIF, WebP • Max 10MB"
-                  : "Supports: MP4, MOV, WebM • Max 100MB"}
+                {activeTab === "images" ? "Supports: JPG, PNG, GIF, WebP • Max 10MB" : "Supports: MP4, MOV, WebM • Max 100MB"}
               </p>
             </div>
 
@@ -503,15 +488,8 @@ export function MediaLibrary() {
                   ) : (
                     <div className="space-y-2">
                       {images.map((image) => (
-                        <div
-                          key={image.id}
-                          className="flex items-center gap-4 rounded-lg border p-3"
-                        >
-                          <img
-                            src={image.url}
-                            alt={image.alt}
-                            className="h-16 w-16 rounded object-cover"
-                          />
+                        <div key={image.id} className="flex items-center gap-4 rounded-lg border p-3">
+                          <img src={image.url} alt={image.alt} className="h-16 w-16 rounded object-cover" />
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{image.name}</p>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -525,25 +503,13 @@ export function MediaLibrary() {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => copyToClipboard(image.url)}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(image.url)}>
                               <Copy className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(image)}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(image)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openDeleteDialog(image)}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(image)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -568,17 +534,10 @@ export function MediaLibrary() {
                   ) : (
                     <div className="space-y-2">
                       {videos.map((video) => (
-                        <div
-                          key={video.id}
-                          className="flex items-center gap-4 rounded-lg border p-3"
-                        >
+                        <div key={video.id} className="flex items-center gap-4 rounded-lg border p-3">
                           <div className="relative h-16 w-16">
                             {video.thumbnailUrl ? (
-                              <img
-                                src={video.thumbnailUrl}
-                                alt={video.alt}
-                                className="h-16 w-16 rounded object-cover"
-                              />
+                              <img src={video.thumbnailUrl} alt={video.alt} className="h-16 w-16 rounded object-cover" />
                             ) : (
                               <div className="flex h-16 w-16 items-center justify-center rounded bg-muted">
                                 <Video className="h-6 w-6 text-muted-foreground" />
@@ -593,33 +552,20 @@ export function MediaLibrary() {
                               </Badge>
                               {video.duration && (
                                 <span>
-                                  {Math.floor(video.duration / 60)}:
-                                  {String(Math.floor(video.duration % 60)).padStart(2, "0")}
+                                  {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, "0")}
                                 </span>
                               )}
                               <span>{formatFileSize(video.size)}</span>
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => copyToClipboard(video.url)}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(video.url)}>
                               <Copy className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(video)}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(video)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openDeleteDialog(video)}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(video)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -652,9 +598,7 @@ export function MediaLibrary() {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{uploadForm.file.name}</p>
-                  <p className="et-caption text-muted-foreground">
-                    {formatFileSize(uploadForm.file.size)}
-                  </p>
+                  <p className="et-caption text-muted-foreground">{formatFileSize(uploadForm.file.size)}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -691,21 +635,16 @@ export function MediaLibrary() {
 
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Select
-                value={uploadForm.type}
-                onValueChange={(value) => setUploadForm({ ...uploadForm, type: value })}
-              >
+              <Select value={uploadForm.type} onValueChange={(value) => setUploadForm({ ...uploadForm, type: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(uploadForm.file?.type?.startsWith("image/") ? IMAGE_TYPES : VIDEO_TYPES).map(
-                    (type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    )
-                  )}
+                  {(uploadForm.file?.type?.startsWith("image/") ? IMAGE_TYPES : VIDEO_TYPES).map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -717,10 +656,7 @@ export function MediaLibrary() {
                   <span>{uploadProgress}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
+                  <div className="h-full bg-primary transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
                 </div>
               </div>
             )}
@@ -730,7 +666,7 @@ export function MediaLibrary() {
             <Button variant="outline" onClick={() => setUploadDialogOpen(false)} disabled={uploading}>
               Cancel
             </Button>
-            <Button onClick={handleUpload} disabled={uploading || !uploadForm.name}>
+            <Button variant="success" onClick={handleUpload} disabled={uploading || !uploadForm.name}>
               {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -758,28 +694,17 @@ export function MediaLibrary() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="edit-name">Name</Label>
-              <Input
-                id="edit-name"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              />
+              <Input id="edit-name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="edit-alt">Alt Text</Label>
-              <Input
-                id="edit-alt"
-                value={editForm.alt}
-                onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })}
-              />
+              <Input id="edit-alt" value={editForm.alt} onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="edit-type">Type</Label>
-              <Select
-                value={editForm.type}
-                onValueChange={(value) => setEditForm({ ...editForm, type: value })}
-              >
+              <Select value={editForm.type} onValueChange={(value) => setEditForm({ ...editForm, type: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -798,7 +723,7 @@ export function MediaLibrary() {
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEdit}>
+            <Button variant="success" onClick={handleEdit}>
               <Check className="mr-2 h-4 w-4" />
               Save Changes
             </Button>
@@ -811,10 +736,7 @@ export function MediaLibrary() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete {activeTab === "images" ? "Image" : "Video"}</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete &quot;{itemToDelete?.name}&quot;? This action cannot be
-              undone.
-            </DialogDescription>
+            <DialogDescription>Are you sure you want to delete &quot;{itemToDelete?.name}&quot;? This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
@@ -837,17 +759,9 @@ export function MediaLibrary() {
 
           <div className="py-4">
             {previewItem && activeTab === "images" ? (
-              <img
-                src={previewItem.url}
-                alt={previewItem.alt}
-                className="max-h-[60vh] w-full rounded-lg object-contain"
-              />
+              <img src={previewItem.url} alt={previewItem.alt} className="max-h-[60vh] w-full rounded-lg object-contain" />
             ) : previewItem ? (
-              <video
-                src={previewItem.url}
-                controls
-                className="max-h-[60vh] w-full rounded-lg"
-              />
+              <video src={previewItem.url} controls className="max-h-[60vh] w-full rounded-lg" />
             ) : null}
 
             {previewItem && (
@@ -864,15 +778,11 @@ export function MediaLibrary() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Type</p>
-                  <p className="font-medium">
-                    {currentTypes.find((t) => t.value === previewItem.type)?.label || previewItem.type}
-                  </p>
+                  <p className="font-medium">{currentTypes.find((t) => t.value === previewItem.type)?.label || previewItem.type}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Uploaded</p>
-                  <p className="font-medium">
-                    {format(new Date(previewItem.createdAt), "MMM d, yyyy")}
-                  </p>
+                  <p className="font-medium">{format(new Date(previewItem.createdAt), "MMM d, yyyy")}</p>
                 </div>
               </div>
             )}

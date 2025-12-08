@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Switch } from "@/app/(auth)/components/ui/switch";
+import { Badge } from "@/app/(auth)/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -16,14 +16,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/app/(auth)/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/app/(auth)/components/ui/select";
 import {
   Table,
   TableBody,
@@ -31,9 +31,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from "@/app/(auth)/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/(auth)/components/ui/tabs";
+import { Alert, AlertDescription } from "@/app/(auth)/components/ui/alert";
 import {
   Clock,
   Loader2,
@@ -96,6 +96,14 @@ const SLOT_INTERVAL_OPTIONS = [
   { value: "120", label: "Every 2 hours" },
 ];
 
+const BREAK_DURATION_OPTIONS = [
+  { value: "0", label: "No break" },
+  { value: "30", label: "30 minutes" },
+  { value: "60", label: "1 hour" },
+  { value: "90", label: "1.5 hours" },
+  { value: "120", label: "2 hours" },
+];
+
 const CALENDAR_VIEW_OPTIONS = [
   { value: "month", label: "Month View" },
   { value: "week", label: "Week View" },
@@ -134,6 +142,7 @@ export function AvailabilitySettings() {
 
   const [timezone, setTimezone] = useState("America/New_York");
   const [slotInterval, setSlotInterval] = useState("30");
+  const [breakDuration, setBreakDuration] = useState("60");
   const [defaultCalendarView, setDefaultCalendarView] = useState("week");
 
   useEffect(() => {
@@ -177,6 +186,7 @@ export function AvailabilitySettings() {
         const tenantData = await tenantRes.json();
         if (tenantData.timezone) setTimezone(tenantData.timezone);
         if (tenantData.slotInterval) setSlotInterval(String(tenantData.slotInterval));
+        if (tenantData.breakDuration !== undefined) setBreakDuration(String(tenantData.breakDuration));
         if (tenantData.defaultCalendarView) setDefaultCalendarView(tenantData.defaultCalendarView);
       }
     } catch (error) {
@@ -224,6 +234,7 @@ export function AvailabilitySettings() {
           body: JSON.stringify({
             timezone,
             slotInterval: parseInt(slotInterval),
+            breakDuration: parseInt(breakDuration),
             defaultCalendarView,
           }),
         }),
@@ -386,7 +397,7 @@ export function AvailabilitySettings() {
             Clients will only be able to book during your available hours. Use date overrides for holidays or special events.
           </AlertDescription>
         </Alert>
-        <Button onClick={handleSave} disabled={saving}>
+        <Button variant="success" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
           Save Changes
         </Button>
@@ -520,7 +531,7 @@ export function AvailabilitySettings() {
                   </CardTitle>
                   <CardDescription>Set special hours or close on specific dates (holidays, events)</CardDescription>
                 </div>
-                <Button size="sm" onClick={() => setOverrideDialogOpen(true)}>
+                <Button size="sm" variant="success" onClick={() => setOverrideDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-1" />
                   Add Override
                 </Button>
@@ -641,6 +652,25 @@ export function AvailabilitySettings() {
                     </SelectContent>
                   </Select>
                   <p className="et-caption text-muted-foreground">How often booking slots are offered to clients</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Daily Break / Lunch Duration</Label>
+                  <Select value={breakDuration} onValueChange={setBreakDuration}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BREAK_DURATION_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="et-caption text-muted-foreground">
+                    Deducted from daily hours when calculating business days for service/booking durations
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -778,7 +808,7 @@ export function AvailabilitySettings() {
             <Button variant="outline" onClick={() => setOverrideDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddOverride} disabled={savingOverride}>
+            <Button variant="success" onClick={handleAddOverride} disabled={savingOverride}>
               {savingOverride && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add Override
             </Button>

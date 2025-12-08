@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Textarea } from "@/app/(auth)/components/ui/textarea";
+import { Switch } from "@/app/(auth)/components/ui/switch";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Checkbox } from "@/app/(auth)/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -17,14 +17,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/app/(auth)/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/app/(auth)/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,7 +32,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/app/(auth)/components/ui/table";
 import {
   Package,
   Plus,
@@ -47,13 +47,14 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/app/(auth)/components/ui/alert";
+import { ScrollArea } from "@/app/(auth)/components/ui/scroll-area";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "@/app/(auth)/components/ui/collapsible";
+import { useBusinessHours } from "@/hooks/use-business-hours";
 
 const DISCOUNT_OPTIONS = [
   { value: 5, label: "5% off" },
@@ -86,6 +87,7 @@ export function PackagesList() {
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { formatDuration } = useBusinessHours();
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -367,12 +369,6 @@ export function PackagesList() {
     }).format(cents / 100);
   };
 
-  const formatDuration = (minutes) => {
-    if (minutes < 60) return `${minutes}min`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
 
   if (loading) {
     return (
@@ -489,7 +485,7 @@ export function PackagesList() {
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        <Badge variant={pkg.active ? "default" : "secondary"}>
+                        <Badge variant={pkg.active ? "success" : "secondary"}>
                           {pkg.active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
@@ -539,7 +535,7 @@ export function PackagesList() {
                   : "Select the services you want to include and choose a discount percentage"}
               </DialogDescription>
               <div className="flex items-center gap-2 shrink-0">
-                <Label htmlFor="active" className="et-small font-normal text-muted-foreground">
+                <Label htmlFor="active" className={`et-small font-medium leading-none mb-0! ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
                   {formData.active ? "Active" : "Inactive"}
                 </Label>
                 <Switch

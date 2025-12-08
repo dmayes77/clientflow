@@ -105,7 +105,7 @@ function FormDescription({
     <p
       data-slot="form-description"
       id={formDescriptionId}
-      className={cn("text-muted-foreground et-text-xs", className)}
+      className={cn("text-muted-foreground text-sm", className)}
       {...props} />
   );
 }
@@ -125,7 +125,7 @@ function FormMessage({
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn("text-destructive et-text-xs", className)}
+      className={cn("text-destructive text-sm", className)}
       {...props}>
       {body}
     </p>

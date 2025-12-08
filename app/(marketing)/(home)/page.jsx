@@ -148,16 +148,16 @@ export default function MarketingHome() {
       <section className="py-20 md:py-28 text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-muted/30 to-transparent" />
         <div className="container max-w-4xl mx-auto px-4 relative">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary mft-small font-medium mb-6">
             Platform Features
           </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight">
+          <h2 className="mft-display-3 mb-6">
             Everything You Need to{" "}
             <span className="bg-linear-to-r from-primary via-violet-500 to-blue-500 bg-clip-text text-transparent">
               Run Your Business
             </span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+          <p className="mft-lead max-w-2xl mx-auto">
             From booking management to payment processing, ClientFlow gives you all the tools
             to manage your service business—plus full API access to build custom experiences.
           </p>
@@ -251,14 +251,14 @@ export default function MarketingHome() {
         <SectionContainer className="relative">
           {/* Big statement header */}
           <div className="text-center mb-16">
-            <p className="text-sm font-medium text-primary mb-4 tracking-wide uppercase">The Difference</p>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+            <p className="mft-small font-medium text-primary mb-4 tracking-wide uppercase">The Difference</p>
+            <h2 className="mft-display-3 mb-6">
               Not a Widget.{" "}
               <span className="bg-linear-to-r from-primary via-violet-500 to-blue-500 bg-clip-text text-transparent">
                 A Platform.
               </span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="mft-lead max-w-2xl mx-auto">
               Stop fighting with pre-built widgets. Own your customer experience with full API access.
             </p>
           </div>
@@ -267,7 +267,7 @@ export default function MarketingHome() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {/* Widget card - the "old way" */}
             <div className="relative">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-full border">
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-muted text-muted-foreground mft-caption font-medium rounded-full border">
                 The Widget Way
               </div>
               <div className="h-full rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/30 p-6 pt-8">
@@ -294,7 +294,7 @@ export default function MarketingHome() {
 
             {/* Platform card - the "ClientFlow way" */}
             <div className="relative">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-linear-to-r from-primary to-violet-600 text-white text-xs font-medium rounded-full shadow-md">
+              <div className="absolute -top-3 left-6 px-3 py-1 bg-linear-to-r from-primary to-violet-600 text-white mft-caption font-medium rounded-full shadow-md">
                 The ClientFlow Way
               </div>
               <div className="h-full rounded-2xl border bg-background shadow-lg p-6 pt-8">
@@ -394,9 +394,9 @@ export default function MarketingHome() {
       <section className="py-16 md:py-20 bg-muted/30">
         <SectionContainer>
           <div className="text-center mb-10">
-            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">FAQ</span>
-            <h2 className="text-2xl md:text-3xl font-semibold mb-3">Frequently Asked Questions</h2>
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
+            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary mft-caption font-medium mb-3">FAQ</span>
+            <h2 className="mft-h2 mb-3">Frequently Asked Questions</h2>
+            <p className="mft-small text-muted-foreground max-w-2xl mx-auto">
               Everything you need to know about ClientFlow. Can&apos;t find the answer you&apos;re looking for? Reach out to our support team.
             </p>
           </div>
@@ -413,8 +413,8 @@ export default function MarketingHome() {
                 <MessageCircleQuestion className="h-7 w-7" />
               </div>
               <div className="text-center sm:text-left flex-1">
-                <h3 className="font-semibold text-lg mb-1">Still have questions?</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-semibold mft-text-lg mb-1">Still have questions?</h3>
+                <p className="mft-small text-muted-foreground">
                   Can&apos;t find the answer you&apos;re looking for? Our support team is ready to help you get started.
                 </p>
               </div>

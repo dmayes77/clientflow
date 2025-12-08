@@ -76,7 +76,7 @@ export function FeatureSection({
         <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch ${reversed ? "md:[&>*:first-child]:order-2" : ""}`}>
           {/* Left side - Text content */}
           <div className="flex flex-col justify-center">
-            <h2 className={`text-2xl md:text-3xl font-bold mb-3 ${colors.title}`}>{title}</h2>
+            <h2 className={`mft-h2 mb-3 ${colors.title}`}>{title}</h2>
             <p className="text-muted-foreground mb-6 leading-relaxed">{description}</p>
 
             {/* Feature highlights */}

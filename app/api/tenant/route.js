@@ -39,6 +39,7 @@ export async function GET() {
         logoUrl: true,
         timezone: true,
         slotInterval: true,
+        breakDuration: true,
         defaultCalendarView: true,
         facebookUrl: true,
         twitterUrl: true,

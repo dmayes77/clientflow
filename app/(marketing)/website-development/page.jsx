@@ -3,21 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProjectInquiryForm, WhatsIncluded, DevFAQ } from "./components";
-import {
-  Code,
-  Server,
-  Shield,
-  Smartphone,
-  Zap,
-  Blocks,
-  Check,
-  X,
-  ArrowDown,
-} from "lucide-react";
+import { Code, Server, Shield, Smartphone, Zap, Blocks, Check, X, ArrowDown } from "lucide-react";
 
 export const metadata = {
   title: "Custom Website Development | ClientFlow",
-  description: "We build custom websites from scratch using modern technology like Next.js and React. No WordPress, no templates. Get a professional site with seamless ClientFlow integration.",
+  description:
+    "We build custom websites from scratch using modern technology like Next.js and React. No WordPress, no templates. Get a professional site with seamless ClientFlow integration.",
   keywords: ["custom website development", "Next.js development", "React development", "modern web development", "custom booking website"],
   openGraph: {
     title: "Custom Website Development | ClientFlow",
@@ -91,14 +82,12 @@ export default function CustomDevelopmentPage() {
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               Custom Development
             </Badge>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
-              Custom Websites Built with{" "}
-              <span className="bg-linear-to-r from-primary to-violet-600 bg-clip-text text-transparent">
-                Modern Technology
-              </span>
+            <h1 className="mft-display-2">
+              Custom Websites Built with <span className="bg-linear-to-r from-primary to-violet-600 bg-clip-text text-transparent">Modern Technology</span>
             </h1>
-            <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto">
-              We don&apos;t use WordPress, Wix, or templates. Every website is custom-built from scratch using the same technology that powers Netflix, Uber, and Airbnb.
+            <p className="mft-lead max-w-2xl mx-auto">
+              We don&apos;t use WordPress, Wix, or templates. Every website is custom-built from scratch using the same technology that powers Netflix, Uber,
+              and Airbnb.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
               <Button size="lg" asChild>
@@ -119,12 +108,8 @@ export default function CustomDevelopmentPage() {
       <section className="py-16 md:py-20">
         <SectionContainer>
           <div className="text-center space-y-4 mb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold">
-              Built with Industry-Leading Technology
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Your website deserves the same technology stack used by Fortune 500 companies.
-            </p>
+            <h2>Built with Industry-Leading Technology</h2>
+            <p className="mft-lead max-w-xl mx-auto">Your website deserves the same technology stack used by Fortune 500 companies.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -134,8 +119,8 @@ export default function CustomDevelopmentPage() {
                   <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${tech.color} mb-4`}>
                     <tech.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">{tech.title}</h3>
-                  <p className="text-sm text-muted-foreground">{tech.description}</p>
+                  <h3 className="font-semibold mft-text-lg mb-2">{tech.title}</h3>
+                  <p className="mft-small text-muted-foreground">{tech.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -147,45 +132,42 @@ export default function CustomDevelopmentPage() {
       <section className="py-16 md:py-20 bg-muted/30">
         <SectionContainer>
           <div className="text-center space-y-4 mb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold">Why Not WordPress?</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <h2>Why Not WordPress?</h2>
+            <p className="mftlead max-w-xl mx-auto">
               WordPress powers 40% of the web—but that doesn&apos;t make it the best choice. Here&apos;s how we compare.
             </p>
           </div>
 
-          <Card className="overflow-hidden max-w-3xl mx-auto">
+          <Card className="overflow-hidden max-w-3xl mx-auto py-0 gap-0">
             {/* Header */}
             <div className="grid grid-cols-3 bg-zinc-900 text-white">
               <div className="p-3 md:p-4">
-                <p className="text-xs md:text-sm font-medium">Feature</p>
+                <p className="mft-body font-medium">Feature</p>
               </div>
               <div className="p-3 md:p-4 text-center">
-                <p className="text-xs md:text-sm font-medium">Us</p>
+                <p className="mft-body font-medium">Us</p>
               </div>
               <div className="p-3 md:p-4 text-center">
-                <p className="text-xs md:text-sm font-medium text-zinc-400">WordPress</p>
+                <p className="mft-body font-medium ">WordPress</p>
               </div>
             </div>
 
             {/* Rows */}
             {comparisonData.map((row, index) => (
-              <div
-                key={row.feature}
-                className={`grid grid-cols-3 border-t ${index % 2 === 0 ? "bg-background" : "bg-muted/30"}`}
-              >
+              <div key={row.feature} className={`grid grid-cols-3 border-t ${index % 2 === 0 ? "bg-background" : "bg-muted/30"}`}>
                 <div className="p-3 md:p-4">
-                  <p className="text-xs md:text-sm font-medium">{row.feature}</p>
+                  <p className="mft-small font-medium">{row.feature}</p>
                 </div>
                 <div className="p-3 md:p-4 text-center">
                   <div className="flex items-center justify-center gap-1 md:gap-1.5">
                     <Check className="h-4 w-4 text-green-600 shrink-0" />
-                    <span className="text-xs md:text-sm text-green-600 font-medium hidden sm:inline">{row.us}</span>
+                    <span className="mft-small text-green-600 font-medium hidden sm:inline">{row.us}</span>
                   </div>
                 </div>
                 <div className="p-3 md:p-4 text-center">
                   <div className="flex items-center justify-center gap-1 md:gap-1.5">
                     <X className="h-4 w-4 text-red-500 shrink-0" />
-                    <span className="text-xs md:text-sm text-muted-foreground hidden sm:inline">{row.them}</span>
+                    <span className="mft-small text-muted-foreground hidden sm:inline">{row.them}</span>
                   </div>
                 </div>
               </div>
@@ -206,15 +188,11 @@ export default function CustomDevelopmentPage() {
             <Badge variant="secondary" className="bg-primary/10 text-primary mb-4">
               Proven at Scale
             </Badge>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-              Technology You Can{" "}
-              <span className="bg-linear-to-r from-primary via-violet-500 to-blue-500 bg-clip-text text-transparent">
-                Trust
-              </span>
+            <h2 className="mft-display-3 mb-4">
+              Technology You Can <span className="bg-linear-to-r from-primary via-violet-500 to-blue-500 bg-clip-text text-transparent">Trust</span>
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              The same framework trusted by companies serving billions of users.
-              Battle-tested, enterprise-grade, and ready for your business.
+            <p className="mft-lead max-w-2xl mx-auto">
+              The same framework trusted by companies serving billions of users. Battle-tested, enterprise-grade, and ready for your business.
             </p>
           </div>
 
@@ -233,9 +211,7 @@ export default function CustomDevelopmentPage() {
                   key={company.name}
                   className="group relative flex items-center justify-center p-6 rounded-xl border bg-background/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-lg transition-all duration-300"
                 >
-                  <span className={`text-lg md:text-xl font-bold bg-linear-to-br ${company.color} bg-clip-text text-transparent`}>
-                    {company.name}
-                  </span>
+                  <span className={`mft-text-lg font-bold bg-linear-to-br ${company.color} bg-clip-text text-transparent`}>{company.name}</span>
                 </div>
               ))}
             </div>
@@ -249,8 +225,8 @@ export default function CustomDevelopmentPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-primary to-blue-600 text-white mx-auto mb-4">
                   <Blocks className="h-6 w-6" />
                 </div>
-                <p className="text-3xl md:text-4xl font-bold bg-linear-to-r from-primary to-violet-600 bg-clip-text text-transparent">10M+</p>
-                <p className="text-sm text-muted-foreground mt-2">Websites built with React</p>
+                <p className="mft-text-3xl md:mft-text-4xl font-bold bg-linear-to-r from-primary to-violet-600 bg-clip-text text-transparent">10M+</p>
+                <p className="mft-body text-muted-foreground mt-2">Websites built with React</p>
               </div>
             </div>
 
@@ -260,8 +236,8 @@ export default function CustomDevelopmentPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-violet-500 to-purple-600 text-white mx-auto mb-4">
                   <Server className="h-6 w-6" />
                 </div>
-                <p className="text-3xl md:text-4xl font-bold bg-linear-to-r from-violet-500 to-purple-600 bg-clip-text text-transparent">1M+</p>
-                <p className="text-sm text-muted-foreground mt-2">Next.js deployments</p>
+                <p className="mft-text-3xl md:mft-text-4xl font-bold bg-linear-to-r from-violet-500 to-purple-600 bg-clip-text text-transparent">1M+</p>
+                <p className="mft-body text-muted-foreground mt-2">Next.js deployments</p>
               </div>
             </div>
 
@@ -271,8 +247,8 @@ export default function CustomDevelopmentPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white mx-auto mb-4">
                   <Zap className="h-6 w-6" />
                 </div>
-                <p className="text-3xl md:text-4xl font-bold bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">90+</p>
-                <p className="text-sm text-muted-foreground mt-2">Lighthouse scores guaranteed</p>
+                <p className="mft-text-3xl md:mft-text-4xl font-bold bg-linear-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">90+</p>
+                <p className="mft-body text-muted-foreground mt-2">Lighthouse scores guaranteed</p>
               </div>
             </div>
           </div>
@@ -283,10 +259,8 @@ export default function CustomDevelopmentPage() {
       <section className="py-16 md:py-20">
         <SectionContainer size="lg">
           <div className="text-center space-y-4 mb-12">
-            <h2 className="text-2xl md:text-3xl font-semibold">What&apos;s Included</h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">
-              Every project comes with everything you need to launch a professional website.
-            </p>
+            <h2>What&apos;s Included</h2>
+            <p className="mft-lead max-w-lg mx-auto">Every project comes with everything you need to launch a professional website.</p>
           </div>
 
           <WhatsIncluded />
@@ -300,10 +274,8 @@ export default function CustomDevelopmentPage() {
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               Get Started
             </Badge>
-            <h2 className="text-2xl md:text-3xl font-semibold">Start Your Project</h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">
-              Tell us about your project and we&apos;ll get back to you within 24-48 hours with a custom proposal.
-            </p>
+            <h2>Start Your Project</h2>
+            <p className="mft-lead max-w-lg mx-auto">Tell us about your project and we&apos;ll get back to you within 24-48 hours with a custom proposal.</p>
           </div>
 
           <ProjectInquiryForm />
@@ -317,10 +289,8 @@ export default function CustomDevelopmentPage() {
             <Badge variant="secondary" className="bg-primary/10 text-primary">
               Pricing & FAQ
             </Badge>
-            <h2 className="text-2xl md:text-3xl font-semibold">Frequently Asked Questions</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Everything you need to know about our custom development services and pricing.
-            </p>
+            <h2>Frequently Asked Questions</h2>
+            <p className="mft-lead max-w-xl mx-auto">Everything you need to know about our custom development services and pricing.</p>
           </div>
 
           <DevFAQ />

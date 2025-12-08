@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/app/(auth)/components/ui/alert";
+import { Separator } from "@/app/(auth)/components/ui/separator";
 import {
   CreditCard,
   Loader2,
@@ -119,17 +119,17 @@ export function IntegrationsList() {
                 </Button>
               )}
               {isFullySetup ? (
-                <Badge className="bg-green-100 text-green-800">
+                <Badge variant="success">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Connected
                 </Badge>
               ) : isConnected ? (
-                <Badge className="bg-yellow-100 text-yellow-800">
+                <Badge variant="warning">
                   <AlertTriangle className="h-3 w-3 mr-1" />
                   Setup Incomplete
                 </Badge>
               ) : (
-                <Badge className="bg-gray-100 text-gray-800">
+                <Badge variant="secondary">
                   <XCircle className="h-3 w-3 mr-1" />
                   Not Connected
                 </Badge>

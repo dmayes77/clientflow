@@ -141,16 +141,16 @@ export function WhoItsFor() {
       <div className="container max-w-7xl mx-auto px-4 relative">
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">
-          <Badge variant="outline" className="text-sm px-4 py-1.5 mb-6 border-primary/30 text-primary">
+          <Badge variant="outline" className="mft-small px-4 py-1.5 mb-6 border-primary/30 text-primary">
             Built For Service Businesses
           </Badge>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight">
+          <h2 className="mft-display-3 mb-6">
             Who Uses{" "}
             <span className="bg-linear-to-r from-primary via-violet-500 to-blue-500 bg-clip-text text-transparent">
               ClientFlow?
             </span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
+          <p className="mft-lead max-w-3xl mx-auto mb-8">
             If you&apos;re using Calendly, Square Appointments, Wix Bookings, or Acuity—but frustrated by
             limited customization and clunky widgets—ClientFlow gives you the control you deserve.
           </p>
@@ -160,7 +160,7 @@ export function WhoItsFor() {
             {comparisonPoints.slice(0, 4).map((point, idx) => (
               <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200">
                 <Check className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">{point.feature}</span>
+                <span className="mft-small font-medium text-green-800">{point.feature}</span>
               </div>
             ))}
           </div>
@@ -185,19 +185,19 @@ export function WhoItsFor() {
                       <Icon className={`w-7 h-7 ${industry.color}`} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold mb-1">{industry.title}</h3>
-                      <p className="text-sm text-muted-foreground">{industry.description}</p>
+                      <h3 className="mft-text-xl font-bold mb-1">{industry.title}</h3>
+                      <p className="mft-small text-muted-foreground">{industry.description}</p>
                     </div>
                   </div>
 
                   {/* Pain Points */}
                   <div className="mb-5">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    <p className="mft-caption font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                       Common Challenges
                     </p>
                     <ul className="space-y-2">
                       {industry.painPoints.map((point, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <li key={idx} className="flex items-start gap-2 mft-small text-muted-foreground">
                           <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
                           {point}
                         </li>
@@ -207,10 +207,10 @@ export function WhoItsFor() {
 
                   {/* Solution */}
                   <div className="pt-5 border-t">
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">
+                    <p className="mft-caption font-semibold text-primary uppercase tracking-wider mb-2">
                       How ClientFlow Helps
                     </p>
-                    <p className="text-sm leading-relaxed">
+                    <p className="mft-small leading-relaxed">
                       {industry.solution}
                     </p>
                   </div>
@@ -226,10 +226,10 @@ export function WhoItsFor() {
         {/* Comparison Section */}
         <div className="mt-20 md:mt-28">
           <div className="text-center mb-10">
-            <h3 className="text-2xl md:text-3xl font-bold mb-4">
+            <h3 className="mb-4">
               Why Switch from Calendly, Square, or Wix?
             </h3>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="mft-lead max-w-2xl mx-auto">
               Those tools embed widgets on your site. ClientFlow gives you a full API to build
               exactly what you want—your design, your brand, your rules.
             </p>
@@ -239,14 +239,14 @@ export function WhoItsFor() {
             <div className="rounded-xl border overflow-hidden">
               {/* Header */}
               <div className="grid grid-cols-3 bg-muted/50 border-b">
-                <div className="p-4 font-medium text-sm">Feature</div>
-                <div className="p-4 font-medium text-sm text-center border-x bg-primary/5">ClientFlow</div>
-                <div className="p-4 font-medium text-sm text-center text-muted-foreground">Others</div>
+                <div className="p-4 font-medium mft-small">Feature</div>
+                <div className="p-4 font-medium mft-small text-center border-x bg-primary/5">ClientFlow</div>
+                <div className="p-4 font-medium mft-small text-center text-muted-foreground">Others</div>
               </div>
               {/* Rows */}
               {comparisonPoints.map((point, idx) => (
                 <div key={idx} className={`grid grid-cols-3 ${idx !== comparisonPoints.length - 1 ? 'border-b' : ''}`}>
-                  <div className="p-4 text-sm">{point.feature}</div>
+                  <div className="p-4 mft-small">{point.feature}</div>
                   <div className="p-4 flex justify-center items-center border-x bg-green-50/50">
                     <Check className="w-5 h-5 text-green-600" />
                   </div>
@@ -256,7 +256,7 @@ export function WhoItsFor() {
                     ) : point.others === false ? (
                       <X className="w-5 h-5 text-muted-foreground/50" />
                     ) : (
-                      <span className="text-xs text-muted-foreground">{point.others}</span>
+                      <span className="mft-caption text-muted-foreground">{point.others}</span>
                     )}
                   </div>
                 </div>
@@ -269,8 +269,8 @@ export function WhoItsFor() {
         <div className="mt-16 md:mt-20 text-center">
           <div className="inline-flex flex-col sm:flex-row items-center gap-4 p-6 md:p-8 rounded-2xl bg-linear-to-r from-primary/10 via-violet-500/10 to-blue-500/10 border">
             <div className="text-center sm:text-left">
-              <p className="font-semibold text-lg mb-1">Ready to take control?</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-semibold mft-text-lg mb-1">Ready to take control?</p>
+              <p className="mft-small text-muted-foreground">
                 Stop fighting with widgets. Build your booking experience your way.
               </p>
             </div>

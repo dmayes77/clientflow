@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Textarea } from "@/app/(auth)/components/ui/textarea";
+import { Switch } from "@/app/(auth)/components/ui/switch";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Checkbox } from "@/app/(auth)/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/app/(auth)/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -25,13 +25,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/app/(auth)/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/app/(auth)/components/ui/dropdown-menu";
 import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign, Calendar } from "lucide-react";
 
 const initialFormState = {

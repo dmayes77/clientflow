@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Tenant {
@@ -36,6 +37,7 @@ model Tenant {
 
   timezone            String    @default("America/New_York")
   slotInterval        Int       @default(30)
+  breakDuration       Int       @default(60) // Daily break/lunch duration in minutes
   defaultCalendarView String    @default("week")
 
   facebookUrl         String?
@@ -63,6 +65,9 @@ model Tenant {
   images              Image[]
   videos              Video[]
   invoices            Invoice[]
+  tags                Tag[]
+  workflows           Workflow[]
+  emailTemplates      EmailTemplate[]
 
   @@index([clerkOrgId])
 }
@@ -104,6 +109,7 @@ model Service {
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category    ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   bookings    Booking[]
+  bookingServices BookingService[]
   packageServices PackageService[]
   images      Image[]
 
@@ -129,6 +135,7 @@ model Package {
   category        ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   services        PackageService[]
   bookings        Booking[]
+  bookingPackages BookingPackage[]
   images          Image[]
 
   @@index([tenantId])
@@ -161,17 +168,149 @@ model Client {
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   bookings  Booking[]
   invoices  Invoice[]
+  tags      ClientTag[]
 
   @@index([tenantId])
   @@index([email])
+}
+
+model Tag {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String
+  color       String    @default("blue")
+  description String?
+  type        String    @default("general") // general, contact, invoice, booking
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clients     ClientTag[]
+  invoices    InvoiceTag[]
+  bookings    BookingTag[]
+  workflows   Workflow[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([type])
+}
+
+model ClientTag {
+  id        String   @id @default(cuid())
+  clientId  String
+  tagId     String
+
+  createdAt DateTime @default(now())
+
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, tagId])
+  @@index([clientId])
+  @@index([tagId])
+}
+
+model InvoiceTag {
+  id        String   @id @default(cuid())
+  invoiceId String
+  tagId     String
+
+  createdAt DateTime @default(now())
+
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, tagId])
+  @@index([invoiceId])
+  @@index([tagId])
+}
+
+model BookingTag {
+  id        String   @id @default(cuid())
+  bookingId String
+  tagId     String
+
+  createdAt DateTime @default(now())
+
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, tagId])
+  @@index([bookingId])
+  @@index([tagId])
+}
+
+model Workflow {
+  id            String    @id @default(cuid())
+  tenantId      String
+  triggerTagId  String?
+
+  name          String
+  description   String?
+  triggerType   String    // tag_added, tag_removed, lead_created, booking_created, client_converted
+  delayMinutes  Int       @default(0)
+  actions       Json      // Array of action objects
+  active        Boolean   @default(true)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  triggerTag    Tag?      @relation(fields: [triggerTagId], references: [id], onDelete: SetNull)
+  runs          WorkflowRun[]
+
+  @@index([tenantId])
+  @@index([triggerTagId])
+  @@index([active])
+}
+
+model WorkflowRun {
+  id          String    @id @default(cuid())
+  workflowId  String
+  clientId    String?
+
+  status      String    @default("pending") // pending, running, completed, failed
+  result      Json?
+  error       String?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model EmailTemplate {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String
+  subject     String
+  body        String    @db.Text  // HTML content from TipTap
+  description String?
+  category    String?   // e.g., "welcome", "follow-up", "booking", "invoice"
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([category])
 }
 
 model Booking {
   id              String    @id @default(cuid())
   tenantId        String
   clientId        String
-  serviceId       String?
-  packageId       String?
+  serviceId       String?   // Legacy - kept for backwards compat
+  packageId       String?   // Legacy - kept for backwards compat
 
   scheduledAt     DateTime
   status          String    @default("inquiry")
@@ -191,11 +330,46 @@ model Booking {
   package         Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
   payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   invoice         Invoice?
+  tags            BookingTag[]
+  services        BookingService[]
+  packages        BookingPackage[]
 
   @@index([tenantId])
   @@index([clientId])
   @@index([status])
   @@index([scheduledAt])
+}
+
+model BookingService {
+  id        String   @id @default(cuid())
+  bookingId String
+  serviceId String
+  quantity  Int      @default(1)
+
+  createdAt DateTime @default(now())
+
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, serviceId])
+  @@index([bookingId])
+  @@index([serviceId])
+}
+
+model BookingPackage {
+  id        String   @id @default(cuid())
+  bookingId String
+  packageId String
+  quantity  Int      @default(1)
+
+  createdAt DateTime @default(now())
+
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, packageId])
+  @@index([bookingId])
+  @@index([packageId])
 }
 
 model ApiKey {
@@ -413,6 +587,7 @@ model Invoice {
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  tags            InvoiceTag[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])

@@ -2,78 +2,45 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Users,
-  Plus,
-  Pencil,
-  Trash2,
-  Loader2,
-  Calendar,
-  Search,
-  Flame,
-  FileText,
-  CalendarPlus,
-  Download,
-  X,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Textarea } from "@/app/(auth)/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/(auth)/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/(auth)/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/(auth)/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/(auth)/components/ui/tooltip";
+import { Checkbox } from "@/app/(auth)/components/ui/checkbox";
+import { Users, Plus, Pencil, Trash2, Loader2, Calendar, Search, Flame, FileText, CalendarPlus, Download, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { DeleteContactDialog } from "./DeleteContactDialog";
 
 const initialFormState = {
   name: "",
   email: "",
   phone: "",
   notes: "",
-  status: "lead",
-  source: "",
 };
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }) + " @ " + new Date(dateString).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).toLowerCase();
+  return (
+    new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }) +
+    " @ " +
+    new Date(dateString)
+      .toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase()
+  );
 }
 
 export function ContactsList() {
@@ -81,9 +48,8 @@ export function ContactsList() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState(null);
   const [clientToDelete, setClientToDelete] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,19 +70,14 @@ export function ContactsList() {
 
     // Letter filter
     if (selectedLetter) {
-      result = result.filter((c) =>
-        c.name.toUpperCase().startsWith(selectedLetter)
-      );
+      result = result.filter((c) => c.name.toUpperCase().startsWith(selectedLetter));
     }
 
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        (client) =>
-          client.name.toLowerCase().includes(query) ||
-          client.email.toLowerCase().includes(query) ||
-          (client.phone && client.phone.includes(query))
+        (client) => client.name.toLowerCase().includes(query) || client.email.toLowerCase().includes(query) || (client.phone && client.phone.includes(query))
       );
     }
 
@@ -152,27 +113,13 @@ export function ContactsList() {
     }
   };
 
-  const handleOpenDialog = (client = null) => {
-    if (client) {
-      setEditingClient(client);
-      setFormData({
-        name: client.name,
-        email: client.email,
-        phone: client.phone || "",
-        notes: client.notes || "",
-        status: client.status || "lead",
-        source: client.source || "",
-      });
-    } else {
-      setEditingClient(null);
-      setFormData(initialFormState);
-    }
-    setDialogOpen(true);
+  const handleOpenAddDialog = () => {
+    setFormData(initialFormState);
+    setAddDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingClient(null);
+  const handleCloseAddDialog = () => {
+    setAddDialogOpen(false);
     setFormData(initialFormState);
   };
 
@@ -181,27 +128,17 @@ export function ContactsList() {
     setSaving(true);
 
     try {
-      const url = editingClient
-        ? `/api/clients/${editingClient.id}`
-        : "/api/clients";
-      const method = editingClient ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
+      const res = await fetch("/api/clients", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       if (res.ok) {
         const savedClient = await res.json();
-        if (editingClient) {
-          setClients(clients.map((c) => (c.id === savedClient.id ? savedClient : c)));
-          toast.success("Contact updated");
-        } else {
-          setClients([savedClient, ...clients]);
-          toast.success("Contact created");
-        }
-        handleCloseDialog();
+        setClients([savedClient, ...clients]);
+        toast.success("Contact created");
+        handleCloseAddDialog();
       } else {
         const error = await res.json();
         toast.error(error.error || "Failed to save contact");
@@ -213,26 +150,9 @@ export function ContactsList() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!clientToDelete) return;
-
-    try {
-      const res = await fetch(`/api/clients/${clientToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setClients(clients.filter((c) => c.id !== clientToDelete.id));
-        toast.success("Contact deleted");
-      } else {
-        toast.error("Failed to delete contact");
-      }
-    } catch (error) {
-      toast.error("Failed to delete contact");
-    } finally {
-      setDeleteDialogOpen(false);
-      setClientToDelete(null);
-    }
+  const handleContactDeleted = (contactId) => {
+    setClients(clients.filter((c) => c.id !== contactId));
+    setClientToDelete(null);
   };
 
   const getStatusColor = (status) => {
@@ -292,9 +212,7 @@ export function ContactsList() {
 
     setBulkDeleting(true);
     try {
-      const deletePromises = Array.from(selectedIds).map((id) =>
-        fetch(`/api/clients/${id}`, { method: "DELETE" })
-      );
+      const deletePromises = Array.from(selectedIds).map((id) => fetch(`/api/clients/${id}`, { method: "DELETE" }));
       await Promise.all(deletePromises);
 
       setClients(clients.filter((c) => !selectedIds.has(c.id)));
@@ -322,11 +240,7 @@ export function ContactsList() {
       );
       await Promise.all(updatePromises);
 
-      setClients(
-        clients.map((c) =>
-          selectedIds.has(c.id) ? { ...c, status: newStatus } : c
-        )
-      );
+      setClients(clients.map((c) => (selectedIds.has(c.id) ? { ...c, status: newStatus } : c)));
       toast.success(`${selectedIds.size} contact(s) updated to ${newStatus}`);
       clearSelection();
     } catch (error) {
@@ -341,15 +255,7 @@ export function ContactsList() {
     const contactsToExport = clients.filter((c) => selectedIds.has(c.id));
     const csv = [
       ["Name", "Email", "Phone", "Status", "Source", "Notes", "Created"],
-      ...contactsToExport.map((c) => [
-        c.name,
-        c.email,
-        c.phone || "",
-        c.status,
-        c.source || "",
-        c.notes || "",
-        new Date(c.createdAt).toISOString(),
-      ]),
+      ...contactsToExport.map((c) => [c.name, c.email, c.phone || "", c.status, c.source || "", c.notes || "", new Date(c.createdAt).toISOString()]),
     ]
       .map((row) => row.map((cell) => `"${cell}"`).join(","))
       .join("\n");
@@ -381,21 +287,24 @@ export function ContactsList() {
         <div className="flex flex-wrap gap-2 et-small">
           <span className="text-primary font-medium">Filtering results by:</span>
           <span className="text-muted-foreground">
-            {statusFilter === "all" ? "All Contacts" :
-              statusFilter === "lead" ? "Leads" :
-              statusFilter === "prospect" ? "Prospects" :
-              statusFilter === "active" ? "Active Clients" : "Inactive"}
+            {statusFilter === "all"
+              ? "All Contacts"
+              : statusFilter === "lead"
+              ? "Leads"
+              : statusFilter === "prospect"
+              ? "Prospects"
+              : statusFilter === "active"
+              ? "Active Clients"
+              : "Inactive"}
           </span>
         </div>
 
-        <Card>
+        <Card className="py-6">
           <CardHeader className="pb-4">
             <div className="flex flex-col gap-4">
               {/* Title and Actions Row */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <CardTitle className="flex items-center gap-2 et-h3">
-                  {statusFilter === "all" || statusFilter === "active" ? "Contacts" : "Leads"}
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2 et-h3">{statusFilter === "all" || statusFilter === "active" ? "Contacts" : "Leads"}</CardTitle>
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -406,7 +315,7 @@ export function ContactsList() {
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <Button size="sm" onClick={() => handleOpenDialog()} className="bg-green-600 hover:bg-green-700 h-9">
+                  <Button size="sm" variant="success" onClick={handleOpenAddDialog}>
                     <Plus className="h-4 w-4 mr-1" />
                     Add Contact
                   </Button>
@@ -415,12 +324,7 @@ export function ContactsList() {
 
               {/* Status Filter Pills */}
               <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={statusFilter === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("all")}
-                  className="et-caption"
-                >
+                <Button variant={statusFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("all")} className="et-caption">
                   All ({statusCounts.all})
                 </Button>
                 <Button
@@ -440,12 +344,7 @@ export function ContactsList() {
                 >
                   Prospects ({statusCounts.prospect})
                 </Button>
-                <Button
-                  variant={statusFilter === "active" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("active")}
-                  className={`et-caption ${statusFilter === "active" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                >
+                <Button variant={statusFilter === "active" ? "success" : "outline"} size="sm" onClick={() => setStatusFilter("active")} className="et-caption">
                   Active ({statusCounts.active})
                 </Button>
                 <Button
@@ -488,15 +387,8 @@ export function ContactsList() {
             {selectedIds.size > 0 && (
               <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="et-small font-medium">
-                    {selectedIds.size} selected
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearSelection}
-                    className="h-7 px-2"
-                  >
+                  <span className="et-small font-medium">{selectedIds.size} selected</span>
+                  <Button variant="ghost" size="sm" onClick={clearSelection} className="h-7 px-2">
                     <X className="h-3 w-3 mr-1" />
                     Clear
                   </Button>
@@ -514,27 +406,12 @@ export function ContactsList() {
                       <SelectItem value="inactive">Set as Inactive</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExport}
-                    className="et-caption"
-                  >
+                  <Button variant="outline" size="sm" onClick={handleExport} className="et-caption">
                     <Download className="h-3 w-3 mr-1" />
                     Export CSV
                   </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleBulkDelete}
-                    disabled={bulkDeleting}
-                    className="et-caption"
-                  >
-                    {bulkDeleting ? (
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3 w-3 mr-1" />
-                    )}
+                  <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={bulkDeleting} className="et-caption">
+                    {bulkDeleting ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Trash2 className="h-3 w-3 mr-1" />}
                     Delete
                   </Button>
                 </div>
@@ -547,19 +424,15 @@ export function ContactsList() {
                   <Users className="h-6 w-6 text-violet-600" />
                 </div>
                 <h3 className="font-medium text-zinc-900 mb-1">No contacts yet</h3>
-                <p className="et-et-small text-muted-foreground mb-4">
-                  Add your first client or lead to get started
-                </p>
-                <Button size="sm" onClick={() => handleOpenDialog()} className="bg-green-600 hover:bg-green-700">
+                <p className="et-small text-muted-foreground mb-4">Add your first client or lead to get started</p>
+                <Button size="sm" variant="success" onClick={handleOpenAddDialog}>
                   <Plus className="h-4 w-4 mr-1" />
                   Add Contact
                 </Button>
               </div>
             ) : filteredClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="et-et-small text-muted-foreground">
-                  No contacts match your filters
-                </p>
+                <p className="et-small text-muted-foreground">No contacts match your filters</p>
                 <Button
                   variant="link"
                   size="sm"
@@ -579,10 +452,7 @@ export function ContactsList() {
                     <TableRow className="bg-muted/30">
                       <TableHead className="w-10">
                         <Checkbox
-                          checked={
-                            filteredClients.length > 0 &&
-                            selectedIds.size === filteredClients.length
-                          }
+                          checked={filteredClients.length > 0 && selectedIds.size === filteredClients.length}
                           onCheckedChange={toggleSelectAll}
                           aria-label="Select all"
                         />
@@ -596,51 +466,33 @@ export function ContactsList() {
                     {filteredClients.map((client) => (
                       <TableRow
                         key={client.id}
-                        className={`cursor-pointer hover:bg-muted/50 ${
-                          selectedIds.has(client.id) ? "bg-primary/5" : ""
-                        }`}
+                        className={`cursor-pointer hover:bg-muted/50 ${selectedIds.has(client.id) ? "bg-primary/5" : ""}`}
                         onClick={() => router.push(`/dashboard/contacts/${client.id}`)}
                       >
                         {/* Checkbox Column */}
                         <TableCell className="py-3" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            checked={selectedIds.has(client.id)}
-                            onCheckedChange={() => toggleSelect(client.id)}
-                            aria-label={`Select ${client.name}`}
-                          />
+                          <Checkbox checked={selectedIds.has(client.id)} onCheckedChange={() => toggleSelect(client.id)} aria-label={`Select ${client.name}`} />
                         </TableCell>
                         {/* Contact Info Column */}
                         <TableCell className="py-3">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              {["lead", "prospect"].includes(client.status) && (
-                                <Flame className={`h-4 w-4 ${getStatusColor(client.status)}`} />
-                              )}
-                              <span className="font-semibold text-primary hover:underline">
-                                {client.name}
-                              </span>
+                              {["lead", "prospect"].includes(client.status) && <Flame className={`h-4 w-4 ${getStatusColor(client.status)}`} />}
+                              <span className="font-semibold text-primary hover:underline">{client.name}</span>
                             </div>
                             {client.phone && (
                               <div className="flex items-center gap-2 et-small">
-                                <a
-                                  href={`tel:${client.phone}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="text-primary hover:underline"
-                                >
+                                <a href={`tel:${client.phone}`} onClick={(e) => e.stopPropagation()} className="text-primary hover:underline">
                                   {client.phone}
                                 </a>
                               </div>
                             )}
-                            <div className="et-small text-muted-foreground">
-                              {client.email}
-                            </div>
+                            <div className="et-small text-muted-foreground">{client.email}</div>
                             <div className="flex items-center gap-2 et-caption text-muted-foreground">
                               <Calendar className="h-3 w-3" />
                               added {formatDate(client.createdAt)}
                             </div>
-                            <div className="et-caption text-muted-foreground">
-                              ID# {client.id.slice(-6).toUpperCase()}
-                            </div>
+                            <div className="et-caption text-muted-foreground">ID# {client.id.slice(-6).toUpperCase()}</div>
                           </div>
                         </TableCell>
 
@@ -648,18 +500,12 @@ export function ContactsList() {
                         <TableCell className="hidden lg:table-cell py-3">
                           <div className="space-y-1 et-small">
                             <div>
-                              <span className="font-medium">Source:</span>{" "}
-                              <span className="text-muted-foreground">{getSourceLabel(client.source)}</span>
+                              <span className="font-medium">Source:</span> <span className="text-muted-foreground">{getSourceLabel(client.source)}</span>
                             </div>
                             <div>
-                              <span className="font-medium">Bookings:</span>{" "}
-                              <span className="text-muted-foreground">{client.bookingCount || 0}</span>
+                              <span className="font-medium">Bookings:</span> <span className="text-muted-foreground">{client.bookingCount || 0}</span>
                             </div>
-                            {client.notes && (
-                              <div className="et-caption text-muted-foreground line-clamp-1">
-                                {client.notes}
-                              </div>
-                            )}
+                            {client.notes && <div className="et-caption text-muted-foreground line-clamp-1">{client.notes}</div>}
                           </div>
                         </TableCell>
 
@@ -700,7 +546,7 @@ export function ContactsList() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                  onClick={() => handleOpenDialog(client)}
+                                  onClick={() => router.push(`/dashboard/contacts/${client.id}`)}
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
@@ -735,18 +581,12 @@ export function ContactsList() {
           </CardContent>
         </Card>
 
-        {/* Add/Edit Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {/* Add Contact Dialog */}
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                {editingClient ? "Edit Contact" : "Add Contact"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingClient
-                  ? "Update contact information"
-                  : "Add a new client or lead to your contact list"}
-              </DialogDescription>
+              <DialogTitle>Add Contact</DialogTitle>
+              <DialogDescription>Add a new contact to your list. You can add more details after creating.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4 py-4">
@@ -784,48 +624,6 @@ export function ContactsList() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => setFormData({ ...formData, status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="lead">Lead</SelectItem>
-                        <SelectItem value="prospect">Prospect</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="source">Source</Label>
-                    <Select
-                      value={formData.source || "none"}
-                      onValueChange={(value) => setFormData({ ...formData, source: value === "none" ? "" : value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">--</SelectItem>
-                        <SelectItem value="website">Website</SelectItem>
-                        <SelectItem value="referral">Referral</SelectItem>
-                        <SelectItem value="social">Social Media</SelectItem>
-                        <SelectItem value="google">Google</SelectItem>
-                        <SelectItem value="booking-form">Booking Form</SelectItem>
-                        <SelectItem value="walk-in">Walk-in</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes (optional)</Label>
                   <Textarea
@@ -839,37 +637,24 @@ export function ContactsList() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                <Button type="button" variant="outline" onClick={handleCloseAddDialog}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving} className="bg-green-600 hover:bg-green-700">
+                <Button type="submit" variant="success" disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {editingClient ? "Save Changes" : "Add Contact"}
+                  Add Contact
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Contact</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete "{clientToDelete?.name}"? This will also delete all associated bookings. This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DeleteContactDialog
+          contact={clientToDelete}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onDeleted={handleContactDeleted}
+        />
       </div>
     </TooltipProvider>
   );

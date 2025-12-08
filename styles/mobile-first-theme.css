@@ -1,0 +1,1034 @@
+/**
+ * ClientFlow Mobile-First Website Theme
+ * ======================================
+ * Clean, modern marketing site theme optimized for public-facing pages.
+ * Mobile-first responsive design that progressively enhances to desktop.
+ *
+ * Strategy:
+ * - Mobile (default): Large, readable, thumb-friendly
+ * - Tablet (768px+): Balanced layout, side-by-side content
+ * - Desktop (1024px+): Dramatic typography, rich visuals
+ *
+ * Usage:
+ * - Apply `.mobile-first-theme` class to your site container
+ * - Works seamlessly with Tailwind utilities
+ * - Import in layout: import "@/styles/mobile-first-theme.css"
+ */
+
+/* ============================================
+   CSS Custom Properties - MOBILE FIRST
+   ============================================ */
+
+.mobile-first-theme,
+:root {
+  /* ===================
+     Shared UI Component Variables
+     Used by Button, Input, Select, etc.
+     =================== */
+
+  --ui-height-sm: 2.25rem;
+  --ui-height-md: 2.5rem;
+  --ui-height-lg: 2.75rem;
+  --ui-input-bg: var(--background);
+  --ui-popover: var(--popover);
+  --ui-popover-foreground: var(--popover-foreground);
+  --ui-text-sm: 0.875rem;
+
+  /* Semantic colors for Button variants */
+  --ui-success: var(--primary);
+  --ui-success-foreground: var(--primary-foreground);
+  --ui-info: var(--primary);
+  --ui-info-foreground: var(--primary-foreground);
+  --ui-warning: var(--secondary);
+  --ui-warning-foreground: var(--secondary-foreground);
+
+  /* ===================
+     Typography Scale - Mobile First
+     =================== */
+
+  /* Font Families */
+  --mft-font-heading: var(--font-heading), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mft-font-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mft-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Font Sizes - Mobile: Base 15px */
+  --mft-text-xs: 0.6875rem;    /* 11px - captions, fine print */
+  --mft-text-sm: 0.8125rem;    /* 13px - secondary text */
+  --mft-text-base: 0.9375rem;  /* 15px - body text */
+  --mft-text-lg: 1.0625rem;    /* 17px - emphasized text */
+  --mft-text-xl: 1.1875rem;    /* 19px - small headings */
+  --mft-text-2xl: 1.4375rem;   /* 23px - section headings */
+  --mft-text-3xl: 1.75rem;     /* 28px - page titles */
+  --mft-text-4xl: 2.125rem;    /* 34px - hero subheadings */
+  --mft-text-5xl: 2.625rem;    /* 42px - hero headings */
+  --mft-text-6xl: 3.125rem;    /* 50px - large hero */
+
+  /* Semantic Heading Sizes - mapped to text scale */
+  --mft-display-1: var(--mft-text-6xl);  /* Hero headlines */
+  --mft-display-2: var(--mft-text-5xl);  /* Large section headlines */
+  --mft-display-3: var(--mft-text-4xl);  /* Medium section headlines */
+  --mft-h1: var(--mft-text-3xl);         /* Page titles */
+  --mft-h2: var(--mft-text-2xl);         /* Section headings */
+  --mft-h3: var(--mft-text-xl);          /* Subsection headings */
+  --mft-h4: var(--mft-text-lg);          /* Minor headings */
+
+  /* Font Weights */
+  --mft-font-normal: 400;
+  --mft-font-medium: 500;
+  --mft-font-semibold: 600;
+  --mft-font-bold: 700;
+  --mft-font-extrabold: 800;
+
+  /* Line Heights - Mobile optimized */
+  --mft-leading-none: 1;
+  --mft-leading-tight: 1.2;
+  --mft-leading-snug: 1.375;
+  --mft-leading-normal: 1.5;
+  --mft-leading-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --mft-tracking-tighter: -0.05em;
+  --mft-tracking-tight: -0.025em;
+  --mft-tracking-normal: 0;
+  --mft-tracking-wide: 0.025em;
+
+  /* ===================
+     Spacing Scale - Mobile First (Generous)
+     =================== */
+
+  --mft-space-0: 0;
+  --mft-space-1: 0.25rem; /* 4px */
+  --mft-space-2: 0.5rem; /* 8px */
+  --mft-space-3: 0.75rem; /* 12px */
+  --mft-space-4: 1rem; /* 16px */
+  --mft-space-5: 1.25rem; /* 20px */
+  --mft-space-6: 1.5rem; /* 24px */
+  --mft-space-8: 2rem; /* 32px */
+  --mft-space-10: 2.5rem; /* 40px */
+  --mft-space-12: 3rem; /* 48px */
+  --mft-space-16: 4rem; /* 64px */
+  --mft-space-20: 5rem; /* 80px */
+  --mft-space-24: 6rem; /* 96px */
+  --mft-space-32: 8rem; /* 128px */
+
+  /* ===================
+     Border Radius
+     =================== */
+
+  --mft-radius-none: 0;
+  --mft-radius-sm: 0.375rem; /* 6px */
+  --mft-radius-md: 0.5rem; /* 8px */
+  --mft-radius-lg: 0.75rem; /* 12px */
+  --mft-radius-xl: 1rem; /* 16px */
+  --mft-radius-2xl: 1.5rem; /* 24px */
+  --mft-radius-3xl: 2rem; /* 32px */
+  --mft-radius-full: 9999px;
+
+  /* ===================
+     Shadows - Mobile Optimized (Subtle)
+     =================== */
+
+  --mft-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --mft-shadow-md: 0 2px 4px 0 rgb(0 0 0 / 0.08);
+  --mft-shadow-lg: 0 4px 8px 0 rgb(0 0 0 / 0.1);
+  --mft-shadow-xl: 0 8px 16px 0 rgb(0 0 0 / 0.12);
+  --mft-shadow-2xl: 0 12px 24px 0 rgb(0 0 0 / 0.15);
+
+  /* ===================
+     Transitions
+     =================== */
+
+  --mft-transition-fast: 150ms;
+  --mft-transition-normal: 250ms;
+  --mft-transition-slow: 400ms;
+  --mft-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --mft-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ===================
+     Container & Layout
+     =================== */
+
+  --mft-container-padding: 1rem; /* 16px mobile */
+  --mft-container-max-width: 1280px;
+
+  /* ===================
+     Button Sizes - Mobile First (Touch-Friendly)
+     =================== */
+
+  --mft-btn-height-sm: 2.5rem; /* 40px */
+  --mft-btn-height-md: 3rem; /* 48px - comfortable tap */
+  --mft-btn-height-lg: 3.5rem; /* 56px - prominent CTA */
+  --mft-btn-padding-x: 1.5rem; /* 24px */
+
+  /* ===================
+     Safe Areas (iOS Support)
+     =================== */
+
+  --mft-safe-top: env(safe-area-inset-top);
+  --mft-safe-bottom: env(safe-area-inset-bottom);
+  --mft-safe-left: env(safe-area-inset-left);
+  --mft-safe-right: env(safe-area-inset-right);
+}
+
+/* ============================================
+   TABLET BREAKPOINT (768px+)
+   Balanced layout, start expanding
+   ============================================ */
+
+@media (min-width: 768px) {
+  :root,
+  .mobile-first-theme {
+    /* Tablet typography - Base 15px */
+    --mft-text-xs: 0.6875rem;    /* 11px */
+    --mft-text-sm: 0.8125rem;    /* 13px */
+    --mft-text-base: 0.9375rem;  /* 15px */
+    --mft-text-lg: 1.0625rem;    /* 17px */
+    --mft-text-xl: 1.25rem;      /* 20px */
+    --mft-text-2xl: 1.5rem;      /* 24px */
+    --mft-text-3xl: 1.875rem;    /* 30px */
+    --mft-text-4xl: 2.375rem;    /* 38px */
+    --mft-text-5xl: 3rem;        /* 48px */
+    --mft-text-6xl: 3.75rem;     /* 60px */
+
+    /* More generous spacing */
+    --mft-space-16: 5rem; /* 80px */
+    --mft-space-20: 6rem; /* 96px */
+    --mft-space-24: 8rem; /* 128px */
+
+    /* Container padding */
+    --mft-container-padding: 2rem; /* 32px */
+
+    /* Enhanced shadows */
+    --mft-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --mft-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --mft-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+}
+
+/* ============================================
+   DESKTOP BREAKPOINT (1024px+)
+   Dramatic typography, rich visuals
+   ============================================ */
+
+@media (min-width: 1024px) {
+  :root,
+  .mobile-first-theme {
+    /* Desktop typography - Base 14px */
+    --mft-text-xs: 0.625rem;     /* 10px */
+    --mft-text-sm: 0.75rem;      /* 12px */
+    --mft-text-base: 0.875rem;   /* 14px */
+    --mft-text-lg: 1rem;         /* 16px */
+    --mft-text-xl: 1.1875rem;    /* 19px */
+    --mft-text-2xl: 1.4375rem;   /* 23px */
+    --mft-text-3xl: 1.75rem;     /* 28px */
+    --mft-text-4xl: 2.1875rem;   /* 35px */
+    --mft-text-5xl: 2.8125rem;   /* 45px */
+    --mft-text-6xl: 3.5rem;      /* 56px */
+
+    /* Even more spacing for impact */
+    --mft-space-16: 6rem; /* 96px */
+    --mft-space-20: 8rem; /* 128px */
+    --mft-space-24: 10rem; /* 160px */
+
+    /* Container padding */
+    --mft-container-padding: 3rem; /* 48px */
+
+    /* Dramatic shadows */
+    --mft-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --mft-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --mft-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+    /* Reduce button sizes for desktop precision */
+    --mft-btn-height-md: 2.75rem; /* 44px */
+    --mft-btn-height-lg: 3.25rem; /* 52px */
+  }
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+.mobile-first-theme {
+  font-family: var(--mft-font-sans);
+  font-size: var(--mft-text-base);
+  line-height: var(--mft-leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Touch optimizations for mobile */
+.mobile-first-theme * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================
+   Typography Components
+   ============================================ */
+
+.mobile-first-theme h1,
+.mobile-first-theme h2,
+.mobile-first-theme h3,
+.mobile-first-theme h4,
+.mobile-first-theme h5,
+.mobile-first-theme h6 {
+  font-family: var(--mft-font-heading);
+  font-weight: var(--mft-font-bold);
+}
+
+/* Display sizes - for hero and large headlines */
+.mobile-first-theme .mft-display-1 {
+  font-family: var(--mft-font-heading);
+  font-size: var(--mft-display-1);
+  line-height: var(--mft-leading-none);
+  letter-spacing: var(--mft-tracking-tighter);
+  font-weight: var(--mft-font-extrabold);
+}
+
+.mobile-first-theme .mft-display-2 {
+  font-family: var(--mft-font-heading);
+  font-size: var(--mft-display-2);
+  line-height: var(--mft-leading-tight);
+  letter-spacing: var(--mft-tracking-tighter);
+  font-weight: var(--mft-font-extrabold);
+}
+
+.mobile-first-theme .mft-display-3 {
+  font-family: var(--mft-font-heading);
+  font-size: var(--mft-display-3);
+  line-height: var(--mft-leading-tight);
+  letter-spacing: var(--mft-tracking-tight);
+  font-weight: var(--mft-font-bold);
+}
+
+/* Heading sizes */
+.mobile-first-theme h1,
+.mobile-first-theme .mft-h1 {
+  font-size: var(--mft-h1);
+  line-height: var(--mft-leading-tight);
+  letter-spacing: var(--mft-tracking-tight);
+  font-weight: var(--mft-font-extrabold);
+}
+
+.mobile-first-theme h2,
+.mobile-first-theme .mft-h2 {
+  font-size: var(--mft-h2);
+  line-height: var(--mft-leading-tight);
+  letter-spacing: var(--mft-tracking-tight);
+  font-weight: var(--mft-font-bold);
+}
+
+.mobile-first-theme h3,
+.mobile-first-theme .mft-h3 {
+  font-size: var(--mft-h3);
+  line-height: var(--mft-leading-snug);
+  font-weight: var(--mft-font-semibold);
+}
+
+.mobile-first-theme h4,
+.mobile-first-theme .mft-h4 {
+  font-size: var(--mft-h4);
+  line-height: var(--mft-leading-snug);
+  font-weight: var(--mft-font-semibold);
+}
+
+.mobile-first-theme p,
+.mobile-first-theme .mft-body {
+  font-size: var(--mft-text-base);
+  line-height: var(--mft-leading-relaxed);
+}
+
+.mobile-first-theme .mft-lead {
+  font-size: var(--mft-text-lg);
+  line-height: var(--mft-leading-relaxed);
+  color: var(--muted-foreground);
+}
+
+.mobile-first-theme .mft-small {
+  font-size: var(--mft-text-sm);
+  line-height: var(--mft-leading-normal);
+}
+
+.mobile-first-theme .mft-caption,
+.mobile-first-theme .mft-text-xs {
+  font-size: var(--mft-text-xs);
+  line-height: var(--mft-leading-normal);
+}
+
+.mobile-first-theme .mft-text-sm {
+  font-size: var(--mft-text-sm);
+  line-height: var(--mft-leading-normal);
+}
+
+.mobile-first-theme .mft-text-lg {
+  font-size: var(--mft-text-lg);
+  line-height: var(--mft-leading-relaxed);
+}
+
+.mobile-first-theme .mft-text-xl {
+  font-size: var(--mft-text-xl);
+  line-height: var(--mft-leading-snug);
+}
+
+.mobile-first-theme .mft-text-2xl {
+  font-size: var(--mft-text-2xl);
+  line-height: var(--mft-leading-snug);
+}
+
+.mobile-first-theme .mft-text-3xl {
+  font-size: var(--mft-text-3xl);
+  line-height: var(--mft-leading-tight);
+}
+
+.mobile-first-theme .mft-text-4xl {
+  font-size: var(--mft-text-4xl);
+  line-height: var(--mft-leading-tight);
+}
+
+.mobile-first-theme .mft-text-5xl {
+  font-size: var(--mft-text-5xl);
+  line-height: var(--mft-leading-tight);
+}
+
+.mobile-first-theme .mft-text-6xl {
+  font-size: var(--mft-text-6xl);
+  line-height: var(--mft-leading-none);
+}
+
+/* ============================================
+   Layout Components
+   ============================================ */
+
+/* Container with safe areas and responsive padding */
+.mobile-first-theme .mft-container {
+  width: 100%;
+  margin: 0 auto;
+  padding-left: max(var(--mft-container-padding), var(--mft-safe-left));
+  padding-right: max(var(--mft-container-padding), var(--mft-safe-right));
+  max-width: var(--mft-container-max-width);
+}
+
+/* Section spacing - adapts across breakpoints */
+.mobile-first-theme .mft-section {
+  padding-top: var(--mft-space-12);
+  padding-bottom: var(--mft-space-12);
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-section {
+    padding-top: var(--mft-space-16);
+    padding-bottom: var(--mft-space-16);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-section {
+    padding-top: var(--mft-space-20);
+    padding-bottom: var(--mft-space-20);
+  }
+}
+
+/* Hero section - extra spacing */
+.mobile-first-theme .mft-hero {
+  padding-top: var(--mft-space-16);
+  padding-bottom: var(--mft-space-16);
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-hero {
+    padding-top: var(--mft-space-20);
+    padding-bottom: var(--mft-space-20);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-hero {
+    padding-top: var(--mft-space-24);
+    padding-bottom: var(--mft-space-24);
+  }
+}
+
+/* Safe area helpers */
+.mobile-first-theme .mft-safe-top {
+  padding-top: max(var(--mft-space-4), var(--mft-safe-top));
+}
+
+.mobile-first-theme .mft-safe-bottom {
+  padding-bottom: max(var(--mft-space-4), var(--mft-safe-bottom));
+}
+
+/* ============================================
+   Hero Components
+   ============================================ */
+
+/* Hero title - uses clamp for fluid scaling */
+.mobile-first-theme .mft-hero-title {
+  font-family: var(--mft-font-heading);
+  font-size: clamp(2rem, 8vw, 5.5rem);
+  font-weight: var(--mft-font-extrabold);
+  line-height: 1.1;
+  letter-spacing: var(--mft-tracking-tight);
+}
+
+/* Hero subtitle */
+.mobile-first-theme .mft-hero-subtitle {
+  font-size: var(--mft-text-lg);
+  line-height: var(--mft-leading-relaxed);
+  color: var(--muted-foreground);
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-hero-subtitle {
+    font-size: var(--mft-text-xl);
+  }
+}
+
+/* ============================================
+   Button Components
+   ============================================ */
+
+.mobile-first-theme .mft-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mft-space-2);
+  height: var(--mft-btn-height-md);
+  padding: 0 var(--mft-btn-padding-x);
+  font-family: var(--mft-font-heading);
+  font-size: var(--mft-text-base);
+  font-weight: var(--mft-font-semibold);
+  border-radius: var(--mft-radius-lg);
+  transition: all var(--mft-transition-fast) var(--mft-easing);
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Button variants */
+.mobile-first-theme .mft-btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.mobile-first-theme .mft-btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: var(--mft-shadow-lg);
+}
+
+.mobile-first-theme .mft-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.mobile-first-theme .mft-btn-secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+}
+
+.mobile-first-theme .mft-btn-secondary:hover:not(:disabled) {
+  background: var(--muted);
+  transform: translateY(-1px);
+}
+
+.mobile-first-theme .mft-btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.mobile-first-theme .mft-btn-ghost:hover:not(:disabled) {
+  background: var(--muted);
+}
+
+/* Button sizes */
+.mobile-first-theme .mft-btn-sm {
+  height: var(--mft-btn-height-sm);
+  padding: 0 var(--mft-space-4);
+  font-size: var(--mft-text-sm);
+}
+
+.mobile-first-theme .mft-btn-lg {
+  height: var(--mft-btn-height-lg);
+  padding: 0 var(--mft-space-8);
+  font-size: var(--mft-text-lg);
+}
+
+/* Full width on mobile, auto on desktop */
+.mobile-first-theme .mft-btn-responsive {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-btn-responsive {
+    width: auto;
+  }
+}
+
+/* Disabled state */
+.mobile-first-theme .mft-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Card Components
+   ============================================ */
+
+.mobile-first-theme .mft-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--mft-radius-xl);
+  padding: var(--mft-space-6);
+  box-shadow: var(--mft-shadow-sm);
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-card {
+    padding: var(--mft-space-8);
+  }
+}
+
+/* Interactive card with hover effect */
+.mobile-first-theme .mft-card-hover {
+  transition: all var(--mft-transition-normal) var(--mft-easing);
+}
+
+.mobile-first-theme .mft-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--mft-shadow-xl);
+  border-color: var(--primary);
+}
+
+/* Feature card */
+.mobile-first-theme .mft-feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--mft-radius-xl);
+  padding: var(--mft-space-6);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-feature-card {
+    text-align: left;
+    padding: var(--mft-space-8);
+  }
+}
+
+/* ============================================
+   Feature Components
+   ============================================ */
+
+/* Feature icon */
+.mobile-first-theme .mft-feature-icon {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--mft-radius-lg);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  margin: 0 auto var(--mft-space-4);
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-feature-icon {
+    margin: 0 0 var(--mft-space-4) 0;
+  }
+}
+
+/* Feature grid */
+.mobile-first-theme .mft-feature-grid {
+  display: grid;
+  gap: var(--mft-space-6);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .mobile-first-theme .mft-feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-feature-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--mft-space-8);
+  }
+}
+
+/* ============================================
+   Gradient & Visual Effects
+   ============================================ */
+
+/* Gradient text */
+.mobile-first-theme .mft-gradient-text {
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.65 0.2 280) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient background */
+.mobile-first-theme .mft-gradient-bg {
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.55 0.18 280) 100%);
+}
+
+/* Subtle gradient */
+.mobile-first-theme .mft-gradient-subtle {
+  background: linear-gradient(180deg, transparent 0%, var(--muted) 100%);
+}
+
+/* Glow effect (desktop only for performance) */
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-glow {
+    box-shadow: 0 0 40px rgb(var(--primary-rgb) / 0.3);
+  }
+}
+
+/* ============================================
+   Navigation Components
+   ============================================ */
+
+/* Mobile header */
+.mobile-first-theme .mft-mobile-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5rem;
+  padding: 0 var(--mft-space-4);
+  padding-top: var(--mft-safe-top);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 40;
+  backdrop-filter: blur(8px);
+  background: var(--background) / 0.95;
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-mobile-header {
+    height: 4rem;
+    padding: 0 var(--mft-space-8);
+  }
+}
+
+/* Mobile menu button */
+.mobile-first-theme .mft-menu-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-menu-btn {
+    display: none;
+  }
+}
+
+/* Desktop navigation */
+.mobile-first-theme .mft-nav-desktop {
+  display: none;
+  gap: var(--mft-space-8);
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-nav-desktop {
+    display: flex;
+  }
+}
+
+.mobile-first-theme .mft-nav-link {
+  font-family: var(--mft-font-heading);
+  font-size: var(--mft-text-base);
+  font-weight: var(--mft-font-medium);
+  color: var(--foreground);
+  text-decoration: none;
+  transition: color var(--mft-transition-fast) var(--mft-easing);
+}
+
+.mobile-first-theme .mft-nav-link:hover {
+  color: var(--primary);
+}
+
+/* Mobile menu overlay */
+.mobile-first-theme .mft-mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  background: var(--background);
+  padding: var(--mft-space-6);
+  padding-top: calc(3.5rem + var(--mft-safe-top) + var(--mft-space-6));
+}
+
+.mobile-first-theme .mft-mobile-menu.open {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-mobile-menu {
+    display: none !important;
+  }
+}
+
+.mobile-first-theme .mft-mobile-menu-link {
+  display: block;
+  padding: var(--mft-space-4);
+  font-family: var(--mft-font-heading);
+  font-size: var(--mft-text-xl);
+  font-weight: var(--mft-font-semibold);
+  color: var(--foreground);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ============================================
+   CTA (Call-to-Action) Sections
+   ============================================ */
+
+.mobile-first-theme .mft-cta {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--mft-radius-2xl);
+  padding: var(--mft-space-8);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-cta {
+    padding: var(--mft-space-12);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-cta {
+    padding: var(--mft-space-16);
+  }
+}
+
+/* ============================================
+   Testimonial Components
+   ============================================ */
+
+.mobile-first-theme .mft-testimonial {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--mft-radius-xl);
+  padding: var(--mft-space-6);
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-testimonial {
+    padding: var(--mft-space-8);
+  }
+}
+
+.mobile-first-theme .mft-testimonial-quote {
+  font-size: var(--mft-text-lg);
+  line-height: var(--mft-leading-relaxed);
+  font-style: italic;
+  margin-bottom: var(--mft-space-4);
+}
+
+.mobile-first-theme .mft-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: var(--mft-space-3);
+}
+
+.mobile-first-theme .mft-testimonial-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--mft-radius-full);
+  overflow: hidden;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes mft-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mft-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mft-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mft-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Animation classes - use sparingly on mobile for performance */
+.mobile-first-theme .mft-animate-fade-up {
+  animation: mft-fade-up 0.6s var(--mft-easing) forwards;
+}
+
+.mobile-first-theme .mft-animate-fade-in {
+  animation: mft-fade-in 0.4s var(--mft-easing) forwards;
+}
+
+.mobile-first-theme .mft-animate-scale-in {
+  animation: mft-scale-in 0.5s var(--mft-easing) forwards;
+}
+
+/* Enhanced animations on desktop */
+@media (min-width: 1024px) {
+  .mobile-first-theme .mft-animate-slide-in {
+    animation: mft-slide-in-right 0.6s var(--mft-easing) forwards;
+  }
+}
+
+/* Staggered animations */
+.mobile-first-theme .mft-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.mobile-first-theme .mft-stagger > *:nth-child(2) {
+  animation-delay: 100ms;
+}
+.mobile-first-theme .mft-stagger > *:nth-child(3) {
+  animation-delay: 200ms;
+}
+.mobile-first-theme .mft-stagger > *:nth-child(4) {
+  animation-delay: 300ms;
+}
+.mobile-first-theme .mft-stagger > *:nth-child(5) {
+  animation-delay: 400ms;
+}
+.mobile-first-theme .mft-stagger > *:nth-child(6) {
+  animation-delay: 500ms;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-first-theme *,
+  .mobile-first-theme *::before,
+  .mobile-first-theme *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.mobile-first-theme .mft-text-center {
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .mobile-first-theme .mft-md-text-left {
+    text-align: left;
+  }
+}
+
+.mobile-first-theme .mft-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-first-theme .mft-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+
+.mobile-first-theme ::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.mobile-first-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-first-theme ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--mft-radius-sm);
+}
+
+.mobile-first-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+.mobile-first-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  .mobile-first-theme .mft-mobile-header,
+  .mobile-first-theme .mft-mobile-menu,
+  .mobile-first-theme .mft-btn {
+    display: none;
+  }
+}
+
+/* ============================================
+   Shared UI Text Utilities
+   ============================================ */
+
+.mobile-first-theme .ui-text-sm {
+  font-size: var(--ui-text-sm);
+  line-height: 1.5;
+}

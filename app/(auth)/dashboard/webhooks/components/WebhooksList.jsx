@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Textarea } from "@/app/(auth)/components/ui/textarea";
+import { Switch } from "@/app/(auth)/components/ui/switch";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Checkbox } from "@/app/(auth)/components/ui/checkbox";
+import { Separator } from "@/app/(auth)/components/ui/separator";
+import { ScrollArea } from "@/app/(auth)/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/app/(auth)/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -28,19 +28,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/app/(auth)/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/app/(auth)/components/ui/dropdown-menu";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from "@/app/(auth)/components/ui/collapsible";
 import {
   Webhook,
   Plus,
@@ -358,16 +358,16 @@ export function WebhooksList() {
                             {webhook.active ? "Active" : "Disabled"}
                           </Badge>
                           <Badge
-                            variant="outline"
-                            className={`et-caption ${
+                            variant={
                               deliveryStatus.status === "success"
-                                ? "border-green-200 bg-green-50 text-green-700"
+                                ? "success"
                                 : deliveryStatus.status === "error"
-                                ? "border-red-200 bg-red-50 text-red-700"
+                                ? "destructive"
                                 : deliveryStatus.status === "warning"
-                                ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                                : ""
-                            }`}
+                                ? "warning"
+                                : "secondary"
+                            }
+                            className="et-caption"
                           >
                             {deliveryStatus.status === "success" && (
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -675,12 +675,12 @@ export function WebhooksList() {
                       <TableRow key={delivery.id}>
                         <TableCell>
                           {delivery.success ? (
-                            <Badge className="bg-green-100 text-green-700">
+                            <Badge variant="success">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Success
                             </Badge>
                           ) : (
-                            <Badge className="bg-red-100 text-red-700">
+                            <Badge variant="destructive">
                               <XCircle className="h-3 w-3 mr-1" />
                               Failed
                             </Badge>

@@ -41,14 +41,14 @@ export default function PricingPage() {
                 <Badge variant="secondary" className="text-sm px-3 py-1">
                   Simple Pricing
                 </Badge>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
+                <h1 className="mft-display-2">
                   One price.
                   <br />
                   <span className="bg-linear-to-r from-primary to-cyan-500 bg-clip-text text-transparent">
                     Everything included.
                   </span>
                 </h1>
-                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+                <p className="mft-lead">
                   No confusing tiers. No hidden fees. Get the complete backend for your service business—bookings, CRM, payments, and API access.
                 </p>
               </div>
@@ -64,26 +64,26 @@ export default function PricingPage() {
 
               <CardContent className="p-8 md:p-10 space-y-6">
                 <div>
-                  <p className="text-lg font-semibold text-muted-foreground mb-2">
+                  <p className="mft-text-lg font-semibold text-muted-foreground mb-2">
                     ClientFlow Professional
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-semibold text-primary">$</span>
-                    <span className="text-6xl md:text-7xl font-black text-primary">149</span>
-                    <span className="text-xl text-muted-foreground">/month</span>
+                    <span className="mft-text-3xl font-semibold text-primary">$</span>
+                    <span className="mft-text-6xl font-black text-primary">149</span>
+                    <span className="mft-text-xl text-muted-foreground">/month</span>
                   </div>
                 </div>
 
                 <PricingCardList />
 
                 <Link href="/sign-up" className="block">
-                  <Button size="lg" className="w-full text-lg bg-linear-to-r from-primary to-cyan-500 hover:opacity-90">
+                  <Button size="lg" className="w-full mft-text-lg bg-linear-to-r from-primary to-cyan-500 hover:opacity-90">
                     Start Free Trial
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
 
-                <p className="text-sm text-muted-foreground text-center">
+                <p className="mft-small text-muted-foreground text-center">
                   Cancel anytime during trial
                 </p>
               </CardContent>
@@ -99,7 +99,7 @@ export default function PricingPage() {
             <Badge variant="outline" className="text-sm px-3 py-1 border-amber-300 text-amber-600">
               Sound Familiar?
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-extrabold">
+            <h2>
               The cost of not having a system
             </h2>
           </div>
@@ -115,10 +115,10 @@ export default function PricingPage() {
             <Badge variant="outline" className="text-sm px-3 py-1 border-violet-300 text-violet-600">
               Everything You Need
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-extrabold">
+            <h2>
               Built for service businesses
             </h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            <p className="mft-lead max-w-xl mx-auto">
               Whether you&apos;re a photographer, consultant, or any service provider—manage your entire business from one platform.
             </p>
           </div>
@@ -134,7 +134,7 @@ export default function PricingPage() {
             <Badge variant="outline" className="text-sm px-3 py-1 border-teal-300 text-teal-600">
               How It Works
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-extrabold">
+            <h2>
               Your website&apos;s backend in 3 steps
             </h2>
           </div>
@@ -150,7 +150,7 @@ export default function PricingPage() {
             <Badge variant="outline" className="text-sm px-3 py-1 border-orange-300 text-orange-600">
               FAQ
             </Badge>
-            <h2 className="text-3xl md:text-4xl font-extrabold">
+            <h2>
               Common questions
             </h2>
           </div>
@@ -163,22 +163,22 @@ export default function PricingPage() {
       <section className="py-20 md:py-28 bg-linear-to-br from-primary to-cyan-500">
         <div className="container max-w-2xl mx-auto px-4 text-center space-y-8">
           <div className="space-y-4">
-            <h2 className="text-3xl md:text-4xl font-black text-white">
+            <h2 className="text-white">
               Ready to streamline your business?
             </h2>
-            <p className="text-lg text-white/90">
+            <p className="mft-text-lg text-white/90">
               Join service providers who use ClientFlow to manage bookings, clients, and payments.
             </p>
           </div>
 
           <Link href="/sign-up">
-            <Button size="lg" variant="secondary" className="text-lg">
+            <Button size="lg" variant="secondary" className="mft-text-lg">
               Start Your Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
 
-          <p className="text-sm text-white/80">
+          <p className="mft-small text-white/80">
             14 days free • Cancel anytime
           </p>
         </div>
@@ -187,7 +187,7 @@ export default function PricingPage() {
       {/* Support Links */}
       <section className="py-12 md:py-16">
         <div className="container max-w-xl mx-auto px-4 text-center space-y-6">
-          <p className="text-lg font-semibold">
+          <p className="mft-text-lg font-semibold">
             Need help getting started?
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

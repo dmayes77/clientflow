@@ -67,14 +67,14 @@ export function HowItWorks() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <p className="text-sm font-medium text-primary mb-3 tracking-wide uppercase">How It Works</p>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <p className="mft-small font-medium text-primary mb-3 tracking-wide uppercase">How It Works</p>
+          <h2 className="mft-display-3 mb-4">
             Three Steps to{" "}
             <span className="bg-linear-to-r from-primary to-violet-500 bg-clip-text text-transparent">
               Get Started
             </span>
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="mft-lead max-w-2xl mx-auto">
             From sign-up to your first booking in minutes, not weeks.
           </p>
         </motion.div>
@@ -115,12 +115,12 @@ export function HowItWorks() {
                       <div className={`h-14 w-14 rounded-2xl bg-linear-to-br ${step.color} text-white shadow-lg flex items-center justify-center`}>
                         <Icon className="h-7 w-7" />
                       </div>
-                      <div className={`text-sm font-semibold bg-linear-to-r ${step.color} bg-clip-text text-transparent`}>
+                      <div className={`mft-small font-semibold bg-linear-to-r ${step.color} bg-clip-text text-transparent`}>
                         Step {step.number}
                       </div>
                     </div>
 
-                    <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                    <h3 className="mft-text-xl font-bold mb-3">{step.title}</h3>
                     <p className="text-muted-foreground leading-relaxed flex-1">{step.description}</p>
 
                     {/* Features list - anchored to bottom */}
@@ -128,7 +128,7 @@ export function HowItWorks() {
                       {step.features.map((feature, i) => (
                         <span
                           key={i}
-                          className={`px-3 py-1 text-xs font-medium rounded-full ${step.badgeClass}`}
+                          className={`px-3 py-1 mft-caption font-medium rounded-full ${step.badgeClass}`}
                         >
                           {feature}
                         </span>

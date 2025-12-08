@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "../styles/enterprise-theme.css";
-@import "../styles/marketing-theme.css";
+@import "../styles/mobile-first-theme.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -23,6 +23,9 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  /* Green colors for semantic styling */
+  --color-green-500: oklch(0.723 0.219 149.579);
+  --color-green-600: oklch(0.627 0.194 149.214);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

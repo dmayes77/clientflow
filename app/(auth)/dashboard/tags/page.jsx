@@ -10,7 +10,7 @@ export default function TagsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="et-text-2xl font-semibold">Tags</h1>
-        <p className="et-small text-muted-foreground">Organize contacts and bookings with custom tags</p>
+        <p className="et-small text-muted-foreground">Organize contacts, invoices, and bookings with custom tags to trigger workflows</p>
       </div>
       <TagsList />
     </div>

@@ -22,6 +22,27 @@
 .enterprise-theme,
 :root {
   /* ===================
+     Shared UI Component Variables
+     Used by Button, Input, Select, etc.
+     =================== */
+
+  --ui-height-sm: 2.5rem;
+  --ui-height-md: 2.75rem;
+  --ui-height-lg: 3rem;
+  --ui-input-bg: oklch(1 0 0);
+  --ui-popover: oklch(1 0 0);
+  --ui-popover-foreground: oklch(0.15 0.02 260);
+  --ui-text-sm: 0.875rem;
+
+  /* Semantic colors for Button variants */
+  --ui-success: oklch(0.52 0.15 155);
+  --ui-success-foreground: oklch(1 0 0);
+  --ui-info: oklch(0.62 0.18 250);
+  --ui-info-foreground: oklch(1 0 0);
+  --ui-warning: oklch(0.75 0.16 70);
+  --ui-warning-foreground: oklch(0.2 0.02 60);
+
+  /* ===================
      Color Palette (OKLCH format)
      =================== */
 
@@ -37,8 +58,8 @@
   --et-popover: oklch(1 0 0);
   --et-popover-foreground: oklch(0.15 0.02 260);
 
-  /* Primary Action Color */
-  --et-primary: oklch(0.2 0.02 260);
+  /* Primary Action Color - Blue 500 */
+  --et-primary: oklch(0.62 0.18 250);
   --et-primary-foreground: oklch(0.98 0 0);
 
   /* Secondary/Subtle Color */
@@ -62,9 +83,10 @@
 
   /* Input/Form Color */
   --et-input: oklch(0.92 0.005 250);
+  --et-input-bg: oklch(1 0 0);
 
-  /* Focus Ring Color */
-  --et-ring: oklch(0.2 0.02 260);
+  /* Focus Ring Color - Blue 500 */
+  --et-ring: oklch(0.62 0.18 250);
 
   /* ===================
      Semantic Colors
@@ -89,16 +111,16 @@
   --et-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   /* Font Sizes - Mobile: Readable & Touch-Friendly */
-  --et-text-2xs: 0.75rem;    /* 12px - tiny labels, captions */
-  --et-text-xs: 0.8125rem;   /* 13px - small labels, badges */
-  --et-text-sm: 0.875rem;    /* 14px - secondary text */
-  --et-text-base: 1rem;      /* 16px - body text, inputs (prevents iOS zoom) */
-  --et-text-lg: 1.125rem;    /* 18px - emphasized text */
-  --et-text-xl: 1.25rem;     /* 20px - section headers */
-  --et-text-2xl: 1.5rem;     /* 24px - page titles */
-  --et-text-3xl: 1.875rem;   /* 30px - major headings */
-  --et-text-4xl: 2.25rem;    /* 36px - hero text */
-  --et-text-5xl: 3rem;       /* 48px - large hero */
+  --et-text-2xs: 0.75rem; /* 12px - tiny labels, captions */
+  --et-text-xs: 0.8125rem; /* 13px - small labels, badges */
+  --et-text-sm: 0.875rem; /* 14px - secondary text */
+  --et-text-base: 1rem; /* 16px - body text, inputs (prevents iOS zoom) */
+  --et-text-lg: 1.125rem; /* 18px - emphasized text */
+  --et-text-xl: 1.25rem; /* 20px - section headers */
+  --et-text-2xl: 1.5rem; /* 24px - page titles */
+  --et-text-3xl: 1.875rem; /* 30px - major headings */
+  --et-text-4xl: 2.25rem; /* 36px - hero text */
+  --et-text-5xl: 3rem; /* 48px - large hero */
 
   /* Font Weights */
   --et-font-normal: 400;
@@ -119,29 +141,29 @@
 
   --et-space-0: 0;
   --et-space-px: 1px;
-  --et-space-0\.5: 0.125rem;  /* 2px */
-  --et-space-1: 0.25rem;      /* 4px */
-  --et-space-2: 0.5rem;       /* 8px */
-  --et-space-3: 0.75rem;      /* 12px */
-  --et-space-4: 1rem;         /* 16px - base unit */
-  --et-space-5: 1.25rem;      /* 20px */
-  --et-space-6: 1.5rem;       /* 24px */
-  --et-space-8: 2rem;         /* 32px */
-  --et-space-10: 2.5rem;      /* 40px */
-  --et-space-12: 3rem;        /* 48px */
-  --et-space-16: 4rem;        /* 64px */
-  --et-space-20: 5rem;        /* 80px */
+  --et-space-0\.5: 0.125rem; /* 2px */
+  --et-space-1: 0.25rem; /* 4px */
+  --et-space-2: 0.5rem; /* 8px */
+  --et-space-3: 0.75rem; /* 12px */
+  --et-space-4: 1rem; /* 16px - base unit */
+  --et-space-5: 1.25rem; /* 20px */
+  --et-space-6: 1.5rem; /* 24px */
+  --et-space-8: 2rem; /* 32px */
+  --et-space-10: 2.5rem; /* 40px */
+  --et-space-12: 3rem; /* 48px */
+  --et-space-16: 4rem; /* 64px */
+  --et-space-20: 5rem; /* 80px */
 
   /* ===================
      Border Radius
      =================== */
 
   --et-radius-none: 0;
-  --et-radius-sm: 0.375rem;   /* 6px */
-  --et-radius-md: 0.5rem;     /* 8px - default */
-  --et-radius-lg: 0.75rem;    /* 12px */
-  --et-radius-xl: 1rem;       /* 16px */
-  --et-radius-2xl: 1.5rem;    /* 24px */
+  --et-radius-sm: 0.375rem; /* 6px */
+  --et-radius-md: 0.5rem; /* 8px - default */
+  --et-radius-lg: 0.75rem; /* 12px */
+  --et-radius-xl: 1rem; /* 16px */
+  --et-radius-2xl: 1.5rem; /* 24px */
   --et-radius-full: 9999px;
 
   /* Default radius */
@@ -152,18 +174,18 @@
      =================== */
 
   /* Input/Button Heights */
-  --et-height-xs: 2rem;       /* 32px */
-  --et-height-sm: 2.5rem;     /* 40px */
-  --et-height-md: 2.75rem;    /* 44px - Apple HIG minimum */
-  --et-height-lg: 3rem;       /* 48px */
-  --et-height-xl: 3.5rem;     /* 56px */
+  --et-height-xs: 2rem; /* 32px */
+  --et-height-sm: 2.5rem; /* 40px */
+  --et-height-md: 2.75rem; /* 44px - Apple HIG minimum */
+  --et-height-lg: 3rem; /* 48px */
+  --et-height-xl: 3.5rem; /* 56px */
 
   /* Icon Sizes */
-  --et-icon-xs: 1rem;         /* 16px */
-  --et-icon-sm: 1.125rem;     /* 18px */
-  --et-icon-md: 1.25rem;      /* 20px */
-  --et-icon-lg: 1.5rem;       /* 24px */
-  --et-icon-xl: 2rem;         /* 32px */
+  --et-icon-xs: 1rem; /* 16px */
+  --et-icon-sm: 1.125rem; /* 18px */
+  --et-icon-md: 1.25rem; /* 20px */
+  --et-icon-lg: 1.5rem; /* 24px */
+  --et-icon-xl: 2rem; /* 32px */
 
   /* Container Padding */
   --et-container-padding: 1rem; /* 16px mobile */
@@ -205,15 +227,15 @@
   :root,
   .enterprise-theme {
     /* Slightly smaller fonts for more content */
-    --et-text-base: 0.9375rem;  /* 15px */
-    --et-text-lg: 1.0625rem;    /* 17px */
-    --et-text-xl: 1.125rem;     /* 18px */
-    --et-text-2xl: 1.375rem;    /* 22px */
-    --et-text-3xl: 1.75rem;     /* 28px */
+    --et-text-base: 0.9375rem; /* 15px */
+    --et-text-lg: 1.0625rem; /* 17px */
+    --et-text-xl: 1.125rem; /* 18px */
+    --et-text-2xl: 1.375rem; /* 22px */
+    --et-text-3xl: 1.75rem; /* 28px */
 
     /* Reduce button heights slightly */
-    --et-height-md: 2.5rem;     /* 40px */
-    --et-height-lg: 2.75rem;    /* 44px */
+    --et-height-md: 2.5rem; /* 40px */
+    --et-height-lg: 2.75rem; /* 44px */
 
     /* More spacing */
     --et-container-padding: 1.5rem; /* 24px */
@@ -233,46 +255,46 @@
   :root,
   .enterprise-theme {
     /* Compact Typography */
-    --et-text-2xs: 0.625rem;    /* 10px */
-    --et-text-xs: 0.6875rem;    /* 11px */
-    --et-text-sm: 0.75rem;      /* 12px */
-    --et-text-base: 0.8125rem;  /* 13px - compact default */
-    --et-text-lg: 0.875rem;     /* 14px */
-    --et-text-xl: 1rem;         /* 16px */
-    --et-text-2xl: 1.125rem;    /* 18px */
-    --et-text-3xl: 1.25rem;     /* 20px */
+    --et-text-2xs: 0.625rem; /* 10px */
+    --et-text-xs: 0.6875rem; /* 11px */
+    --et-text-sm: 0.75rem; /* 12px */
+    --et-text-base: 0.8125rem; /* 13px - compact default */
+    --et-text-lg: 0.875rem; /* 14px */
+    --et-text-xl: 1rem; /* 16px */
+    --et-text-2xl: 1.125rem; /* 18px */
+    --et-text-3xl: 1.25rem; /* 20px */
 
     /* Compact Spacing */
-    --et-space-0\.5: 0.125rem;  /* 2px */
-    --et-space-1: 0.25rem;      /* 4px */
-    --et-space-2: 0.5rem;       /* 8px */
-    --et-space-3: 0.75rem;      /* 12px */
-    --et-space-4: 1rem;         /* 16px */
-    --et-space-6: 1.25rem;      /* 20px */
-    --et-space-8: 1.5rem;       /* 24px */
+    --et-space-0\.5: 0.125rem; /* 2px */
+    --et-space-1: 0.25rem; /* 4px */
+    --et-space-2: 0.5rem; /* 8px */
+    --et-space-3: 0.75rem; /* 12px */
+    --et-space-4: 1rem; /* 16px */
+    --et-space-6: 1.25rem; /* 20px */
+    --et-space-8: 1.5rem; /* 24px */
 
     /* Compact Components */
-    --et-height-xs: 1.5rem;     /* 24px */
-    --et-height-sm: 1.75rem;    /* 28px */
-    --et-height-md: 2rem;       /* 32px - compact default */
-    --et-height-lg: 2.25rem;    /* 36px */
-    --et-height-xl: 2.5rem;     /* 40px */
+    --et-height-xs: 1.5rem; /* 24px */
+    --et-height-sm: 1.75rem; /* 28px */
+    --et-height-md: 2rem; /* 32px - compact default */
+    --et-height-lg: 2.25rem; /* 36px */
+    --et-height-xl: 2.5rem; /* 40px */
 
     /* Smaller icons */
-    --et-icon-xs: 0.75rem;      /* 12px */
-    --et-icon-sm: 0.875rem;     /* 14px */
-    --et-icon-md: 1rem;         /* 16px */
-    --et-icon-lg: 1.25rem;      /* 20px */
-    --et-icon-xl: 1.5rem;       /* 24px */
+    --et-icon-xs: 0.75rem; /* 12px */
+    --et-icon-sm: 0.875rem; /* 14px */
+    --et-icon-md: 1rem; /* 16px */
+    --et-icon-lg: 1.25rem; /* 20px */
+    --et-icon-xl: 1.5rem; /* 24px */
 
     /* Desktop padding */
     --et-container-padding: 2rem; /* 32px */
 
     /* Tighter radius for compact feel */
-    --et-radius-sm: 0.25rem;    /* 4px */
-    --et-radius-md: 0.375rem;   /* 6px */
-    --et-radius-lg: 0.5rem;     /* 8px */
-    --et-radius-xl: 0.75rem;    /* 12px */
+    --et-radius-sm: 0.25rem; /* 4px */
+    --et-radius-md: 0.375rem; /* 6px */
+    --et-radius-lg: 0.5rem; /* 8px */
+    --et-radius-xl: 0.75rem; /* 12px */
 
     /* Desktop shadows */
     --et-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -292,8 +314,8 @@
   --et-card-foreground: oklch(0.98 0 0);
   --et-popover: oklch(0.18 0.015 260);
   --et-popover-foreground: oklch(0.98 0 0);
-  --et-primary: oklch(0.98 0 0);
-  --et-primary-foreground: oklch(0.2 0.02 260);
+  --et-primary: oklch(0.70 0.18 250); /* Blue 400 for dark mode */
+  --et-primary-foreground: oklch(0.12 0.015 260);
   --et-secondary: oklch(0.24 0.015 260);
   --et-secondary-foreground: oklch(0.98 0 0);
   --et-muted: oklch(0.24 0.015 260);
@@ -304,7 +326,8 @@
   --et-destructive-foreground: oklch(0.98 0 0);
   --et-border: oklch(0.24 0.015 260);
   --et-input: oklch(0.24 0.015 260);
-  --et-ring: oklch(0.85 0.005 250);
+  --et-input-bg: oklch(0.18 0.015 260);
+  --et-ring: oklch(0.70 0.18 250); /* Blue 400 for dark mode */
 }
 
 /* ============================================
@@ -316,7 +339,6 @@
   font-size: var(--et-text-base);
   line-height: var(--et-leading-normal);
   color: var(--et-foreground);
-  background-color: var(--et-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -352,6 +374,7 @@
   font-weight: var(--et-font-bold);
   line-height: var(--et-leading-tight);
   letter-spacing: -0.025em;
+  margin-bottom: var(--et-space-2);
 }
 
 .enterprise-theme h2,
@@ -359,6 +382,7 @@
   font-size: var(--et-text-2xl);
   font-weight: var(--et-font-semibold);
   line-height: var(--et-leading-tight);
+  margin-bottom: var(--et-space-2);
 }
 
 .enterprise-theme h3,
@@ -366,6 +390,7 @@
   font-size: var(--et-text-xl);
   font-weight: var(--et-font-semibold);
   line-height: var(--et-leading-snug);
+  margin-bottom: var(--et-space-1);
 }
 
 .enterprise-theme h4,
@@ -373,12 +398,14 @@
   font-size: var(--et-text-lg);
   font-weight: var(--et-font-medium);
   line-height: var(--et-leading-snug);
+  margin-bottom: var(--et-space-1);
 }
 
 .enterprise-theme p,
 .enterprise-theme .et-body {
   font-size: var(--et-text-base);
   line-height: var(--et-leading-relaxed);
+  margin-bottom: var(--et-space-3);
 }
 
 .enterprise-theme .et-small {
@@ -465,10 +492,9 @@
   font-family: var(--et-font-sans);
   border: 1px solid var(--et-input);
   border-radius: var(--et-radius-md);
-  background: var(--et-background);
+  background: var(--et-input-bg);
   color: var(--et-foreground);
-  transition: border-color var(--et-transition-fast) var(--et-easing),
-              box-shadow var(--et-transition-fast) var(--et-easing);
+  transition: border-color var(--et-transition-fast) var(--et-easing), box-shadow var(--et-transition-fast) var(--et-easing);
   -webkit-appearance: none;
   appearance: none;
 }
@@ -510,6 +536,36 @@
 /* Form groups */
 .enterprise-theme .et-form-group {
   margin-bottom: var(--et-space-6);
+}
+
+/* Compact select for toolbars */
+.enterprise-theme .et-select-compact {
+  height: var(--et-height-sm);
+  padding: var(--et-space-4);
+  font-size: var(--et-text-xs);
+  gap: var(--et-space-1);
+}
+
+.enterprise-theme .et-select-compact:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  border-color: inherit !important;
+}
+
+.enterprise-theme .et-select-compact [data-slot="select-value"] {
+  font-size: var(--et-text-xs);
+}
+
+/* Compact select dropdown content (theme class is on same element via portal) */
+.enterprise-theme.et-select-compact-content {
+  min-width: 6rem;
+}
+
+.enterprise-theme.et-select-compact-content [data-slot="select-item"] {
+  padding: var(--et-space-1) var(--et-space-2);
+  font-size: var(--et-text-xs);
 }
 
 /* ============================================
@@ -839,12 +895,7 @@
 
 /* Loading skeleton */
 .enterprise-theme .et-skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--et-muted) 25%,
-    oklch(0.9 0.005 250) 50%,
-    var(--et-muted) 75%
-  );
+  background: linear-gradient(90deg, var(--et-muted) 25%, oklch(0.9 0.005 250) 50%, var(--et-muted) 75%);
   background-size: 200% 100%;
   animation: et-loading 1.5s ease-in-out infinite;
   border-radius: var(--et-radius-md);
@@ -870,8 +921,12 @@
    ============================================ */
 
 @keyframes et-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes et-slide-up {
@@ -908,12 +963,18 @@
 }
 
 @keyframes et-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes et-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============================================
@@ -983,4 +1044,226 @@
 .enterprise-theme .et-focus-visible:focus-visible {
   outline: 2px solid var(--et-ring);
   outline-offset: 2px;
+}
+
+/* ============================================
+   Text Size Utilities
+   Uses responsive CSS variables defined above
+   ============================================ */
+
+.enterprise-theme .et-text-2xs {
+  font-size: var(--et-text-2xs);
+  line-height: 1.5;
+}
+
+.enterprise-theme .et-text-xs {
+  font-size: var(--et-text-xs);
+  line-height: 1.5;
+}
+
+.enterprise-theme .et-text-sm {
+  font-size: var(--et-text-sm);
+  line-height: 1.5;
+}
+
+.enterprise-theme .et-text-base {
+  font-size: var(--et-text-base);
+  line-height: 1.5;
+}
+
+.enterprise-theme .et-text-lg {
+  font-size: var(--et-text-lg);
+  line-height: 1.375;
+}
+
+.enterprise-theme .et-text-xl {
+  font-size: var(--et-text-xl);
+  line-height: 1.375;
+}
+
+/* ============================================
+   Shared UI Text Utilities
+   ============================================ */
+
+.enterprise-theme .ui-text-sm {
+  font-size: var(--ui-text-sm);
+  line-height: 1.5;
+}
+
+/* ============================================
+   Media Library Components
+   ============================================ */
+
+/* Responsive media grid - mobile-first */
+.enterprise-theme .et-media-grid {
+  display: grid;
+  gap: var(--et-space-2);
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 640px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--et-space-3);
+  }
+}
+
+@media (min-width: 768px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .enterprise-theme .et-media-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+/* Compact media card */
+.enterprise-theme .et-media-card {
+  border-radius: var(--et-radius-sm);
+  overflow: hidden;
+  background: var(--et-card);
+  border: 1px solid var(--et-border);
+  transition: box-shadow var(--et-transition-fast) var(--et-easing), border-color var(--et-transition-fast) var(--et-easing);
+  cursor: pointer;
+}
+
+.enterprise-theme .et-media-card:hover {
+  box-shadow: var(--et-shadow-md);
+  border-color: oklch(0.55 0.01 260 / 0.3);
+}
+
+/* Square thumbnail */
+.enterprise-theme .et-media-thumb {
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--et-muted);
+}
+
+.enterprise-theme .et-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--et-transition-normal) var(--et-easing);
+}
+
+.enterprise-theme .et-media-card:hover .et-media-thumb img {
+  transform: scale(1.05);
+}
+
+/* Media info section */
+.enterprise-theme .et-media-info {
+  padding: var(--et-space-1) var(--et-space-2);
+  background: var(--et-card);
+}
+
+@media (min-width: 480px) {
+  .enterprise-theme .et-media-info {
+    padding: var(--et-space-2) var(--et-space-3);
+  }
+}
+
+.enterprise-theme .et-media-name {
+  font-size: var(--et-text-2xs);
+  font-weight: var(--et-font-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--et-leading-snug);
+  color: var(--et-foreground);
+}
+
+@media (min-width: 480px) {
+  .enterprise-theme .et-media-name {
+    font-size: var(--et-text-xs);
+  }
+}
+
+.enterprise-theme .et-media-meta {
+  font-size: 9px;
+  color: var(--et-muted-foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: var(--et-leading-tight);
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .enterprise-theme .et-media-meta {
+    display: block;
+    font-size: var(--et-text-2xs);
+  }
+}
+
+/* Hover overlay for media cards */
+.enterprise-theme .et-media-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity var(--et-transition-fast) var(--et-easing);
+}
+
+.enterprise-theme .et-media-card:hover .et-media-overlay {
+  opacity: 1;
+}
+
+.enterprise-theme .et-media-overlay button {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  min-width: 0;
+}
+
+.enterprise-theme .et-media-overlay svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Video play icon overlay */
+.enterprise-theme .et-video-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.enterprise-theme .et-video-icon svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--et-primary);
+}
+
+/* Duration badge for videos */
+.enterprise-theme .et-duration-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  padding: 1px 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-size: 9px;
+  border-radius: 2px;
+  line-height: 1.2;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   format,
@@ -23,12 +24,12 @@ import {
   setHours,
   setMinutes,
 } from "date-fns";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Textarea } from "@/app/(auth)/components/ui/textarea";
+import { Badge } from "@/app/(auth)/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -36,29 +37,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/app/(auth)/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/app/(auth)/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@/app/(auth)/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/app/(auth)/components/ui/tabs";
 import {
   Calendar,
   Plus,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Clock,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -66,18 +66,6 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-
-const initialFormState = {
-  clientId: "",
-  serviceId: "",
-  packageId: "",
-  scheduledAt: "",
-  scheduledTime: "09:00",
-  status: "inquiry",
-  duration: 60,
-  totalPrice: 0,
-  notes: "",
-};
 
 const statusColors = {
   inquiry: "bg-amber-500 hover:bg-amber-600 border-amber-600",
@@ -87,10 +75,10 @@ const statusColors = {
 };
 
 const statusConfig = {
-  inquiry: { label: "Inquiry", color: "bg-yellow-100 text-yellow-800", icon: AlertCircle },
-  confirmed: { label: "Confirmed", color: "bg-blue-100 text-blue-800", icon: Calendar },
-  completed: { label: "Completed", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  cancelled: { label: "Cancelled", color: "bg-red-100 text-red-800", icon: XCircle },
+  inquiry: { label: "Inquiry", variant: "warning", icon: AlertCircle },
+  confirmed: { label: "Confirmed", variant: "info", icon: Calendar },
+  completed: { label: "Completed", variant: "success", icon: CheckCircle },
+  cancelled: { label: "Cancelled", variant: "destructive", icon: XCircle },
 };
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -98,19 +86,13 @@ const BUSINESS_HOURS_START = 6;
 const BUSINESS_HOURS_END = 22;
 
 export function CalendarView() {
+  const router = useRouter();
   const [bookings, setBookings] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [services, setServices] = useState([]);
-  const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState("week");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingBooking, setEditingBooking] = useState(null);
   const [bookingToDelete, setBookingToDelete] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
 
   // Calculate date ranges based on view
   const dateRange = useMemo(() => {
@@ -130,9 +112,12 @@ export function CalendarView() {
   }, [currentDate, view]);
 
   useEffect(() => {
-    fetchData();
     fetchTenantSettings();
   }, []);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [dateRange]);
 
   const fetchTenantSettings = async () => {
     try {
@@ -145,26 +130,6 @@ export function CalendarView() {
       }
     } catch (error) {
       // Use default view if tenant fetch fails
-    }
-  };
-
-  useEffect(() => {
-    fetchBookings();
-  }, [dateRange]);
-
-  const fetchData = async () => {
-    try {
-      const [clientsRes, servicesRes, packagesRes] = await Promise.all([
-        fetch("/api/clients"),
-        fetch("/api/services"),
-        fetch("/api/packages"),
-      ]);
-
-      if (clientsRes.ok) setClients(await clientsRes.json());
-      if (servicesRes.ok) setServices(await servicesRes.json());
-      if (packagesRes.ok) setPackages(await packagesRes.json());
-    } catch (error) {
-      toast.error("Failed to load data");
     }
   };
 
@@ -197,109 +162,15 @@ export function CalendarView() {
 
   const goToToday = () => setCurrentDate(new Date());
 
-  const handleOpenDialog = (booking = null, date = null, hour = null) => {
-    if (booking) {
-      const scheduledDate = new Date(booking.scheduledAt);
-      setEditingBooking(booking);
-      setFormData({
-        clientId: booking.clientId,
-        serviceId: booking.serviceId || "",
-        packageId: booking.packageId || "",
-        scheduledAt: format(scheduledDate, "yyyy-MM-dd"),
-        scheduledTime: format(scheduledDate, "HH:mm"),
-        status: booking.status,
-        duration: booking.duration,
-        totalPrice: booking.totalPrice / 100,
-        notes: booking.notes || "",
-      });
-    } else {
-      setEditingBooking(null);
-      const selectedDate = date || new Date();
-      const selectedTime = hour !== null ? `${String(hour).padStart(2, "0")}:00` : "09:00";
-      setFormData({
-        ...initialFormState,
-        scheduledAt: format(selectedDate, "yyyy-MM-dd"),
-        scheduledTime: selectedTime,
-      });
-    }
-    setDialogOpen(true);
+  const handleOpenDialog = (date = null, hour = null) => {
+    const selectedDate = date || new Date();
+    const selectedTime = hour !== null ? `${String(hour).padStart(2, "0")}:00` : "09:00";
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    router.push(`/dashboard/bookings/new?date=${dateStr}&time=${selectedTime}`);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingBooking(null);
-    setFormData(initialFormState);
-  };
-
-  const handleServiceChange = (serviceId) => {
-    const actualId = serviceId === "none" ? "" : serviceId;
-    const service = services.find((s) => s.id === actualId);
-    setFormData({
-      ...formData,
-      serviceId: actualId,
-      packageId: "",
-      duration: service?.duration || 60,
-      totalPrice: service ? service.price / 100 : 0,
-    });
-  };
-
-  const handlePackageChange = (packageId) => {
-    const actualId = packageId === "none" ? "" : packageId;
-    const pkg = packages.find((p) => p.id === actualId);
-    setFormData({
-      ...formData,
-      packageId: actualId,
-      serviceId: "",
-      totalPrice: pkg ? pkg.price / 100 : 0,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-
-    try {
-      const scheduledAt = new Date(`${formData.scheduledAt}T${formData.scheduledTime}`);
-
-      const payload = {
-        clientId: formData.clientId,
-        serviceId: formData.serviceId || null,
-        packageId: formData.packageId || null,
-        scheduledAt: scheduledAt.toISOString(),
-        status: formData.status,
-        duration: parseInt(formData.duration),
-        totalPrice: Math.round(formData.totalPrice * 100),
-        notes: formData.notes || null,
-      };
-
-      const url = editingBooking ? `/api/bookings/${editingBooking.id}` : "/api/bookings";
-      const method = editingBooking ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const savedBooking = await res.json();
-        if (editingBooking) {
-          setBookings(bookings.map((b) => (b.id === savedBooking.id ? savedBooking : b)));
-          toast.success("Booking updated");
-        } else {
-          setBookings([savedBooking, ...bookings]);
-          toast.success("Booking created");
-        }
-        handleCloseDialog();
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save booking");
-      }
-    } catch (error) {
-      toast.error("Failed to save booking");
-    } finally {
-      setSaving(false);
-    }
+  const handleBookingClick = (booking) => {
+    router.push(`/dashboard/bookings/${booking.id}`);
   };
 
   const handleStatusChange = async (booking, newStatus) => {
@@ -413,10 +284,10 @@ export function CalendarView() {
                   {dayBookings.slice(0, 3).map((booking) => (
                     <div
                       key={booking.id}
-                      className={`et-caption px-1.5 py-0.5 rounded text-white truncate cursor-pointer ${statusColors[booking.status]}`}
+                      className={`et-caption px-1.5 py-0.5 rounded text-white! font-semibold truncate cursor-pointer ${statusColors[booking.status]}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleOpenDialog(booking);
+                        handleBookingClick(booking);
                       }}
                     >
                       {format(new Date(booking.scheduledAt), "h:mm")} {booking.client?.name}
@@ -443,7 +314,7 @@ export function CalendarView() {
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header with days */}
         <div className="flex border-b sticky top-0 bg-background z-10">
-          <div className="w-16 flex-shrink-0 border-r" />
+          <div className="w-16 shrink-0 border-r" />
           {weekDays.map((day) => (
             <div key={day.toISOString()} className="flex-1 text-center py-2 border-r">
               <div className="et-caption text-muted-foreground">{format(day, "EEE")}</div>
@@ -497,7 +368,7 @@ export function CalendarView() {
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleOpenDialog(booking);
+                              handleBookingClick(booking);
                             }}
                           >
                             <div className="font-medium truncate">{booking.client?.name}</div>
@@ -579,7 +450,7 @@ export function CalendarView() {
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenDialog(booking);
+                            handleBookingClick(booking);
                           }}
                         >
                           <div className="flex items-center justify-between">
@@ -591,9 +462,9 @@ export function CalendarView() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleOpenDialog(booking)}>
+                                <DropdownMenuItem onClick={() => handleBookingClick(booking)}>
                                   <Pencil className="h-4 w-4 mr-2" />
-                                  Edit
+                                  View Details
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {booking.status !== "confirmed" && (
@@ -712,174 +583,6 @@ export function CalendarView() {
           </div>
         ))}
       </div>
-
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingBooking ? "Edit Booking" : "New Booking"}</DialogTitle>
-            <DialogDescription>
-              {editingBooking ? "Update booking details" : "Schedule a new appointment for a client"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="client">Client</Label>
-                <Select
-                  value={formData.clientId}
-                  onValueChange={(value) => setFormData({ ...formData, clientId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name} ({client.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {clients.length === 0 && (
-                  <p className="et-caption text-muted-foreground">No clients yet. Add a client first.</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="service">Service</Label>
-                  <Select value={formData.serviceId || "none"} onValueChange={handleServiceChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {services
-                        .filter((s) => s.active)
-                        .map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            {service.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="package">Package</Label>
-                  <Select value={formData.packageId || "none"} onValueChange={handlePackageChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select package" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {packages
-                        .filter((p) => p.active)
-                        .map((pkg) => (
-                          <SelectItem key={pkg.id} value={pkg.id}>
-                            {pkg.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.scheduledAt}
-                    onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="time">Time</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={formData.scheduledTime}
-                    onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (minutes)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    min="5"
-                    step="5"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 60 })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="price">Total Price ($)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.totalPrice}
-                    onChange={(e) => setFormData({ ...formData, totalPrice: parseFloat(e.target.value) || 0 })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inquiry">Inquiry</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes (optional)</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Add any notes about this booking..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={saving || !formData.clientId}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {editingBooking ? "Save Changes" : "Create Booking"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

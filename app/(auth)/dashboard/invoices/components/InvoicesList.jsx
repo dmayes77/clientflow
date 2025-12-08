@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Textarea } from "@/app/(auth)/components/ui/textarea";
+import { Badge } from "@/app/(auth)/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -16,14 +16,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/app/(auth)/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/app/(auth)/components/ui/select";
 import {
   Table,
   TableBody,
@@ -31,14 +31,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/app/(auth)/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/app/(auth)/components/ui/dropdown-menu";
 import {
   DollarSign,
   Plus,
@@ -53,15 +53,16 @@ import {
   AlertCircle,
   Eye,
   X,
+  Download,
 } from "lucide-react";
 
 const statusConfig = {
-  draft: { label: "Draft", color: "bg-gray-100 text-gray-800", icon: FileText },
-  sent: { label: "Sent", color: "bg-blue-100 text-blue-800", icon: Send },
-  viewed: { label: "Viewed", color: "bg-purple-100 text-purple-800", icon: Eye },
-  paid: { label: "Paid", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  overdue: { label: "Overdue", color: "bg-red-100 text-red-800", icon: AlertCircle },
-  cancelled: { label: "Cancelled", color: "bg-gray-100 text-gray-500", icon: X },
+  draft: { label: "Draft", variant: "secondary", icon: FileText },
+  sent: { label: "Sent", variant: "info", icon: Send },
+  viewed: { label: "Viewed", variant: "default", icon: Eye },
+  paid: { label: "Paid", variant: "success", icon: CheckCircle },
+  overdue: { label: "Overdue", variant: "destructive", icon: AlertCircle },
+  cancelled: { label: "Cancelled", variant: "secondary", icon: X },
 };
 
 const initialFormState = {
@@ -87,6 +88,8 @@ export function InvoicesList() {
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
+  const [sendingId, setSendingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -286,6 +289,61 @@ export function InvoicesList() {
     }
   };
 
+  const handleDownload = async (invoice) => {
+    try {
+      setDownloadingId(invoice.id);
+      const res = await fetch(`/api/invoices/${invoice.id}/pdf`);
+
+      if (!res.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${invoice.invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      toast.error("Failed to download invoice PDF");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleSend = async (invoice) => {
+    try {
+      setSendingId(invoice.id);
+      const res = await fetch(`/api/invoices/${invoice.id}/send`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to send invoice");
+      }
+
+      const data = await res.json();
+      toast.success("Invoice sent successfully");
+
+      // Update the invoice status in the list
+      setInvoices(invoices.map((i) =>
+        i.id === invoice.id ? { ...i, status: "sent" } : i
+      ));
+
+      if (data.warning) {
+        toast.warning(data.warning);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to send invoice");
+    } finally {
+      setSendingId(null);
+    }
+  };
+
   const formatPrice = (cents) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -307,7 +365,7 @@ export function InvoicesList() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="py-4 md:py-6">
         <CardContent className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
@@ -319,25 +377,25 @@ export function InvoicesList() {
     <>
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
             <p className="et-caption text-muted-foreground">Total Collected</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold">{formatPrice(stats.outstandingAmount)}</div>
             <p className="et-caption text-muted-foreground">Outstanding</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold">{stats.paid}</div>
             <p className="et-caption text-muted-foreground">Paid Invoices</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="py-4 md:py-6">
           <CardContent className="pt-6">
             <div className="et-text-2xl font-bold text-red-600">{stats.overdue}</div>
             <p className="et-caption text-muted-foreground">Overdue</p>
@@ -345,7 +403,7 @@ export function InvoicesList() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="py-4 md:py-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
             <CardTitle className="flex items-center gap-2 et-h4">
@@ -413,7 +471,7 @@ export function InvoicesList() {
                           <span className="font-medium">{formatPrice(invoice.total)}</span>
                         </TableCell>
                         <TableCell>
-                          <Badge className={statusConfig[invoice.status]?.color || "bg-gray-100"}>
+                          <Badge variant={statusConfig[invoice.status]?.variant || "secondary"}>
                             {statusConfig[invoice.status]?.label || invoice.status}
                           </Badge>
                         </TableCell>
@@ -429,11 +487,29 @@ export function InvoicesList() {
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                               </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDownload(invoice)}
+                                disabled={downloadingId === invoice.id}
+                              >
+                                {downloadingId === invoice.id ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Download className="h-4 w-4 mr-2" />
+                                )}
+                                {downloadingId === invoice.id ? "Downloading..." : "Download PDF"}
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {invoice.status === "draft" && (
-                                <DropdownMenuItem onClick={() => handleStatusChange(invoice, "sent")}>
-                                  <Send className="h-4 w-4 mr-2" />
-                                  Mark as Sent
+                                <DropdownMenuItem
+                                  onClick={() => handleSend(invoice)}
+                                  disabled={sendingId === invoice.id}
+                                >
+                                  {sendingId === invoice.id ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Send className="h-4 w-4 mr-2" />
+                                  )}
+                                  {sendingId === invoice.id ? "Sending..." : "Send Invoice"}
                                 </DropdownMenuItem>
                               )}
                               {["sent", "viewed", "overdue"].includes(invoice.status) && (

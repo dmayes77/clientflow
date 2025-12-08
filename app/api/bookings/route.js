@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { createBookingSchema, validateRequest } from "@/lib/validations";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
 // GET /api/bookings - List all bookings
 export async function GET(request) {
@@ -121,6 +122,15 @@ export async function POST(request) {
         service: true,
         package: true,
       },
+    });
+
+    // Trigger booking_created workflows (async, don't wait)
+    triggerWorkflows("booking_created", {
+      tenant,
+      client: booking.client,
+      booking,
+    }).catch((err) => {
+      console.error("Error triggering workflows:", err);
     });
 
     return NextResponse.json(booking, { status: 201 });

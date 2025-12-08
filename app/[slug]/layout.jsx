@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/components/theme-provider";
 import "@/styles/enterprise-theme.css";
 import { prisma } from "@/lib/prisma";
 
@@ -107,8 +108,16 @@ export async function generateMetadata({ params }) {
 
 export default function TenantLayout({ children }) {
   return (
-    <div className="enterprise-theme">
-      {children}
-    </div>
+    <ThemeProvider 
+      layoutTheme="enterprise-theme"
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <div className="enterprise-theme">
+        {children}
+      </div>
+    </ThemeProvider>
   );
 }

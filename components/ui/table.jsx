@@ -12,7 +12,7 @@ function Table({
     <div data-slot="table-container" className="relative w-full overflow-x-auto">
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom et-text-sm", className)}
+        className={cn("w-full caption-bottom ui-text-sm", className)}
         {...props} />
     </div>
   );
@@ -106,7 +106,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={cn("text-muted-foreground mt-4 et-text-sm", className)}
+      className={cn("text-muted-foreground mt-4 ui-text-sm", className)}
       {...props} />
   );
 }

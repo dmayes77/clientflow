@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/(auth)/components/ui/card";
+import { Button } from "@/app/(auth)/components/ui/button";
+import { Input } from "@/app/(auth)/components/ui/input";
+import { Label } from "@/app/(auth)/components/ui/label";
+import { Textarea } from "@/app/(auth)/components/ui/textarea";
+import { Switch } from "@/app/(auth)/components/ui/switch";
+import { Badge } from "@/app/(auth)/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/(auth)/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/(auth)/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/(auth)/components/ui/select";
+import { ScrollArea } from "@/app/(auth)/components/ui/scroll-area";
 import {
   Wrench,
   Plus,
@@ -31,7 +31,9 @@ import {
   ExternalLink,
   GripVertical,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/app/(auth)/components/ui/alert";
+import { DurationSelect } from "@/app/(auth)/components/ui/duration-select";
+import { useBusinessHours } from "@/hooks/use-business-hours";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -84,6 +86,7 @@ const initialFormState = {
 };
 
 export function ServicesList() {
+  const { formatDuration: formatBusinessDuration } = useBusinessHours();
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
   const [images, setImages] = useState([]);
@@ -454,12 +457,8 @@ Format the includes list so I can easily copy each item individually.`;
     }).format(cents / 100);
   };
 
-  const formatDuration = (minutes) => {
-    if (minutes < 60) return `${minutes}min`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
+  // Use business hours hook for duration formatting
+  const formatDuration = formatBusinessDuration;
 
   const selectedImage = images.find((img) => img.id === formData.imageId);
 
@@ -486,12 +485,12 @@ Format the includes list so I can easily copy each item individually.`;
               {services.length} service{services.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button size="sm" onClick={() => handleOpenDialog()}>
+          <Button size="sm" variant="success" onClick={() => handleOpenDialog()}>
             <Plus className="h-4 w-4 mr-1" />
             Add Service
           </Button>
         </CardHeader>
-        <CardContent className="py-6">
+        <CardContent className="py-0">
           {services.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
@@ -499,7 +498,7 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
               <h3 className="font-medium text-zinc-900 mb-1">No services yet</h3>
               <p className="et-small text-muted-foreground mb-4">Create your first service to start booking clients</p>
-              <Button size="sm" onClick={() => handleOpenDialog()}>
+              <Button size="sm" variant="success" onClick={() => handleOpenDialog()}>
                 <Plus className="h-4 w-4 mr-1" />
                 Create Service
               </Button>
@@ -549,7 +548,7 @@ Format the includes list so I can easily copy each item individually.`;
                         <span className="font-medium">{formatPrice(service.price)}</span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <Badge variant={service.active ? "default" : "secondary"}>{service.active ? "Active" : "Inactive"}</Badge>
+                        <Badge variant={service.active ? "success" : "secondary"}>{service.active ? "Active" : "Inactive"}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -588,7 +587,7 @@ Format the includes list so I can easily copy each item individually.`;
                 {editingService ? "Update your service details" : "Add a new service offering for your clients"}
               </DialogDescription>
               <div className="flex items-center gap-2 shrink-0">
-                <Label htmlFor="active" className="et-small font-normal text-muted-foreground">
+                <Label htmlFor="active" className={`et-small font-medium leading-none mb-0! ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
                   {formData.active ? "Active" : "Inactive"}
                 </Label>
                 <Switch id="active" checked={formData.active} onCheckedChange={(checked) => setFormData({ ...formData, active: checked })} />
@@ -614,20 +613,24 @@ Format the includes list so I can easily copy each item individually.`;
                     </div>
 
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="description">Description (optional)</Label>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 et-caption gap-1.5 text-violet-600 hover:text-violet-700 hover:bg-violet-50"
-                          onClick={() => setAiPromptDialogOpen(true)}
-                        >
-                          <Sparkles className="h-3.5 w-3.5" />
-                          Need help? Use AI
-                        </Button>
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="description" className="mb-0!">
+                            Description (optional)
+                          </Label>
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 et-caption text-blue-600! hover:text-blue-700! hover:underline"
+                            onClick={() => setAiPromptDialogOpen(true)}
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Need help? Use AI
+                          </button>
+                        </div>
+                        <p className="et-caption text-muted-foreground" style={{ marginTop: "var(--et-space-1)" }}>
+                          Marketing copy describing the end result your client will achieve
+                        </p>
                       </div>
-                      <p className="et-caption text-muted-foreground -mt-1">Marketing copy describing the end result your client will achieve</p>
                       <Textarea
                         id="description"
                         placeholder="e.g., Walk away with a fresh, confident look that turns heads and lasts for weeks"
@@ -686,15 +689,11 @@ Format the includes list so I can easily copy each item individually.`;
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="duration">Duration (minutes)</Label>
-                        <Input
+                        <Label htmlFor="duration">Duration</Label>
+                        <DurationSelect
                           id="duration"
-                          type="number"
-                          min="5"
-                          step="5"
                           value={formData.duration}
-                          onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
-                          required
+                          onValueChange={(value) => setFormData({ ...formData, duration: value })}
                         />
                       </div>
 
@@ -753,8 +752,8 @@ Format the includes list so I can easily copy each item individually.`;
 
                   {/* Right Column - Includes */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>What's Included</Label>
+                    <div className="flex items-center justify-between mb-1!">
+                      <Label className="mb-0!">What's Included</Label>
                       <span className="et-caption text-muted-foreground">{formData.includes.length}/20</span>
                     </div>
 
@@ -820,7 +819,7 @@ Format the includes list so I can easily copy each item individually.`;
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" variant="success" disabled={saving}>
                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingService ? "Save Changes" : "Create Service"}
               </Button>
@@ -930,11 +929,7 @@ Format the includes list so I can easily copy each item individually.`;
             </div>
 
             <div className="flex items-center gap-3 pt-2">
-              <Button
-                type="button"
-                onClick={copyPromptToClipboard}
-                className={`flex-1 transition-colors ${promptCopied ? "bg-green-600 hover:bg-green-700" : "bg-violet-600 hover:bg-violet-700"}`}
-              >
+              <Button type="button" variant={promptCopied ? "success" : "default"} onClick={copyPromptToClipboard} className="flex-1 transition-colors">
                 {promptCopied ? (
                   <>
                     <Check className="h-4 w-4 mr-2" />
