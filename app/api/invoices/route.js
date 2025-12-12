@@ -22,30 +22,41 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const clientId = searchParams.get("clientId");
+    const contactId = searchParams.get("contactId");
     const statusFilter = searchParams.get("status");
 
     const where = {
       tenantId: tenant.id,
-      ...(clientId && { clientId }),
+      ...(contactId && { contactId }),
       ...(statusFilter && { status: statusFilter }),
     };
 
     const invoices = await prisma.invoice.findMany({
       where,
       include: {
-        client: true,
+        contact: true,
         booking: {
           include: {
             service: true,
             package: true,
           },
         },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(invoices);
+    // Flatten tags for easier consumption
+    const invoicesWithTags = invoices.map((invoice) => ({
+      ...invoice,
+      tags: invoice.tags.map((t) => t.tag),
+    }));
+
+    return NextResponse.json(invoicesWithTags);
   } catch (error) {
     console.error("Error fetching invoices:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -68,17 +79,17 @@ export async function POST(request) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
-    // Verify client belongs to tenant if provided
-    if (data.clientId) {
-      const client = await prisma.client.findFirst({
+    // Verify contact belongs to tenant if provided
+    if (data.contactId) {
+      const contact = await prisma.contact.findFirst({
         where: {
-          id: data.clientId,
+          id: data.contactId,
           tenantId: tenant.id,
         },
       });
 
-      if (!client) {
-        return NextResponse.json({ error: "Client not found" }, { status: 404 });
+      if (!contact) {
+        return NextResponse.json({ error: "Contact not found" }, { status: 404 });
       }
     }
 
@@ -89,41 +100,80 @@ export async function POST(request) {
           id: data.bookingId,
           tenantId: tenant.id,
         },
+        include: {
+          invoice: true,
+        },
       });
 
       if (!booking) {
         return NextResponse.json({ error: "Booking not found" }, { status: 404 });
       }
+
+      // Check if booking already has an invoice (one invoice per booking)
+      if (booking.invoice) {
+        return NextResponse.json(
+          { error: "This booking already has an invoice" },
+          { status: 400 }
+        );
+      }
     }
 
     const invoiceNumber = await generateInvoiceNumber(tenant.id);
 
+    // Safely parse deposit percent - must be positive integer or null
+    const safeDepositPercent = (data.depositPercent !== null && data.depositPercent !== undefined && data.depositPercent > 0)
+      ? data.depositPercent
+      : null;
+
+    // Calculate deposit amount if percent is provided
+    const depositAmount = safeDepositPercent
+      ? Math.round(data.total * (safeDepositPercent / 100))
+      : null;
+    const balanceDue = data.total;
+
     const invoice = await prisma.invoice.create({
       data: {
         tenantId: tenant.id,
-        clientId: data.clientId,
+        contactId: data.contactId,
         bookingId: data.bookingId,
         invoiceNumber,
         status: data.status || "draft",
         dueDate: data.dueDate,
         subtotal: data.subtotal,
+        discountCode: data.discountCode || null,
+        discountAmount: data.discountAmount || 0,
         taxRate: data.taxRate || 0,
         taxAmount: data.taxAmount || 0,
         total: data.total,
+        depositPercent: safeDepositPercent,
+        depositAmount,
+        amountPaid: 0,
+        balanceDue,
         lineItems: data.lineItems,
-        clientName: data.clientName,
-        clientEmail: data.clientEmail,
-        clientAddress: data.clientAddress,
+        contactName: data.contactName,
+        contactEmail: data.contactEmail,
+        contactAddress: data.contactAddress,
         notes: data.notes,
         terms: data.terms,
       },
       include: {
-        client: true,
+        contact: true,
         booking: true,
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     });
 
-    return NextResponse.json(invoice, { status: 201 });
+    // Flatten tags
+    const invoiceWithTags = {
+      ...invoice,
+      tags: invoice.tags.map((t) => t.tag),
+    };
+
+    return NextResponse.json(invoiceWithTags, { status: 201 });
   } catch (error) {
     console.error("Error creating invoice:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

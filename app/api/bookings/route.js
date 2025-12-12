@@ -14,14 +14,14 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const clientId = searchParams.get("clientId");
+    const contactId = searchParams.get("contactId");
     const statusFilter = searchParams.get("status");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
     const where = {
       tenantId: tenant.id,
-      ...(clientId && { clientId }),
+      ...(contactId && { contactId }),
       ...(statusFilter && { status: statusFilter }),
       ...(from || to
         ? {
@@ -36,9 +36,18 @@ export async function GET(request) {
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        client: true,
+        contact: true,
         service: true,
         package: true,
+        services: {
+          include: { service: true },
+        },
+        packages: {
+          include: { package: true },
+        },
+        invoice: {
+          select: { id: true },
+        },
       },
       orderBy: { scheduledAt: "desc" },
     });
@@ -66,16 +75,16 @@ export async function POST(request) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
-    // Verify client belongs to tenant
-    const client = await prisma.client.findFirst({
+    // Verify contact belongs to tenant
+    const contact = await prisma.contact.findFirst({
       where: {
-        id: data.clientId,
+        id: data.contactId,
         tenantId: tenant.id,
       },
     });
 
-    if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    if (!contact) {
+      return NextResponse.json({ error: "Contact not found" }, { status: 404 });
     }
 
     // Verify service/package if provided
@@ -108,7 +117,7 @@ export async function POST(request) {
     const booking = await prisma.booking.create({
       data: {
         tenantId: tenant.id,
-        clientId: data.clientId,
+        contactId: data.contactId,
         serviceId: data.serviceId,
         packageId: data.packageId,
         scheduledAt: data.scheduledAt,
@@ -118,16 +127,47 @@ export async function POST(request) {
         duration: data.duration,
       },
       include: {
-        client: true,
+        contact: true,
         service: true,
         package: true,
       },
     });
 
+    // Auto-tag contact based on booking status
+    const bookingStatus = data.status || "inquiry";
+    if (bookingStatus === "inquiry" || bookingStatus === "scheduled") {
+      const tagName = bookingStatus === "inquiry" ? "Lead" : "Client";
+
+      // Find or create the tag using upsert to avoid race conditions
+      const tag = await prisma.tag.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: tagName } },
+        update: {},
+        create: {
+          tenantId: tenant.id,
+          name: tagName,
+          type: "contact",
+          color: tagName === "Lead" ? "#f59e0b" : "#22c55e",
+        },
+      });
+
+      // Check if contact already has this tag
+      const existingContactTag = await prisma.contactTag.findUnique({
+        where: {
+          contactId_tagId: { contactId: data.contactId, tagId: tag.id },
+        },
+      });
+
+      if (!existingContactTag) {
+        await prisma.contactTag.create({
+          data: { contactId: data.contactId, tagId: tag.id },
+        });
+      }
+    }
+
     // Trigger booking_created workflows (async, don't wait)
     triggerWorkflows("booking_created", {
       tenant,
-      client: booking.client,
+      contact: booking.contact,
       booking,
     }).catch((err) => {
       console.error("Error triggering workflows:", err);

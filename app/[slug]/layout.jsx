@@ -1,5 +1,4 @@
 import { ThemeProvider } from "@/components/theme-provider";
-import "@/styles/enterprise-theme.css";
 import { prisma } from "@/lib/prisma";
 
 function toTitleCase(str) {
@@ -108,16 +107,13 @@ export async function generateMetadata({ params }) {
 
 export default function TenantLayout({ children }) {
   return (
-    <ThemeProvider 
-      layoutTheme="enterprise-theme"
+    <ThemeProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
     >
-      <div className="enterprise-theme">
-        {children}
-      </div>
+      {children}
     </ThemeProvider>
   );
 }

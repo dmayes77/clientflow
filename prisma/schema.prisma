@@ -39,6 +39,7 @@ model Tenant {
   slotInterval        Int       @default(30)
   breakDuration       Int       @default(60) // Daily break/lunch duration in minutes
   defaultCalendarView String    @default("week")
+  defaultTaxRate      Float     @default(0) // Default tax rate for invoices
 
   facebookUrl         String?
   twitterUrl          String?
@@ -55,7 +56,7 @@ model Tenant {
   services            Service[]
   packages            Package[]
   serviceCategories   ServiceCategory[]
-  clients             Client[]
+  contacts            Contact[]
   bookings            Booking[]
   apiKeys             ApiKey[]
   availability        Availability[]
@@ -153,13 +154,16 @@ model PackageService {
   @@unique([packageId, serviceId])
 }
 
-model Client {
+model Contact {
   id        String    @id @default(cuid())
   tenantId  String
 
   name      String
   email     String
   phone     String?
+  company   String?
+  website   String?
+  status    String?   @default("lead") // lead, client, active, inactive, unclassified
   notes     String?
 
   createdAt DateTime  @default(now())
@@ -168,8 +172,9 @@ model Client {
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   bookings  Booking[]
   invoices  Invoice[]
-  tags      ClientTag[]
+  tags      ContactTag[]
 
+  @@map("Client")
   @@index([tenantId])
   @@index([email])
 }
@@ -182,12 +187,13 @@ model Tag {
   color       String    @default("blue")
   description String?
   type        String    @default("general") // general, contact, invoice, booking
+  isSystem    Boolean   @default(false) // System tags cannot be deleted
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  clients     ClientTag[]
+  contacts    ContactTag[]
   invoices    InvoiceTag[]
   bookings    BookingTag[]
   workflows   Workflow[]
@@ -195,20 +201,22 @@ model Tag {
   @@unique([tenantId, name])
   @@index([tenantId])
   @@index([type])
+  @@index([isSystem])
 }
 
-model ClientTag {
+model ContactTag {
   id        String   @id @default(cuid())
-  clientId  String
+  contactId String   @map("clientId")
   tagId     String
 
   createdAt DateTime @default(now())
 
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@unique([clientId, tagId])
-  @@index([clientId])
+  @@map("ClientTag")
+  @@unique([contactId, tagId])
+  @@index([contactId])
   @@index([tagId])
 }
 
@@ -269,7 +277,7 @@ model Workflow {
 model WorkflowRun {
   id          String    @id @default(cuid())
   workflowId  String
-  clientId    String?
+  contactId   String?   @map("clientId")
 
   status      String    @default("pending") // pending, running, completed, failed
   result      Json?
@@ -308,7 +316,7 @@ model EmailTemplate {
 model Booking {
   id              String    @id @default(cuid())
   tenantId        String
-  clientId        String
+  contactId       String    @map("clientId")
   serviceId       String?   // Legacy - kept for backwards compat
   packageId       String?   // Legacy - kept for backwards compat
 
@@ -325,7 +333,7 @@ model Booking {
   updatedAt       DateTime  @updatedAt
 
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  contact         Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   service         Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   package         Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
   payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
@@ -335,7 +343,7 @@ model Booking {
   packages        BookingPackage[]
 
   @@index([tenantId])
-  @@index([clientId])
+  @@index([contactId])
   @@index([status])
   @@index([scheduledAt])
 }
@@ -551,7 +559,7 @@ model Video {
 model Invoice {
   id              String    @id @default(cuid())
   tenantId        String
-  clientId        String?
+  contactId       String?   @map("clientId")
   bookingId       String?   @unique
 
   invoiceNumber   String
@@ -564,16 +572,24 @@ model Invoice {
   viewedAt        DateTime?
 
   subtotal        Int
+  discountCode    String?
+  discountAmount  Int       @default(0)
   taxRate         Float     @default(0)
   taxAmount       Int       @default(0)
   total           Int
   currency        String    @default("usd")
 
+  depositPercent  Int?      // 10, 20, 25, 50 percent options
+  depositAmount   Int?      // Calculated from depositPercent
+  depositPaidAt   DateTime?
+  amountPaid      Int       @default(0)
+  balanceDue      Int?      // Calculated: total - amountPaid
+
   lineItems       Json
 
-  clientName      String
-  clientEmail     String
-  clientAddress   String?
+  contactName     String    @map("clientName")
+  contactEmail    String    @map("clientEmail")
+  contactAddress  String?   @map("clientAddress")
 
   stripeCheckoutSessionId String?   @unique
   stripePaymentIntentId   String?   @unique
@@ -585,13 +601,13 @@ model Invoice {
   updatedAt       DateTime  @updatedAt
 
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  contact         Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
   booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   tags            InvoiceTag[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
-  @@index([clientId])
+  @@index([contactId])
   @@index([status])
   @@index([dueDate])
   @@index([createdAt])

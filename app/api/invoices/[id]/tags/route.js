@@ -55,7 +55,7 @@ export async function POST(request, { params }) {
     // Verify invoice belongs to tenant
     const invoice = await prisma.invoice.findFirst({
       where: { id, tenantId: tenant.id },
-      include: { client: true },
+      include: { contact: true },
     });
 
     if (!invoice) {
@@ -95,7 +95,7 @@ export async function POST(request, { params }) {
       tenant,
       invoice,
       tag,
-      client: invoice.client,
+      client: invoice.contact,
     }).catch((err) => {
       console.error("Error triggering invoice_tag_added workflows:", err);
     });
@@ -127,7 +127,7 @@ export async function DELETE(request, { params }) {
     // Verify invoice belongs to tenant
     const invoice = await prisma.invoice.findFirst({
       where: { id, tenantId: tenant.id },
-      include: { client: true },
+      include: { contact: true },
     });
 
     if (!invoice) {
@@ -153,7 +153,7 @@ export async function DELETE(request, { params }) {
       tenant,
       invoice,
       tag,
-      client: invoice.client,
+      client: invoice.contact,
     }).catch((err) => {
       console.error("Error triggering invoice_tag_removed workflows:", err);
     });

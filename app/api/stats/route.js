@@ -21,7 +21,7 @@ export async function GET(request) {
     // Get counts in parallel
     const [
       totalBookings,
-      totalClients,
+      totalContacts,
       totalServices,
       thisMonthBookings,
       lastMonthBookings,
@@ -31,7 +31,7 @@ export async function GET(request) {
       prisma.booking.count({
         where: { tenantId: tenant.id },
       }),
-      prisma.client.count({
+      prisma.contact.count({
         where: { tenantId: tenant.id },
       }),
       prisma.service.count({
@@ -94,7 +94,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       totalBookings,
-      totalClients,
+      totalContacts,
       totalServices,
       totalRevenue,
       thisMonthBookings: thisMonthBookings.length,

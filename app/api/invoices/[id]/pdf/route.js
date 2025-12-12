@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
       invoice = await prisma.invoice.findUnique({
         where: { id },
         include: {
-          client: true,
+          contact: true,
           tenant: {
             select: {
               businessName: true,
@@ -57,7 +57,7 @@ export async function GET(request, { params }) {
           tenantId: tenant.id,
         },
         include: {
-          client: true,
+          contact: true,
         },
       });
 

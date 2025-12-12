@@ -70,8 +70,8 @@ export async function POST(request, { params }) {
 
     // Send email with PDF attachment
     const emailResult = await sendInvoiceEmail({
-      to: invoice.clientEmail,
-      clientName: invoice.clientName,
+      to: invoice.contactEmail,
+      contactName: invoice.contactName,
       businessName: fullTenant.businessName,
       invoiceNumber: invoice.invoiceNumber,
       total: invoice.total,
@@ -105,8 +105,8 @@ export async function POST(request, { params }) {
     dispatchInvoiceSent(tenant.id, {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
-      clientName: invoice.clientName,
-      clientEmail: invoice.clientEmail,
+      contactName: invoice.contactName,
+      contactEmail: invoice.contactEmail,
       total: invoice.total,
       dueDate: invoice.dueDate,
       status: updatedInvoice.status,

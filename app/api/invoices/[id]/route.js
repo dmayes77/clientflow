@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
         tenantId: tenant.id,
       },
       include: {
-        client: true,
+        contact: true,
         booking: {
           include: {
             service: true,
@@ -81,14 +81,38 @@ export async function PATCH(request, { params }) {
       }
     }
 
+    // Prevent changing deposit once it's been paid
+    if (existingInvoice.depositPaidAt && data.depositPercent !== undefined && data.depositPercent !== existingInvoice.depositPercent) {
+      return NextResponse.json(
+        { error: "Cannot change deposit after it has been paid" },
+        { status: 400 }
+      );
+    }
+
+    // Safely handle deposit percent - use new value if provided, otherwise keep existing
+    const total = data.total ?? existingInvoice.total;
+    const rawDepositPercent = data.depositPercent !== undefined ? data.depositPercent : existingInvoice.depositPercent;
+    // Ensure deposit percent is a valid positive integer or null
+    const safeDepositPercent = (rawDepositPercent !== null && rawDepositPercent !== undefined && rawDepositPercent > 0)
+      ? rawDepositPercent
+      : null;
+    const depositAmount = safeDepositPercent ? Math.round(total * (safeDepositPercent / 100)) : null;
+
+    // Ensure depositPercent is explicitly set in data for the update
+    const dataWithDeposit = {
+      ...data,
+      depositPercent: safeDepositPercent,
+    };
+
     const invoice = await prisma.invoice.update({
       where: { id },
       data: {
-        ...data,
+        ...dataWithDeposit,
         ...statusUpdates,
+        depositAmount,
       },
       include: {
-        client: true,
+        contact: true,
         booking: true,
       },
     });

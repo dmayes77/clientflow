@@ -24,7 +24,7 @@ export async function GET(request) {
       include: {
         _count: {
           select: {
-            clients: true,
+            contacts: true,
             invoices: true,
             bookings: true,
           },
@@ -93,7 +93,7 @@ export async function POST(request) {
       include: {
         _count: {
           select: {
-            clients: true,
+            contacts: true,
             invoices: true,
             bookings: true,
           },

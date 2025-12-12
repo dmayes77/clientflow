@@ -309,10 +309,10 @@ export function InvoiceDocument({ invoice, tenant }) {
         <View style={styles.infoRow}>
           <View style={styles.infoColumn}>
             <Text style={styles.label}>Bill To</Text>
-            <Text style={styles.valueBold}>{invoice.clientName}</Text>
-            <Text style={styles.value}>{invoice.clientEmail}</Text>
-            {invoice.clientAddress && (
-              <Text style={styles.value}>{invoice.clientAddress}</Text>
+            <Text style={styles.valueBold}>{invoice.contactName}</Text>
+            <Text style={styles.value}>{invoice.contactEmail}</Text>
+            {invoice.contactAddress && (
+              <Text style={styles.value}>{invoice.contactAddress}</Text>
             )}
           </View>
           <View style={styles.infoColumn}>

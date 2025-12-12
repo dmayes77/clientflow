@@ -24,14 +24,14 @@ export async function GET(request, { params }) {
       include: {
         _count: {
           select: {
-            clients: true,
+            contacts: true,
             invoices: true,
             bookings: true,
           },
         },
-        clients: {
+        contacts: {
           include: {
-            client: {
+            contact: {
               select: {
                 id: true,
                 name: true,
@@ -46,7 +46,7 @@ export async function GET(request, { params }) {
               select: {
                 id: true,
                 invoiceNumber: true,
-                clientName: true,
+                contactName: true,
                 total: true,
                 status: true,
               },
@@ -101,6 +101,14 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Tag not found" }, { status: 404 });
     }
 
+    // System tags cannot have name or type modified
+    if (existingTag.isSystem) {
+      return NextResponse.json(
+        { error: "System tags cannot be modified" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { name, color, description, type } = body;
 
@@ -141,7 +149,7 @@ export async function PUT(request, { params }) {
       include: {
         _count: {
           select: {
-            clients: true,
+            contacts: true,
             invoices: true,
             bookings: true,
           },
@@ -176,6 +184,14 @@ export async function DELETE(request, { params }) {
 
     if (!existingTag) {
       return NextResponse.json({ error: "Tag not found" }, { status: 404 });
+    }
+
+    // System tags cannot be deleted
+    if (existingTag.isSystem) {
+      return NextResponse.json(
+        { error: "System tags cannot be deleted" },
+        { status: 403 }
+      );
     }
 
     await prisma.tag.delete({

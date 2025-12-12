@@ -55,7 +55,7 @@ export async function POST(request, { params }) {
     // Verify booking belongs to tenant
     const booking = await prisma.booking.findFirst({
       where: { id, tenantId: tenant.id },
-      include: { client: true, service: true, package: true },
+      include: { contact: true, service: true, package: true },
     });
 
     if (!booking) {
@@ -95,7 +95,7 @@ export async function POST(request, { params }) {
       tenant,
       booking,
       tag,
-      client: booking.client,
+      contact: booking.contact,
     }).catch((err) => {
       console.error("Error triggering booking_tag_added workflows:", err);
     });
@@ -127,7 +127,7 @@ export async function DELETE(request, { params }) {
     // Verify booking belongs to tenant
     const booking = await prisma.booking.findFirst({
       where: { id, tenantId: tenant.id },
-      include: { client: true },
+      include: { contact: true },
     });
 
     if (!booking) {
@@ -153,7 +153,7 @@ export async function DELETE(request, { params }) {
       tenant,
       booking,
       tag,
-      client: booking.client,
+      contact: booking.contact,
     }).catch((err) => {
       console.error("Error triggering booking_tag_removed workflows:", err);
     });

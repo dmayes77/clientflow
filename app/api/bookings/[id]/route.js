@@ -14,7 +14,7 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
 
-    // Fetch booking with tags and all available data
+    // Fetch booking with tags, services, packages and all available data
     const [booking, allTags, allServices, allPackages] = await Promise.all([
       prisma.booking.findFirst({
         where: {
@@ -22,13 +22,23 @@ export async function GET(request, { params }) {
           tenantId: tenant.id,
         },
         include: {
-          client: true,
+          contact: true,
           service: true,
           package: true,
           invoice: true,
           tags: {
             include: {
               tag: true,
+            },
+          },
+          services: {
+            include: {
+              service: true,
+            },
+          },
+          packages: {
+            include: {
+              package: true,
             },
           },
         },
@@ -56,11 +66,19 @@ export async function GET(request, { params }) {
 
     // Transform to simpler formats
     const bookingTags = booking.tags.map((bt) => bt.tag);
+    const selectedServices = booking.services.map((bs) => ({
+      ...bs.service,
+      quantity: bs.quantity,
+    }));
+    const selectedPackages = booking.packages.map((bp) => ({
+      ...bp.package,
+      quantity: bp.quantity,
+    }));
     const bookingWithData = {
       ...booking,
       tags: bookingTags,
-      selectedServices: [],
-      selectedPackages: [],
+      selectedServices,
+      selectedPackages,
     };
 
     return NextResponse.json({
@@ -119,12 +137,42 @@ export async function PATCH(request, { params }) {
       where: { id },
       data,
       include: {
-        client: true,
+        contact: true,
         service: true,
         package: true,
         invoice: true,
       },
     });
+
+    // Auto-tag contact based on booking status change
+    if (data.status && (data.status === "inquiry" || data.status === "scheduled")) {
+      const tagName = data.status === "inquiry" ? "Lead" : "Client";
+
+      // Find or create the tag using upsert to avoid race conditions
+      const tag = await prisma.tag.upsert({
+        where: { tenantId_name: { tenantId: tenant.id, name: tagName } },
+        update: {},
+        create: {
+          tenantId: tenant.id,
+          name: tagName,
+          type: "contact",
+          color: tagName === "Lead" ? "#f59e0b" : "#22c55e",
+        },
+      });
+
+      // Check if contact already has this tag
+      const existingContactTag = await prisma.contactTag.findUnique({
+        where: {
+          contactId_tagId: { contactId: booking.contactId, tagId: tag.id },
+        },
+      });
+
+      if (!existingContactTag) {
+        await prisma.contactTag.create({
+          data: { contactId: booking.contactId, tagId: tag.id },
+        });
+      }
+    }
 
     // Auto-update linked invoice if price or service/package changed and invoice is still in draft
     if (existingBooking.invoice && existingBooking.invoice.status === "draft" && (priceChanged || serviceChanged || packageChanged)) {
@@ -151,7 +199,7 @@ export async function PATCH(request, { params }) {
       const updatedBooking = await prisma.booking.findFirst({
         where: { id },
         include: {
-          client: true,
+          contact: true,
           service: true,
           package: true,
           invoice: true,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { dispatchBookingCreated, dispatchClientCreated } from "@/lib/webhooks";
+import { dispatchBookingCreated, dispatchContactCreated } from "@/lib/webhooks";
 
 // POST /api/public/[slug]/book - Create a public booking
 export async function POST(request, { params }) {
@@ -23,9 +23,9 @@ export async function POST(request, { params }) {
       serviceIds,
       packageIds,
       scheduledAt,
-      clientName,
-      clientEmail,
-      clientPhone,
+      contactName,
+      contactEmail,
+      contactPhone,
       notes,
       totalDuration,
       totalPrice,
@@ -40,7 +40,7 @@ export async function POST(request, { params }) {
       : (packageId ? [packageId] : []);
 
     // Validate required fields
-    if (!clientName || !clientEmail || !scheduledAt) {
+    if (!contactName || !contactEmail || !scheduledAt) {
       return NextResponse.json(
         { error: "Name, email, and appointment time are required" },
         { status: 400 }
@@ -56,7 +56,7 @@ export async function POST(request, { params }) {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(clientEmail)) {
+    if (!emailRegex.test(contactEmail)) {
       return NextResponse.json(
         { error: "Please enter a valid email address" },
         { status: 400 }
@@ -185,25 +185,25 @@ export async function POST(request, { params }) {
       }
     }
 
-    // Find or create the client
-    let client = await prisma.client.findFirst({
+    // Find or create the contact
+    let contact = await prisma.contact.findFirst({
       where: {
         tenantId: tenant.id,
-        email: clientEmail.toLowerCase(),
+        email: contactEmail.toLowerCase(),
       },
     });
 
-    let isNewClient = false;
-    if (!client) {
-      client = await prisma.client.create({
+    let isNewContact = false;
+    if (!contact) {
+      contact = await prisma.contact.create({
         data: {
           tenantId: tenant.id,
-          name: clientName,
-          email: clientEmail.toLowerCase(),
-          phone: clientPhone || null,
+          name: contactName,
+          email: contactEmail.toLowerCase(),
+          phone: contactPhone || null,
         },
       });
-      isNewClient = true;
+      isNewContact = true;
     }
 
     // Create the booking (store first service/package for backward compatibility)
@@ -215,7 +215,7 @@ export async function POST(request, { params }) {
     const booking = await prisma.booking.create({
       data: {
         tenantId: tenant.id,
-        clientId: client.id,
+        contactId: contact.id,
         serviceId: primaryServiceId,
         packageId: primaryPackageId,
         scheduledAt: new Date(scheduledAt),
@@ -245,12 +245,12 @@ export async function POST(request, { params }) {
     // Dispatch webhook events (fire and forget)
     dispatchBookingCreated(tenant.id, {
       ...booking,
-      client: { id: client.id, name: client.name, email: client.email },
+      contact: { id: contact.id, name: contact.name, email: contact.email },
     }).catch((err) => console.error("Failed to dispatch booking.created webhook:", err));
 
-    if (isNewClient) {
-      dispatchClientCreated(tenant.id, client).catch((err) =>
-        console.error("Failed to dispatch client.created webhook:", err)
+    if (isNewContact) {
+      dispatchContactCreated(tenant.id, contact).catch((err) =>
+        console.error("Failed to dispatch contact.created webhook:", err)
       );
     }
 

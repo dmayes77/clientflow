@@ -1,0 +1,643 @@
+/* app/globals.css */
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* ========================================
+     TYPOGRAPHY SCALE - MOBILE (Largest, touch-friendly)
+     ======================================== */
+  --text-2xs: 0.6875rem;  /* 11px */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.8125rem;   /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-lg: 1rem;        /* 16px - prevents iOS zoom */
+  --text-xl: 1.125rem;    /* 18px */
+  --text-2xl: 1.375rem;   /* 22px */
+  --text-3xl: 1.625rem;   /* 26px */
+  --text-4xl: 2rem;       /* 32px */
+  --text-5xl: 2.5rem;     /* 40px */
+  --text-6xl: 3rem;       /* 48px */
+  --text-7xl: 3.75rem;    /* 60px */
+  --text-8xl: 4.5rem;     /* 72px */
+
+  /* ========================================
+     SPACING SCALE - MOBILE
+     ======================================== */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0\.5: 0.125rem; /* 2px */
+  --space-1: 0.25rem;     /* 4px */
+  --space-2: 0.5rem;      /* 8px */
+  --space-3: 0.75rem;     /* 12px */
+  --space-4: 1rem;        /* 16px */
+  --space-5: 1.25rem;     /* 20px */
+  --space-6: 1.5rem;      /* 24px */
+  --space-8: 2rem;        /* 32px */
+  --space-10: 2.5rem;     /* 40px */
+  --space-12: 3rem;       /* 48px */
+  --space-16: 4rem;       /* 64px */
+  --space-20: 5rem;       /* 80px */
+
+  /* Colors */
+  --color-background: oklch(0.97 0.002 250);
+  --color-foreground: oklch(0.15 0.02 260);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.15 0.02 260);
+  --color-primary: oklch(0.62 0.18 250);
+  --color-primary-foreground: oklch(0.98 0 0);
+  --color-secondary: oklch(0.97 0.004 250);
+  --color-secondary-foreground: oklch(0.2 0.02 260);
+  --color-muted: oklch(0.97 0.004 250);
+  --color-muted-foreground: oklch(0.55 0.01 260);
+  --color-accent: oklch(0.97 0.004 250);
+  --color-accent-foreground: oklch(0.2 0.02 260);
+  --color-destructive: oklch(0.62 0.22 25);
+  --color-destructive-foreground: oklch(0.98 0 0);
+  --color-border: oklch(0.92 0.005 250);
+  --color-input: oklch(0.92 0.005 250);
+  --color-ring: oklch(0.62 0.18 250);
+  --color-success: oklch(0.52 0.15 155);
+  --color-success-foreground: oklch(1 0 0);
+  --color-warning: oklch(0.75 0.16 70);
+  --color-warning-foreground: oklch(0.2 0.02 60);
+  --color-error: oklch(0.62 0.22 25);
+  --color-info: oklch(0.62 0.18 250);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 2px 4px 0 rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 4px 8px 0 rgb(0 0 0 / 0.12);
+  --shadow-xl: 0 10px 20px 0 rgb(0 0 0 / 0.15);
+
+  /* ========================================
+     COMPONENT HEIGHTS - MOBILE (Touch-friendly)
+     ======================================== */
+  --height-xs: 1.75rem;   /* 28px */
+  --height-sm: 2.25rem;   /* 36px */
+  --height-md: 2.75rem;   /* 44px - iOS minimum tap target */
+  --height-lg: 3rem;      /* 48px */
+  --height-xl: 3.5rem;    /* 56px */
+
+  /* ========================================
+     ICON SIZES - MOBILE
+     ======================================== */
+  --icon-xs: 0.875rem;    /* 14px */
+  --icon-sm: 1rem;        /* 16px */
+  --icon-md: 1.25rem;     /* 20px */
+  --icon-lg: 1.5rem;      /* 24px */
+  --icon-xl: 2rem;        /* 32px */
+}
+
+/* ========================================
+   FOLD (480px+) - Slightly tighter
+   ======================================== */
+@media (min-width: 480px) {
+  :root {
+    --text-2xs: 0.625rem;   /* 10px */
+    --text-xs: 0.6875rem;   /* 11px */
+    --text-sm: 0.75rem;     /* 12px */
+    --text-base: 0.875rem;  /* 14px */
+    --text-lg: 1rem;        /* 16px */
+    --text-xl: 1.0625rem;   /* 17px */
+    --text-2xl: 1.25rem;    /* 20px */
+    --text-3xl: 1.5rem;     /* 24px */
+    --text-4xl: 1.875rem;   /* 30px */
+    --text-5xl: 2.25rem;    /* 36px */
+
+    --space-3: 0.625rem;    /* 10px */
+    --space-4: 0.875rem;    /* 14px */
+    --space-6: 1.25rem;     /* 20px */
+
+    --height-xs: 1.625rem;  /* 26px */
+    --height-sm: 2rem;      /* 32px */
+    --height-md: 2.5rem;    /* 40px */
+    --height-lg: 2.75rem;   /* 44px */
+    --height-xl: 3.25rem;   /* 52px */
+
+    --icon-xs: 0.75rem;     /* 12px */
+    --icon-sm: 0.875rem;    /* 14px */
+    --icon-md: 1.125rem;    /* 18px */
+    --icon-lg: 1.25rem;     /* 20px */
+    --icon-xl: 1.75rem;     /* 28px */
+  }
+}
+
+/* ========================================
+   TABLET (640px+) - Balanced
+   ======================================== */
+@media (min-width: 640px) {
+  :root {
+    --text-2xs: 0.625rem;   /* 10px */
+    --text-xs: 0.6875rem;   /* 11px */
+    --text-sm: 0.75rem;     /* 12px */
+    --text-base: 0.875rem;  /* 14px */
+    --text-lg: 0.9375rem;   /* 15px */
+    --text-xl: 1rem;        /* 16px */
+    --text-2xl: 1.125rem;   /* 18px */
+    --text-3xl: 1.375rem;   /* 22px */
+    --text-4xl: 1.75rem;    /* 28px */
+    --text-5xl: 2rem;       /* 32px */
+
+    --space-3: 0.625rem;    /* 10px */
+    --space-4: 0.875rem;    /* 14px */
+    --space-6: 1.25rem;     /* 20px */
+    --space-8: 1.5rem;      /* 24px */
+
+    --height-xs: 1.5rem;    /* 24px */
+    --height-sm: 1.875rem;  /* 30px */
+    --height-md: 2.25rem;   /* 36px */
+    --height-lg: 2.5rem;    /* 40px */
+    --height-xl: 3rem;      /* 48px */
+
+    --icon-xs: 0.625rem;    /* 10px */
+    --icon-sm: 0.75rem;     /* 12px */
+    --icon-md: 1rem;        /* 16px */
+    --icon-lg: 1.125rem;    /* 18px */
+    --icon-xl: 1.5rem;      /* 24px */
+  }
+}
+
+/* ========================================
+   DESKTOP (1024px+) - COMPACT (Maximum data density)
+   ======================================== */
+@media (min-width: 1024px) {
+  :root {
+    --text-2xs: 0.5625rem;  /* 9px */
+    --text-xs: 0.625rem;    /* 10px */
+    --text-sm: 0.6875rem;   /* 11px */
+    --text-base: 0.75rem;   /* 12px - compact default */
+    --text-lg: 0.8125rem;   /* 13px */
+    --text-xl: 0.875rem;    /* 14px */
+    --text-2xl: 1rem;       /* 16px */
+    --text-3xl: 1.125rem;   /* 18px */
+    --text-4xl: 1.5rem;     /* 24px */
+    --text-5xl: 1.875rem;   /* 30px */
+
+    --space-1: 0.1875rem;   /* 3px */
+    --space-2: 0.375rem;    /* 6px */
+    --space-3: 0.5rem;      /* 8px */
+    --space-4: 0.75rem;     /* 12px */
+    --space-6: 1rem;        /* 16px */
+    --space-8: 1.25rem;     /* 20px */
+
+    --height-xs: 1.25rem;   /* 20px */
+    --height-sm: 1.5rem;    /* 24px */
+    --height-md: 1.75rem;   /* 28px */
+    --height-lg: 2rem;      /* 32px */
+    --height-xl: 2.5rem;    /* 40px */
+
+    --icon-xs: 0.5rem;      /* 8px */
+    --icon-sm: 0.625rem;    /* 10px */
+    --icon-md: 0.75rem;     /* 12px */
+    --icon-lg: 0.875rem;    /* 14px */
+    --icon-xl: 1.25rem;     /* 20px */
+  }
+}
+
+.dark {
+  --color-background: oklch(0.14 0.015 260);
+  --color-foreground: oklch(0.98 0 0);
+  --color-card: oklch(0.18 0.015 260);
+  --color-card-foreground: oklch(0.98 0 0);
+  --color-primary: oklch(0.7 0.18 250);
+  --color-primary-foreground: oklch(0.15 0.02 260);
+  --color-secondary: oklch(0.22 0.015 260);
+  --color-secondary-foreground: oklch(0.98 0 0);
+  --color-muted: oklch(0.22 0.015 260);
+  --color-muted-foreground: oklch(0.65 0.01 260);
+  --color-accent: oklch(0.22 0.015 260);
+  --color-accent-foreground: oklch(0.98 0 0);
+  --color-border: oklch(0.26 0.015 260);
+  --color-input: oklch(0.26 0.015 260);
+  --color-ring: oklch(0.7 0.18 250);
+  --color-destructive: oklch(0.6 0.2 25);
+  --color-success: oklch(0.62 0.17 155);
+}
+
+@theme {
+  --breakpoint-fold: 480px;
+  --breakpoint-tablet: 640px;
+  --breakpoint-desktop: 1024px;
+
+  --font-size-2xs: var(--text-2xs);
+  --font-size-xs: var(--text-xs);
+  --font-size-sm: var(--text-sm);
+  --font-size-base: var(--text-base);
+  --font-size-lg: var(--text-lg);
+  --font-size-xl: var(--text-xl);
+  --font-size-2xl: var(--text-2xl);
+  --font-size-3xl: var(--text-3xl);
+  --font-size-4xl: var(--text-4xl);
+  --font-size-5xl: var(--text-5xl);
+  --font-size-6xl: var(--text-6xl);
+  --font-size-7xl: var(--text-7xl);
+  --font-size-8xl: var(--text-8xl);
+
+  --spacing-0: var(--space-0);
+  --spacing-px: var(--space-px);
+  --spacing-0\.5: var(--space-0\.5);
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-8: var(--space-8);
+  --spacing-10: var(--space-10);
+  --spacing-12: var(--space-12);
+  --spacing-16: var(--space-16);
+  --spacing-20: var(--space-20);
+
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-card: var(--color-card);
+  --color-card-foreground: var(--color-card-foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-destructive: var(--color-destructive);
+  --color-destructive-foreground: var(--color-destructive-foreground);
+  --color-border: var(--color-border);
+  --color-input: var(--color-input);
+  --color-ring: var(--color-ring);
+  --color-success: var(--color-success);
+  --color-success-foreground: var(--color-success-foreground);
+  --color-warning: var(--color-warning);
+  --color-warning-foreground: var(--color-warning-foreground);
+  --color-error: var(--color-error);
+  --color-info: var(--color-info);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  /* Heights - use with h-*, min-h-*, max-h-* */
+  --height-xs: var(--height-xs);
+  --height-sm: var(--height-sm);
+  --height-md: var(--height-md);
+  --height-lg: var(--height-lg);
+  --height-xl: var(--height-xl);
+
+  /* Icon sizes - use with size-icon-* */
+  --size-icon-xs: var(--icon-xs);
+  --size-icon-sm: var(--icon-sm);
+  --size-icon-md: var(--icon-md);
+  --size-icon-lg: var(--icon-lg);
+  --size-icon-xl: var(--icon-xl);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ========================================
+     SEMANTIC HEADINGS - Mobile LARGE → Desktop SMALL
+     ======================================== */
+
+  /* H1 - Page Title: 26px mobile → 18px desktop */
+  h1 {
+    @apply text-3xl fold:text-2xl tablet:text-2xl desktop:text-3xl;
+    @apply font-bold leading-tight;
+    @apply mb-6 fold:mb-5 tablet:mb-4 desktop:mb-3;
+    letter-spacing: -0.025em;
+  }
+
+  /* H2 - Section Heading: 22px mobile → 16px desktop */
+  h2 {
+    @apply text-2xl fold:text-xl tablet:text-xl desktop:text-2xl;
+    @apply font-bold leading-tight;
+    @apply mb-5 fold:mb-4 tablet:mb-4 desktop:mb-3;
+    letter-spacing: -0.02em;
+  }
+
+  /* H3 - Subsection: 18px mobile → 14px desktop */
+  h3 {
+    @apply text-xl fold:text-lg tablet:text-base desktop:text-xl;
+    @apply font-semibold leading-tight;
+    @apply mb-4 fold:mb-3 tablet:mb-3 desktop:mb-2;
+    letter-spacing: -0.015em;
+  }
+
+  /* H4 - Card Title: 16px mobile → 13px desktop */
+  h4 {
+    @apply text-lg fold:text-base tablet:text-base desktop:text-lg;
+    @apply font-semibold leading-snug;
+    @apply mb-3 fold:mb-3 tablet:mb-2 desktop:mb-2;
+  }
+
+  /* H5 - Small Heading: 15px mobile → 12px desktop */
+  h5 {
+    @apply text-base fold:text-sm tablet:text-sm desktop:text-base;
+    @apply font-semibold leading-snug;
+    @apply mb-3 fold:mb-2 tablet:mb-2 desktop:mb-2;
+  }
+
+  /* H6 - Smallest: 13px mobile → 11px desktop */
+  h6 {
+    @apply text-sm fold:text-xs tablet:text-xs desktop:text-sm;
+    @apply font-semibold leading-normal;
+    @apply mb-2 fold:mb-2 tablet:mb-2 desktop:mb-1;
+  }
+
+  p {
+    @apply mb-4 fold:mb-3 tablet:mb-3 desktop:mb-2;
+  }
+
+  input[type="number"],
+  .numeric {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* ========================================
+     DISPLAY CLASSES - For hero/marketing
+     ======================================== */
+
+  .display-1 {
+    @apply text-5xl fold:text-4xl tablet:text-3xl desktop:text-4xl;
+    @apply font-bold leading-none;
+    letter-spacing: -0.04em;
+  }
+
+  .display-2 {
+    @apply text-4xl fold:text-3xl tablet:text-2xl desktop:text-3xl;
+    @apply font-bold leading-none;
+    letter-spacing: -0.035em;
+  }
+
+  .display-3 {
+    @apply text-3xl fold:text-2xl tablet:text-xl desktop:text-2xl;
+    @apply font-bold leading-tight;
+    letter-spacing: -0.03em;
+  }
+
+  /* ========================================
+     BUTTONS - Smaller on desktop
+     ======================================== */
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors;
+    @apply px-6 py-3 fold:px-5 fold:py-2.5 tablet:px-4 tablet:py-2 desktop:px-3 desktop:py-1.5;
+    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 fold:px-3 fold:py-1.5 tablet:px-3 tablet:py-1.5 desktop:px-2 desktop:py-1;
+    @apply text-sm fold:text-xs tablet:text-xs desktop:text-2xs;
+  }
+
+  .btn-lg {
+    @apply px-8 py-4 fold:px-7 fold:py-3.5 tablet:px-6 tablet:py-3 desktop:px-5 desktop:py-2.5;
+    @apply text-lg fold:text-base tablet:text-base desktop:text-sm;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+  }
+
+  .btn-ghost {
+    @apply hover:bg-accent hover:text-accent-foreground;
+  }
+
+  /* ========================================
+     CARDS
+     ======================================== */
+
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+
+  .card-header {
+    @apply flex flex-col gap-1.5;
+    @apply p-6 fold:p-5 tablet:p-4 desktop:p-3;
+  }
+
+  .card-title {
+    @apply text-lg fold:text-base tablet:text-base desktop:text-lg;
+    @apply font-semibold leading-none;
+  }
+
+  .card-description {
+    @apply text-sm fold:text-xs tablet:text-xs desktop:text-sm;
+    @apply text-muted-foreground;
+  }
+
+  .card-content {
+    @apply p-6 fold:p-5 tablet:p-4 desktop:p-3 pt-0;
+  }
+
+  .card-footer {
+    @apply flex items-center;
+    @apply p-6 fold:p-5 tablet:p-4 desktop:p-3 pt-0;
+  }
+
+  /* ========================================
+     FORMS
+     ======================================== */
+
+  .input {
+    @apply flex w-full rounded-md border border-input bg-background;
+    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
+    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .label {
+    @apply text-sm fold:text-xs tablet:text-xs desktop:text-2xs;
+    @apply font-medium;
+  }
+
+  .textarea {
+    @apply flex min-h-20 w-full rounded-md border border-input bg-background;
+    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
+    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .select {
+    @apply flex w-full items-center justify-between rounded-md border border-input bg-background;
+    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
+    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* ========================================
+     BADGES
+     ======================================== */
+
+  .badge {
+    @apply inline-flex items-center rounded-full border font-semibold;
+    @apply px-2.5 py-0.5 fold:px-2 tablet:px-2 desktop:px-1.5;
+    @apply text-xs fold:text-2xs tablet:text-2xs desktop:text-2xs;
+  }
+
+  .badge-primary {
+    @apply border-transparent bg-primary text-primary-foreground;
+  }
+
+  .badge-success {
+    @apply border-transparent bg-success text-success-foreground;
+  }
+
+  .badge-warning {
+    @apply border-transparent bg-warning text-warning-foreground;
+  }
+
+  .badge-destructive {
+    @apply border-transparent bg-destructive text-destructive-foreground;
+  }
+
+  .badge-outline {
+    @apply text-foreground;
+  }
+
+  /* ========================================
+     TABLES
+     ======================================== */
+
+  .table {
+    @apply w-full;
+  }
+
+  .table-header {
+    @apply border-b;
+  }
+
+  .table-row {
+    @apply border-b transition-colors hover:bg-muted/50;
+  }
+
+  .table-head {
+    @apply text-left font-medium text-muted-foreground;
+    @apply p-4 fold:p-3 tablet:p-3 desktop:p-2;
+    @apply text-sm fold:text-xs tablet:text-xs desktop:text-2xs;
+  }
+
+  .table-cell {
+    @apply align-middle;
+    @apply p-4 fold:p-3 tablet:p-3 desktop:p-2;
+    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+  }
+
+  /* ========================================
+     CONTAINER
+     ======================================== */
+
+  .container {
+    @apply mx-auto w-full;
+    @apply px-4 fold:px-5 tablet:px-6 desktop:px-8;
+  }
+}
+
+/* ========================================
+   SCROLLBAR STYLES
+   ======================================== */
+
+/* Mobile/Fold/Tablet: Hide scrollbars for app-like feel */
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Desktop (1024px+): Show compact scrollbars for mouse/trackpad users */
+@media (min-width: 1024px) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+  ::-webkit-scrollbar {
+    display: block;
+    width: 0.375rem;
+    height: 0.375rem;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 0.1875rem;
+  }
+}
+
+/* Utility to force hide scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* ========================================
+   INTERACTIVE ELEMENT CURSORS
+   ======================================== */
+
+button,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+a[href],
+select,
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+[role="checkbox"],
+[role="switch"],
+[role="radio"],
+label[for],
+summary {
+  cursor: pointer;
+}
+
+[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}

@@ -1,47 +1,31 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Routes that require authentication
-const protectedRoutes = [
-  "/onboarding",
-  "/michelle",
-  "/dashboard",
-];
-
 const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/pricing",
-  "/documentation",
-  "/api-reference",
-  "/support",
-  "/website-development",
-  "/founders",
-  "/roadmap",
-  "/privacy",
-  "/terms",
   "/book(.*)",
-  "/api/calendar(.*)",
+  "/offline",
   "/api/public(.*)",
   "/api/webhooks/clerk(.*)",
+  "/api/stripe/webhook(.*)",
 ]);
 
 // Check if route is a tenant public page (matches [slug] pattern)
 function isTenantRoute(pathname) {
-  // Skip if it's a known protected route
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
-    return false;
-  }
   // Skip API routes, auth routes, and static routes
   if (pathname.startsWith("/api/") ||
       pathname.startsWith("/sign-") ||
       pathname.startsWith("/_next/") ||
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/admin") ||
       pathname.startsWith("/onboarding") ||
-      pathname.startsWith("/michelle")) {
+      pathname.startsWith("/book") ||
+      pathname.startsWith("/offline")) {
     return false;
   }
-  // Match patterns like /some-slug or /some-slug/book
-  const tenantPattern = /^\/[a-z0-9][a-z0-9-]*[a-z0-9](\/book)?$/;
+  // Match patterns like /some-slug (business profile pages)
+  const tenantPattern = /^\/[a-z0-9][a-z0-9-]*[a-z0-9]$/;
   return tenantPattern.test(pathname);
 }
 
