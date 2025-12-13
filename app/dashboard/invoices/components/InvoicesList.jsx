@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -33,7 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Percent, DollarSign, CreditCard, Send, FileText, Pencil, Trash2, ExternalLink, Download, Copy, User } from "lucide-react";
+import { Percent, DollarSign, CreditCard, Send, FileText, Pencil, Trash2, ExternalLink, Download, User, Calendar, Clock, FileCheck } from "lucide-react";
 import {
   MoneyIcon,
   AddIcon,
@@ -49,20 +51,6 @@ import {
   CloseIcon,
   DownloadIcon,
 } from "@/lib/icons";
-import { InvoiceDialog } from "./InvoiceDialog";
-
-// Tag color mapping
-const tagColorMap = {
-  blue: "bg-blue-100 text-blue-800 border-blue-200",
-  green: "bg-green-100 text-green-800 border-green-200",
-  red: "bg-red-100 text-red-800 border-red-200",
-  yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  gray: "bg-gray-100 text-gray-800 border-gray-200",
-  indigo: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  purple: "bg-purple-100 text-purple-800 border-purple-200",
-  pink: "bg-pink-100 text-pink-800 border-pink-200",
-  orange: "bg-orange-100 text-orange-800 border-orange-200",
-};
 
 const statusConfig = {
   draft: { label: "Draft", variant: "secondary", icon: InvoiceIcon },
@@ -73,19 +61,18 @@ const statusConfig = {
   cancelled: { label: "Cancelled", variant: "secondary", icon: CloseIcon },
 };
 
-// Safe deposit percent parser - handles strings, numbers, null, undefined, NaN
+// Safe deposit percent parser
 const getSafeDepositPercent = (value) => {
   if (value === null || value === undefined) return 0;
   const parsed = typeof value === 'number' ? value : parseInt(value, 10);
   return (!isNaN(parsed) && parsed > 0) ? parsed : 0;
 };
 
-// Safe deposit amount getter - returns 0 if invalid
+// Safe deposit amount getter
 const getSafeDepositAmount = (invoice) => {
   if (!invoice) return 0;
   const depositAmount = invoice.depositAmount;
   if (depositAmount === null || depositAmount === undefined) {
-    // Calculate from percent if depositAmount not stored
     const percent = getSafeDepositPercent(invoice.depositPercent);
     const total = (typeof invoice.total === 'number' && !isNaN(invoice.total)) ? invoice.total : 0;
     return Math.round(total * (percent / 100));
@@ -94,29 +81,33 @@ const getSafeDepositAmount = (invoice) => {
   return (!isNaN(parsed) && isFinite(parsed) && parsed >= 0) ? parsed : 0;
 };
 
+const getTagColorClass = (color) => {
+  const colorMap = {
+    blue: "bg-blue-100 text-blue-800 border-blue-200",
+    green: "bg-green-100 text-green-800 border-green-200",
+    red: "bg-red-100 text-red-800 border-red-200",
+    yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    purple: "bg-purple-100 text-purple-800 border-purple-200",
+    pink: "bg-pink-100 text-pink-800 border-pink-200",
+    orange: "bg-orange-100 text-orange-800 border-orange-200",
+    teal: "bg-teal-100 text-teal-800 border-teal-200",
+    gray: "bg-gray-100 text-gray-800 border-gray-200",
+  };
+  return colorMap[color] || colorMap.gray;
+};
+
 export function InvoicesList() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [invoices, setInvoices] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [services, setServices] = useState([]);
-  const [packages, setPackages] = useState([]);
-  const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState(null);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
   const [invoiceForPayment, setInvoiceForPayment] = useState(null);
   const [paymentData, setPaymentData] = useState({ amount: 0, isDeposit: false, depositPercent: null });
   const [sendingId, setSendingId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
-  const [urlParamsHandled, setUrlParamsHandled] = useState(false);
-  const [defaultTaxRate, setDefaultTaxRate] = useState(0);
-  const [prefillContact, setPrefillContact] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewInvoice, setPreviewInvoice] = useState(null);
@@ -132,102 +123,15 @@ export function InvoicesList() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Handle URL params for opening dialog with prefilled contact
-  useEffect(() => {
-    if (!loading && !urlParamsHandled && clients.length > 0) {
-      const newInvoice = searchParams.get("newInvoice");
-      const clientId = searchParams.get("clientId");
-
-      if (newInvoice === "true") {
-        // Open dialog
-        setEditingInvoice(null);
-
-        if (clientId) {
-          // Find and prefill the contact
-          const client = clients.find((c) => c.id === clientId);
-          if (client) {
-            setPrefillContact(client);
-          } else {
-            setPrefillContact(null);
-          }
-        } else {
-          setPrefillContact(null);
-        }
-
-        setDialogOpen(true);
-        setUrlParamsHandled(true);
-
-        // Clean up URL params
-        router.replace("/dashboard/invoices", { scroll: false });
-      }
-    }
-  }, [loading, clients, searchParams, urlParamsHandled, router]);
-
   const fetchData = async () => {
     try {
-      const [invoicesRes, clientsRes, bookingsRes, servicesRes, packagesRes, tagsRes, tenantRes] = await Promise.all([
-        fetch("/api/invoices"),
-        fetch("/api/contacts"),
-        fetch("/api/bookings"),
-        fetch("/api/services"),
-        fetch("/api/packages"),
-        fetch("/api/tags?type=invoice"),
-        fetch("/api/tenant"),
-      ]);
-
-      if (invoicesRes.ok) setInvoices(await invoicesRes.json());
-      if (clientsRes.ok) setClients(await clientsRes.json());
-      if (bookingsRes.ok) setBookings(await bookingsRes.json());
-      if (servicesRes.ok) setServices(await servicesRes.json());
-      if (packagesRes.ok) setPackages(await packagesRes.json());
-      if (tagsRes.ok) setTags(await tagsRes.json());
-      if (tenantRes.ok) {
-        const tenantData = await tenantRes.json();
-        // Store the default tax rate for new invoices
-        setDefaultTaxRate(tenantData.defaultTaxRate || 0);
-      }
+      const res = await fetch("/api/invoices");
+      if (res.ok) setInvoices(await res.json());
     } catch (error) {
-      toast.error("Failed to load data");
+      toast.error("Failed to load invoices");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Get invoice status tags (system tags like Draft, Sent, Paid, etc.)
-  const statusTags = useMemo(() => {
-    return tags.filter((tag) => tag.isSystem && tag.type === "invoice");
-  }, [tags]);
-
-  // Get current status tag for an invoice
-  const getStatusTag = (invoice) => {
-    const statusTagNames = ["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"];
-    return invoice.tags?.find((t) => statusTagNames.includes(t.name));
-  };
-
-  const handleOpenDialog = (invoice = null) => {
-    setEditingInvoice(invoice);
-    setPrefillContact(null);
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingInvoice(null);
-    setPrefillContact(null);
-  };
-
-  const handleInvoiceSave = (savedInvoice, isEdit) => {
-    if (isEdit) {
-      setInvoices(invoices.map((i) => (i.id === savedInvoice.id ? savedInvoice : i)));
-    } else {
-      setInvoices([savedInvoice, ...invoices]);
-    }
-    handleCloseDialog();
-  };
-
-  const handleContactCreated = (newContact) => {
-    // Add new contact to the clients list
-    setClients([newContact, ...clients]);
   };
 
   const handleStatusChange = async (invoice, newStatus) => {
@@ -250,7 +154,6 @@ export function InvoicesList() {
     }
   };
 
-  // Payment handling functions
   const handleOpenPaymentDialog = (invoice) => {
     setInvoiceForPayment(invoice);
     const safeTotal = (typeof invoice.total === 'number' && !isNaN(invoice.total)) ? invoice.total : 0;
@@ -335,9 +238,7 @@ export function InvoicesList() {
       setDownloadingId(invoice.id);
       const res = await fetch(`/api/invoices/${invoice.id}/pdf`);
 
-      if (!res.ok) {
-        throw new Error("Failed to generate PDF");
-      }
+      if (!res.ok) throw new Error("Failed to generate PDF");
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -369,8 +270,6 @@ export function InvoicesList() {
 
       const data = await res.json();
       toast.success("Invoice sent successfully");
-
-      // Update the invoice status in the list
       setInvoices(invoices.map((i) =>
         i.id === invoice.id ? { ...i, status: "sent" } : i
       ));
@@ -392,7 +291,6 @@ export function InvoicesList() {
     }).format(cents / 100);
   };
 
-  // Calculate summary stats including discounts
   const stats = useMemo(() => {
     const paidInvoices = invoices.filter((i) => i.status === "paid");
     const pendingInvoices = invoices.filter((i) => ["sent", "viewed"].includes(i.status));
@@ -405,11 +303,6 @@ export function InvoicesList() {
       overdue: overdueInvoices.length,
       totalRevenue: paidInvoices.reduce((sum, i) => sum + i.total, 0),
       outstandingAmount: [...pendingInvoices, ...overdueInvoices].reduce((sum, i) => sum + (i.balanceDue || i.total), 0),
-      totalDiscounts: invoices.reduce((sum, i) => sum + (i.discountAmount || 0), 0),
-      depositsCollected: invoices.reduce((sum, i) => {
-        if (i.depositPaidAt && i.depositAmount) return sum + i.depositAmount;
-        return sum;
-      }, 0),
     };
   }, [invoices]);
 
@@ -456,7 +349,7 @@ export function InvoicesList() {
               {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button size="sm" onClick={() => handleOpenDialog()}>
+          <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
             <AddIcon className="h-4 w-4 mr-1" />
             Create Invoice
           </Button>
@@ -471,7 +364,7 @@ export function InvoicesList() {
               <p className="text-sm text-muted-foreground mb-6">
                 Create your first invoice to track payments
               </p>
-              <Button size="sm" onClick={() => handleOpenDialog()}>
+              <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
                 <AddIcon className="h-4 w-4 mr-1" />
                 Create Invoice
               </Button>
@@ -490,139 +383,124 @@ export function InvoicesList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.map((invoice) => {
-                    const StatusIcon = statusConfig[invoice.status]?.icon || FileText;
-                    return (
-                      <TableRow
+                  {invoices.map((invoice) => (
+                    <TableRow
                       key={invoice.id}
-                      className={isMobile ? "cursor-pointer" : ""}
+                      className="cursor-pointer"
                       onClick={() => {
-                        if (isMobile) {
-                          setPreviewInvoice(invoice);
-                          setPreviewSheetOpen(true);
-                        }
+                        setPreviewInvoice(invoice);
+                        setPreviewSheetOpen(true);
                       }}
                     >
-                        <TableCell>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDialog(invoice);
-                            }}
-                            className="text-sm font-medium text-primary hover:underline cursor-pointer"
-                          >
-                            {invoice.invoiceNumber}
-                          </button>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <div>
-                            <p className="text-sm font-medium">{invoice.contactName}</p>
-                            <p className="text-xs text-muted-foreground">{invoice.contactEmail}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <PendingIcon className="h-3.5 w-3.5" />
-                            {format(new Date(invoice.dueDate), "MMM d, yyyy")}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-medium">{formatPrice(invoice.total)}</span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={statusConfig[invoice.status]?.variant || "secondary"}>
-                            {statusConfig[invoice.status]?.label || invoice.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreIcon className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                      <TableCell>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewInvoice(invoice);
+                            setPreviewSheetOpen(true);
+                          }}
+                          className="text-sm font-medium text-primary hover:underline cursor-pointer"
+                        >
+                          {invoice.invoiceNumber}
+                        </button>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <div>
+                          <p className="text-sm font-medium">{invoice.contactName}</p>
+                          <p className="text-xs text-muted-foreground">{invoice.contactEmail}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <PendingIcon className="h-3.5 w-3.5" />
+                          {format(new Date(invoice.dueDate), "MMM d, yyyy")}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm font-medium">{formatPrice(invoice.total)}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={statusConfig[invoice.status]?.variant || "secondary"}>
+                          {statusConfig[invoice.status]?.label || invoice.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDownload(invoice)}
+                              disabled={downloadingId === invoice.id}
+                            >
+                              {downloadingId === invoice.id ? (
+                                <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <DownloadIcon className="h-4 w-4 mr-2" />
+                              )}
+                              {downloadingId === invoice.id ? "Downloading..." : "Download PDF"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {invoice.status === "draft" && (
                               <DropdownMenuItem
-                                onClick={() => handleDownload(invoice)}
-                                disabled={downloadingId === invoice.id}
+                                onClick={() => handleSend(invoice)}
+                                disabled={sendingId === invoice.id}
                               >
-                                {downloadingId === invoice.id ? (
+                                {sendingId === invoice.id ? (
                                   <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
                                 ) : (
-                                  <DownloadIcon className="h-4 w-4 mr-2" />
+                                  <SendIcon className="h-4 w-4 mr-2" />
                                 )}
-                                {downloadingId === invoice.id ? "Downloading..." : "Download PDF"}
+                                {sendingId === invoice.id ? "Sending..." : "Send Invoice"}
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {invoice.status === "draft" && (
-                                <DropdownMenuItem
-                                  onClick={() => handleSend(invoice)}
-                                  disabled={sendingId === invoice.id}
-                                >
-                                  {sendingId === invoice.id ? (
-                                    <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
-                                  ) : (
-                                    <SendIcon className="h-4 w-4 mr-2" />
-                                  )}
-                                  {sendingId === invoice.id ? "Sending..." : "Send Invoice"}
+                            )}
+                            {["sent", "viewed", "overdue"].includes(invoice.status) && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleOpenPaymentDialog(invoice)}>
+                                  <CreditCard className="h-4 w-4 mr-2" />
+                                  Record Payment
                                 </DropdownMenuItem>
-                              )}
-                              {["sent", "viewed", "overdue"].includes(invoice.status) && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleOpenPaymentDialog(invoice)}>
-                                    <CreditCard className="h-4 w-4 mr-2" />
-                                    Record Payment
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleStatusChange(invoice, "paid")}>
-                                    <CompleteIcon className="h-4 w-4 mr-2" />
-                                    Mark as Paid (Full)
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {invoice.status !== "cancelled" && invoice.status !== "paid" && (
-                                <DropdownMenuItem onClick={() => handleStatusChange(invoice, "cancelled")}>
-                                  <CloseIcon className="h-4 w-4 mr-2" />
-                                  Cancel
+                                <DropdownMenuItem onClick={() => handleStatusChange(invoice, "paid")}>
+                                  <CompleteIcon className="h-4 w-4 mr-2" />
+                                  Mark as Paid (Full)
                                 </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setInvoiceToDelete(invoice);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                className="text-red-600"
-                              >
-                                <DeleteIcon className="h-4 w-4 mr-2" />
-                                Delete
+                              </>
+                            )}
+                            {invoice.status !== "cancelled" && invoice.status !== "paid" && (
+                              <DropdownMenuItem onClick={() => handleStatusChange(invoice, "cancelled")}>
+                                <CloseIcon className="h-4 w-4 mr-2" />
+                                Cancel
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setInvoiceToDelete(invoice);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600"
+                            >
+                              <DeleteIcon className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Create/Edit Invoice Dialog */}
-      <InvoiceDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        invoice={editingInvoice}
-        contact={prefillContact}
-        contacts={clients}
-        bookings={bookings}
-        services={services}
-        packages={packages}
-        defaultTaxRate={defaultTaxRate}
-        onSave={handleInvoiceSave}
-        onContactCreated={handleContactCreated}
-      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -658,7 +536,6 @@ export function InvoicesList() {
           </DialogHeader>
           {invoiceForPayment && (
             <div className="space-y-4 py-4">
-              {/* Invoice Summary */}
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Invoice Total</span>
@@ -676,7 +553,6 @@ export function InvoicesList() {
                 </div>
               </div>
 
-              {/* Deposit Option (if invoice has deposit and not paid) */}
               {getSafeDepositPercent(invoiceForPayment.depositPercent) > 0 && !invoiceForPayment.depositPaidAt && (
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Payment Type</Label>
@@ -713,7 +589,6 @@ export function InvoicesList() {
                 </div>
               )}
 
-              {/* Payment Amount */}
               <div className="space-y-2">
                 <Label htmlFor="paymentAmount">Payment Amount</Label>
                 <div className="flex items-center">
@@ -748,80 +623,203 @@ export function InvoicesList() {
         </DialogContent>
       </Dialog>
 
-      {/* Invoice Preview Sheet (Mobile) */}
+      {/* Invoice Preview Sheet */}
       <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-2xl px-0 pb-0">
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl px-0 pb-0 flex flex-col">
           <SheetHeader className="sr-only">
             <SheetTitle>{previewInvoice?.invoiceNumber || "Invoice Preview"}</SheetTitle>
           </SheetHeader>
-          {/* Drag Handle */}
-          <div className="flex justify-center pt-2 pb-3">
+          <div className="flex justify-center pt-2 pb-3 shrink-0">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
 
           {previewInvoice && (
-            <div className="flex flex-col">
-              {/* Invoice Header */}
-              <div className="px-4 pb-3">
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* Header */}
+              <div className="px-4 pb-3 shrink-0">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">{previewInvoice.invoiceNumber}</h3>
                   <Badge variant={statusConfig[previewInvoice.status]?.variant || "secondary"}>
                     {statusConfig[previewInvoice.status]?.label || previewInvoice.status}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Due {format(new Date(previewInvoice.dueDate), "MMM d, yyyy")}
-                </p>
               </div>
 
-              {/* Client Info */}
-              <div className="px-4 pb-3 flex items-center gap-2">
-                <div className="size-8 rounded-full bg-muted flex items-center justify-center">
-                  <User className="size-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{previewInvoice.contactName}</p>
-                  <p className="text-xs text-muted-foreground">{previewInvoice.contactEmail}</p>
-                </div>
-              </div>
-
-              {/* Amount Summary */}
-              <div className="px-4 pb-3 space-y-1.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total</span>
-                  <span className="font-semibold text-lg">{formatPrice(previewInvoice.total)}</span>
-                </div>
-                {(previewInvoice.amountPaid || 0) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Paid</span>
-                    <span className="text-green-600">-{formatPrice(previewInvoice.amountPaid)}</span>
+              {/* Scrollable Content */}
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="px-4 space-y-4 pb-4">
+                  {/* Contact Info */}
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-full bg-muted flex items-center justify-center">
+                      <User className="size-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{previewInvoice.contactName}</p>
+                      <p className="text-sm text-muted-foreground truncate">{previewInvoice.contactEmail}</p>
+                      {previewInvoice.contactAddress && (
+                        <p className="text-xs text-muted-foreground truncate">{previewInvoice.contactAddress}</p>
+                      )}
+                    </div>
                   </div>
-                )}
-                {previewInvoice.balanceDue > 0 && previewInvoice.balanceDue !== previewInvoice.total && (
-                  <div className="flex justify-between text-sm font-medium pt-1 border-t">
-                    <span>Balance Due</span>
-                    <span>{formatPrice(previewInvoice.balanceDue)}</span>
+
+                  <Separator />
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="size-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Issue Date</p>
+                        <p className="text-sm font-medium">{format(new Date(previewInvoice.issueDate || previewInvoice.createdAt), "MMM d, yyyy")}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="size-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Due Date</p>
+                        <p className="text-sm font-medium">{format(new Date(previewInvoice.dueDate), "MMM d, yyyy")}</p>
+                      </div>
+                    </div>
+                    {previewInvoice.sentAt && (
+                      <div className="flex items-center gap-2">
+                        <Send className="size-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Sent</p>
+                          <p className="text-sm font-medium">{format(new Date(previewInvoice.sentAt), "MMM d, yyyy")}</p>
+                        </div>
+                      </div>
+                    )}
+                    {previewInvoice.paidAt && (
+                      <div className="flex items-center gap-2">
+                        <FileCheck className="size-4 text-green-600" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Paid</p>
+                          <p className="text-sm font-medium text-green-600">{format(new Date(previewInvoice.paidAt), "MMM d, yyyy")}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Metadata Pills */}
-              <div className="px-4 pb-3 flex flex-wrap gap-2">
-                {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
-                  <Badge variant={previewInvoice.depositPaidAt ? "success" : "secondary"} className="text-xs">
-                    {previewInvoice.depositPaidAt ? "Deposit Paid" : `${getSafeDepositPercent(previewInvoice.depositPercent)}% Deposit`}
-                  </Badge>
-                )}
-                {previewInvoice.tags?.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).map((tag) => (
-                  <Badge key={tag.id} variant="outline" className="text-xs">
-                    {tag.name}
-                  </Badge>
-                ))}
-              </div>
+                  <Separator />
 
-              {/* Actions */}
-              <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-4 gap-2">
-                {previewInvoice.status === "draft" && (
+                  {/* Line Items */}
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Line Items</h4>
+                    <div className="space-y-2">
+                      {(previewInvoice.lineItems || []).map((item, index) => (
+                        <div key={index} className={`flex justify-between items-start text-sm ${item.isDiscount ? "text-red-600" : ""}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{item.description || "Item"}</p>
+                            {item.quantity > 1 && (
+                              <p className="text-xs text-muted-foreground">
+                                {item.quantity} × {formatPrice(item.unitPrice)}
+                              </p>
+                            )}
+                          </div>
+                          <span className="font-medium ml-2">
+                            {item.isDiscount ? "-" : ""}{formatPrice(Math.abs(item.amount))}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Financial Summary */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>{formatPrice(previewInvoice.subtotal)}</span>
+                    </div>
+                    {(previewInvoice.discountAmount || 0) > 0 && (
+                      <div className="flex justify-between text-sm text-red-600">
+                        <span>Discount {previewInvoice.discountCode ? `(${previewInvoice.discountCode})` : ""}</span>
+                        <span>-{formatPrice(previewInvoice.discountAmount)}</span>
+                      </div>
+                    )}
+                    {(previewInvoice.taxAmount || 0) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tax ({previewInvoice.taxRate}%)</span>
+                        <span>{formatPrice(previewInvoice.taxAmount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-semibold text-lg pt-2 border-t">
+                      <span>Total</span>
+                      <span>{formatPrice(previewInvoice.total)}</span>
+                    </div>
+
+                    {/* Deposit Info */}
+                    {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
+                      <div className={`flex justify-between text-sm ${previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}`}>
+                        <span>Deposit ({getSafeDepositPercent(previewInvoice.depositPercent)}%)</span>
+                        <span>
+                          {previewInvoice.depositPaidAt ? "✓ " : ""}
+                          {formatPrice(getSafeDepositAmount(previewInvoice))}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Payment Info */}
+                    {(previewInvoice.amountPaid || 0) > 0 && (
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Amount Paid</span>
+                        <span>{formatPrice(previewInvoice.amountPaid)}</span>
+                      </div>
+                    )}
+                    {(previewInvoice.balanceDue || 0) > 0 && previewInvoice.status !== "paid" && (
+                      <div className="flex justify-between font-medium pt-2 border-t">
+                        <span>Balance Due</span>
+                        <span>{formatPrice(previewInvoice.balanceDue)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notes */}
+                  {previewInvoice.notes && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h4 className="text-sm font-medium mb-1">Notes</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewInvoice.notes}</p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Terms */}
+                  {previewInvoice.terms && (
+                    <>
+                      <Separator />
+                      <div>
+                        <h4 className="text-sm font-medium mb-1">Terms</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewInvoice.terms}</p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Tags */}
+                  {previewInvoice.tags?.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="flex flex-wrap gap-2">
+                        {previewInvoice.tags.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).map((tag) => (
+                          <span
+                            key={tag.id}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTagColorClass(tag.color)}`}
+                          >
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* 5 Quick Actions */}
+              <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-5 gap-2">
+                {/* Action 1: Send (if draft) or Pay (if sent/viewed/overdue) */}
+                {previewInvoice.status === "draft" ? (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -836,8 +834,7 @@ export function InvoicesList() {
                     <Send className="h-5 w-5" />
                     <span className="text-xs">Send</span>
                   </Button>
-                )}
-                {["sent", "viewed", "overdue"].includes(previewInvoice.status) && (
+                ) : ["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -851,7 +848,14 @@ export function InvoicesList() {
                     <CreditCard className="h-5 w-5" />
                     <span className="text-xs">Pay</span>
                   </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-1 opacity-50" disabled>
+                    <CreditCard className="h-5 w-5" />
+                    <span className="text-xs">Pay</span>
+                  </Button>
                 )}
+
+                {/* Action 2: Download PDF */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -865,6 +869,8 @@ export function InvoicesList() {
                   <Download className="h-5 w-5" />
                   <span className="text-xs">PDF</span>
                 </Button>
+
+                {/* Action 3: Edit */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -872,12 +878,36 @@ export function InvoicesList() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setPreviewSheetOpen(false);
-                    handleOpenDialog(previewInvoice);
+                    router.push(`/dashboard/invoices/${previewInvoice.id}`);
                   }}
                 >
                   <Pencil className="h-5 w-5" />
                   <span className="text-xs">Edit</span>
                 </Button>
+
+                {/* Action 4: Mark Paid (if applicable) */}
+                {["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-col h-auto py-2 gap-1 text-green-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewSheetOpen(false);
+                      handleStatusChange(previewInvoice, "paid");
+                    }}
+                  >
+                    <CompleteIcon className="h-5 w-5" />
+                    <span className="text-xs">Paid</span>
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-1 opacity-50" disabled>
+                    <CompleteIcon className="h-5 w-5" />
+                    <span className="text-xs">Paid</span>
+                  </Button>
+                )}
+
+                {/* Action 5: Delete */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -894,7 +924,6 @@ export function InvoicesList() {
                 </Button>
               </div>
 
-              {/* Safe area padding for mobile */}
               <div className="h-[env(safe-area-inset-bottom)]" />
             </div>
           )}

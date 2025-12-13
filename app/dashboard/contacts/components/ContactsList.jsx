@@ -28,9 +28,9 @@ import {
   SuccessIcon,
   PhoneIcon,
 } from "@/lib/icons";
-import { Users, Search, Flame, Mail, Calendar, FileText, Pencil, Trash2, ExternalLink, Copy } from "lucide-react";
+import { Users, Search, Flame, Mail, Calendar, FileText, Pencil, Trash2, ExternalLink, Copy, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DeleteContactDialog } from "./DeleteContactDialog";
 
 const initialFormState = {
@@ -41,6 +41,21 @@ const initialFormState = {
 };
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+const getTagColorClass = (color) => {
+  const colorMap = {
+    blue: "bg-blue-100 text-blue-800 border-blue-200",
+    green: "bg-green-100 text-green-800 border-green-200",
+    red: "bg-red-100 text-red-800 border-red-200",
+    yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    purple: "bg-purple-100 text-purple-800 border-purple-200",
+    pink: "bg-pink-100 text-pink-800 border-pink-200",
+    orange: "bg-orange-100 text-orange-800 border-orange-200",
+    teal: "bg-teal-100 text-teal-800 border-teal-200",
+    gray: "bg-gray-100 text-gray-800 border-gray-200",
+  };
+  return colorMap[color] || colorMap.gray;
+};
 
 function formatDate(dateString) {
   return (
@@ -62,10 +77,12 @@ function formatDate(dateString) {
 
 export function ContactsList() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [urlParamsHandled, setUrlParamsHandled] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
@@ -78,6 +95,7 @@ export function ContactsList() {
   const [isMobile, setIsMobile] = useState(false);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewContact, setPreviewContact] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Detect mobile viewport
   useEffect(() => {
@@ -88,6 +106,19 @@ export function ContactsList() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Handle URL params for opening add dialog
+  useEffect(() => {
+    if (!urlParamsHandled) {
+      const newContact = searchParams.get("new");
+      if (newContact === "true") {
+        setAddDialogOpen(true);
+        setUrlParamsHandled(true);
+        // Clean up URL params
+        router.replace("/dashboard/contacts", { scroll: false });
+      }
+    }
+  }, [searchParams, urlParamsHandled, router]);
 
   // Helper to check if contact has a specific tag (case insensitive)
   const hasTag = (contact, tagName) => {
@@ -243,6 +274,7 @@ export function ContactsList() {
 
   const clearSelection = () => {
     setSelectedIds(new Set());
+    setIsEditMode(false);
   };
 
   // Bulk delete
@@ -347,6 +379,21 @@ export function ContactsList() {
           {/* Header with search and add button */}
           <div className="p-3 border-b border-border">
             <div className="flex items-center gap-2 mb-3">
+              {isEditMode ? (
+                <button
+                  className="mobile:hig-body text-primary font-medium touch-target"
+                  onClick={clearSelection}
+                >
+                  Done
+                </button>
+              ) : (
+                <button
+                  className="mobile:hig-body text-primary font-medium touch-target"
+                  onClick={() => setIsEditMode(true)}
+                >
+                  Edit
+                </button>
+              )}
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
                 <Input
@@ -365,37 +412,37 @@ export function ContactsList() {
             {/* Status filter pills - horizontal scroll */}
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3">
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("all")}
               >
                 All ({statusCounts.all})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${statusFilter === "lead" ? "bg-orange-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors flex items-center gap-1 touch-target ${statusFilter === "lead" ? "bg-orange-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("lead")}
               >
                 <Flame className="size-3" /> Leads ({statusCounts.lead})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "client" ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "client" ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("client")}
               >
                 Clients ({statusCounts.client})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "active" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "active" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("active")}
               >
                 Active ({statusCounts.active})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "inactive" ? "bg-gray-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "inactive" ? "bg-gray-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("inactive")}
               >
                 Inactive ({statusCounts.inactive})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "unclassified" ? "bg-slate-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "unclassified" ? "bg-slate-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("unclassified")}
               >
                 Unclassified ({statusCounts.unclassified})
@@ -422,32 +469,38 @@ export function ContactsList() {
             </div>
           </div>
 
-          {/* Bulk actions bar */}
-          {selectedIds.size > 0 && (
-            <div className="flex items-center gap-2 p-2 bg-primary/5 border-b border-primary/20">
+          {/* Bulk actions bar - show when in edit mode */}
+          {isEditMode && (
+            <div className="flex items-center gap-2 p-2 bg-muted/50 border-b border-border">
               <button
-                className={`shrink-0 size-5 rounded border flex items-center justify-center ${selectedIds.size === filteredClients.length ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}
+                className={`shrink-0 size-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedIds.size === filteredClients.length && filteredClients.length > 0 ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"}`}
                 onClick={toggleSelectAll}
               >
-                {selectedIds.size === filteredClients.length && <SuccessIcon className="size-3" />}
+                {selectedIds.size === filteredClients.length && filteredClients.length > 0 && <SuccessIcon className="size-3" />}
               </button>
-              <span className="text-xs font-medium">{selectedIds.size} selected</span>
-              <button className="ml-auto flex items-center gap-1 text-xs px-2 py-1 rounded bg-muted" onClick={handleExport}>
-                <DownloadIcon className="size-3" /> Export
-              </button>
-              <button
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-destructive text-destructive-foreground"
-                onClick={handleBulkDelete}
-                disabled={bulkDeleting}
-              >
-                {bulkDeleting ? <LoadingIcon className="size-3 animate-spin" /> : <DeleteIcon className="size-3" />}
-                Delete
-              </button>
+              <span className="text-xs text-muted-foreground">
+                {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select items"}
+              </span>
+              {selectedIds.size > 0 && (
+                <>
+                  <button className="ml-auto flex items-center gap-1 text-xs px-2 py-1 rounded bg-muted" onClick={handleExport}>
+                    <DownloadIcon className="size-3" /> Export
+                  </button>
+                  <button
+                    className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-destructive text-destructive-foreground"
+                    onClick={handleBulkDelete}
+                    disabled={bulkDeleting}
+                  >
+                    {bulkDeleting ? <LoadingIcon className="size-3 animate-spin" /> : <DeleteIcon className="size-3" />}
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           )}
 
           {/* Contact list */}
-          <div className="flex-1 overflow-y-auto p-2">
+          <div className="flex-1 overflow-y-auto">
             {clients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
@@ -476,64 +529,49 @@ export function ContactsList() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-border">
                 {filteredClients.map((client) => (
                   <div
                     key={client.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer transition-colors hover:bg-muted/50 ${selectedIds.has(client.id) ? "border-primary bg-primary/5" : "border-border"}`}
+                    className={`flex items-center gap-3 px-4 min-h-[56px] cursor-pointer active:bg-muted/70 ${selectedIds.has(client.id) ? "bg-primary/5" : ""}`}
                     onClick={() => {
                       setPreviewContact(client);
                       setPreviewSheetOpen(true);
                     }}
                   >
-                    {/* Selection checkbox */}
-                    <button
-                      className={`shrink-0 size-5 rounded border flex items-center justify-center ${selectedIds.has(client.id) ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelect(client.id);
-                      }}
-                    >
-                      {selectedIds.has(client.id) && <SuccessIcon className="size-3" />}
-                    </button>
+                    {/* Selection checkbox - only show when in edit mode */}
+                    {isEditMode && (
+                      <button
+                        className={`shrink-0 size-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedIds.has(client.id) ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelect(client.id);
+                        }}
+                      >
+                        {selectedIds.has(client.id) && <SuccessIcon className="size-3.5" />}
+                      </button>
+                    )}
 
-                    {/* Avatar */}
-                    <div className={`shrink-0 size-10 rounded-full flex items-center justify-center text-sm font-medium ${getAvatarBg(client)}`}>
+                    {/* Avatar - 40px matches iOS standard */}
+                    <div className={`shrink-0 size-10 rounded-full flex items-center justify-center text-sm font-semibold ${getAvatarBg(client)}`}>
                       {getInitials(client.name)}
                     </div>
 
-                    {/* Contact info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 font-medium truncate">
+                    {/* Contact info - simple two-line layout */}
+                    <div className="flex-1 min-w-0 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium mobile:hig-subhead truncate">{client.name}</span>
                         {hasTag(client, "lead") && (
                           <Flame className="size-3.5 shrink-0 text-orange-500" />
                         )}
-                        <span className="truncate">{client.name}</span>
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
+                      <div className="mobile:hig-footnote text-muted-foreground truncate">
                         {client.phone || client.email}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{client.bookingCount || 0} bookings</span>
-                        {client.source && <span>via {getSourceLabel(client.source)}</span>}
-                      </div>
                     </div>
 
-                    {/* Quick actions */}
-                    <div className="shrink-0 flex items-center gap-1">
-                      {client.phone && (
-                        <a
-                          href={`tel:${client.phone}`}
-                          className="p-2 rounded-full hover:bg-muted text-primary"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <PhoneIcon className="size-4" />
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Chevron */}
-                    <NextIcon className="size-4 text-muted-foreground shrink-0" />
+                    {/* Chevron - standard iOS disclosure indicator */}
+                    <NextIcon className="size-5 text-muted-foreground/40 shrink-0" />
                   </div>
                 ))}
               </div>
@@ -617,107 +655,129 @@ export function ContactsList() {
               <div className="flex flex-col">
                 {/* Contact Header */}
                 <div className="px-4 pb-3 flex items-center gap-3">
-                  <div className={`shrink-0 size-14 rounded-full flex items-center justify-center text-lg font-semibold ${getAvatarBg(previewContact)}`}>
+                  <div className={`shrink-0 size-14 rounded-full flex items-center justify-center mobile:hig-headline ${getAvatarBg(previewContact)}`}>
                     {getInitials(previewContact.name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       {hasTag(previewContact, "lead") && <Flame className="size-4 text-orange-500" />}
-                      <h3 className="font-semibold text-lg truncate">{previewContact.name}</h3>
+                      <h3 className="font-semibold mobile:hig-title-3 truncate">{previewContact.name}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{previewContact.email}</p>
+                    <p className="mobile:hig-subhead text-muted-foreground truncate">{previewContact.email}</p>
+                    <p className="mobile:hig-caption text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Clock className="size-3" />
+                      Added {formatDate(previewContact.createdAt)}
+                    </p>
                   </div>
                 </div>
 
                 {/* Contact Details */}
                 <div className="px-4 pb-3 space-y-2">
                   {previewContact.phone && (
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 mobile:hig-body">
                       <PhoneIcon className="size-4 text-muted-foreground" />
                       <a href={`tel:${previewContact.phone}`} className="text-primary">{previewContact.phone}</a>
                     </div>
                   )}
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 mobile:hig-body">
                     <Mail className="size-4 text-muted-foreground" />
                     <a href={`mailto:${previewContact.email}`} className="text-primary truncate">{previewContact.email}</a>
                   </div>
                 </div>
 
-                {/* Metadata Pills */}
-                <div className="px-4 pb-3 flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {previewContact.bookingCount || 0} bookings
-                  </Badge>
-                  {previewContact.source && (
-                    <Badge variant="outline" className="text-xs">
-                      via {getSourceLabel(previewContact.source)}
-                    </Badge>
-                  )}
-                  {previewContact.tags?.map((tag) => (
-                    <Badge key={tag.id} variant="outline" className="text-xs">
-                      {tag.name}
-                    </Badge>
-                  ))}
+                {/* Stats Row */}
+                <div className="px-4 pb-3 grid grid-cols-3 gap-3 text-center">
+                  <div className="bg-muted/50 rounded-lg py-2">
+                    <div className="mobile:hig-title-3 font-semibold">{previewContact.bookingCount || 0}</div>
+                    <div className="mobile:hig-caption text-muted-foreground">Bookings</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg py-2">
+                    <div className="mobile:hig-title-3 font-semibold">{previewContact.invoiceCount || 0}</div>
+                    <div className="mobile:hig-caption text-muted-foreground">Invoices</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg py-2">
+                    <div className="mobile:hig-title-3 font-semibold">{previewContact.source ? getSourceLabel(previewContact.source).split(' ')[0] : 'N/A'}</div>
+                    <div className="mobile:hig-caption text-muted-foreground">Source</div>
+                  </div>
                 </div>
 
-                {previewContact.notes && (
-                  <div className="px-4 pb-3">
-                    <p className="text-sm text-muted-foreground line-clamp-2">{previewContact.notes}</p>
+                {/* Tags */}
+                {previewContact.tags?.length > 0 && (
+                  <div className="px-4 pb-3 flex flex-wrap gap-2">
+                    {previewContact.tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full mobile:hig-caption font-medium border ${getTagColorClass(tag.color)}`}
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
                   </div>
                 )}
 
-                {/* Actions */}
+                {previewContact.notes && (
+                  <div className="px-4 pb-3">
+                    <p className="mobile:hig-subhead text-muted-foreground line-clamp-2">{previewContact.notes}</p>
+                  </div>
+                )}
+
+                {/* Actions - Always 5 */}
                 <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-5 gap-2">
-                  {previewContact.phone && (
-                    <a href={`tel:${previewContact.phone}`} className="flex flex-col items-center gap-1 py-2">
-                      <PhoneIcon className="h-5 w-5 text-foreground" />
-                      <span className="text-xs">Call</span>
+                  {previewContact.phone ? (
+                    <a href={`tel:${previewContact.phone}`} className="flex flex-col items-center gap-1 py-2 touch-target">
+                      <PhoneIcon className="h-6 w-6 text-foreground" />
+                      <span className="mobile:hig-caption">Call</span>
                     </a>
+                  ) : (
+                    <button
+                      className="flex flex-col items-center gap-1 py-2 touch-target"
+                      onClick={() => {
+                        navigator.clipboard.writeText(previewContact.email);
+                        toast.success("Email copied");
+                      }}
+                    >
+                      <Copy className="h-6 w-6 text-foreground" />
+                      <span className="mobile:hig-caption">Copy</span>
+                    </button>
                   )}
-                  <a href={`mailto:${previewContact.email}`} className="flex flex-col items-center gap-1 py-2">
-                    <Mail className="h-5 w-5 text-foreground" />
-                    <span className="text-xs">Email</span>
+                  <a href={`mailto:${previewContact.email}`} className="flex flex-col items-center gap-1 py-2 touch-target">
+                    <Mail className="h-6 w-6 text-foreground" />
+                    <span className="mobile:hig-caption">Email</span>
                   </a>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-1"
+                  <button
+                    className="flex flex-col items-center gap-1 py-2 touch-target"
                     onClick={() => {
                       setPreviewSheetOpen(false);
-                      router.push(`/dashboard/calendar?clientId=${previewContact.id}`);
+                      router.push(`/dashboard/bookings/new?contactId=${previewContact.id}`);
                     }}
                   >
-                    <Calendar className="h-5 w-5" />
-                    <span className="text-xs">Book</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-1"
+                    <Calendar className="h-6 w-6 text-foreground" />
+                    <span className="mobile:hig-caption">Book</span>
+                  </button>
+                  <button
+                    className="flex flex-col items-center gap-1 py-2 touch-target"
                     onClick={() => {
                       setPreviewSheetOpen(false);
-                      router.push(`/dashboard/invoices?newInvoice=true&clientId=${previewContact.id}`);
+                      router.push(`/dashboard/invoices/new?contactId=${previewContact.id}`);
                     }}
                   >
-                    <FileText className="h-5 w-5" />
-                    <span className="text-xs">Invoice</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-1"
+                    <FileText className="h-6 w-6 text-foreground" />
+                    <span className="mobile:hig-caption">Invoice</span>
+                  </button>
+                  <button
+                    className="flex flex-col items-center gap-1 py-2 touch-target"
                     onClick={() => {
                       setPreviewSheetOpen(false);
                       router.push(`/dashboard/contacts/${previewContact.id}`);
                     }}
                   >
-                    <ExternalLink className="h-5 w-5" />
-                    <span className="text-xs">View</span>
-                  </Button>
+                    <Pencil className="h-6 w-6 text-foreground" />
+                    <span className="mobile:hig-caption">Edit</span>
+                  </button>
                 </div>
 
                 {/* Safe area padding for mobile */}
-                <div className="h-[env(safe-area-inset-bottom)]" />
+                <div className="hig-safe-bottom" />
               </div>
             )}
           </SheetContent>

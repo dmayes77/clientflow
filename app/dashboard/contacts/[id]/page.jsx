@@ -404,52 +404,35 @@ export default function ClientDetailPage({ params }) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="space-y-3 pb-4 border-b">
-        {/* Top row: Back button and actions */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/contacts")} className="gap-1">
-            <BackIcon className="size-4" />
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              className={!hasChanges ? "opacity-50" : ""}
-              onClick={handleSave}
-              disabled={saving || !hasChanges}
-            >
-              {saving ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
-              Save
-            </Button>
-            <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push(`/dashboard/bookings/new?clientId=${id}`)}>
-              <NewBookingIcon className="size-4 mr-1" />
-              <span className="hidden sm:inline">Book</span>
-            </Button>
-            <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
-              <NewInvoiceIcon className="size-4 mr-1" />
-              <span className="hidden sm:inline">Invoice</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setDeleteDialogOpen(true)}
-            >
-              <DeleteIcon className="size-4" />
-            </Button>
-          </div>
-        </div>
-        {/* Title row */}
-        <div>
+      <div className="flex items-start gap-3">
+        <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" onClick={() => router.push("/dashboard/contacts")}>
+          <BackIcon className="h-5 w-5" />
+        </Button>
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="mb-0!">{formData.name || "Unnamed"}</h1>
+            <h1 className="text-xl font-semibold truncate">{formData.name || "Unnamed"}</h1>
             <Badge variant={client.status === "lead" ? "warning" : "info"}>
               {client.status === "lead" ? "Lead" : "Contact"}
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Added {formatFullDateTime(client.createdAt)}
-          </p>
+          <p className="text-sm text-muted-foreground">Added {formatFullDateTime(client.createdAt)}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button size="sm" variant={hasChanges ? "default" : "outline"} onClick={handleSave} disabled={saving || !hasChanges}>
+            {saving ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
+            <span className="hidden sm:inline">Save</span>
+          </Button>
+          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push(`/dashboard/bookings/new?clientId=${id}`)}>
+            <NewBookingIcon className="size-4 sm:mr-1" />
+            <span className="hidden sm:inline">Book</span>
+          </Button>
+          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
+            <NewInvoiceIcon className="size-4 sm:mr-1" />
+            <span className="hidden sm:inline">Invoice</span>
+          </Button>
+          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteDialogOpen(true)}>
+            <DeleteIcon className="size-4" />
+          </Button>
         </div>
       </div>
 

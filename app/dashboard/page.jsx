@@ -219,12 +219,12 @@ export default function DashboardPage() {
           <p className="text-xs text-muted-foreground">Welcome back! Here's what's happening.</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Button size="sm" className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push("/dashboard/calendar")}>
+          <Button size="sm" className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push("/dashboard/bookings/new")}>
             <CalendarPlus className="size-4 sm:mr-1" />
             <span className="hidden sm:inline">New Booking</span>
             <span className="sm:hidden">Book</span>
           </Button>
-          <Button size="sm" className="flex-1 sm:flex-none bg-purple-500 hover:bg-purple-600 text-white" onClick={() => router.push("/dashboard/contacts")}>
+          <Button size="sm" className="flex-1 sm:flex-none bg-purple-500 hover:bg-purple-600 text-white" onClick={() => router.push("/dashboard/contacts/new")}>
             <UserPlus className="size-4 sm:mr-1" />
             <span className="hidden sm:inline">Add Contact</span>
             <span className="sm:hidden">Contact</span>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
           <Button
             size="sm"
             className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white"
-            onClick={() => router.push("/dashboard/invoices?new=true")}
+            onClick={() => router.push("/dashboard/invoices/new")}
           >
             <FilePlus2 className="size-4 sm:mr-1" />
             <span className="hidden sm:inline">New Invoice</span>
@@ -339,6 +339,7 @@ export default function DashboardPage() {
                     interval="preserveStartEnd"
                   />
                   <YAxis
+                    width={45}
                     tick={{ fontSize: 10, fill: "oklch(var(--color-muted-foreground))" }}
                     tickLine={false}
                     axisLine={{ stroke: "oklch(var(--color-border))" }}
@@ -420,6 +421,7 @@ export default function DashboardPage() {
                     axisLine={{ stroke: "oklch(var(--color-border))" }}
                   />
                   <YAxis
+                    width={30}
                     tick={{ fontSize: 10, fill: "oklch(var(--color-muted-foreground))" }}
                     tickLine={false}
                     axisLine={{ stroke: "oklch(var(--color-border))" }}
