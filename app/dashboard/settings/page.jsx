@@ -7,10 +7,10 @@ export const metadata = {
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1>API Keys</h1>
-        <p className="text-muted-foreground">Manage your API keys for integrations</p>
+        <p className="hig-subheadline text-muted-foreground">Manage your API keys for integrations</p>
       </div>
       <APIKeysSettings />
     </div>

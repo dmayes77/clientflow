@@ -7,10 +7,10 @@ export const metadata = {
 
 export default function WebhooksPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1>Webhooks</h1>
-        <p className="text-muted-foreground">Configure webhook endpoints for real-time notifications</p>
+        <p className="hig-subheadline text-muted-foreground">Configure webhook endpoints for real-time notifications</p>
       </div>
       <WebhooksList />
     </div>

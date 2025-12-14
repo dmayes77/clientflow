@@ -17,10 +17,10 @@ function LoadingFallback() {
 
 export default function IntegrationsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1>Integrations</h1>
-        <p className="text-muted-foreground">Connect third-party services to ClientFlow</p>
+        <p className="hig-subheadline text-muted-foreground">Connect third-party services to ClientFlow</p>
       </div>
       <Suspense fallback={<LoadingFallback />}>
         <IntegrationsList />

@@ -404,27 +404,27 @@ export function AvailabilitySettings() {
       </div>
 
       <Tabs defaultValue="schedule" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 h-auto p-1 rounded-lg border border-gray-200 bg-gray-100">
+        <TabsList className="grid w-full grid-cols-3 h-auto p-1 rounded-lg border border-border bg-muted">
           <TabsTrigger
             value="schedule"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-200"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
           >
             <Clock className="h-4 w-4" />
-            Weekly Schedule
+            <span className="hig-footnote">Weekly Schedule</span>
           </TabsTrigger>
           <TabsTrigger
             value="overrides"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-200"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
           >
             <CalendarOff className="h-4 w-4" />
-            Date Overrides
+            <span className="hig-footnote">Date Overrides</span>
           </TabsTrigger>
           <TabsTrigger
             value="settings"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-gray-200"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
           >
             <Settings className="h-4 w-4" />
-            Settings
+            <span className="hig-footnote">Settings</span>
           </TabsTrigger>
         </TabsList>
 

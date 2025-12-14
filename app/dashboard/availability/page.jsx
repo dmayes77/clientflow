@@ -7,10 +7,10 @@ export const metadata = {
 
 export default function AvailabilityPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1>Availability</h1>
-        <p className="text-muted-foreground">Set your working hours and availability</p>
+        <p className="hig-subheadline text-muted-foreground">Set your working hours and availability</p>
       </div>
       <AvailabilitySettings />
     </div>
