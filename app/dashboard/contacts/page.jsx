@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ContactsList } from "./components";
 
 export const metadata = {
@@ -12,7 +13,9 @@ export default function ContactsPage() {
         <h1>Contacts</h1>
         <p className="hig-subheadline text-muted-foreground">Manage your contacts database</p>
       </div>
-      <ContactsList />
+      <Suspense fallback={<div className="rounded-lg border bg-card p-6 flex items-center justify-center"><div className="size-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>}>
+        <ContactsList />
+      </Suspense>
     </div>
   );
 }
