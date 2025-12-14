@@ -41,6 +41,7 @@ export async function GET() {
         slotInterval: true,
         breakDuration: true,
         defaultCalendarView: true,
+        defaultTaxRate: true,
         facebookUrl: true,
         twitterUrl: true,
         instagramUrl: true,
