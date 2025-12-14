@@ -8,7 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  PreviewSheet,
+  PreviewSheetHeader,
+  PreviewSheetContent,
+  PreviewSheetSection,
+  PreviewSheetStats,
+  PreviewSheetStat,
+  PreviewSheetAction,
+} from "@/components/ui/preview-sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -381,14 +389,14 @@ export function ContactsList() {
             <div className="flex items-center gap-2 mb-3">
               {isEditMode ? (
                 <button
-                  className="mobile:hig-body text-primary font-medium touch-target"
+                  className="hig-body text-primary font-medium hig-hig-touch-target"
                   onClick={clearSelection}
                 >
                   Done
                 </button>
               ) : (
                 <button
-                  className="mobile:hig-body text-primary font-medium touch-target"
+                  className="hig-body text-primary font-medium hig-hig-touch-target"
                   onClick={() => setIsEditMode(true)}
                 >
                   Edit
@@ -412,37 +420,37 @@ export function ContactsList() {
             {/* Status filter pills - horizontal scroll */}
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3">
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full hig-caption-1 font-medium transition-colors hig-touch-target ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("all")}
               >
                 All ({statusCounts.all})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors flex items-center gap-1 touch-target ${statusFilter === "lead" ? "bg-orange-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full hig-caption-1 font-medium transition-colors flex items-center gap-1 hig-touch-target ${statusFilter === "lead" ? "bg-orange-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("lead")}
               >
                 <Flame className="size-3" /> Leads ({statusCounts.lead})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "client" ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full hig-caption-1 font-medium transition-colors hig-touch-target ${statusFilter === "client" ? "bg-blue-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("client")}
               >
                 Clients ({statusCounts.client})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "active" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full hig-caption-1 font-medium transition-colors hig-touch-target ${statusFilter === "active" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("active")}
               >
                 Active ({statusCounts.active})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "inactive" ? "bg-gray-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full hig-caption-1 font-medium transition-colors hig-touch-target ${statusFilter === "inactive" ? "bg-gray-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("inactive")}
               >
                 Inactive ({statusCounts.inactive})
               </button>
               <button
-                className={`shrink-0 px-3 py-1.5 rounded-full mobile:hig-caption font-medium transition-colors touch-target ${statusFilter === "unclassified" ? "bg-slate-500 text-white" : "bg-muted text-muted-foreground"}`}
+                className={`shrink-0 px-3 py-1.5 rounded-full hig-caption-1 font-medium transition-colors hig-touch-target ${statusFilter === "unclassified" ? "bg-slate-500 text-white" : "bg-muted text-muted-foreground"}`}
                 onClick={() => setStatusFilter("unclassified")}
               >
                 Unclassified ({statusCounts.unclassified})
@@ -560,12 +568,12 @@ export function ContactsList() {
                     {/* Contact info - simple two-line layout */}
                     <div className="flex-1 min-w-0 py-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-medium mobile:hig-subhead truncate">{client.name}</span>
+                        <span className="font-medium hig-subheadline truncate">{client.name}</span>
                         {hasTag(client, "lead") && (
                           <Flame className="size-3.5 shrink-0 text-orange-500" />
                         )}
                       </div>
-                      <div className="mobile:hig-footnote text-muted-foreground truncate">
+                      <div className="hig-footnote text-muted-foreground truncate">
                         {client.phone || client.email}
                       </div>
                     </div>
@@ -641,147 +649,114 @@ export function ContactsList() {
         />
 
         {/* Contact Preview Sheet */}
-        <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
-          <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-2xl px-0 pb-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>{previewContact?.name || "Contact Preview"}</SheetTitle>
-            </SheetHeader>
-            {/* Drag Handle */}
-            <div className="flex justify-center pt-2 pb-3">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-            </div>
-
-            {previewContact && (
-              <div className="flex flex-col">
-                {/* Contact Header */}
-                <div className="px-4 pb-3 flex items-center gap-3">
-                  <div className={`shrink-0 size-14 rounded-full flex items-center justify-center mobile:hig-headline ${getAvatarBg(previewContact)}`}>
-                    {getInitials(previewContact.name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {hasTag(previewContact, "lead") && <Flame className="size-4 text-orange-500" />}
-                      <h3 className="font-semibold mobile:hig-title-3 truncate">{previewContact.name}</h3>
-                    </div>
-                    <p className="mobile:hig-subhead text-muted-foreground truncate">{previewContact.email}</p>
-                    <p className="mobile:hig-caption text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Clock className="size-3" />
-                      Added {formatDate(previewContact.createdAt)}
-                    </p>
-                  </div>
+        {previewContact && (
+          <PreviewSheet
+            open={previewSheetOpen}
+            onOpenChange={setPreviewSheetOpen}
+            title={previewContact.name}
+            header={
+              <PreviewSheetHeader
+                avatar={getInitials(previewContact.name)}
+                avatarClassName={getAvatarBg(previewContact)}
+              >
+                <div className="flex items-center gap-2">
+                  {hasTag(previewContact, "lead") && <Flame className="size-3.5 text-orange-500" />}
+                  <h3 className="hig-headline truncate">{previewContact.name}</h3>
                 </div>
-
-                {/* Contact Details */}
-                <div className="px-4 pb-3 space-y-2">
-                  {previewContact.phone && (
-                    <div className="flex items-center gap-2 mobile:hig-body">
-                      <PhoneIcon className="size-4 text-muted-foreground" />
-                      <a href={`tel:${previewContact.phone}`} className="text-primary">{previewContact.phone}</a>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 mobile:hig-body">
-                    <Mail className="size-4 text-muted-foreground" />
-                    <a href={`mailto:${previewContact.email}`} className="text-primary truncate">{previewContact.email}</a>
-                  </div>
-                </div>
-
-                {/* Stats Row */}
-                <div className="px-4 pb-3 grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-muted/50 rounded-lg py-2">
-                    <div className="mobile:hig-title-3 font-semibold">{previewContact.bookingCount || 0}</div>
-                    <div className="mobile:hig-caption text-muted-foreground">Bookings</div>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg py-2">
-                    <div className="mobile:hig-title-3 font-semibold">{previewContact.invoiceCount || 0}</div>
-                    <div className="mobile:hig-caption text-muted-foreground">Invoices</div>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg py-2">
-                    <div className="mobile:hig-title-3 font-semibold">{previewContact.source ? getSourceLabel(previewContact.source).split(' ')[0] : 'N/A'}</div>
-                    <div className="mobile:hig-caption text-muted-foreground">Source</div>
-                  </div>
-                </div>
-
-                {/* Tags */}
-                {previewContact.tags?.length > 0 && (
-                  <div className="px-4 pb-3 flex flex-wrap gap-2">
-                    {previewContact.tags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full mobile:hig-caption font-medium border ${getTagColorClass(tag.color)}`}
-                      >
-                        {tag.name}
-                      </span>
-                    ))}
+                <p className="hig-footnote text-muted-foreground truncate">{previewContact.email}</p>
+                <p className="hig-caption-2 text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <Clock className="size-3" />
+                  Added {formatDate(previewContact.createdAt)}
+                </p>
+              </PreviewSheetHeader>
+            }
+            actions={
+              <>
+                {previewContact.phone ? (
+                  <PreviewSheetAction icon={PhoneIcon} label="Call" href={`tel:${previewContact.phone}`} />
+                ) : (
+                  <PreviewSheetAction
+                    icon={Copy}
+                    label="Copy"
+                    onClick={() => {
+                      navigator.clipboard.writeText(previewContact.email);
+                      toast.success("Email copied");
+                    }}
+                  />
+                )}
+                <PreviewSheetAction icon={Mail} label="Email" href={`mailto:${previewContact.email}`} />
+                <PreviewSheetAction
+                  icon={Calendar}
+                  label="Book"
+                  onClick={() => {
+                    setPreviewSheetOpen(false);
+                    router.push(`/dashboard/bookings/new?contactId=${previewContact.id}`);
+                  }}
+                />
+                <PreviewSheetAction
+                  icon={FileText}
+                  label="Invoice"
+                  onClick={() => {
+                    setPreviewSheetOpen(false);
+                    router.push(`/dashboard/invoices/new?contactId=${previewContact.id}`);
+                  }}
+                />
+                <PreviewSheetAction
+                  icon={Pencil}
+                  label="Edit"
+                  onClick={() => {
+                    setPreviewSheetOpen(false);
+                    router.push(`/dashboard/contacts/${previewContact.id}`);
+                  }}
+                />
+              </>
+            }
+          >
+            <PreviewSheetContent>
+              {/* Contact Details */}
+              <PreviewSheetSection className="space-y-1.5">
+                {previewContact.phone && (
+                  <div className="flex items-center gap-2 hig-footnote">
+                    <PhoneIcon className="size-3.5 text-muted-foreground" />
+                    <a href={`tel:${previewContact.phone}`} className="text-primary">{previewContact.phone}</a>
                   </div>
                 )}
+                <div className="flex items-center gap-2 hig-footnote">
+                  <Mail className="size-3.5 text-muted-foreground" />
+                  <a href={`mailto:${previewContact.email}`} className="text-primary truncate">{previewContact.email}</a>
+                </div>
+              </PreviewSheetSection>
 
-                {previewContact.notes && (
-                  <div className="px-4 pb-3">
-                    <p className="mobile:hig-subhead text-muted-foreground line-clamp-2">{previewContact.notes}</p>
-                  </div>
-                )}
+              {/* Stats */}
+              <PreviewSheetStats>
+                <PreviewSheetStat value={previewContact.bookingCount || 0} label="Bookings" />
+                <PreviewSheetStat value={previewContact.invoiceCount || 0} label="Invoices" />
+                <PreviewSheetStat value={previewContact.source ? getSourceLabel(previewContact.source).split(' ')[0] : 'N/A'} label="Source" />
+              </PreviewSheetStats>
 
-                {/* Actions - Always 5 */}
-                <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-5 gap-2">
-                  {previewContact.phone ? (
-                    <a href={`tel:${previewContact.phone}`} className="flex flex-col items-center gap-1 py-2 touch-target">
-                      <PhoneIcon className="h-6 w-6 text-foreground" />
-                      <span className="mobile:hig-caption">Call</span>
-                    </a>
-                  ) : (
-                    <button
-                      className="flex flex-col items-center gap-1 py-2 touch-target"
-                      onClick={() => {
-                        navigator.clipboard.writeText(previewContact.email);
-                        toast.success("Email copied");
-                      }}
+              {/* Tags */}
+              {previewContact.tags?.length > 0 && (
+                <PreviewSheetSection className="flex flex-wrap gap-1.5">
+                  {previewContact.tags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full hig-caption-2 font-medium border ${getTagColorClass(tag.color)}`}
                     >
-                      <Copy className="h-6 w-6 text-foreground" />
-                      <span className="mobile:hig-caption">Copy</span>
-                    </button>
-                  )}
-                  <a href={`mailto:${previewContact.email}`} className="flex flex-col items-center gap-1 py-2 touch-target">
-                    <Mail className="h-6 w-6 text-foreground" />
-                    <span className="mobile:hig-caption">Email</span>
-                  </a>
-                  <button
-                    className="flex flex-col items-center gap-1 py-2 touch-target"
-                    onClick={() => {
-                      setPreviewSheetOpen(false);
-                      router.push(`/dashboard/bookings/new?contactId=${previewContact.id}`);
-                    }}
-                  >
-                    <Calendar className="h-6 w-6 text-foreground" />
-                    <span className="mobile:hig-caption">Book</span>
-                  </button>
-                  <button
-                    className="flex flex-col items-center gap-1 py-2 touch-target"
-                    onClick={() => {
-                      setPreviewSheetOpen(false);
-                      router.push(`/dashboard/invoices/new?contactId=${previewContact.id}`);
-                    }}
-                  >
-                    <FileText className="h-6 w-6 text-foreground" />
-                    <span className="mobile:hig-caption">Invoice</span>
-                  </button>
-                  <button
-                    className="flex flex-col items-center gap-1 py-2 touch-target"
-                    onClick={() => {
-                      setPreviewSheetOpen(false);
-                      router.push(`/dashboard/contacts/${previewContact.id}`);
-                    }}
-                  >
-                    <Pencil className="h-6 w-6 text-foreground" />
-                    <span className="mobile:hig-caption">Edit</span>
-                  </button>
-                </div>
+                      {tag.name}
+                    </span>
+                  ))}
+                </PreviewSheetSection>
+              )}
 
-                {/* Safe area padding for mobile */}
-                <div className="hig-safe-bottom" />
-              </div>
-            )}
-          </SheetContent>
-        </Sheet>
+              {/* Notes */}
+              {previewContact.notes && (
+                <PreviewSheetSection>
+                  <p className="hig-footnote text-muted-foreground line-clamp-2">{previewContact.notes}</p>
+                </PreviewSheetSection>
+              )}
+            </PreviewSheetContent>
+          </PreviewSheet>
+        )}
       </>
     );
   }

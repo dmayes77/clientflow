@@ -20,7 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  PreviewSheet,
+  PreviewSheetHeader,
+  PreviewSheetContent,
+  PreviewSheetSection,
+} from "@/components/ui/preview-sheet";
 import { BottomSheet, BottomSheetFooter } from "@/components/ui/bottom-sheet";
 import { useIsMobile } from "@/hooks/use-media-query";
 import {
@@ -414,7 +419,7 @@ export function PackagesList() {
               <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center mb-3">
                 <Package className="h-5 w-5 text-amber-600" />
               </div>
-              <h3 className="text-sm font-medium text-zinc-900 mb-1">Create services first</h3>
+              <h3 className="text-zinc-900 mb-1">Create services first</h3>
               <p className="text-xs text-muted-foreground mb-3 max-w-xs">
                 Create individual services first, then bundle them here with a discount.
               </p>
@@ -424,7 +429,7 @@ export function PackagesList() {
               <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center mb-3">
                 <Package className="h-5 w-5 text-amber-600" />
               </div>
-              <h3 className="text-sm font-medium text-zinc-900 mb-1">Ready to create packages!</h3>
+              <h3 className="text-zinc-900 mb-1">Ready to create packages!</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Bundle your {services.length} service{services.length !== 1 ? "s" : ""} with a discount.
               </p>
@@ -955,180 +960,171 @@ export function PackagesList() {
       </Dialog>
 
       {/* Package Preview Sheet (Mobile) */}
-      <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-2xl px-0 pb-0">
-          <SheetHeader className="sr-only">
-            <SheetTitle>{previewPackage?.name || "Package Preview"}</SheetTitle>
-          </SheetHeader>
-          {/* Drag Handle */}
-          <div className="flex justify-center pt-2 pb-3">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </div>
-
-          {previewPackage && (
-            <div className="flex flex-col">
-              {/* Package Header */}
-              <div className="px-4 pb-3 flex items-start gap-3">
-                <div className="shrink-0 size-16 rounded-lg overflow-hidden bg-muted relative">
-                  <Image
-                    src="/default_img.webp"
-                    alt={previewPackage.name}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
+      {previewPackage && (
+        <PreviewSheet
+          open={previewSheetOpen}
+          onOpenChange={setPreviewSheetOpen}
+          title={previewPackage?.name || "Package Preview"}
+          actionColumns={4}
+          header={
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 size-16 rounded-lg overflow-hidden bg-muted relative">
+                <Image
+                  src="/default_img.webp"
+                  alt={previewPackage.name}
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="hig-headline truncate">{previewPackage.name}</h3>
+                  <Badge variant={previewPackage.active ? "success" : "secondary"} className="shrink-0">
+                    {previewPackage.active ? "Active" : "Off"}
+                  </Badge>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate m-0">{previewPackage.name}</h3>
-                    <Badge variant={previewPackage.active ? "success" : "secondary"} className="shrink-0">
-                      {previewPackage.active ? "Active" : "Off"}
-                    </Badge>
-                  </div>
-                  {previewPackage.category && (
-                    <p className="text-sm text-muted-foreground">{previewPackage.category.name}</p>
+                {previewPackage.category && (
+                  <p className="hig-footnote text-muted-foreground">{previewPackage.category.name}</p>
+                )}
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="hig-footnote font-semibold">{formatPrice(previewPackage.price)}</span>
+                  {previewPackage.originalPrice > previewPackage.price && (
+                    <span className="hig-footnote text-muted-foreground line-through">
+                      {formatPrice(previewPackage.originalPrice)}
+                    </span>
                   )}
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-sm font-semibold">{formatPrice(previewPackage.price)}</span>
-                    {previewPackage.originalPrice > previewPackage.price && (
-                      <span className="text-sm text-muted-foreground line-through">
-                        {formatPrice(previewPackage.originalPrice)}
-                      </span>
-                    )}
-                  </div>
                 </div>
               </div>
-
-              {/* Description */}
-              {previewPackage.description && (
-                <div className="px-4 pb-3">
-                  <p className="text-sm text-muted-foreground line-clamp-3">{previewPackage.description}</p>
-                </div>
-              )}
-
-              {/* Services Included */}
-              {previewPackage.services?.length > 0 && (
-                <div className="px-4 pb-3">
-                  <p className="text-xs text-muted-foreground mb-1.5">Includes {previewPackage.services.length} services:</p>
-                  <div className="space-y-1">
-                    {previewPackage.services.slice(0, 4).map((service) => (
-                      <div key={service.id} className="flex items-center gap-2 text-sm">
-                        <Check className="size-3.5 text-green-600 shrink-0" />
-                        <span className="truncate">{service.name}</span>
-                      </div>
-                    ))}
-                    {previewPackage.services.length > 4 && (
-                      <p className="text-xs text-muted-foreground pl-5">+{previewPackage.services.length - 4} more</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Metadata */}
-              <div className="px-4 pb-3 flex flex-wrap gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  {previewPackage.discountPercent}% off
-                </Badge>
-                <Badge variant="outline" className="text-xs flex items-center gap-1">
-                  <Clock className="size-3" />
-                  {formatDuration(previewPackage.totalDuration || previewPackage.services?.reduce((sum, s) => sum + s.duration, 0) || 0)}
-                </Badge>
-              </div>
-
-              {/* Action Bar */}
-              <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-4 gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    router.push(`/dashboard/packages/${previewPackage.id}`);
-                  }}
-                >
-                  <Pencil className="size-5" />
-                  <span className="text-xs">Edit</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    // Prepare duplicate
-                    setEditingPackage(null);
-                    setFormData({
-                      name: `${previewPackage.name} (Copy)`,
-                      description: previewPackage.description || "",
-                      discountPercent: previewPackage.discountPercent,
-                      active: previewPackage.active,
-                      serviceIds: previewPackage.services.map((s) => s.id),
-                      categoryId: previewPackage.categoryId || null,
-                      newCategoryName: "",
-                      priceEnding: "custom",
-                      customPrice: String(Math.round(previewPackage.price / 100)),
-                    });
-                    setDialogOpen(true);
-                  }}
-                >
-                  <Copy className="size-5" />
-                  <span className="text-xs">Duplicate</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex-col h-auto py-2 gap-1 ${previewPackage.active ? "text-amber-600" : "text-green-600"}`}
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(`/api/packages/${previewPackage.id}`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ active: !previewPackage.active }),
-                      });
-                      if (res.ok) {
-                        const updated = await res.json();
-                        setPackages(packages.map((p) => (p.id === updated.id ? updated : p)));
-                        setPreviewPackage(updated);
-                        toast.success(updated.active ? "Package activated" : "Package deactivated");
-                      }
-                    } catch (error) {
-                      toast.error("Failed to update package");
-                    }
-                  }}
-                >
-                  {previewPackage.active ? (
-                    <>
-                      <X className="size-5" />
-                      <span className="text-xs">Deactivate</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="size-5" />
-                      <span className="text-xs">Activate</span>
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1 text-destructive hover:text-destructive"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    setPackageToDelete(previewPackage);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="size-5" />
-                  <span className="text-xs">Delete</span>
-                </Button>
-              </div>
-
-              {/* Safe area padding for mobile */}
-              <div className="h-[env(safe-area-inset-bottom)]" />
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+          }
+          actions={
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  router.push(`/dashboard/packages/${previewPackage.id}`);
+                }}
+              >
+                <Pencil className="size-5" />
+                <span className="hig-caption-2">Edit</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  setEditingPackage(null);
+                  setFormData({
+                    name: `${previewPackage.name} (Copy)`,
+                    description: previewPackage.description || "",
+                    discountPercent: previewPackage.discountPercent,
+                    active: previewPackage.active,
+                    serviceIds: previewPackage.services.map((s) => s.id),
+                    categoryId: previewPackage.categoryId || null,
+                    newCategoryName: "",
+                    priceEnding: "custom",
+                    customPrice: String(Math.round(previewPackage.price / 100)),
+                  });
+                  setDialogOpen(true);
+                }}
+              >
+                <Copy className="size-5" />
+                <span className="hig-caption-2">Duplicate</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewPackage.active ? "text-amber-600" : "text-green-600"}`}
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/packages/${previewPackage.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ active: !previewPackage.active }),
+                    });
+                    if (res.ok) {
+                      const updated = await res.json();
+                      setPackages(packages.map((p) => (p.id === updated.id ? updated : p)));
+                      setPreviewPackage(updated);
+                      toast.success(updated.active ? "Package activated" : "Package deactivated");
+                    }
+                  } catch (error) {
+                    toast.error("Failed to update package");
+                  }
+                }}
+              >
+                {previewPackage.active ? (
+                  <>
+                    <X className="size-5" />
+                    <span className="hig-caption-2">Deactivate</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="size-5" />
+                    <span className="hig-caption-2">Activate</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  setPackageToDelete(previewPackage);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="size-5" />
+                <span className="hig-caption-2">Delete</span>
+              </Button>
+            </>
+          }
+        >
+          <PreviewSheetContent>
+            {/* Description */}
+            {previewPackage.description && (
+              <PreviewSheetSection>
+                <p className="hig-footnote text-muted-foreground line-clamp-3">{previewPackage.description}</p>
+              </PreviewSheetSection>
+            )}
+
+            {/* Services Included */}
+            {previewPackage.services?.length > 0 && (
+              <PreviewSheetSection>
+                <p className="hig-caption-2 text-muted-foreground mb-1.5">Includes {previewPackage.services.length} services:</p>
+                <div className="space-y-1">
+                  {previewPackage.services.slice(0, 4).map((service) => (
+                    <div key={service.id} className="flex items-center gap-2 hig-footnote">
+                      <Check className="size-3.5 text-green-600 shrink-0" />
+                      <span className="truncate">{service.name}</span>
+                    </div>
+                  ))}
+                  {previewPackage.services.length > 4 && (
+                    <p className="hig-caption-2 text-muted-foreground pl-5">+{previewPackage.services.length - 4} more</p>
+                  )}
+                </div>
+              </PreviewSheetSection>
+            )}
+
+            {/* Metadata */}
+            <PreviewSheetSection className="flex flex-wrap gap-2">
+              <Badge variant="secondary" className="hig-caption-2">
+                {previewPackage.discountPercent}% off
+              </Badge>
+              <Badge variant="outline" className="hig-caption-2 flex items-center gap-1">
+                <Clock className="size-3" />
+                {formatDuration(previewPackage.totalDuration || previewPackage.services?.reduce((sum, s) => sum + s.duration, 0) || 0)}
+              </Badge>
+            </PreviewSheetSection>
+          </PreviewSheetContent>
+        </PreviewSheet>
+      )}
     </>
   );
 }

@@ -11,7 +11,13 @@ const Table = React.forwardRef(({ className, ...props }, ref) => (
   <div className="relative w-full overflow-auto">
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
+      className={cn(
+        "w-full caption-bottom",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG footnote (mobile default) */
+        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        className
+      )}
       {...props}
     />
   </div>
@@ -83,7 +89,13 @@ TableCell.displayName = "TableCell";
 const TableCaption = React.forwardRef(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-3 text-2xs text-muted-foreground", className)}
+    className={cn(
+      "mt-3 text-muted-foreground",
+      "tablet:text-xs desktop:text-2xs",
+      /* HIG caption-2 (mobile default) */
+      "text-[11px] tracking-[0.066px] leading-[13px]",
+      className
+    )}
     {...props}
   />
 ));

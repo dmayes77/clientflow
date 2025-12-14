@@ -26,15 +26,15 @@ const buttonVariants = cva(
         info: "bg-info text-info-foreground hover:opacity-90 shadow-sm",
       },
       size: {
-        // Default: touch-friendly mobile → compact desktop
+        // Default: HIG callout (16px) on mobile → compact desktop
         default:
-          "px-6 py-3 fold:px-5 fold:py-2.5 tablet:px-4 tablet:py-2 desktop:px-3 desktop:py-1.5 text-[13px] fold:text-sm tablet:text-sm desktop:text-xs",
-        // Small
-        sm: "px-4 py-2 fold:px-3 fold:py-1.5 tablet:px-3 tablet:py-1.5 desktop:px-2 desktop:py-1 text-[12px] fold:text-xs tablet:text-xs desktop:text-xs gap-1",
-        // Extra small
-        xs: "px-3 py-1.5 desktop:px-2 desktop:py-1 text-xs desktop:text-2xs gap-1 rounded-sm",
-        // Large
-        lg: "px-8 py-4 fold:px-7 fold:py-3.5 tablet:px-6 tablet:py-3 desktop:px-5 desktop:py-2.5 text-lg fold:text-base tablet:text-base desktop:text-sm",
+          "px-6 py-3 fold:px-5 fold:py-2.5 tablet:px-4 tablet:py-2 desktop:px-3 desktop:py-1.5 text-[16px] tracking-[-0.32px] tablet:text-sm desktop:text-xs",
+        // Small: HIG footnote (13px) on mobile
+        sm: "px-4 py-2 fold:px-3 fold:py-1.5 tablet:px-3 tablet:py-1.5 desktop:px-2 desktop:py-1 text-[13px] tracking-[-0.078px] tablet:text-xs desktop:text-xs gap-1",
+        // Extra small: HIG caption-1 (12px) on mobile
+        xs: "px-3 py-1.5 desktop:px-2 desktop:py-1 text-[12px] tracking-[0px] tablet:text-xs desktop:text-2xs gap-1 rounded-sm",
+        // Large: HIG body (17px) on mobile
+        lg: "px-8 py-4 fold:px-7 fold:py-3.5 tablet:px-6 tablet:py-3 desktop:px-5 desktop:py-2.5 text-[17px] tracking-[-0.408px] tablet:text-base desktop:text-sm",
         // Icon buttons - square, responsive
         icon: "size-11 fold:size-10 tablet:size-9 desktop:size-8",
         "icon-sm": "size-9 fold:size-8 tablet:size-8 desktop:size-7",

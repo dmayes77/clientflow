@@ -58,7 +58,7 @@ export default function OnboardingLayout({ children }) {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-primary">ClientFlow</h1>
+          <h1 className="text-primary">ClientFlow</h1>
           <p className="text-sm text-muted-foreground">Welcome to your business management platform</p>
         </div>
 

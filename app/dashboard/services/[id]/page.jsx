@@ -421,7 +421,7 @@ Format the includes list so I can easily copy each item individually.`;
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">Edit Service</h1>
+          <h1>Edit Service</h1>
           <p className="text-muted-foreground">Update your service details</p>
         </div>
         <div className="flex items-center gap-2">

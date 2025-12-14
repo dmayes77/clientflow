@@ -410,12 +410,12 @@ export default function ClientDetailPage({ params }) {
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-semibold truncate">{formData.name || "Unnamed"}</h1>
+            <h1 className="truncate">{formData.name || "Unnamed"}</h1>
             <Badge variant={client.status === "lead" ? "warning" : "info"}>
               {client.status === "lead" ? "Lead" : "Contact"}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">Added {formatFullDateTime(client.createdAt)}</p>
+          <p className="text-muted-foreground">Added {formatFullDateTime(client.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button size="sm" variant={hasChanges ? "default" : "outline"} onClick={handleSave} disabled={saving || !hasChanges}>

@@ -50,7 +50,7 @@ export default function SignInPage() {
       {/* Card - Fixed generous sizing for auth pages */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl px-8 py-10 sm:px-10 sm:py-12">
         {/* Logo */}
-        <h1 className="text-center text-3xl sm:text-4xl font-bold mb-8 sm:mb-10">
+        <h1 className="text-center mb-8 sm:mb-10">
           <span className="text-slate-800">Client</span>
           <span className="text-blue-500">Flow</span>
         </h1>

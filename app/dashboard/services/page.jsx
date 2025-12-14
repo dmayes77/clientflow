@@ -9,8 +9,8 @@ export default function ServicesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Services & Packages</h1>
-        <p className="text-sm text-muted-foreground">Manage your services and create packages</p>
+        <h1>Services & Packages</h1>
+        <p className="text-muted-foreground">Manage your services and create packages</p>
       </div>
 
       <Tabs defaultValue="services" className="w-full">

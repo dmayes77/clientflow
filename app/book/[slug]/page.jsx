@@ -265,7 +265,7 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
       )}
 
       {/* Title */}
-      <h3 className="font-semibold text-sm pr-8">{item.name}</h3>
+      <h3 className="pr-8">{item.name}</h3>
 
       {/* Category */}
       {category && (
@@ -452,7 +452,7 @@ function BookingCalendar({ currentMonth, calendarDays, selectedDate, onDateSelec
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h3 className="font-semibold text-sm">
+        <h3>
           {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h3>
         <button
@@ -870,7 +870,7 @@ function TenantBookingPageContent({ params }) {
             <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
               <X className="w-6 h-6 text-destructive" />
             </div>
-            <h1 className="text-lg font-semibold mb-2">Error</h1>
+            <h1 className="mb-2">Error</h1>
             <p className="text-sm text-muted-foreground mb-4">{error}</p>
             <Link href="/">
               <Button>Go Home</Button>
@@ -901,7 +901,7 @@ function TenantBookingPageContent({ params }) {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </motion.div>
 
-              <h1 className="text-xl font-semibold mb-2">Booking Confirmed!</h1>
+              <h1 className="mb-2">Booking Confirmed!</h1>
               <p className="text-sm text-muted-foreground mb-6">
                 {bookingResult?.message || "We've sent a confirmation to your email."}
               </p>
@@ -959,7 +959,7 @@ function TenantBookingPageContent({ params }) {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="font-semibold text-sm">{business?.name}</h1>
+              <h1>{business?.name}</h1>
               <p className="text-xs text-muted-foreground">Book an appointment</p>
             </div>
           </div>
@@ -995,7 +995,7 @@ function TenantBookingPageContent({ params }) {
                   {business?.name?.[0] || "B"}
                 </div>
               )}
-              <h1 className="text-xl font-bold mb-1">{business?.name}</h1>
+              <h1 className="mb-1">{business?.name}</h1>
               <p className="text-sm text-muted-foreground">Book an appointment</p>
             </div>
 
@@ -1061,7 +1061,7 @@ function TenantBookingPageContent({ params }) {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <h2 className="text-xl font-bold mb-1 hidden lg:block">Select Services</h2>
+                  <h2 className="mb-1 hidden lg:block">Select Services</h2>
                   <p className="text-sm text-muted-foreground mb-6 hidden lg:block">
                     Choose the services you'd like to book
                   </p>
@@ -1078,7 +1078,7 @@ function TenantBookingPageContent({ params }) {
                   {/* Services Grid */}
                   {filteredServices.length > 0 && (
                     <div className="mt-6">
-                      <h3 className="font-semibold text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                      <h3 className="text-muted-foreground mb-3 flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-primary" />
                         Services
                       </h3>
@@ -1100,7 +1100,7 @@ function TenantBookingPageContent({ params }) {
                   {/* Packages Grid */}
                   {filteredPackages.length > 0 && (
                     <div className="mt-6">
-                      <h3 className="font-semibold text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                      <h3 className="text-muted-foreground mb-3 flex items-center gap-2">
                         <Package className="w-4 h-4 text-violet-500" />
                         Packages
                       </h3>
@@ -1161,7 +1161,7 @@ function TenantBookingPageContent({ params }) {
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     <div>
-                      <h2 className="text-xl font-bold">Pick a Date & Time</h2>
+                      <h2>Pick a Date & Time</h2>
                       <p className="text-sm text-muted-foreground">
                         {selectedItems.length} service{selectedItems.length > 1 ? 's' : ''} • {formatDuration(selectedDuration)}
                       </p>
@@ -1185,7 +1185,7 @@ function TenantBookingPageContent({ params }) {
                     {/* Time Slots */}
                     <Card>
                       <CardContent className="p-4">
-                        <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
+                        <h3 className="mb-4 flex items-center gap-2">
                           <Clock className="w-4 h-4 text-primary" />
                           {selectedDate
                             ? selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })
@@ -1241,7 +1241,7 @@ function TenantBookingPageContent({ params }) {
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     <div>
-                      <h2 className="text-xl font-bold">Your Details</h2>
+                      <h2>Your Details</h2>
                       <p className="text-sm text-muted-foreground">
                         Almost done! We just need a few details.
                       </p>

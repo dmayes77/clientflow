@@ -105,7 +105,13 @@ function FormDescription({
     <p
       data-slot="form-description"
       id={formDescriptionId}
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn(
+        "text-muted-foreground",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG footnote (mobile default) */
+        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        className
+      )}
       {...props} />
   );
 }
@@ -125,7 +131,13 @@ function FormMessage({
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn("text-destructive text-sm", className)}
+      className={cn(
+        "text-destructive",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG footnote (mobile default) */
+        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        className
+      )}
       {...props}>
       {body}
     </p>

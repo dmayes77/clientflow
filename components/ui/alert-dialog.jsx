@@ -74,7 +74,13 @@ AlertDialogFooter.displayName = "AlertDialogFooter";
 const AlertDialogTitle = React.forwardRef(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Title
     ref={ref}
-    className={cn("text-base font-semibold", className)}
+    className={cn(
+      "font-semibold",
+      "tablet:text-base desktop:text-sm",
+      /* HIG headline (mobile default) */
+      "text-[17px] tracking-[-0.408px]",
+      className
+    )}
     {...props}
   />
 ));
@@ -84,7 +90,13 @@ const AlertDialogDescription = React.forwardRef(
   ({ className, ...props }, ref) => (
     <AlertDialogPrimitive.Description
       ref={ref}
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn(
+        "text-muted-foreground",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG footnote (mobile default) */
+        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        className
+      )}
       {...props}
     />
   )

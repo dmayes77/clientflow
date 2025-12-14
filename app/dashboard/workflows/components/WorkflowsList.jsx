@@ -329,7 +329,7 @@ export function WorkflowsList() {
                     <Settings className="h-6 w-6 text-indigo-600" />
                   </div>
                   <div>
-                    <h3 className="font-medium">No workflows yet</h3>
+                    <h3>No workflows yet</h3>
                     <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                       Create workflows to automate actions. For example, send an email when a "hot-lead" tag is added.
                     </p>
@@ -432,7 +432,7 @@ export function WorkflowsList() {
                   <Megaphone className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-semibold mb-1">Campaign Workflows</h2>
+                  <h2 className="mb-1">Campaign Workflows</h2>
                   <Badge className="bg-gradient-to-r from-indigo-500 to-violet-600 text-white border-0">
                     Coming Soon
                   </Badge>

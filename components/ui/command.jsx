@@ -65,7 +65,10 @@ function CommandInput({ className, ...props }) {
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-2 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-2 outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "tablet:text-sm desktop:text-xs",
+          /* HIG body (mobile default) */
+          "text-[17px] tracking-[-0.408px] leading-[22px]",
           className
         )}
         {...props}
@@ -88,7 +91,12 @@ function CommandEmpty({ ...props }) {
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
-      className="py-4 text-center text-sm"
+      className={cn(
+        "py-4 text-center",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG footnote (mobile default) */
+        "text-[13px] tracking-[-0.078px] leading-[18px]"
+      )}
       {...props}
     />
   );
@@ -122,7 +130,10 @@ function CommandItem({ className, ...props }) {
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-2 min-h-md text-sm outline-hidden select-none transition-colors data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-2 min-h-md outline-hidden select-none transition-colors data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG subheadline (mobile default) */
+        "text-[15px] tracking-[-0.24px] leading-[20px]",
         className
       )}
       {...props}
@@ -134,7 +145,13 @@ function CommandShortcut({ className, ...props }) {
   return (
     <span
       data-slot="command-shortcut"
-      className={cn("text-muted-foreground ml-auto text-xs tracking-widest", className)}
+      className={cn(
+        "text-muted-foreground ml-auto tracking-widest",
+        "tablet:text-xs desktop:text-2xs",
+        /* HIG caption-2 (mobile default) */
+        "text-[11px] tracking-[0.066px] leading-[13px]",
+        className
+      )}
       {...props}
     />
   );

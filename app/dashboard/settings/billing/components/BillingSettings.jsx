@@ -170,7 +170,7 @@ export function BillingSettings() {
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-2xl font-bold">ClientFlow Professional</h3>
+              <h3>ClientFlow Professional</h3>
               <p className="text-muted-foreground">
                 <span className="text-3xl font-bold text-foreground">$149</span>
                 <span className="text-muted-foreground">/month</span>
@@ -192,7 +192,7 @@ export function BillingSettings() {
 
           {/* Plan Features */}
           <div>
-            <h4 className="font-medium mb-4">Plan includes:</h4>
+            <h4 className="mb-4">Plan includes:</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {PLAN_FEATURES.map((feature, index) => (
                 <div key={index} className="flex items-center gap-2 text-sm">

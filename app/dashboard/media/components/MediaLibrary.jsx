@@ -13,7 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import {
+  PreviewSheet,
+  PreviewSheetContent,
+  PreviewSheetSection,
+} from "@/components/ui/preview-sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Image as ImageIcon,
@@ -755,115 +759,107 @@ export function MediaLibrary() {
       </Dialog>
 
       {/* Preview Sheet */}
-      <Sheet open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-2xl px-0 pb-0">
-          <SheetHeader className="sr-only">
-            <SheetTitle>{previewItem?.name || "Media Preview"}</SheetTitle>
-          </SheetHeader>
-          {/* Drag Handle */}
-          <div className="flex justify-center pt-2 pb-3">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </div>
-
-          {previewItem && (
-            <div className="flex flex-col">
-              {/* Media Preview */}
-              <div className="px-4 flex items-center justify-center bg-muted/30">
-                {activeTab === "images" ? (
-                  <div className="relative max-h-[45vh] w-auto max-w-full" style={{ aspectRatio: `${previewItem.width}/${previewItem.height}` }}>
-                    <Image
-                      src={previewItem.url}
-                      alt={previewItem.alt}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="rounded-lg object-contain"
-                    />
-                  </div>
-                ) : (
-                  <video
+      {previewItem && (
+        <PreviewSheet
+          open={previewDialogOpen}
+          onOpenChange={setPreviewDialogOpen}
+          title={previewItem?.name || "Media Preview"}
+          actionColumns={4}
+          header={
+            <div className="flex items-center justify-center bg-muted/30 -mx-5 -mt-3 pb-3">
+              {activeTab === "images" ? (
+                <div className="relative max-h-[45vh] w-auto max-w-full" style={{ aspectRatio: `${previewItem.width}/${previewItem.height}` }}>
+                  <Image
                     src={previewItem.url}
-                    controls
-                    className="max-h-[45vh] w-full rounded-lg"
+                    alt={previewItem.alt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="rounded-lg object-contain"
                   />
-                )}
-              </div>
-
-              {/* Info Section */}
-              <div className="px-4 pt-4 pb-2">
-                <h3 className="font-semibold text-base truncate">{previewItem.name}</h3>
-                {previewItem.alt && previewItem.alt !== previewItem.name && (
-                  <p className="text-sm text-muted-foreground truncate mt-0.5">{previewItem.alt}</p>
-                )}
-              </div>
-
-              {/* Metadata Pills */}
-              <div className="px-4 pb-3 flex flex-wrap gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  {previewItem.width}x{previewItem.height}
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  {formatFileSize(previewItem.size)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {currentTypes.find((t) => t.value === previewItem.type)?.label || previewItem.type}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {format(new Date(previewItem.createdAt), "MMM d, yyyy")}
-                </Badge>
-              </div>
-
-              {/* Actions */}
-              <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-4 gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={() => copyToClipboard(previewItem.url)}
-                >
-                  <Copy className="h-5 w-5" />
-                  <span className="text-xs">Copy</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={() => window.open(previewItem.url, "_blank")}
-                >
-                  <ExternalLink className="h-5 w-5" />
-                  <span className="text-xs">Open</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={() => {
-                    setPreviewDialogOpen(false);
-                    openEditDialog(previewItem);
-                  }}
-                >
-                  <Pencil className="h-5 w-5" />
-                  <span className="text-xs">Edit</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1 text-destructive hover:text-destructive"
-                  onClick={() => {
-                    setPreviewDialogOpen(false);
-                    openDeleteDialog(previewItem);
-                  }}
-                >
-                  <Trash2 className="h-5 w-5" />
-                  <span className="text-xs">Delete</span>
-                </Button>
-              </div>
-
-              {/* Safe area padding for mobile */}
-              <div className="h-[env(safe-area-inset-bottom)]" />
+                </div>
+              ) : (
+                <video
+                  src={previewItem.url}
+                  controls
+                  className="max-h-[45vh] w-full rounded-lg"
+                />
+              )}
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+          }
+          actions={
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => copyToClipboard(previewItem.url)}
+              >
+                <Copy className="h-5 w-5" />
+                <span className="hig-caption-2">Copy</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => window.open(previewItem.url, "_blank")}
+              >
+                <ExternalLink className="h-5 w-5" />
+                <span className="hig-caption-2">Open</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => {
+                  setPreviewDialogOpen(false);
+                  openEditDialog(previewItem);
+                }}
+              >
+                <Pencil className="h-5 w-5" />
+                <span className="hig-caption-2">Edit</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setPreviewDialogOpen(false);
+                  openDeleteDialog(previewItem);
+                }}
+              >
+                <Trash2 className="h-5 w-5" />
+                <span className="hig-caption-2">Delete</span>
+              </Button>
+            </>
+          }
+        >
+          <PreviewSheetContent>
+            {/* Info Section */}
+            <PreviewSheetSection>
+              <h3 className="hig-headline truncate">{previewItem.name}</h3>
+              {previewItem.alt && previewItem.alt !== previewItem.name && (
+                <p className="hig-footnote text-muted-foreground truncate mt-0.5">{previewItem.alt}</p>
+              )}
+            </PreviewSheetSection>
+
+            {/* Metadata Pills */}
+            <PreviewSheetSection className="flex flex-wrap gap-2">
+              <Badge variant="secondary" className="hig-caption-2">
+                {previewItem.width}x{previewItem.height}
+              </Badge>
+              <Badge variant="secondary" className="hig-caption-2">
+                {formatFileSize(previewItem.size)}
+              </Badge>
+              <Badge variant="outline" className="hig-caption-2">
+                {currentTypes.find((t) => t.value === previewItem.type)?.label || previewItem.type}
+              </Badge>
+              <Badge variant="outline" className="hig-caption-2">
+                {format(new Date(previewItem.createdAt), "MMM d, yyyy")}
+              </Badge>
+            </PreviewSheetSection>
+          </PreviewSheetContent>
+        </PreviewSheet>
+      )}
     </div>
   );
 }

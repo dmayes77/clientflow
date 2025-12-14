@@ -18,7 +18,10 @@ const SelectTrigger = React.forwardRef(
     <SelectPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex h-md w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm",
+        "flex h-md w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 shadow-sm",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG body (mobile default) */
+        "text-[17px] tracking-[-0.408px] leading-[22px]",
         "placeholder:text-muted-foreground",
         "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -104,7 +107,13 @@ SelectContent.displayName = SelectPrimitive.Content.displayName;
 const SelectLabel = React.forwardRef(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn("py-1 pl-2 pr-2 text-2xs font-medium text-muted-foreground", className)}
+    className={cn(
+      "py-1 pl-2 pr-2 font-medium text-muted-foreground",
+      "tablet:text-xs desktop:text-2xs",
+      /* HIG caption-2 (mobile default) */
+      "text-[11px] tracking-[0.066px] leading-[13px]",
+      className
+    )}
     {...props}
   />
 ));
@@ -115,7 +124,10 @@ const SelectItem = React.forwardRef(
     <SelectPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 pl-2 pr-8 min-h-md text-sm outline-none transition-colors",
+        "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 pl-2 pr-8 min-h-md outline-none transition-colors",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG body (mobile default) */
+        "text-[17px] tracking-[-0.408px] leading-[22px]",
         "focus:bg-accent focus:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className

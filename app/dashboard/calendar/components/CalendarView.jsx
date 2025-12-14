@@ -34,11 +34,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  PreviewSheet,
+  PreviewSheetHeader,
+  PreviewSheetContent,
+  PreviewSheetSection,
+} from "@/components/ui/preview-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -711,146 +711,132 @@ export function CalendarView() {
         </div>
 
         {/* Booking Preview Sheet */}
-        <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
-          <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-2xl px-0 pb-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>{previewBooking?.contact?.name || "Booking Details"}</SheetTitle>
-            </SheetHeader>
-
-            {/* Drag Handle */}
-            <div className="flex justify-center pt-2 pb-3">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-            </div>
-
-            {previewBooking && (
+        {previewBooking && (
+          <PreviewSheet
+            open={previewSheetOpen}
+            onOpenChange={setPreviewSheetOpen}
+            title={previewBooking?.contact?.name || "Booking Details"}
+            header={
+              <PreviewSheetHeader
+                avatar={<CalendarClock className="size-6" />}
+                avatarClassName={cn("text-white", statusConfig[previewBooking.status]?.color)}
+              >
+                <div className="flex items-center gap-2">
+                  <h3 className="hig-headline truncate">{previewBooking.contact?.name || "Unknown Contact"}</h3>
+                  <span className={cn("hig-caption-2 px-2 py-0.5 rounded-full text-white shrink-0", statusConfig[previewBooking.status]?.color)}>
+                    {statusConfig[previewBooking.status]?.label}
+                  </span>
+                </div>
+                <p className="hig-footnote text-muted-foreground">
+                  {formatTimeInTz(previewBooking.scheduledAt, "EEEE, MMMM d, yyyy")}
+                </p>
+                <p className="hig-footnote font-medium">
+                  {formatTimeInTz(previewBooking.scheduledAt, "h:mm a")} • {previewBooking.duration} min
+                </p>
+              </PreviewSheetHeader>
+            }
+            actions={
               <>
-                {/* Booking Header */}
-                <div className="px-4 pb-4">
-                  <div className="flex items-start gap-3">
-                    <div className={cn("size-12 rounded-full flex items-center justify-center text-white shrink-0", statusConfig[previewBooking.status]?.color)}>
-                      <CalendarClock className="size-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="truncate m-0">{previewBooking.contact?.name || "Unknown Contact"}</h3>
-                        <span className={cn("text-xs px-2 py-0.5 rounded-full text-white shrink-0", statusConfig[previewBooking.status]?.color)}>
-                          {statusConfig[previewBooking.status]?.label}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {formatTimeInTz(previewBooking.scheduledAt, "EEEE, MMMM d, yyyy")}
-                      </p>
-                      <p className="text-sm font-medium">
-                        {formatTimeInTz(previewBooking.scheduledAt, "h:mm a")} • {previewBooking.duration} min
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Service/Package Info */}
-                <div className="px-4 pb-4 border-t border-border pt-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Service/Package:</span>
-                    <span className="font-medium">
-                      {previewBooking.services?.[0]?.service?.name || previewBooking.packages?.[0]?.package?.name || previewBooking.service?.name || previewBooking.package?.name || "Custom Booking"}
-                    </span>
-                  </div>
-                  {previewBooking.notes && (
-                    <div className="mt-2">
-                      <span className="text-sm text-muted-foreground">Notes:</span>
-                      <p className="text-sm mt-1 p-2 bg-muted/50 rounded-md">{previewBooking.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Metadata Pills */}
-                <div className="px-4 pb-4 flex flex-wrap gap-2">
-                  {previewBooking.contact?.email && (
-                    <span className="text-xs bg-muted px-2 py-1 rounded-full">{previewBooking.contact.email}</span>
-                  )}
-                  {previewBooking.contact?.phone && (
-                    <span className="text-xs bg-muted px-2 py-1 rounded-full">{previewBooking.contact.phone}</span>
-                  )}
-                  {previewBooking.tags?.length > 0 && previewBooking.tags.map((tag) => (
-                    <span key={tag.id} className={`text-xs px-2 py-1 rounded-full border ${getTagColorClass(tag.color)}`}>
-                      {tag.name}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Action Bar */}
-                <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-5 gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex flex-col items-center h-auto py-2 ${previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : "text-green-600"}`}
-                    disabled={previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled"}
-                    onClick={() => {
-                      handleStatusChange(previewBooking, "confirmed");
-                      setPreviewSheetOpen(false);
-                    }}
-                  >
-                    <CheckCircle className="size-5 mb-1" />
-                    <span className="text-xs">Confirm</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`flex flex-col items-center h-auto py-2 ${previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : ""}`}
-                    disabled={previewBooking.status === "completed" || previewBooking.status === "cancelled"}
-                    onClick={() => {
-                      handleStatusChange(previewBooking, "completed");
-                      setPreviewSheetOpen(false);
-                    }}
-                  >
-                    <CheckCheck className="size-5 mb-1" />
-                    <span className="text-xs">Complete</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex flex-col items-center h-auto py-2"
-                    onClick={() => {
-                      setPreviewSheetOpen(false);
-                      router.push(`/dashboard/invoices?contactId=${previewBooking.contactId}`);
-                    }}
-                  >
-                    <Receipt className="size-5 mb-1" />
-                    <span className="text-xs">Invoice</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex flex-col items-center h-auto py-2 text-red-600"
-                    onClick={() => {
-                      setPreviewSheetOpen(false);
-                      setBookingToDelete(previewBooking);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="size-5 mb-1" />
-                    <span className="text-xs">Delete</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex flex-col items-center h-auto py-2"
-                    onClick={() => {
-                      setPreviewSheetOpen(false);
-                      router.push(`/dashboard/bookings/${previewBooking.id}`);
-                    }}
-                  >
-                    <MoreHorizontal className="size-5 mb-1" />
-                    <span className="text-xs">More</span>
-                  </Button>
-                </div>
-
-                {/* Safe Area Padding */}
-                <div className="h-[env(safe-area-inset-bottom)]" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : "text-green-600"}`}
+                  disabled={previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled"}
+                  onClick={() => {
+                    handleStatusChange(previewBooking, "confirmed");
+                    setPreviewSheetOpen(false);
+                  }}
+                >
+                  <CheckCircle className="size-5" />
+                  <span className="hig-caption-2">Confirm</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : ""}`}
+                  disabled={previewBooking.status === "completed" || previewBooking.status === "cancelled"}
+                  onClick={() => {
+                    handleStatusChange(previewBooking, "completed");
+                    setPreviewSheetOpen(false);
+                  }}
+                >
+                  <CheckCheck className="size-5" />
+                  <span className="hig-caption-2">Complete</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0"
+                  onClick={() => {
+                    setPreviewSheetOpen(false);
+                    router.push(`/dashboard/invoices?contactId=${previewBooking.contactId}`);
+                  }}
+                >
+                  <Receipt className="size-5" />
+                  <span className="hig-caption-2">Invoice</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 text-red-600"
+                  onClick={() => {
+                    setPreviewSheetOpen(false);
+                    setBookingToDelete(previewBooking);
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="size-5" />
+                  <span className="hig-caption-2">Delete</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0"
+                  onClick={() => {
+                    setPreviewSheetOpen(false);
+                    router.push(`/dashboard/bookings/${previewBooking.id}`);
+                  }}
+                >
+                  <Pencil className="size-5" />
+                  <span className="hig-caption-2">Edit</span>
+                </Button>
               </>
-            )}
-          </SheetContent>
-        </Sheet>
+            }
+          >
+            <PreviewSheetContent>
+              {/* Service/Package Info */}
+              <PreviewSheetSection className="border-t border-border pt-3">
+                <div className="flex items-center gap-2 hig-footnote">
+                  <span className="text-muted-foreground">Service/Package:</span>
+                  <span className="font-medium">
+                    {previewBooking.services?.[0]?.service?.name || previewBooking.packages?.[0]?.package?.name || previewBooking.service?.name || previewBooking.package?.name || "Custom Booking"}
+                  </span>
+                </div>
+                {previewBooking.notes && (
+                  <div className="mt-2">
+                    <span className="hig-caption-2 text-muted-foreground">Notes:</span>
+                    <p className="hig-footnote mt-1 p-2 bg-muted/50 rounded-md">{previewBooking.notes}</p>
+                  </div>
+                )}
+              </PreviewSheetSection>
+
+              {/* Metadata Pills */}
+              <PreviewSheetSection className="flex flex-wrap gap-2">
+                {previewBooking.contact?.email && (
+                  <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.email}</span>
+                )}
+                {previewBooking.contact?.phone && (
+                  <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.phone}</span>
+                )}
+                {previewBooking.tags?.length > 0 && previewBooking.tags.map((tag) => (
+                  <span key={tag.id} className={`hig-caption-2 px-2 py-1 rounded-full border ${getTagColorClass(tag.color)}`}>
+                    {tag.name}
+                  </span>
+                ))}
+              </PreviewSheetSection>
+            </PreviewSheetContent>
+          </PreviewSheet>
+        )}
 
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <DialogContent>
@@ -891,7 +877,7 @@ export function CalendarView() {
                 <ChevronRight className="size-4" />
               </Button>
             </div>
-            <h2 className="text-base font-semibold">{getHeaderTitle()}</h2>
+            <h2>{getHeaderTitle()}</h2>
           </div>
 
           <div className="flex items-center gap-3">

@@ -9,7 +9,7 @@ export default function CreateOrgPage() {
       <Badge className="mb-4" variant="secondary">
         Step 1 of 3
       </Badge>
-      <h2 className="mb-2 text-2xl font-bold">Create Your Business</h2>
+      <h2 className="mb-2">Create Your Business</h2>
       <p className="mb-8 text-muted-foreground">
         Set up your business account to get started with ClientFlow
       </p>

@@ -215,7 +215,7 @@ export default function DashboardPage() {
       {/* Page Header with Quick Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Overview</h1>
+          <h1>Overview</h1>
           <p className="text-xs text-muted-foreground">Welcome back! Here's what's happening.</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">

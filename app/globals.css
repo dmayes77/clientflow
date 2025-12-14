@@ -76,7 +76,6 @@
   --color-destructive: oklch(0.6 0.2 25);
   --color-success: oklch(0.62 0.17 155);
 
-  /* Sidebar colors */
   --color-sidebar: oklch(0.18 0.015 260);
   --color-sidebar-foreground: oklch(0.98 0 0);
   --color-sidebar-primary: oklch(0.7 0.18 250);
@@ -93,22 +92,22 @@
   --breakpoint-tablet: 640px;
   --breakpoint-desktop: 1024px;
 
-  /* Typography - use text-* classes with responsive prefixes: text-sm fold:text-xs desktop:text-2xs */
-  --font-size-2xs: 0.5625rem; /* 9px */
-  --font-size-xs: 0.625rem; /* 10px */
-  --font-size-sm: 0.6875rem; /* 11px */
-  --font-size-base: 0.75rem; /* 12px */
-  --font-size-lg: 0.8125rem; /* 13px */
-  --font-size-xl: 0.875rem; /* 14px */
-  --font-size-2xl: 1rem; /* 16px */
-  --font-size-3xl: 1.125rem; /* 18px */
-  --font-size-4xl: 1.5rem; /* 24px */
-  --font-size-5xl: 1.875rem; /* 30px */
-  --font-size-6xl: 2.25rem; /* 36px */
-  --font-size-7xl: 3rem; /* 48px */
-  --font-size-8xl: 3.75rem; /* 60px */
+  /* Typography */
+  --font-size-2xs: 0.5625rem;
+  --font-size-xs: 0.625rem;
+  --font-size-sm: 0.6875rem;
+  --font-size-base: 0.75rem;
+  --font-size-lg: 0.8125rem;
+  --font-size-xl: 0.875rem;
+  --font-size-2xl: 1rem;
+  --font-size-3xl: 1.125rem;
+  --font-size-4xl: 1.5rem;
+  --font-size-5xl: 1.875rem;
+  --font-size-6xl: 2.25rem;
+  --font-size-7xl: 3rem;
+  --font-size-8xl: 3.75rem;
 
-  /* Colors - reference :root variables for light/dark mode support */
+  /* Colors - reference :root variables */
   --color-background: var(--color-background);
   --color-foreground: var(--color-foreground);
   --color-card: var(--color-card);
@@ -159,12 +158,166 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
 
-  /* Icon sizes - use with size-icon-* */
-  --size-icon-xs: 0.5rem; /* 8px */
-  --size-icon-sm: 0.625rem; /* 10px */
-  --size-icon-md: 0.75rem; /* 12px */
-  --size-icon-lg: 0.875rem; /* 14px */
-  --size-icon-xl: 1.25rem; /* 20px */
+  /* Icon sizes */
+  --size-icon-xs: 0.5rem;
+  --size-icon-sm: 0.625rem;
+  --size-icon-md: 0.75rem;
+  --size-icon-lg: 0.875rem;
+  --size-icon-xl: 1.25rem;
+}
+
+@layer utilities {
+  /* ========================================
+     APPLE HIG UTILITIES - ADAPTIVE
+     Use with breakpoint prefixes:
+     @apply hig-title-1 fold:hig-large-title tablet:text-2xl
+     ======================================== */
+
+  .hig-large-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.374px;
+  line-height: 41px;
+}
+
+.hig-title-1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.364px;
+  line-height: 34px;
+}
+
+.hig-title-2 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.352px;
+  line-height: 28px;
+}
+
+.hig-title-3 {
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.38px;
+  line-height: 25px;
+}
+
+.hig-title-3-emphasized {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.38px;
+  line-height: 25px;
+}
+
+.hig-headline {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.408px;
+  line-height: 22px;
+}
+
+.hig-body {
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.408px;
+  line-height: 22px;
+}
+
+.hig-body-emphasized {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.408px;
+  line-height: 22px;
+}
+
+.hig-callout {
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.32px;
+  line-height: 21px;
+}
+
+.hig-callout-emphasized {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.32px;
+  line-height: 21px;
+}
+
+.hig-subheadline {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: -0.24px;
+  line-height: 20px;
+}
+
+.hig-subheadline-emphasized {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.24px;
+  line-height: 20px;
+}
+
+.hig-footnote {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.078px;
+  line-height: 18px;
+}
+
+.hig-footnote-emphasized {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.078px;
+  line-height: 18px;
+}
+
+.hig-caption-1 {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 16px;
+}
+
+.hig-caption-1-emphasized {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 16px;
+}
+
+.hig-caption-2 {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.066px;
+  line-height: 13px;
+}
+
+.hig-caption-2-emphasized {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.066px;
+  line-height: 13px;
+}
+
+.hig-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hig-safe-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.hig-safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.hig-safe-all {
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
 }
 
 @layer base {
@@ -172,104 +325,107 @@
     @apply border-border;
   }
 
+  html,
   body {
-    @apply bg-background text-foreground;
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply bg-background text-foreground tablet:text-base desktop:text-base;
     font-family: var(--font-sans);
-    font-weight: 400;
-    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* HIG body (mobile default) */
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.408px;
+    line-height: 22px;
   }
 
-  /* ========================================
-     SEMANTIC HEADINGS - Mobile LARGE → Desktop SMALL
-     ======================================== */
+  /* ADAPTIVE HEADINGS - HIG on mobile, Tailwind on larger screens */
 
-  /* H1 - Page Title: 26px mobile → 18px desktop */
   h1 {
-    @apply text-3xl fold:text-2xl tablet:text-2xl desktop:text-3xl;
-    @apply font-bold leading-tight;
-    @apply mb-6 fold:mb-5 tablet:mb-4 desktop:mb-3;
-    letter-spacing: -0.025em;
+    @apply font-bold leading-tight tablet:text-2xl desktop:text-3xl;
+    /* HIG title-1 (mobile default) */
+    font-size: 28px;
+    letter-spacing: 0.364px;
+    line-height: 34px;
   }
 
-  /* H2 - Section Heading: 22px mobile → 16px desktop */
   h2 {
-    @apply text-2xl fold:text-xl tablet:text-xl desktop:text-2xl;
-    @apply font-bold leading-tight;
-    @apply mb-5 fold:mb-4 tablet:mb-4 desktop:mb-3;
-    letter-spacing: -0.02em;
+    @apply font-bold leading-tight tablet:text-xl desktop:text-2xl;
+    /* HIG title-2 (mobile default) */
+    font-size: 22px;
+    letter-spacing: 0.352px;
+    line-height: 28px;
   }
 
-  /* H3 - Subsection: 18px mobile → 14px desktop */
   h3 {
-    @apply text-xl fold:text-lg tablet:text-base desktop:text-xl;
-    @apply font-semibold leading-tight;
-    @apply mb-4 fold:mb-3 tablet:mb-3 desktop:mb-2;
-    letter-spacing: -0.015em;
+    @apply font-semibold leading-tight tablet:text-base desktop:text-xl;
+    /* HIG title-3 (mobile default) */
+    font-size: 20px;
+    letter-spacing: 0.38px;
+    line-height: 25px;
   }
 
-  /* H4 - Card Title: 16px mobile → 13px desktop */
   h4 {
-    @apply text-lg fold:text-base tablet:text-base desktop:text-lg;
-    @apply font-semibold leading-snug;
-    @apply mb-3 fold:mb-3 tablet:mb-2 desktop:mb-2;
+    @apply font-semibold leading-snug tablet:text-base desktop:text-lg;
+    /* HIG headline (mobile default) */
+    font-size: 17px;
+    letter-spacing: -0.408px;
+    line-height: 22px;
   }
 
-  /* H5 - Small Heading: 15px mobile → 12px desktop */
   h5 {
-    @apply text-base fold:text-sm tablet:text-sm desktop:text-base;
-    @apply font-semibold leading-snug;
-    @apply mb-3 fold:mb-2 tablet:mb-2 desktop:mb-2;
+    @apply font-semibold leading-snug tablet:text-sm desktop:text-base;
+    /* HIG subheadline (mobile default) */
+    font-size: 15px;
+    letter-spacing: -0.24px;
+    line-height: 20px;
   }
 
-  /* H6 - Smallest: 13px mobile → 11px desktop */
   h6 {
-    @apply text-sm fold:text-xs tablet:text-xs desktop:text-sm;
-    @apply font-semibold leading-normal;
-    @apply mb-2 fold:mb-2 tablet:mb-2 desktop:mb-1;
+    @apply font-semibold leading-normal tablet:text-xs desktop:text-sm;
+    /* HIG footnote (mobile default) */
+    font-size: 13px;
+    letter-spacing: -0.078px;
+    line-height: 18px;
   }
 
-  p {
-    @apply mb-4 fold:mb-3 tablet:mb-3 desktop:mb-2;
-  }
 
   input[type="number"],
   .numeric {
     font-variant-numeric: tabular-nums;
   }
-
-  CardTitle {
-    @apply mb-0!;
-  }
 }
 
 @layer components {
-  /* ========================================
-     DISPLAY CLASSES - For hero/marketing
-     ======================================== */
-
   .display-1 {
-    @apply text-5xl fold:text-4xl tablet:text-3xl desktop:text-4xl;
+    @apply fold:text-5xl tablet:text-3xl desktop:text-4xl;
     @apply font-bold leading-none;
-    letter-spacing: -0.04em;
+    /* HIG large-title (mobile default) */
+    font-size: 34px;
+    letter-spacing: 0.374px;
+    line-height: 41px;
   }
 
   .display-2 {
-    @apply text-4xl fold:text-3xl tablet:text-2xl desktop:text-3xl;
+    @apply fold:text-4xl tablet:text-2xl desktop:text-3xl;
     @apply font-bold leading-none;
-    letter-spacing: -0.035em;
+    /* HIG title-1 (mobile default) */
+    font-size: 28px;
+    letter-spacing: 0.364px;
+    line-height: 34px;
   }
 
   .display-3 {
-    @apply text-3xl fold:text-2xl tablet:text-xl desktop:text-2xl;
+    @apply fold:text-3xl tablet:text-xl desktop:text-2xl;
     @apply font-bold leading-tight;
-    letter-spacing: -0.03em;
+    /* HIG title-2 (mobile default) */
+    font-size: 22px;
+    letter-spacing: 0.352px;
+    line-height: 28px;
   }
-
-  /* ========================================
-     CARDS
-     ======================================== */
 
   .card {
     @apply rounded-lg border bg-card text-card-foreground shadow-sm;
@@ -281,13 +437,21 @@
   }
 
   .card-title {
-    @apply text-lg fold:text-base tablet:text-base desktop:text-lg;
+    @apply tablet:text-base desktop:text-lg;
     @apply font-semibold leading-none;
+    /* HIG headline (mobile default) */
+    font-size: 17px;
+    letter-spacing: -0.408px;
+    line-height: 22px;
   }
 
   .card-description {
-    @apply text-sm fold:text-xs tablet:text-xs desktop:text-sm;
+    @apply tablet:text-xs desktop:text-sm;
     @apply text-muted-foreground;
+    /* HIG footnote (mobile default) */
+    font-size: 13px;
+    letter-spacing: -0.078px;
+    line-height: 18px;
   }
 
   .card-content {
@@ -299,46 +463,58 @@
     @apply p-6 fold:p-5 tablet:p-4 desktop:p-3 pt-0;
   }
 
-  /* ========================================
-     FORMS
-     ======================================== */
-
   .input {
     @apply flex w-full rounded-md border border-input bg-background;
     @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
-    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply tablet:text-sm desktop:text-xs;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
+    /* HIG body (mobile default) */
+    font-size: 17px;
+    letter-spacing: -0.408px;
+    line-height: 22px;
   }
 
   .label {
-    @apply text-sm fold:text-xs tablet:text-xs desktop:text-xs;
+    @apply tablet:text-xs desktop:text-xs;
     @apply font-medium;
+    /* HIG footnote (mobile default) */
+    font-size: 13px;
+    letter-spacing: -0.078px;
+    line-height: 18px;
   }
 
   .textarea {
     @apply flex min-h-20 w-full rounded-md border border-input bg-background;
     @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
-    @apply text-xs fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply tablet:text-sm desktop:text-xs;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    /* HIG body (mobile default) */
+    font-size: 17px;
+    letter-spacing: -0.408px;
+    line-height: 22px;
   }
 
   .select {
     @apply flex w-full items-center justify-between rounded-md border border-input bg-background;
     @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
-    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply tablet:text-sm desktop:text-xs;
     @apply focus:outline-none focus:ring-2 focus:ring-ring;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
+    /* HIG body (mobile default) */
+    font-size: 17px;
+    letter-spacing: -0.408px;
+    line-height: 22px;
   }
-
-  /* ========================================
-     BADGES
-     ======================================== */
 
   .badge {
     @apply inline-flex items-center rounded-full border font-semibold;
     @apply px-2.5 py-0.5 fold:px-2 tablet:px-2 desktop:px-1.5;
-    @apply text-xs fold:text-xs tablet:text-xs desktop:text-xs;
+    @apply tablet:text-xs desktop:text-xs;
+    /* HIG caption-2 (mobile default) */
+    font-size: 11px;
+    letter-spacing: 0.066px;
+    line-height: 13px;
   }
 
   .badge-primary {
@@ -361,10 +537,6 @@
     @apply text-foreground;
   }
 
-  /* ========================================
-     TABLES
-     ======================================== */
-
   .table {
     @apply w-full;
   }
@@ -380,18 +552,22 @@
   .table-head {
     @apply text-left font-medium text-muted-foreground;
     @apply p-4 fold:p-3 tablet:p-3 desktop:p-2;
-    @apply text-sm fold:text-xs tablet:text-xs desktop:text-xs;
+    @apply tablet:text-xs desktop:text-xs;
+    /* HIG footnote (mobile default) */
+    font-size: 13px;
+    letter-spacing: -0.078px;
+    line-height: 18px;
   }
 
   .table-cell {
     @apply align-middle;
     @apply p-4 fold:p-3 tablet:p-3 desktop:p-2;
-    @apply text-base fold:text-sm tablet:text-sm desktop:text-xs;
+    @apply tablet:text-sm desktop:text-xs;
+    /* HIG body (mobile default) */
+    font-size: 17px;
+    letter-spacing: -0.408px;
+    line-height: 22px;
   }
-
-  /* ========================================
-     CONTAINER
-     ======================================== */
 
   .container {
     @apply mx-auto w-full;
@@ -399,11 +575,6 @@
   }
 }
 
-/* ========================================
-   SCROLLBAR STYLES
-   ======================================== */
-
-/* Mobile/Fold/Tablet: Hide scrollbars for app-like feel */
 * {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -412,7 +583,6 @@
   display: none;
 }
 
-/* Desktop (1024px+): Show compact scrollbars for mouse/trackpad users */
 @media (min-width: 1024px) {
   * {
     scrollbar-width: thin;
@@ -432,7 +602,6 @@
   }
 }
 
-/* Utility to force hide scrollbar */
 .scrollbar-hide {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
@@ -440,10 +609,6 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none !important;
 }
-
-/* ========================================
-   INTERACTIVE ELEMENT CURSORS
-   ======================================== */
 
 button,
 [role="button"],

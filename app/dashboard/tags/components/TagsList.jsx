@@ -246,7 +246,7 @@ export function TagsList() {
                 <Tag className="h-6 w-6 text-rose-600" />
               </div>
               <div>
-                <h3 className="font-medium">No tags yet</h3>
+                <h3>No tags yet</h3>
                 <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                   Create tags to categorize your contacts, invoices, and bookings. Tags can trigger automated workflows.
                 </p>

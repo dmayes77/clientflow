@@ -315,7 +315,7 @@ export default function PackageEditPage({ params }) {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">Edit Package</h1>
+          <h1>Edit Package</h1>
           <p className="text-muted-foreground">Update your package details and services</p>
         </div>
         <div className="flex items-center gap-2">

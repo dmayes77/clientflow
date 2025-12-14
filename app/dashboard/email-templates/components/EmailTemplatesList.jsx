@@ -470,7 +470,7 @@ export function EmailTemplatesList() {
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-12">
               <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-medium mb-1">No email templates</h3>
+              <h3 className="mb-1">No email templates</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 {filterCategory === "all" ? "Create your first email template to get started" : "No templates found in this category"}
               </p>

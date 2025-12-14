@@ -21,7 +21,10 @@ const DropdownMenuSubTrigger = React.forwardRef(
     <DropdownMenuPrimitive.SubTrigger
       ref={ref}
       className={cn(
-        "flex cursor-pointer select-none items-center rounded-sm px-2 py-1 text-sm outline-none focus:bg-accent",
+        "flex cursor-pointer select-none items-center rounded-sm px-2 py-1 outline-none focus:bg-accent",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG subheadline (mobile default) */
+        "text-[15px] tracking-[-0.24px] leading-[20px]",
         inset && "pl-8",
         className
       )}
@@ -74,7 +77,10 @@ const DropdownMenuItem = React.forwardRef(
     <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 min-h-md text-sm outline-none transition-colors",
+        "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 min-h-md outline-none transition-colors",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG subheadline (mobile default) */
+        "text-[15px] tracking-[-0.24px] leading-[20px]",
         "focus:bg-accent focus:text-accent-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:size-4 [&_svg]:shrink-0",
@@ -92,7 +98,10 @@ const DropdownMenuCheckboxItem = React.forwardRef(
     <DropdownMenuPrimitive.CheckboxItem
       ref={ref}
       className={cn(
-        "relative flex cursor-pointer select-none items-center rounded-sm py-1 pl-8 pr-2 text-sm outline-none transition-colors",
+        "relative flex cursor-pointer select-none items-center rounded-sm py-1 pl-8 pr-2 outline-none transition-colors",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG subheadline (mobile default) */
+        "text-[15px] tracking-[-0.24px] leading-[20px]",
         "focus:bg-accent focus:text-accent-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className
@@ -116,7 +125,10 @@ const DropdownMenuRadioItem = React.forwardRef(
     <DropdownMenuPrimitive.RadioItem
       ref={ref}
       className={cn(
-        "relative flex cursor-pointer select-none items-center rounded-sm py-1 pl-8 pr-2 text-sm outline-none transition-colors",
+        "relative flex cursor-pointer select-none items-center rounded-sm py-1 pl-8 pr-2 outline-none transition-colors",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG subheadline (mobile default) */
+        "text-[15px] tracking-[-0.24px] leading-[20px]",
         "focus:bg-accent focus:text-accent-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className
@@ -139,7 +151,10 @@ const DropdownMenuLabel = React.forwardRef(
     <DropdownMenuPrimitive.Label
       ref={ref}
       className={cn(
-        "px-2 py-1 text-2xs font-medium text-muted-foreground",
+        "px-2 py-1 font-medium text-muted-foreground",
+        "tablet:text-xs desktop:text-2xs",
+        /* HIG caption-2 (mobile default) */
+        "text-[11px] tracking-[0.066px] leading-[13px]",
         inset && "pl-8",
         className
       )}

@@ -177,13 +177,13 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
               {isPackage && (
                 <div className="bg-linear-to-r from-violet-500 to-purple-500 px-5 py-4">
                   <Badge className="bg-white/20 text-white border-0 mb-2">Package</Badge>
-                  <h2 className="text-xl font-bold text-white">{item.name}</h2>
+                  <h2 className="text-white">{item.name}</h2>
                 </div>
               )}
 
               <div className="p-5 space-y-4">
                 {/* Service title */}
-                {!isPackage && <h2 className="text-xl font-bold pr-8">{item.name}</h2>}
+                {!isPackage && <h2 className="pr-8">{item.name}</h2>}
 
                 {/* Price & Duration */}
                 <div className={`flex items-center gap-4 p-4 rounded-xl ${isPackage ? "bg-violet-50 border border-violet-100" : "bg-muted/50"}`}>
@@ -206,7 +206,7 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                 {/* What's Included (service) */}
                 {item.includes && item.includes.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-sm mb-3">What's Included</h4>
+                    <h4 className="mb-3">What's Included</h4>
                     <div className="space-y-2">
                       {item.includes.map((inc, index) => (
                         <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
@@ -223,7 +223,7 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                 {/* Included Services (package) */}
                 {isPackage && item.services && item.services.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-sm mb-3">{item.services.length} Services Included</h4>
+                    <h4 className="mb-3">{item.services.length} Services Included</h4>
                     <div className="space-y-2">
                       {item.services.map((service) => (
                         <div key={service.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
@@ -295,7 +295,7 @@ function ServiceCard({ service, onClick }) {
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-sm truncate">{service.name}</h3>
+        <h3 className="truncate">{service.name}</h3>
         {service.description && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{service.description}</p>}
         <div className="flex items-center gap-3 mt-2">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -325,7 +325,7 @@ function PackageCard({ pkg, onClick }) {
               <Package className="w-3 h-3 mr-1" />
               Package
             </Badge>
-            <h3 className="font-semibold text-sm">{pkg.name}</h3>
+            <h3>{pkg.name}</h3>
             {pkg.description && <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{pkg.description}</p>}
           </div>
           <div className="text-right shrink-0">
@@ -424,7 +424,7 @@ export default function TenantLandingPage({ params }) {
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
               <Building2 className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h1 className="text-xl font-bold mb-2">Business Not Found</h1>
+            <h1 className="mb-2">Business Not Found</h1>
             <p className="text-sm text-muted-foreground mb-6">The business you&apos;re looking for doesn&apos;t exist or may have been removed.</p>
             <Link href="/">
               <Button className="w-full">Go Home</Button>
@@ -460,7 +460,7 @@ export default function TenantLandingPage({ params }) {
 
               {/* Business Info */}
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold truncate">{business.name || "Welcome"}</h1>
+                <h1 className="truncate">{business.name || "Welcome"}</h1>
 
                 {/* Location */}
                 {hasAddress && (
@@ -515,7 +515,7 @@ export default function TenantLandingPage({ params }) {
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold">Services</h2>
+                  <h2>Services</h2>
                   <p className="text-xs text-muted-foreground">
                     {filteredServices.length} available
                     {selectedCategory && services.length !== filteredServices.length && <span className="text-muted-foreground/60"> of {services.length}</span>}
@@ -541,7 +541,7 @@ export default function TenantLandingPage({ params }) {
                   <Package className="w-5 h-5 text-violet-500" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold">Packages</h2>
+                  <h2>Packages</h2>
                   <p className="text-xs text-muted-foreground">
                     {filteredPackages.length} bundle{filteredPackages.length !== 1 ? "s" : ""} available
                     {selectedCategory && packages.length !== filteredPackages.length && <span className="text-muted-foreground/60"> of {packages.length}</span>}
@@ -564,7 +564,7 @@ export default function TenantLandingPage({ params }) {
             <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-bold mb-2">No Services Yet</h2>
+            <h2 className="mb-2">No Services Yet</h2>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">This business hasn&apos;t added any services yet. Check back soon!</p>
           </div>
         )}
@@ -575,7 +575,7 @@ export default function TenantLandingPage({ params }) {
             <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-7 h-7 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-bold mb-2">No Results</h2>
+            <h2 className="mb-2">No Results</h2>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-4">No services found in this category.</p>
             <Button variant="outline" size="sm" onClick={() => setSelectedCategory(null)}>
               View All Services

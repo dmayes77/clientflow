@@ -9,7 +9,12 @@ import { cn } from "@/lib/utils";
  * Uses responsive theme variables for sizing.
  */
 const alertVariants = cva(
-  "relative w-full rounded-lg border border-border px-3 py-2 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-2 gap-y-1 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  [
+    "relative w-full rounded-lg border border-border px-3 py-2 grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-2 gap-y-1 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+    "tablet:text-sm desktop:text-xs",
+    /* HIG footnote (mobile default) */
+    "text-[13px] tracking-[-0.078px] leading-[18px]",
+  ].join(" "),
   {
     variants: {
       variant: {
@@ -50,7 +55,10 @@ function AlertDescription({ className, ...props }) {
     <div
       data-slot="alert-description"
       className={cn(
-        "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-xs [&_p]:leading-relaxed",
+        "text-muted-foreground col-start-2 grid justify-items-start gap-1 [&_p]:leading-relaxed",
+        "tablet:text-xs desktop:text-2xs",
+        /* HIG caption-2 (mobile default) */
+        "text-[11px] tracking-[0.066px] leading-[13px]",
         className
       )}
       {...props}

@@ -14,7 +14,11 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
     <input
       type={type}
       className={cn(
-        "flex h-md w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors",
+        "flex w-full rounded-md border border-input bg-background shadow-sm transition-colors",
+        "px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG body (mobile default) */
+        "text-[17px] tracking-[-0.408px] leading-[22px]",
         "file:border-0 file:bg-transparent file:text-sm file:font-medium",
         "placeholder:text-muted-foreground",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring",

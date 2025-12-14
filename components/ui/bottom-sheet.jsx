@@ -74,8 +74,12 @@ export function BottomSheet({
             {/* Header */}
             <div className="flex items-start justify-between px-4 pb-3 border-b">
               <div>
-                {title && <h2 className="text-lg font-semibold">{title}</h2>}
-                {description && <p className="text-sm text-muted-foreground">{description}</p>}
+                {title && <h2>{title}</h2>}
+                {description && (
+                  <p className="text-muted-foreground tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-[18px]">
+                    {description}
+                  </p>
+                )}
               </div>
               <Button
                 variant="ghost"

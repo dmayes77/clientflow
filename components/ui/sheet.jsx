@@ -116,7 +116,13 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn("text-foreground font-semibold", className)}
+      className={cn(
+        "text-foreground font-semibold",
+        "tablet:text-base desktop:text-sm",
+        /* HIG headline (mobile default) */
+        "text-[17px] tracking-[-0.408px]",
+        className
+      )}
       {...props} />
   );
 }
@@ -128,7 +134,13 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn(
+        "text-muted-foreground",
+        "tablet:text-sm desktop:text-xs",
+        /* HIG footnote (mobile default) */
+        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        className
+      )}
       {...props} />
   );
 }

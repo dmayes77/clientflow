@@ -162,7 +162,7 @@ export default function PaymentPage() {
           <Sparkles className="mr-1 h-3 w-3" />
           Founders Program
         </Badge>
-        <h2 className="mb-2 text-2xl font-bold">Welcome, Founder!</h2>
+        <h2 className="mb-2">Welcome, Founder!</h2>
         <p className="mb-8 text-muted-foreground">
           You&apos;re eligible for 1 year of free Professional access
         </p>
@@ -215,7 +215,7 @@ export default function PaymentPage() {
       <Badge className="mb-4" variant="secondary">
         Step 2 of 3
       </Badge>
-      <h2 className="mb-2 text-2xl font-bold">Choose Your Plan</h2>
+      <h2 className="mb-2">Choose Your Plan</h2>
       <p className="mb-8 text-muted-foreground">
         Start with a 14-day free trial. No credit card required.
       </p>

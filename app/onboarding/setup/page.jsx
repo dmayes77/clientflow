@@ -173,7 +173,7 @@ function SetupForm() {
         <Badge className="mb-4" variant="secondary">
           Step 3 of 3
         </Badge>
-        <h2 className="mb-2 text-2xl font-bold">Business Details</h2>
+        <h2 className="mb-2">Business Details</h2>
         <p className="mb-8 text-muted-foreground">
           Tell us more about your business to personalize your experience
         </p>

@@ -80,7 +80,7 @@ export function InstallPrompt() {
               <Smartphone className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm mb-1">Install ClientFlow</h3>
+              <h3 className="mb-1">Install ClientFlow</h3>
               <p className="text-xs text-muted-foreground mb-3">
                 Tap the share button <span className="inline-block px-1 py-0.5 bg-muted rounded text-[10px]">⎙</span> then "Add to Home Screen" for the best experience.
               </p>
@@ -106,7 +106,7 @@ export function InstallPrompt() {
             <Download className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm mb-1">Install ClientFlow</h3>
+            <h3 className="mb-1">Install ClientFlow</h3>
             <p className="text-xs text-muted-foreground mb-3">
               Install for quick access, offline support, and a native app experience.
             </p>

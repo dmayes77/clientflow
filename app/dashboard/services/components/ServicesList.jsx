@@ -12,7 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  PreviewSheet,
+  PreviewSheetHeader,
+  PreviewSheetContent,
+  PreviewSheetSection,
+} from "@/components/ui/preview-sheet";
 import { BottomSheet, BottomSheetFooter } from "@/components/ui/bottom-sheet";
 import { useIsMobile } from "@/hooks/use-media-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -510,7 +515,7 @@ Format the includes list so I can easily copy each item individually.`;
               <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center mb-3">
                 <Wrench className="h-5 w-5 text-amber-600" />
               </div>
-              <h3 className="text-sm font-medium text-zinc-900 mb-1">No services yet</h3>
+              <h3 className="text-zinc-900 mb-1">No services yet</h3>
               <p className="text-xs text-muted-foreground mb-3">Create your first service to start booking</p>
               <Button size="xs" variant="success" onClick={() => handleOpenDialog()}>
                 <Plus className="h-3.5 w-3.5 mr-1" />
@@ -1139,168 +1144,159 @@ Format the includes list so I can easily copy each item individually.`;
       </Dialog>
 
       {/* Service Preview Sheet (Mobile) */}
-      <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
-        <SheetContent side="bottom" className="h-auto max-h-[90vh] rounded-t-2xl px-0 pb-0">
-          <SheetHeader className="sr-only">
-            <SheetTitle>{previewService?.name || "Service Preview"}</SheetTitle>
-          </SheetHeader>
-          {/* Drag Handle */}
-          <div className="flex justify-center pt-2 pb-3">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </div>
-
-          {previewService && (
-            <div className="flex flex-col">
-              {/* Service Header with Image */}
-              <div className="px-4 pb-3 flex items-start gap-3">
-                <div className="shrink-0 size-16 rounded-lg overflow-hidden bg-muted relative">
-                  <Image
-                    src={previewService.images?.[0]?.url || "/default_img.webp"}
-                    alt={previewService.name}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                  />
+      {previewService && (
+        <PreviewSheet
+          open={previewSheetOpen}
+          onOpenChange={setPreviewSheetOpen}
+          title={previewService?.name || "Service Preview"}
+          actionColumns={4}
+          header={
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 size-16 rounded-lg overflow-hidden bg-muted relative">
+                <Image
+                  src={previewService.images?.[0]?.url || "/default_img.webp"}
+                  alt={previewService.name}
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="hig-headline truncate">{previewService.name}</h3>
+                  <Badge variant={previewService.active ? "success" : "secondary"} className="shrink-0">
+                    {previewService.active ? "Active" : "Off"}
+                  </Badge>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate m-0">{previewService.name}</h3>
-                    <Badge variant={previewService.active ? "success" : "secondary"} className="shrink-0">
-                      {previewService.active ? "Active" : "Off"}
-                    </Badge>
-                  </div>
-                  {previewService.category && (
-                    <p className="text-sm text-muted-foreground">{previewService.category.name}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-sm font-semibold">{formatPrice(previewService.price)}</span>
-                    <span className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Clock className="size-3" />
-                      {formatDuration(previewService.duration)}
-                    </span>
-                  </div>
+                {previewService.category && (
+                  <p className="hig-footnote text-muted-foreground">{previewService.category.name}</p>
+                )}
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="hig-footnote font-semibold">{formatPrice(previewService.price)}</span>
+                  <span className="hig-footnote text-muted-foreground flex items-center gap-1">
+                    <Clock className="size-3" />
+                    {formatDuration(previewService.duration)}
+                  </span>
                 </div>
               </div>
-
-              {/* Description */}
-              {previewService.description && (
-                <div className="px-4 pb-3">
-                  <p className="text-sm text-muted-foreground line-clamp-3">{previewService.description}</p>
-                </div>
-              )}
-
-              {/* What's Included */}
-              {previewService.includes?.length > 0 && (
-                <div className="px-4 pb-3">
-                  <p className="text-xs text-muted-foreground mb-1.5">What's Included:</p>
-                  <div className="space-y-1">
-                    {previewService.includes.slice(0, 4).map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <Check className="size-3.5 text-green-600 shrink-0" />
-                        <span className="truncate">{item}</span>
-                      </div>
-                    ))}
-                    {previewService.includes.length > 4 && (
-                      <p className="text-xs text-muted-foreground pl-5">+{previewService.includes.length - 4} more</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Bar */}
-              <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-4 gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    router.push(`/dashboard/services/${previewService.id}`);
-                  }}
-                >
-                  <Pencil className="size-5" />
-                  <span className="text-xs">Edit</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    // Prepare duplicate
-                    setEditingService(null);
-                    setFormData({
-                      name: `${previewService.name} (Copy)`,
-                      description: previewService.description || "",
-                      duration: previewService.duration,
-                      price: previewService.price / 100,
-                      active: previewService.active,
-                      categoryId: previewService.categoryId || "",
-                      newCategoryName: "",
-                      includes: previewService.includes || [],
-                      imageId: previewService.images?.[0]?.id || null,
-                    });
-                    setDialogOpen(true);
-                  }}
-                >
-                  <Copy className="size-5" />
-                  <span className="text-xs">Duplicate</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex-col h-auto py-2 gap-1 ${previewService.active ? "text-amber-600" : "text-green-600"}`}
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(`/api/services/${previewService.id}`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ active: !previewService.active }),
-                      });
-                      if (res.ok) {
-                        const updated = await res.json();
-                        setServices(services.map((s) => (s.id === updated.id ? updated : s)));
-                        setPreviewService(updated);
-                        toast.success(updated.active ? "Service activated" : "Service deactivated");
-                      }
-                    } catch (error) {
-                      toast.error("Failed to update service");
-                    }
-                  }}
-                >
-                  {previewService.active ? (
-                    <>
-                      <X className="size-5" />
-                      <span className="text-xs">Deactivate</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="size-5" />
-                      <span className="text-xs">Activate</span>
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1 text-destructive hover:text-destructive"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    setServiceToDelete(previewService);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="size-5" />
-                  <span className="text-xs">Delete</span>
-                </Button>
-              </div>
-
-              {/* Safe area padding for mobile */}
-              <div className="h-[env(safe-area-inset-bottom)]" />
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+          }
+          actions={
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  router.push(`/dashboard/services/${previewService.id}`);
+                }}
+              >
+                <Pencil className="size-5" />
+                <span className="hig-caption-2">Edit</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  setEditingService(null);
+                  setFormData({
+                    name: `${previewService.name} (Copy)`,
+                    description: previewService.description || "",
+                    duration: previewService.duration,
+                    price: previewService.price / 100,
+                    active: previewService.active,
+                    categoryId: previewService.categoryId || "",
+                    newCategoryName: "",
+                    includes: previewService.includes || [],
+                    imageId: previewService.images?.[0]?.id || null,
+                  });
+                  setDialogOpen(true);
+                }}
+              >
+                <Copy className="size-5" />
+                <span className="hig-caption-2">Duplicate</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewService.active ? "text-amber-600" : "text-green-600"}`}
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/services/${previewService.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ active: !previewService.active }),
+                    });
+                    if (res.ok) {
+                      const updated = await res.json();
+                      setServices(services.map((s) => (s.id === updated.id ? updated : s)));
+                      setPreviewService(updated);
+                      toast.success(updated.active ? "Service activated" : "Service deactivated");
+                    }
+                  } catch (error) {
+                    toast.error("Failed to update service");
+                  }
+                }}
+              >
+                {previewService.active ? (
+                  <>
+                    <X className="size-5" />
+                    <span className="hig-caption-2">Deactivate</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="size-5" />
+                    <span className="hig-caption-2">Activate</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  setServiceToDelete(previewService);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="size-5" />
+                <span className="hig-caption-2">Delete</span>
+              </Button>
+            </>
+          }
+        >
+          <PreviewSheetContent>
+            {/* Description */}
+            {previewService.description && (
+              <PreviewSheetSection>
+                <p className="hig-footnote text-muted-foreground line-clamp-3">{previewService.description}</p>
+              </PreviewSheetSection>
+            )}
+
+            {/* What's Included */}
+            {previewService.includes?.length > 0 && (
+              <PreviewSheetSection>
+                <p className="hig-caption-2 text-muted-foreground mb-1.5">What's Included:</p>
+                <div className="space-y-1">
+                  {previewService.includes.slice(0, 4).map((item, index) => (
+                    <div key={index} className="flex items-center gap-2 hig-footnote">
+                      <Check className="size-3.5 text-green-600 shrink-0" />
+                      <span className="truncate">{item}</span>
+                    </div>
+                  ))}
+                  {previewService.includes.length > 4 && (
+                    <p className="hig-caption-2 text-muted-foreground pl-5">+{previewService.includes.length - 4} more</p>
+                  )}
+                </div>
+              </PreviewSheetSection>
+            )}
+          </PreviewSheetContent>
+        </PreviewSheet>
+      )}
     </>
   );
 }

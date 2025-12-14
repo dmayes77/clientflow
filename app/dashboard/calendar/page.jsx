@@ -9,8 +9,8 @@ export default function CalendarPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Calendar</h1>
-        <p className="text-sm text-muted-foreground">View and manage your bookings</p>
+        <h1>Calendar</h1>
+        <p className="text-muted-foreground">View and manage your bookings</p>
       </div>
       <CalendarView />
     </div>

@@ -17,8 +17,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  PreviewSheet,
+  PreviewSheetHeader,
+  PreviewSheetContent,
+  PreviewSheetSection,
+} from "@/components/ui/preview-sheet";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -360,7 +364,7 @@ export function InvoicesList() {
               <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center mb-4">
                 <InvoiceIcon className="h-6 w-6 text-success" />
               </div>
-              <h3 className="text-base font-medium mb-3">No invoices yet</h3>
+              <h3 className="mb-3">No invoices yet</h3>
               <p className="text-sm text-muted-foreground mb-6">
                 Create your first invoice to track payments
               </p>
@@ -624,311 +628,298 @@ export function InvoicesList() {
       </Dialog>
 
       {/* Invoice Preview Sheet */}
-      <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
-        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl px-0 pb-0 flex flex-col">
-          <SheetHeader className="sr-only">
-            <SheetTitle>{previewInvoice?.invoiceNumber || "Invoice Preview"}</SheetTitle>
-          </SheetHeader>
-          <div className="flex justify-center pt-2 pb-3 shrink-0">
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-          </div>
+      {previewInvoice && (
+        <PreviewSheet
+          open={previewSheetOpen}
+          onOpenChange={setPreviewSheetOpen}
+          title={previewInvoice?.invoiceNumber || "Invoice Preview"}
+          scrollable
+          header={
+            <div className="flex items-center justify-between">
+              <h3 className="hig-headline">{previewInvoice.invoiceNumber}</h3>
+              <Badge variant={statusConfig[previewInvoice.status]?.variant || "secondary"}>
+                {statusConfig[previewInvoice.status]?.label || previewInvoice.status}
+              </Badge>
+            </div>
+          }
+          actions={
+            <>
+              {/* Action 1: Send (if draft) or Pay (if sent/viewed/overdue) */}
+              {previewInvoice.status === "draft" ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                  disabled={sendingId === previewInvoice.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewSheetOpen(false);
+                    handleSend(previewInvoice);
+                  }}
+                >
+                  <Send className="h-5 w-5" />
+                  <span className="hig-caption-2">Send</span>
+                </Button>
+              ) : ["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewSheetOpen(false);
+                    handleOpenPaymentDialog(previewInvoice);
+                  }}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  <span className="hig-caption-2">Pay</span>
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 opacity-50" disabled>
+                  <CreditCard className="h-5 w-5" />
+                  <span className="hig-caption-2">Pay</span>
+                </Button>
+              )}
 
-          {previewInvoice && (
-            <div className="flex flex-col flex-1 min-h-0">
-              {/* Header */}
-              <div className="px-4 pb-3 shrink-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">{previewInvoice.invoiceNumber}</h3>
-                  <Badge variant={statusConfig[previewInvoice.status]?.variant || "secondary"}>
-                    {statusConfig[previewInvoice.status]?.label || previewInvoice.status}
-                  </Badge>
+              {/* Action 2: Download PDF */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                disabled={downloadingId === previewInvoice.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload(previewInvoice);
+                }}
+              >
+                <Download className="h-5 w-5" />
+                <span className="hig-caption-2">PDF</span>
+              </Button>
+
+              {/* Action 3: Edit */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewSheetOpen(false);
+                  router.push(`/dashboard/invoices/${previewInvoice.id}`);
+                }}
+              >
+                <Pencil className="h-5 w-5" />
+                <span className="hig-caption-2">Edit</span>
+              </Button>
+
+              {/* Action 4: Mark Paid (if applicable) */}
+              {["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-green-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewSheetOpen(false);
+                    handleStatusChange(previewInvoice, "paid");
+                  }}
+                >
+                  <CompleteIcon className="h-5 w-5" />
+                  <span className="hig-caption-2">Paid</span>
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 opacity-50" disabled>
+                  <CompleteIcon className="h-5 w-5" />
+                  <span className="hig-caption-2">Paid</span>
+                </Button>
+              )}
+
+              {/* Action 5: Delete */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewSheetOpen(false);
+                  setInvoiceToDelete(previewInvoice);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="h-5 w-5" />
+                <span className="hig-caption-2">Delete</span>
+              </Button>
+            </>
+          }
+        >
+          <PreviewSheetContent className="space-y-4">
+            {/* Contact Info */}
+            <PreviewSheetSection className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-muted flex items-center justify-center">
+                <User className="size-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="hig-subheadline font-medium truncate">{previewInvoice.contactName}</p>
+                <p className="hig-footnote text-muted-foreground truncate">{previewInvoice.contactEmail}</p>
+                {previewInvoice.contactAddress && (
+                  <p className="hig-caption-2 text-muted-foreground truncate">{previewInvoice.contactAddress}</p>
+                )}
+              </div>
+            </PreviewSheetSection>
+
+            <Separator />
+
+            {/* Dates */}
+            <PreviewSheetSection className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="size-4 text-muted-foreground" />
+                <div>
+                  <p className="hig-caption-2 text-muted-foreground">Issue Date</p>
+                  <p className="hig-footnote font-medium">{format(new Date(previewInvoice.issueDate || previewInvoice.createdAt), "MMM d, yyyy")}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Clock className="size-4 text-muted-foreground" />
+                <div>
+                  <p className="hig-caption-2 text-muted-foreground">Due Date</p>
+                  <p className="hig-footnote font-medium">{format(new Date(previewInvoice.dueDate), "MMM d, yyyy")}</p>
+                </div>
+              </div>
+              {previewInvoice.sentAt && (
+                <div className="flex items-center gap-2">
+                  <Send className="size-4 text-muted-foreground" />
+                  <div>
+                    <p className="hig-caption-2 text-muted-foreground">Sent</p>
+                    <p className="hig-footnote font-medium">{format(new Date(previewInvoice.sentAt), "MMM d, yyyy")}</p>
+                  </div>
+                </div>
+              )}
+              {previewInvoice.paidAt && (
+                <div className="flex items-center gap-2">
+                  <FileCheck className="size-4 text-green-600" />
+                  <div>
+                    <p className="hig-caption-2 text-muted-foreground">Paid</p>
+                    <p className="hig-footnote font-medium text-green-600">{format(new Date(previewInvoice.paidAt), "MMM d, yyyy")}</p>
+                  </div>
+                </div>
+              )}
+            </PreviewSheetSection>
 
-              {/* Scrollable Content */}
-              <ScrollArea className="flex-1 min-h-0">
-                <div className="px-4 space-y-4 pb-4">
-                  {/* Contact Info */}
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 rounded-full bg-muted flex items-center justify-center">
-                      <User className="size-5 text-muted-foreground" />
-                    </div>
+            <Separator />
+
+            {/* Line Items */}
+            <PreviewSheetSection>
+              <h4 className="hig-subheadline font-semibold mb-2">Line Items</h4>
+              <div className="space-y-2">
+                {(previewInvoice.lineItems || []).map((item, index) => (
+                  <div key={index} className={`flex justify-between items-start hig-footnote ${item.isDiscount ? "text-red-600" : ""}`}>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{previewInvoice.contactName}</p>
-                      <p className="text-sm text-muted-foreground truncate">{previewInvoice.contactEmail}</p>
-                      {previewInvoice.contactAddress && (
-                        <p className="text-xs text-muted-foreground truncate">{previewInvoice.contactAddress}</p>
+                      <p className="font-medium truncate">{item.description || "Item"}</p>
+                      {item.quantity > 1 && (
+                        <p className="hig-caption-2 text-muted-foreground">
+                          {item.quantity} × {formatPrice(item.unitPrice)}
+                        </p>
                       )}
                     </div>
+                    <span className="font-medium ml-2">
+                      {item.isDiscount ? "-" : ""}{formatPrice(Math.abs(item.amount))}
+                    </span>
                   </div>
+                ))}
+              </div>
+            </PreviewSheetSection>
 
-                  <Separator />
+            <Separator />
 
-                  {/* Dates */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="size-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Issue Date</p>
-                        <p className="text-sm font-medium">{format(new Date(previewInvoice.issueDate || previewInvoice.createdAt), "MMM d, yyyy")}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="size-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Due Date</p>
-                        <p className="text-sm font-medium">{format(new Date(previewInvoice.dueDate), "MMM d, yyyy")}</p>
-                      </div>
-                    </div>
-                    {previewInvoice.sentAt && (
-                      <div className="flex items-center gap-2">
-                        <Send className="size-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Sent</p>
-                          <p className="text-sm font-medium">{format(new Date(previewInvoice.sentAt), "MMM d, yyyy")}</p>
-                        </div>
-                      </div>
-                    )}
-                    {previewInvoice.paidAt && (
-                      <div className="flex items-center gap-2">
-                        <FileCheck className="size-4 text-green-600" />
-                        <div>
-                          <p className="text-xs text-muted-foreground">Paid</p>
-                          <p className="text-sm font-medium text-green-600">{format(new Date(previewInvoice.paidAt), "MMM d, yyyy")}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <Separator />
-
-                  {/* Line Items */}
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Line Items</h4>
-                    <div className="space-y-2">
-                      {(previewInvoice.lineItems || []).map((item, index) => (
-                        <div key={index} className={`flex justify-between items-start text-sm ${item.isDiscount ? "text-red-600" : ""}`}>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{item.description || "Item"}</p>
-                            {item.quantity > 1 && (
-                              <p className="text-xs text-muted-foreground">
-                                {item.quantity} × {formatPrice(item.unitPrice)}
-                              </p>
-                            )}
-                          </div>
-                          <span className="font-medium ml-2">
-                            {item.isDiscount ? "-" : ""}{formatPrice(Math.abs(item.amount))}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Financial Summary */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>{formatPrice(previewInvoice.subtotal)}</span>
-                    </div>
-                    {(previewInvoice.discountAmount || 0) > 0 && (
-                      <div className="flex justify-between text-sm text-red-600">
-                        <span>Discount {previewInvoice.discountCode ? `(${previewInvoice.discountCode})` : ""}</span>
-                        <span>-{formatPrice(previewInvoice.discountAmount)}</span>
-                      </div>
-                    )}
-                    {(previewInvoice.taxAmount || 0) > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax ({previewInvoice.taxRate}%)</span>
-                        <span>{formatPrice(previewInvoice.taxAmount)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-semibold text-lg pt-2 border-t">
-                      <span>Total</span>
-                      <span>{formatPrice(previewInvoice.total)}</span>
-                    </div>
-
-                    {/* Deposit Info */}
-                    {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
-                      <div className={`flex justify-between text-sm ${previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}`}>
-                        <span>Deposit ({getSafeDepositPercent(previewInvoice.depositPercent)}%)</span>
-                        <span>
-                          {previewInvoice.depositPaidAt ? "✓ " : ""}
-                          {formatPrice(getSafeDepositAmount(previewInvoice))}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Payment Info */}
-                    {(previewInvoice.amountPaid || 0) > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Amount Paid</span>
-                        <span>{formatPrice(previewInvoice.amountPaid)}</span>
-                      </div>
-                    )}
-                    {(previewInvoice.balanceDue || 0) > 0 && previewInvoice.status !== "paid" && (
-                      <div className="flex justify-between font-medium pt-2 border-t">
-                        <span>Balance Due</span>
-                        <span>{formatPrice(previewInvoice.balanceDue)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Notes */}
-                  {previewInvoice.notes && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h4 className="text-sm font-medium mb-1">Notes</h4>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewInvoice.notes}</p>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Terms */}
-                  {previewInvoice.terms && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h4 className="text-sm font-medium mb-1">Terms</h4>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{previewInvoice.terms}</p>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Tags */}
-                  {previewInvoice.tags?.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="flex flex-wrap gap-2">
-                        {previewInvoice.tags.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).map((tag) => (
-                          <span
-                            key={tag.id}
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTagColorClass(tag.color)}`}
-                          >
-                            {tag.name}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  )}
+            {/* Financial Summary */}
+            <PreviewSheetSection className="space-y-2">
+              <div className="flex justify-between hig-footnote">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatPrice(previewInvoice.subtotal)}</span>
+              </div>
+              {(previewInvoice.discountAmount || 0) > 0 && (
+                <div className="flex justify-between hig-footnote text-red-600">
+                  <span>Discount {previewInvoice.discountCode ? `(${previewInvoice.discountCode})` : ""}</span>
+                  <span>-{formatPrice(previewInvoice.discountAmount)}</span>
                 </div>
-              </ScrollArea>
-
-              {/* 5 Quick Actions */}
-              <div className="border-t bg-muted/30 px-4 py-3 grid grid-cols-5 gap-2">
-                {/* Action 1: Send (if draft) or Pay (if sent/viewed/overdue) */}
-                {previewInvoice.status === "draft" ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-1"
-                    disabled={sendingId === previewInvoice.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreviewSheetOpen(false);
-                      handleSend(previewInvoice);
-                    }}
-                  >
-                    <Send className="h-5 w-5" />
-                    <span className="text-xs">Send</span>
-                  </Button>
-                ) : ["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreviewSheetOpen(false);
-                      handleOpenPaymentDialog(previewInvoice);
-                    }}
-                  >
-                    <CreditCard className="h-5 w-5" />
-                    <span className="text-xs">Pay</span>
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-1 opacity-50" disabled>
-                    <CreditCard className="h-5 w-5" />
-                    <span className="text-xs">Pay</span>
-                  </Button>
-                )}
-
-                {/* Action 2: Download PDF */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  disabled={downloadingId === previewInvoice.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownload(previewInvoice);
-                  }}
-                >
-                  <Download className="h-5 w-5" />
-                  <span className="text-xs">PDF</span>
-                </Button>
-
-                {/* Action 3: Edit */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPreviewSheetOpen(false);
-                    router.push(`/dashboard/invoices/${previewInvoice.id}`);
-                  }}
-                >
-                  <Pencil className="h-5 w-5" />
-                  <span className="text-xs">Edit</span>
-                </Button>
-
-                {/* Action 4: Mark Paid (if applicable) */}
-                {["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-1 text-green-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreviewSheetOpen(false);
-                      handleStatusChange(previewInvoice, "paid");
-                    }}
-                  >
-                    <CompleteIcon className="h-5 w-5" />
-                    <span className="text-xs">Paid</span>
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-1 opacity-50" disabled>
-                    <CompleteIcon className="h-5 w-5" />
-                    <span className="text-xs">Paid</span>
-                  </Button>
-                )}
-
-                {/* Action 5: Delete */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-1 text-destructive hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPreviewSheetOpen(false);
-                    setInvoiceToDelete(previewInvoice);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-5 w-5" />
-                  <span className="text-xs">Delete</span>
-                </Button>
+              )}
+              {(previewInvoice.taxAmount || 0) > 0 && (
+                <div className="flex justify-between hig-footnote">
+                  <span className="text-muted-foreground">Tax ({previewInvoice.taxRate}%)</span>
+                  <span>{formatPrice(previewInvoice.taxAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between hig-subheadline font-semibold pt-2 border-t">
+                <span>Total</span>
+                <span>{formatPrice(previewInvoice.total)}</span>
               </div>
 
-              <div className="h-[env(safe-area-inset-bottom)]" />
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+              {/* Deposit Info */}
+              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
+                <div className={`flex justify-between hig-footnote ${previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}`}>
+                  <span>Deposit ({getSafeDepositPercent(previewInvoice.depositPercent)}%)</span>
+                  <span>
+                    {previewInvoice.depositPaidAt ? "✓ " : ""}
+                    {formatPrice(getSafeDepositAmount(previewInvoice))}
+                  </span>
+                </div>
+              )}
+
+              {/* Payment Info */}
+              {(previewInvoice.amountPaid || 0) > 0 && (
+                <div className="flex justify-between hig-footnote text-green-600">
+                  <span>Amount Paid</span>
+                  <span>{formatPrice(previewInvoice.amountPaid)}</span>
+                </div>
+              )}
+              {(previewInvoice.balanceDue || 0) > 0 && previewInvoice.status !== "paid" && (
+                <div className="flex justify-between hig-subheadline font-medium pt-2 border-t">
+                  <span>Balance Due</span>
+                  <span>{formatPrice(previewInvoice.balanceDue)}</span>
+                </div>
+              )}
+            </PreviewSheetSection>
+
+            {/* Notes */}
+            {previewInvoice.notes && (
+              <>
+                <Separator />
+                <PreviewSheetSection>
+                  <h4 className="hig-subheadline font-semibold mb-1">Notes</h4>
+                  <p className="hig-footnote text-muted-foreground whitespace-pre-wrap">{previewInvoice.notes}</p>
+                </PreviewSheetSection>
+              </>
+            )}
+
+            {/* Terms */}
+            {previewInvoice.terms && (
+              <>
+                <Separator />
+                <PreviewSheetSection>
+                  <h4 className="hig-subheadline font-semibold mb-1">Terms</h4>
+                  <p className="hig-footnote text-muted-foreground whitespace-pre-wrap">{previewInvoice.terms}</p>
+                </PreviewSheetSection>
+              </>
+            )}
+
+            {/* Tags */}
+            {previewInvoice.tags?.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).length > 0 && (
+              <>
+                <Separator />
+                <PreviewSheetSection className="flex flex-wrap gap-2">
+                  {previewInvoice.tags.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).map((tag) => (
+                    <span
+                      key={tag.id}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full hig-caption-2 font-medium border ${getTagColorClass(tag.color)}`}
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+                </PreviewSheetSection>
+              </>
+            )}
+          </PreviewSheetContent>
+        </PreviewSheet>
+      )}
     </>
   );
 }

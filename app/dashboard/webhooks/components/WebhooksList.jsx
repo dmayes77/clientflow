@@ -329,7 +329,7 @@ export function WebhooksList() {
               <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
                 <Webhook className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="font-medium text-zinc-900 mb-1">No webhooks yet</h3>
+              <h3 className="text-zinc-900 mb-1">No webhooks yet</h3>
               <p className="text-sm text-muted-foreground mb-4 max-w-sm">
                 Webhooks allow external applications to receive real-time data when events happen in
                 your ClientFlow account.

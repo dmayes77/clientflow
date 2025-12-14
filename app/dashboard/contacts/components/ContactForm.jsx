@@ -301,8 +301,8 @@ export function ContactForm({ mode = "create", contactId = null }) {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-semibold">{mode === "edit" ? formData.name || "Edit Contact" : "New Contact"}</h1>
-          <p className="text-sm text-muted-foreground">{mode === "edit" ? "Update contact details" : "Add a new contact to your list"}</p>
+          <h1>{mode === "edit" ? formData.name || "Edit Contact" : "New Contact"}</h1>
+          <p className="text-muted-foreground">{mode === "edit" ? "Update contact details" : "Add a new contact to your list"}</p>
         </div>
       </div>
 

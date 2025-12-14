@@ -81,7 +81,7 @@ export default function CompletePage() {
         Setup Complete!
       </Badge>
 
-      <h2 className="mb-2 text-2xl font-bold">You&apos;re All Set!</h2>
+      <h2 className="mb-2">You&apos;re All Set!</h2>
       <p className="mb-8 text-muted-foreground">
         Your business is ready to accept bookings. Here&apos;s what you can do next.
       </p>
@@ -99,7 +99,7 @@ export default function CompletePage() {
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium">{step.title}</h3>
+                  <h3>{step.title}</h3>
                   <p className="text-sm text-muted-foreground">{step.description}</p>
                 </div>
               </CardContent>

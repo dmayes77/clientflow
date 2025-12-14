@@ -17,7 +17,7 @@ export default function OfflinePage() {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold mb-2">You're Offline</h1>
+        <h1 className="mb-2">You're Offline</h1>
 
         {/* Description */}
         <p className="text-sm text-muted-foreground mb-6">

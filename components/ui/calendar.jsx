@@ -61,7 +61,10 @@ function Calendar({
           defaultClassNames.month_caption
         ),
         dropdowns: cn(
-          "w-full flex items-center text-sm font-medium justify-center h-(--cell-size) gap-1.5",
+          "w-full flex items-center font-medium justify-center h-(--cell-size) gap-1.5",
+          "tablet:text-sm desktop:text-xs",
+          /* HIG footnote (mobile default) */
+          "text-[13px] tracking-[-0.078px] leading-[18px]",
           defaultClassNames.dropdowns
         ),
         dropdown_root: cn(
@@ -69,19 +72,29 @@ function Calendar({
           defaultClassNames.dropdown_root
         ),
         dropdown: cn("absolute bg-popover inset-0 opacity-0", defaultClassNames.dropdown),
-        caption_label: cn("select-none font-medium", captionLayout === "label"
-          ? "text-sm"
-          : "rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5", defaultClassNames.caption_label),
+        caption_label: cn(
+          "select-none font-medium tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-[18px]",
+          captionLayout === "label"
+            ? ""
+            : "rounded-md pl-2 pr-1 flex items-center gap-1 h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5",
+          defaultClassNames.caption_label
+        ),
         table: "w-full border-collapse",
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
-          "text-muted-foreground rounded-md flex-1 font-normal text-[0.8rem] select-none",
+          "text-muted-foreground rounded-md flex-1 font-normal select-none",
+          "tablet:text-xs desktop:text-2xs",
+          /* HIG caption-2 (mobile default) */
+          "text-[11px] tracking-[0.066px] leading-[13px]",
           defaultClassNames.weekday
         ),
         week: cn("flex w-full mt-2", defaultClassNames.week),
         week_number_header: cn("select-none w-(--cell-size)", defaultClassNames.week_number_header),
         week_number: cn(
-          "text-[0.8rem] select-none text-muted-foreground",
+          "select-none text-muted-foreground",
+          "tablet:text-xs desktop:text-2xs",
+          /* HIG caption-2 (mobile default) */
+          "text-[11px] tracking-[0.066px] leading-[13px]",
           defaultClassNames.week_number
         ),
         day: cn(

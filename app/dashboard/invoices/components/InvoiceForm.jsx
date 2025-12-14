@@ -464,8 +464,8 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-semibold mb-0!">{mode === "edit" ? `Edit ${invoice?.invoiceNumber || "Invoice"}` : "New Invoice"}</h1>
-          <p className="text-sm text-muted-foreground">{mode === "edit" ? "Update invoice details" : "Create a new invoice"}</p>
+          <h1 className="mb-0!">{mode === "edit" ? `Edit ${invoice?.invoiceNumber || "Invoice"}` : "New Invoice"}</h1>
+          <p className="text-muted-foreground">{mode === "edit" ? "Update invoice details" : "Create a new invoice"}</p>
         </div>
       </div>
 
