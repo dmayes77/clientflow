@@ -101,21 +101,21 @@ export function IntegrationsList() {
       {/* Stripe Connect Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <CreditCard className="h-6 w-6 text-purple-600" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg shrink-0">
+                <CreditCard className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <CardTitle>Stripe Payments</CardTitle>
-                <CardDescription>Accept payments from your clients</CardDescription>
+                <CardDescription className="hig-caption-1">Accept payments from your clients</CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pl-11 tablet:pl-0">
               {isConnected && (
                 <Button variant="outline" size="sm" onClick={fetchAccountStatus}>
                   <RefreshCw className="h-4 w-4 mr-1" />
-                  Refresh
+                  <span className="hidden fold:inline">Refresh</span>
                 </Button>
               )}
               {isFullySetup ? (
@@ -126,7 +126,7 @@ export function IntegrationsList() {
               ) : isConnected ? (
                 <Badge variant="warning">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  Setup Incomplete
+                  Incomplete
                 </Badge>
               ) : (
                 <Badge variant="secondary">
@@ -141,49 +141,49 @@ export function IntegrationsList() {
           {isConnected ? (
             <>
               {/* Account Details */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 tablet:grid-cols-4 gap-4">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Charges</p>
+                  <p className="hig-caption-1 text-muted-foreground">Charges</p>
                   <div className="flex items-center gap-1">
                     {account.chargesEnabled ? (
                       <>
                         <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm font-medium">Enabled</span>
+                        <span className="hig-footnote font-medium">Enabled</span>
                       </>
                     ) : (
                       <>
                         <XCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-sm font-medium">Disabled</span>
+                        <span className="hig-footnote font-medium">Disabled</span>
                       </>
                     )}
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Payouts</p>
+                  <p className="hig-caption-1 text-muted-foreground">Payouts</p>
                   <div className="flex items-center gap-1">
                     {account.payoutsEnabled ? (
                       <>
                         <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm font-medium">Enabled</span>
+                        <span className="hig-footnote font-medium">Enabled</span>
                       </>
                     ) : (
                       <>
                         <XCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-sm font-medium">Disabled</span>
+                        <span className="hig-footnote font-medium">Disabled</span>
                       </>
                     )}
                   </div>
                 </div>
                 {account.country && (
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Country</p>
-                    <p className="text-sm font-medium">{account.country}</p>
+                    <p className="hig-caption-1 text-muted-foreground">Country</p>
+                    <p className="hig-footnote font-medium">{account.country}</p>
                   </div>
                 )}
                 {account.defaultCurrency && (
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Currency</p>
-                    <p className="text-sm font-medium">{account.defaultCurrency}</p>
+                    <p className="hig-caption-1 text-muted-foreground">Currency</p>
+                    <p className="hig-footnote font-medium uppercase">{account.defaultCurrency}</p>
                   </div>
                 )}
               </div>
@@ -266,11 +266,11 @@ export function IntegrationsList() {
           <CardDescription>What you can do with Stripe payments</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 fold:grid-cols-2 tablet:grid-cols-3 gap-4">
             {STRIPE_FEATURES.map((feature, index) => (
               <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <feature.icon className="h-5 w-5 text-purple-500 shrink-0" />
-                <span className="text-sm">{feature.label}</span>
+                <span className="hig-footnote">{feature.label}</span>
               </div>
             ))}
           </div>
@@ -284,11 +284,11 @@ export function IntegrationsList() {
           <CardDescription>We're working on adding more integrations</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 tablet:grid-cols-4 gap-4">
             {["Google Calendar", "Zoom", "QuickBooks", "Mailchimp"].map((name) => (
               <div
                 key={name}
-                className="flex items-center justify-center p-4 rounded-lg border border-dashed text-muted-foreground text-sm"
+                className="flex items-center justify-center p-4 rounded-lg border border-dashed text-muted-foreground hig-footnote"
               >
                 {name}
               </div>

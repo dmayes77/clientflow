@@ -308,17 +308,17 @@ export function WebhooksList() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between pb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <CardTitle className="flex items-center gap-2">
               <Webhook className="h-5 w-5 text-purple-500" />
               Webhook Endpoints
             </CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription className="hig-caption-1 mt-1">
               Receive real-time notifications when events occur
             </CardDescription>
           </div>
-          <Button size="sm" onClick={() => handleOpenDialog()}>
+          <Button size="sm" onClick={() => handleOpenDialog()} className="w-full tablet:w-auto">
             <Plus className="h-4 w-4 mr-1" />
             Add Endpoint
           </Button>
@@ -326,11 +326,11 @@ export function WebhooksList() {
         <CardContent>
           {webhooks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-                <Webhook className="h-6 w-6 text-purple-600" />
+              <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
+                <Webhook className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-zinc-900 mb-1">No webhooks yet</h3>
-              <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+              <h3 className="hig-subheadline mb-1">No webhooks yet</h3>
+              <p className="hig-footnote text-muted-foreground mb-4 max-w-sm">
                 Webhooks allow external applications to receive real-time data when events happen in
                 your ClientFlow account.
               </p>
@@ -381,12 +381,12 @@ export function WebhooksList() {
                             {deliveryStatus.label}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                          <code className="text-sm font-mono truncate">{webhook.url}</code>
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
+                          <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <code className="hig-caption-1 font-mono truncate">{webhook.url}</code>
                         </div>
                         {webhook.description && (
-                          <p className="text-sm text-muted-foreground mb-2">
+                          <p className="hig-footnote text-muted-foreground mb-2">
                             {webhook.description}
                           </p>
                         )}
@@ -441,16 +441,16 @@ export function WebhooksList() {
 
                     {/* Signing Secret */}
                     <div className="mt-3 pt-3 border-t">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Signing Secret:</span>
-                          <code className="text-xs font-mono bg-muted px-2 py-0.5 rounded">
+                      <div className="flex flex-col gap-2 fold:flex-row fold:items-center fold:justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="hig-caption-2 text-muted-foreground shrink-0">Signing Secret:</span>
+                          <code className="hig-caption-2 font-mono bg-muted px-2 py-0.5 rounded truncate">
                             {showSecrets[webhook.id]
                               ? webhook.secret
-                              : "whsec_" + "•".repeat(24)}
+                              : "whsec_" + "•".repeat(16)}
                           </code>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -654,62 +654,96 @@ export function WebhooksList() {
             <DialogTitle>Webhook Delivery History</DialogTitle>
             <DialogDescription>
               {selectedWebhook?.url && (
-                <code className="text-xs">{selectedWebhook.url}</code>
+                <code className="hig-caption-1 break-all">{selectedWebhook.url}</code>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             {selectedWebhook?.deliveries?.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">Status</TableHead>
-                      <TableHead>Event</TableHead>
-                      <TableHead className="w-[100px]">Code</TableHead>
-                      <TableHead className="w-[150px]">Time</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedWebhook.deliveries.map((delivery) => (
-                      <TableRow key={delivery.id}>
-                        <TableCell>
-                          {delivery.success ? (
-                            <Badge variant="success">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Success
-                            </Badge>
-                          ) : (
-                            <Badge variant="destructive">
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Failed
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <code className="text-xs">{delivery.event}</code>
-                        </TableCell>
-                        <TableCell>
-                          <code className="text-xs">{delivery.statusCode || "—"}</code>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span className="text-xs">
-                              {format(new Date(delivery.createdAt), "MMM d, h:mm a")}
-                            </span>
-                          </div>
-                        </TableCell>
+              <>
+                {/* Mobile Cards */}
+                <div className="space-y-3 tablet:hidden">
+                  {selectedWebhook.deliveries.map((delivery) => (
+                    <div key={delivery.id} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        {delivery.success ? (
+                          <Badge variant="success">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Success
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Failed
+                          </Badge>
+                        )}
+                        <code className="hig-caption-2 text-muted-foreground">
+                          {delivery.statusCode || "—"}
+                        </code>
+                      </div>
+                      <code className="block hig-caption-1 truncate">{delivery.event}</code>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span className="hig-caption-2">
+                          {format(new Date(delivery.createdAt), "MMM d, h:mm a")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table */}
+                <div className="hidden tablet:block rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead>Event</TableHead>
+                        <TableHead className="w-[100px]">Code</TableHead>
+                        <TableHead className="w-[150px]">Time</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedWebhook.deliveries.map((delivery) => (
+                        <TableRow key={delivery.id}>
+                          <TableCell>
+                            {delivery.success ? (
+                              <Badge variant="success">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Success
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Failed
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs">{delivery.event}</code>
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs">{delivery.statusCode || "—"}</code>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span className="text-xs">
+                                {format(new Date(delivery.createdAt), "MMM d, h:mm a")}
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Activity className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No deliveries yet</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="hig-footnote text-muted-foreground">No deliveries yet</p>
+                <p className="hig-caption-1 text-muted-foreground mt-1">
                   Deliveries will appear here when events are triggered
                 </p>
               </div>

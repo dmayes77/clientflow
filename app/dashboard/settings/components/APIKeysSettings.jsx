@@ -147,15 +147,15 @@ export function APIKeysSettings() {
 
       {/* API Keys Card */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Key className="h-5 w-5 text-amber-500" />
               Your API Keys
             </CardTitle>
-            <CardDescription>Generate and manage API keys for your integrations</CardDescription>
+            <CardDescription className="hig-caption-1">Generate and manage API keys for your integrations</CardDescription>
           </div>
-          <Button onClick={() => setNewKeyDialogOpen(true)}>
+          <Button onClick={() => setNewKeyDialogOpen(true)} className="w-full tablet:w-auto">
             <Plus className="h-4 w-4 mr-1" />
             Generate New Key
           </Button>
@@ -164,47 +164,21 @@ export function APIKeysSettings() {
           {apiKeys.length === 0 ? (
             <div className="text-center py-8">
               <Key className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground">No API keys generated yet</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="hig-footnote text-muted-foreground">No API keys generated yet</p>
+              <p className="hig-caption-1 text-muted-foreground mt-1">
                 Generate your first API key to start integrating
               </p>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Key</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Last Used</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {apiKeys.map((apiKey) => (
-                    <TableRow key={apiKey.id}>
-                      <TableCell className="font-medium">{apiKey.name}</TableCell>
-                      <TableCell>
-                        <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                          {apiKey.key}
-                        </code>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(apiKey.createdAt), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {apiKey.lastUsed
-                          ? format(new Date(apiKey.lastUsed), "MMM d, yyyy")
-                          : "Never"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="success">
-                          Active
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
+            <>
+              {/* Mobile Cards */}
+              <div className="space-y-3 tablet:hidden">
+                {apiKeys.map((apiKey) => (
+                  <div key={apiKey.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium hig-subheadline">{apiKey.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="success">Active</Badge>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -218,12 +192,81 @@ export function APIKeysSettings() {
                             <Trash2 className="h-4 w-4" />
                           )}
                         </Button>
-                      </TableCell>
+                      </div>
+                    </div>
+                    <code className="block bg-muted px-2 py-1.5 rounded hig-caption-1 font-mono break-all">
+                      {apiKey.key}
+                    </code>
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                      <div>
+                        <p className="hig-caption-2 text-muted-foreground">Created</p>
+                        <p className="hig-footnote">{format(new Date(apiKey.createdAt), "MMM d, yyyy")}</p>
+                      </div>
+                      <div>
+                        <p className="hig-caption-2 text-muted-foreground">Last Used</p>
+                        <p className="hig-footnote">
+                          {apiKey.lastUsed ? format(new Date(apiKey.lastUsed), "MMM d, yyyy") : "Never"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table */}
+              <div className="hidden tablet:block rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Key</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Last Used</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {apiKeys.map((apiKey) => (
+                      <TableRow key={apiKey.id}>
+                        <TableCell className="font-medium">{apiKey.name}</TableCell>
+                        <TableCell>
+                          <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
+                            {apiKey.key}
+                          </code>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(apiKey.createdAt), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {apiKey.lastUsed
+                            ? format(new Date(apiKey.lastUsed), "MMM d, yyyy")
+                            : "Never"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="success">Active</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteKey(apiKey.id)}
+                            disabled={deletingId === apiKey.id}
+                          >
+                            {deletingId === apiKey.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -235,18 +278,18 @@ export function APIKeysSettings() {
             <Code className="h-5 w-5 text-blue-500" />
             Getting Started
           </CardTitle>
-          <CardDescription>Use your API key to authenticate requests</CardDescription>
+          <CardDescription className="hig-caption-1">Use your API key to authenticate requests</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-sm mb-2">Include your API key in the Authorization header:</p>
-            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+            <p className="hig-footnote mb-2">Include your API key in the Authorization header:</p>
+            <pre className="bg-muted p-3 tablet:p-4 rounded-lg overflow-x-auto text-xs tablet:text-sm">
               <code>{`curl -X GET "https://api.clientflow.com/v1/bookings" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json"`}</code>
             </pre>
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" asChild className="w-full tablet:w-auto">
             <a href="/api-reference" target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4 mr-2" />
               View Full API Documentation
