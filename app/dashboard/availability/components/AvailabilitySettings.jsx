@@ -390,14 +390,14 @@ export function AvailabilitySettings() {
   return (
     <div className="space-y-6">
       {/* Header with Save Button */}
-      <div className="flex items-center justify-between">
-        <Alert className="flex-1 mr-4">
+      <div className="flex flex-col gap-3 tablet:flex-row tablet:items-center tablet:justify-between">
+        <Alert className="flex-1">
           <Info className="h-4 w-4" />
-          <AlertDescription>
-            Clients will only be able to book during your available hours. Use date overrides for holidays or special events.
+          <AlertDescription className="hig-footnote">
+            Clients will only be able to book during your available hours.
           </AlertDescription>
         </Alert>
-        <Button variant="success" onClick={handleSave} disabled={saving}>
+        <Button variant="success" onClick={handleSave} disabled={saving} className="w-full tablet:w-auto">
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
           Save Changes
         </Button>
@@ -407,24 +407,24 @@ export function AvailabilitySettings() {
         <TabsList className="grid w-full grid-cols-3 h-auto p-1 rounded-lg border border-border bg-muted">
           <TabsTrigger
             value="schedule"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2 tablet:px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
           >
-            <Clock className="h-4 w-4" />
-            <span className="hig-footnote">Weekly Schedule</span>
+            <Clock className="h-4 w-4 shrink-0" />
+            <span className="hig-footnote hidden tablet:inline">Schedule</span>
           </TabsTrigger>
           <TabsTrigger
             value="overrides"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2 tablet:px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
           >
-            <CalendarOff className="h-4 w-4" />
-            <span className="hig-footnote">Date Overrides</span>
+            <CalendarOff className="h-4 w-4 shrink-0" />
+            <span className="hig-footnote hidden tablet:inline">Overrides</span>
           </TabsTrigger>
           <TabsTrigger
             value="settings"
-            className="flex items-center justify-center gap-2 py-3 px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-2 tablet:px-4 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border"
           >
-            <Settings className="h-4 w-4" />
-            <span className="hig-footnote">Settings</span>
+            <Settings className="h-4 w-4 shrink-0" />
+            <span className="hig-footnote hidden tablet:inline">Settings</span>
           </TabsTrigger>
         </TabsList>
 
@@ -432,36 +432,36 @@ export function AvailabilitySettings() {
         <TabsContent value="schedule" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 tablet:flex-row tablet:items-center tablet:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-blue-500" />
                     Weekly Schedule
                   </CardTitle>
-                  <CardDescription>Set your regular working hours for each day</CardDescription>
+                  <CardDescription className="hig-caption-1">Set your regular working hours</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => applyPreset("applyMonday")}>
+                <Button variant="outline" size="sm" onClick={() => applyPreset("applyMonday")} className="hidden tablet:flex">
                   Apply Monday to weekdays
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2">
               {schedule.map((day) => (
-                <div key={day.dayOfWeek} className="flex items-center gap-4 py-3 border-b last:border-0">
-                  <div className="w-32 flex items-center gap-3">
+                <div key={day.dayOfWeek} className="flex flex-col gap-2 py-3 border-b last:border-0 tablet:flex-row tablet:items-center tablet:gap-4">
+                  <div className="flex items-center gap-3 min-w-[100px]">
                     <Switch checked={day.active} onCheckedChange={() => handleToggleDay(day.dayOfWeek)} />
-                    <span className={`font-medium ${!day.active ? "text-muted-foreground line-through" : ""}`}>
+                    <span className={`font-medium hig-footnote ${!day.active ? "text-muted-foreground line-through" : ""}`}>
                       {day.dayName}
                     </span>
                   </div>
 
                   {day.active ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 pl-10 tablet:pl-0">
                       <Select
                         value={day.startTime}
                         onValueChange={(value) => handleTimeChange(day.dayOfWeek, "startTime", value)}
                       >
-                        <SelectTrigger className="w-[130px]">
+                        <SelectTrigger className="w-[100px] tablet:w-[120px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -472,12 +472,12 @@ export function AvailabilitySettings() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <span className="text-muted-foreground">to</span>
+                      <span className="text-muted-foreground hig-caption-1">to</span>
                       <Select
                         value={day.endTime}
                         onValueChange={(value) => handleTimeChange(day.dayOfWeek, "endTime", value)}
                       >
-                        <SelectTrigger className="w-[130px]">
+                        <SelectTrigger className="w-[100px] tablet:w-[120px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -490,7 +490,7 @@ export function AvailabilitySettings() {
                       </Select>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-sm">Closed</span>
+                    <span className="text-muted-foreground hig-caption-1 pl-10 tablet:pl-0">Closed</span>
                   )}
                 </div>
               ))}
@@ -541,67 +541,56 @@ export function AvailabilitySettings() {
               {overrides.length === 0 ? (
                 <div className="text-center py-8">
                   <CalendarOff className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground">No date overrides set</p>
-                  <p className="text-xs text-muted-foreground mt-1">Add one for holidays or special events</p>
+                  <p className="hig-footnote text-muted-foreground">No date overrides set</p>
+                  <p className="hig-caption-1 text-muted-foreground mt-1">Add one for holidays or special events</p>
                 </div>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Hours</TableHead>
-                        <TableHead>Reason</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {overrides
-                        .sort((a, b) => new Date(a.date) - new Date(b.date))
-                        .map((override) => (
-                          <TableRow key={override.id}>
-                            <TableCell className="font-medium">
+                <div className="space-y-3">
+                  {overrides
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .map((override) => (
+                      <div key={override.id} className="flex items-start justify-between gap-3 p-3 rounded-lg border bg-card">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium hig-footnote">
                               {format(new Date(override.date), "EEE, MMM d, yyyy")}
-                            </TableCell>
-                            <TableCell>
-                              {override.type === "blocked" ? (
-                                <Badge variant="destructive" className="gap-1">
-                                  <CalendarOff className="h-3 w-3" />
-                                  Closed
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary" className="gap-1">
-                                  <CalendarClock className="h-3 w-3" />
-                                  Custom Hours
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {override.type === "custom"
-                                ? `${formatTime(override.startTime)} - ${formatTime(override.endTime)}`
-                                : "—"}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{override.reason || "—"}</TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-600 hover:text-red-700"
-                                onClick={() => handleDeleteOverride(override.id)}
-                                disabled={deletingId === override.id}
-                              >
-                                {deletingId === override.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
+                            </span>
+                            {override.type === "blocked" ? (
+                              <Badge variant="destructive" className="gap-1">
+                                <CalendarOff className="h-3 w-3" />
+                                Closed
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="gap-1">
+                                <CalendarClock className="h-3 w-3" />
+                                Custom
+                              </Badge>
+                            )}
+                          </div>
+                          {override.type === "custom" && (
+                            <p className="hig-caption-1 text-muted-foreground">
+                              {formatTime(override.startTime)} - {formatTime(override.endTime)}
+                            </p>
+                          )}
+                          {override.reason && (
+                            <p className="hig-caption-1 text-muted-foreground truncate">{override.reason}</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-600 hover:text-red-700 shrink-0"
+                          onClick={() => handleDeleteOverride(override.id)}
+                          disabled={deletingId === override.id}
+                        >
+                          {deletingId === override.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
                 </div>
               )}
             </CardContent>
