@@ -154,13 +154,13 @@ export function BillingSettings() {
       {/* Current Plan Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 tablet:flex-row tablet:items-center tablet:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-amber-500" />
                 Current Plan
               </CardTitle>
-              <CardDescription>Your subscription and billing details</CardDescription>
+              <CardDescription className="hig-caption-1">Your subscription and billing details</CardDescription>
             </div>
             <Badge variant={getStatusVariant(subscriptionStatus)}>
               {getStatusLabel(subscriptionStatus)}
@@ -168,20 +168,20 @@ export function BillingSettings() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 tablet:flex-row tablet:items-center tablet:justify-between">
             <div>
-              <h3>ClientFlow Professional</h3>
+              <h3 className="hig-headline">ClientFlow Professional</h3>
               <p className="text-muted-foreground">
                 <span className="text-3xl font-bold text-foreground">$149</span>
                 <span className="text-muted-foreground">/month</span>
               </p>
             </div>
             {subscription?.currentPeriodEnd && (
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">
+              <div className="tablet:text-right">
+                <p className="hig-caption-1 text-muted-foreground">
                   {subscription.cancelAtPeriodEnd ? "Access until" : "Next billing date"}
                 </p>
-                <p className="font-medium">
+                <p className="font-medium hig-footnote">
                   {format(new Date(subscription.currentPeriodEnd * 1000), "MMMM d, yyyy")}
                 </p>
               </div>
@@ -192,10 +192,10 @@ export function BillingSettings() {
 
           {/* Plan Features */}
           <div>
-            <h4 className="mb-4">Plan includes:</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <h4 className="mb-4 hig-subheadline">Plan includes:</h4>
+            <div className="grid grid-cols-1 fold:grid-cols-2 tablet:grid-cols-3 gap-3">
               {PLAN_FEATURES.map((feature, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm">
+                <div key={index} className="flex items-center gap-2 hig-footnote">
                   <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                   <span>{feature.label}</span>
                 </div>
@@ -212,15 +212,15 @@ export function BillingSettings() {
             <CreditCard className="h-5 w-5 text-blue-500" />
             Billing Management
           </CardTitle>
-          <CardDescription>Manage your payment methods and billing history</CardDescription>
+          <CardDescription className="hig-caption-1">Manage your payment methods and billing history</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {tenant?.stripeCustomerId ? (
             <>
-              <p className="text-sm text-muted-foreground">
+              <p className="hig-footnote text-muted-foreground">
                 Access the billing portal to update your payment method, view invoices, and manage your subscription.
               </p>
-              <Button onClick={openCustomerPortal} disabled={portalLoading}>
+              <Button onClick={openCustomerPortal} disabled={portalLoading} className="w-full tablet:w-auto">
                 {portalLoading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -233,7 +233,7 @@ export function BillingSettings() {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Billing Not Set Up</AlertTitle>
-              <AlertDescription>
+              <AlertDescription className="hig-footnote">
                 Your billing account hasn't been configured yet. This typically happens automatically when you
                 subscribe to a plan. If you believe this is an error, please contact support.
               </AlertDescription>
@@ -245,15 +245,15 @@ export function BillingSettings() {
       {/* Cancellation Info */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Need to cancel?</CardTitle>
+          <CardTitle className="hig-subheadline">Need to cancel?</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="hig-footnote text-muted-foreground mb-4">
             You can cancel your subscription at any time through the billing portal. If you cancel, you'll continue
             to have access until the end of your current billing period.
           </p>
           <Alert>
-            <AlertDescription>
+            <AlertDescription className="hig-footnote">
               Before canceling, consider reaching out to our support team. We'd love to help resolve any issues
               you may be experiencing.
             </AlertDescription>
