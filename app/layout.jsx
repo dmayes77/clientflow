@@ -101,7 +101,10 @@ export default function RootLayout({ children }) {
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <ClerkProvider>
+        <ClerkProvider
+          signInFallbackRedirectUrl="/dashboard"
+          signUpFallbackRedirectUrl="/dashboard"
+        >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <NetworkStatus />
             {children}
