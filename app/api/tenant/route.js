@@ -6,13 +6,18 @@ import { updateTenantSchema, validateRequest } from "@/lib/validations";
 
 // GET /api/tenant - Get current tenant info
 export async function GET() {
+  console.log("[API] GET /api/tenant - Request received");
+
   try {
     const { userId, orgId } = await auth();
+    console.log("[API] Auth result - userId:", userId, "orgId:", orgId);
 
     if (!userId || !orgId) {
+      console.log("[API] Unauthorized - missing userId or orgId");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    console.log("[API] Fetching tenant for orgId:", orgId);
     const tenant = await prisma.tenant.findUnique({
       where: { clerkOrgId: orgId },
       select: {
