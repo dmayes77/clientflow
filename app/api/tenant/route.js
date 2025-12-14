@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { updateTenantSchema, validateRequest } from "@/lib/validations";
+import { getOrCreateTenant } from "@/lib/auth";
 
 // GET /api/tenant - Get current tenant info
 export async function GET() {
@@ -17,9 +18,15 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[API] Fetching tenant for orgId:", orgId);
+    console.log("[API] Getting or creating tenant for orgId:", orgId);
+
+    // Auto-create tenant if it doesn't exist
+    const createdTenant = await getOrCreateTenant(orgId);
+    console.log("[API] Tenant found/created:", createdTenant.id);
+
+    // Re-fetch with all fields we need
     const tenant = await prisma.tenant.findUnique({
-      where: { clerkOrgId: orgId },
+      where: { id: createdTenant.id },
       select: {
         id: true,
         name: true,
@@ -57,10 +64,6 @@ export async function GET() {
         updatedAt: true,
       },
     });
-
-    if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
-    }
 
     // Fetch subscription details from Stripe if customer exists
     let subscriptionData = null;
