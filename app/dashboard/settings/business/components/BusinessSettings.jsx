@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useOrganization } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -51,6 +52,7 @@ export function BusinessSettings() {
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { organization } = useOrganization();
   const [formData, setFormData] = useState({
     businessName: "",
     businessDescription: "",
@@ -77,7 +79,7 @@ export function BusinessSettings() {
 
   useEffect(() => {
     fetchTenantData();
-  }, []);
+  }, [organization]);
 
   const fetchTenantData = async () => {
     try {
@@ -85,7 +87,8 @@ export function BusinessSettings() {
       if (res.ok) {
         const data = await res.json();
         setFormData({
-          businessName: data.businessName || "",
+          // Use org name as fallback for business name if not set
+          businessName: data.businessName || organization?.name || "",
           businessDescription: data.businessDescription || "",
           businessAddress: data.businessAddress || "",
           businessCity: data.businessCity || "",

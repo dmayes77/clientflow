@@ -90,6 +90,16 @@ export async function GET() {
   }
 }
 
+// Helper to generate slug from business name
+function generateSlug(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .substring(0, 50);
+}
+
 // PATCH /api/tenant - Update tenant info
 export async function PATCH(request) {
   try {
@@ -112,6 +122,21 @@ export async function PATCH(request) {
 
     if (!success) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
+    }
+
+    // Generate slug from businessName if not already set
+    if (data.businessName && !tenant.slug) {
+      const baseSlug = generateSlug(data.businessName);
+      // Check if slug is unique, append random suffix if needed
+      let slug = baseSlug;
+      let attempts = 0;
+      while (attempts < 5) {
+        const existing = await prisma.tenant.findUnique({ where: { slug } });
+        if (!existing || existing.id === tenant.id) break;
+        slug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+        attempts++;
+      }
+      data.slug = slug;
     }
 
     const updatedTenant = await prisma.tenant.update({
