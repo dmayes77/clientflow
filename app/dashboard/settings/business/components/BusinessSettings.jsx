@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,9 @@ import {
   ExternalLink,
   Receipt,
   Percent,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 
 const COUNTRIES = [
@@ -45,6 +49,8 @@ export function BusinessSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
   const [formData, setFormData] = useState({
     businessName: "",
     businessDescription: "",
@@ -64,6 +70,10 @@ export function BusinessSettings() {
     linkedinUrl: "",
     youtubeUrl: "",
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     fetchTenantData();
@@ -177,6 +187,54 @@ export function BusinessSettings() {
           Save Changes
         </Button>
       </div>
+
+      {/* Appearance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sun className="h-5 w-5 text-amber-500" />
+            Appearance
+          </CardTitle>
+          <CardDescription>Customize how ClientFlow looks on your device</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label>Theme</Label>
+            <div className="flex gap-2">
+              <Button
+                variant={mounted && theme === "light" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTheme("light")}
+                className="flex items-center gap-2"
+              >
+                <Sun className="h-4 w-4" />
+                Light
+              </Button>
+              <Button
+                variant={mounted && theme === "dark" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTheme("dark")}
+                className="flex items-center gap-2"
+              >
+                <Moon className="h-4 w-4" />
+                Dark
+              </Button>
+              <Button
+                variant={mounted && theme === "system" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTheme("system")}
+                className="flex items-center gap-2"
+              >
+                <Monitor className="h-4 w-4" />
+                System
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Choose your preferred color scheme or sync with your device settings
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Public Booking Link */}
       {bookingUrl && (
