@@ -461,7 +461,7 @@ export function AvailabilitySettings() {
                         value={day.startTime}
                         onValueChange={(value) => handleTimeChange(day.dayOfWeek, "startTime", value)}
                       >
-                        <SelectTrigger className="w-[100px] tablet:w-[120px]">
+                        <SelectTrigger className="w-[115px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -477,7 +477,7 @@ export function AvailabilitySettings() {
                         value={day.endTime}
                         onValueChange={(value) => handleTimeChange(day.dayOfWeek, "endTime", value)}
                       >
-                        <SelectTrigger className="w-[100px] tablet:w-[120px]">
+                        <SelectTrigger className="w-[115px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
