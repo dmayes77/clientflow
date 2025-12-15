@@ -406,7 +406,7 @@ export function PackagesList() {
           </div>
           <Button
             size="xs"
-            onClick={() => handleOpenDialog()}
+            onClick={() => router.push("/dashboard/packages/new")}
             disabled={services.length === 0}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -433,7 +433,7 @@ export function PackagesList() {
               <p className="text-xs text-muted-foreground mb-3">
                 Bundle your {services.length} service{services.length !== 1 ? "s" : ""} with a discount.
               </p>
-              <Button size="xs" onClick={() => handleOpenDialog()}>
+              <Button size="xs" onClick={() => router.push("/dashboard/packages/new")}>
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Create Package
               </Button>
@@ -449,7 +449,7 @@ export function PackagesList() {
                       setPreviewPackage(pkg);
                       setPreviewSheetOpen(true);
                     } else {
-                      handleOpenDialog(pkg);
+                      router.push(`/dashboard/packages/${pkg.id}`);
                     }
                   }}
                   className="relative flex flex-col bg-card border rounded-lg overflow-hidden text-left hover:border-primary/50 transition-colors"
@@ -471,7 +471,7 @@ export function PackagesList() {
                     {/* Status badge - top left */}
                     <Badge
                       variant={pkg.active ? "success" : "secondary"}
-                      className="absolute top-2 left-2 text-xs px-1.5 py-0.5 z-20"
+                      className="absolute top-2 left-2 text-[11px] px-1.5 py-0.5 z-20"
                     >
                       {pkg.active ? "Active" : "Off"}
                     </Badge>
@@ -1006,18 +1006,6 @@ export function PackagesList() {
                 className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
                 onClick={() => {
                   setPreviewSheetOpen(false);
-                  router.push(`/dashboard/packages/${previewPackage.id}`);
-                }}
-              >
-                <Pencil className="size-5" />
-                <span className="hig-caption-2">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
                   setEditingPackage(null);
                   setFormData({
                     name: `${previewPackage.name} (Copy)`,
@@ -1069,6 +1057,18 @@ export function PackagesList() {
                     <span className="hig-caption-2">Activate</span>
                   </>
                 )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  router.push(`/dashboard/packages/${previewPackage.id}`);
+                }}
+              >
+                <Pencil className="size-5" />
+                <span className="hig-caption-2">Edit</span>
               </Button>
               <Button
                 variant="ghost"

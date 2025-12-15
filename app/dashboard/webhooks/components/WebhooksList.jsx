@@ -392,12 +392,12 @@ export function WebhooksList() {
                         )}
                         <div className="flex flex-wrap gap-1">
                           {webhook.events?.slice(0, 4).map((event) => (
-                            <Badge key={event} variant="outline" className="text-xs">
+                            <Badge key={event} variant="outline">
                               {event}
                             </Badge>
                           ))}
                           {webhook.events?.length > 4 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline">
                               +{webhook.events.length - 4} more
                             </Badge>
                           )}
@@ -550,7 +550,7 @@ export function WebhooksList() {
                             )}
                             <span className="font-medium text-sm">{category}</span>
                             {selectedCount > 0 && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary">
                                 {selectedCount}
                               </Badge>
                             )}

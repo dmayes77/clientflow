@@ -1271,7 +1271,7 @@ export function BookingForm({
                               const colors = getTagColors(tag.color);
                               return (
                                 <CommandItem key={tag.id} value={tag.name} onSelect={() => handleAddTag(tag.id)}>
-                                  <Badge variant="secondary" className={cn(colors.bg, colors.text, "text-xs")}>
+                                  <Badge variant="secondary" className={cn(colors.bg, colors.text)}>
                                     {tag.name}
                                   </Badge>
                                 </CommandItem>

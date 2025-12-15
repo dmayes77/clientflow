@@ -411,7 +411,7 @@ export function InvoicesList() {
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-0.5">
                         <span className="text-[13px] text-muted-foreground">{invoice.invoiceNumber}</span>
-                        <Badge variant={statusConfig[invoice.status]?.variant || "secondary"} className="text-[11px] h-5">
+                        <Badge variant={statusConfig[invoice.status]?.variant || "secondary"} className="shrink-0">
                           {statusConfig[invoice.status]?.label || invoice.status}
                         </Badge>
                       </div>
@@ -745,22 +745,7 @@ export function InvoicesList() {
                 <span className="hig-caption-2">PDF</span>
               </Button>
 
-              {/* Action 3: Edit */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewSheetOpen(false);
-                  router.push(`/dashboard/invoices/${previewInvoice.id}`);
-                }}
-              >
-                <Pencil className="h-5 w-5" />
-                <span className="hig-caption-2">Edit</span>
-              </Button>
-
-              {/* Action 4: Mark Paid (if applicable) */}
+              {/* Action 3: Mark Paid (if applicable) */}
               {["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
                 <Button
                   variant="ghost"
@@ -781,6 +766,21 @@ export function InvoicesList() {
                   <span className="hig-caption-2">Paid</span>
                 </Button>
               )}
+
+              {/* Action 4: Edit */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewSheetOpen(false);
+                  router.push(`/dashboard/invoices/${previewInvoice.id}`);
+                }}
+              >
+                <Pencil className="h-5 w-5" />
+                <span className="hig-caption-2">Edit</span>
+              </Button>
 
               {/* Action 5: Delete */}
               <Button

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * Uses responsive theme variables for sizing.
  */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 px-2.5 py-0.5 fold:px-2 tablet:px-2 desktop:px-1.5 tablet:text-xs desktop:text-xs text-[11px] tracking-[0.066px] leading-[13px]",
+  "inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 px-2 py-0.5 sm:px-2.5 text-xs sm:text-[11px]",
   {
     variants: {
       variant: {

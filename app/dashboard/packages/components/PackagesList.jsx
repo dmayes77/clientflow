@@ -257,7 +257,7 @@ export function PackagesList() {
                         <div className="flex flex-wrap gap-1">
                           {pkg.services?.length > 0 ? (
                             pkg.services.slice(0, 2).map((service) => (
-                              <Badge key={service.id} variant="outline" className="text-xs">
+                              <Badge key={service.id} variant="outline">
                                 {service.name}
                               </Badge>
                             ))
@@ -265,7 +265,7 @@ export function PackagesList() {
                             <span className="text-muted-foreground text-sm">No services</span>
                           )}
                           {pkg.services?.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline">
                               +{pkg.services.length - 2}
                             </Badge>
                           )}

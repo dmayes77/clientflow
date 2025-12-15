@@ -501,7 +501,7 @@ export function MediaLibrary() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{image.name}</p>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline">
                                 {currentTypes.find((t) => t.value === image.type)?.label || image.type}
                               </Badge>
                               <span>
@@ -555,7 +555,7 @@ export function MediaLibrary() {
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{video.name}</p>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline">
                                 {VIDEO_TYPES.find((t) => t.value === video.type)?.label || video.type}
                               </Badge>
                               {video.duration && (

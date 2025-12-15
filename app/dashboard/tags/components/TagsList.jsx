@@ -288,7 +288,7 @@ export function TagsList() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[15px] font-semibold truncate">{tag.name}</span>
-                        <Badge variant="outline" className="text-[11px] h-5 px-1.5 shrink-0">
+                        <Badge variant="outline" className="shrink-0">
                           <TypeIcon className="size-3 mr-1" />
                           {getTypeLabel(tag.type)}
                         </Badge>

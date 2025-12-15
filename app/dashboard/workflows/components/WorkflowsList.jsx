@@ -373,7 +373,7 @@ export function WorkflowsList() {
                           <div className="flex items-center gap-2">
                             <span className="text-[15px] font-semibold truncate">{workflow.name}</span>
                             {!workflow.active && (
-                              <Badge variant="secondary" className="text-[11px] h-5 px-1.5 shrink-0">Off</Badge>
+                              <Badge variant="secondary" className="shrink-0">Off</Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -454,11 +454,11 @@ export function WorkflowsList() {
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs text-muted-foreground">Trigger:</span>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary">
                           {TRIGGER_TYPES.find((t) => t.value === workflow.triggerType)?.label || workflow.triggerType}
                         </Badge>
                         {workflow.triggerTag && (
-                          <Badge className="bg-indigo-100 text-indigo-700 text-xs">
+                          <Badge className="bg-indigo-100 text-indigo-700">
                             {workflow.triggerTag.name}
                           </Badge>
                         )}

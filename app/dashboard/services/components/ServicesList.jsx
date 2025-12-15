@@ -504,7 +504,7 @@ Format the includes list so I can easily copy each item individually.`;
             <span className="text-sm font-medium">Services</span>
             <span className="text-xs text-muted-foreground">({services.length})</span>
           </div>
-          <Button size="xs" variant="success" onClick={() => handleOpenDialog()}>
+          <Button size="xs" variant="success" onClick={() => router.push("/dashboard/services/new")}>
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline ml-1">Add</span>
           </Button>
@@ -517,7 +517,7 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
               <h3 className="text-zinc-900 mb-1">No services yet</h3>
               <p className="text-xs text-muted-foreground mb-3">Create your first service to start booking</p>
-              <Button size="xs" variant="success" onClick={() => handleOpenDialog()}>
+              <Button size="xs" variant="success" onClick={() => router.push("/dashboard/services/new")}>
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 Create Service
               </Button>
@@ -533,7 +533,7 @@ Format the includes list so I can easily copy each item individually.`;
                       setPreviewService(service);
                       setPreviewSheetOpen(true);
                     } else {
-                      handleOpenDialog(service);
+                      router.push(`/dashboard/services/${service.id}`);
                     }
                   }}
                   className="relative flex flex-col bg-card border rounded-lg overflow-hidden text-left hover:border-primary/50 transition-colors"
@@ -555,7 +555,7 @@ Format the includes list so I can easily copy each item individually.`;
                     {/* Status badge - top left */}
                     <Badge
                       variant={service.active ? "success" : "secondary"}
-                      className="absolute top-2 left-2 text-xs px-1.5 py-0.5 z-20"
+                      className="absolute top-2 left-2 text-[11px] px-1.5 py-0.5 z-20"
                     >
                       {service.active ? "Active" : "Off"}
                     </Badge>
@@ -1189,18 +1189,6 @@ Format the includes list so I can easily copy each item individually.`;
                 className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
                 onClick={() => {
                   setPreviewSheetOpen(false);
-                  router.push(`/dashboard/services/${previewService.id}`);
-                }}
-              >
-                <Pencil className="size-5" />
-                <span className="hig-caption-2">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
                   setEditingService(null);
                   setFormData({
                     name: `${previewService.name} (Copy)`,
@@ -1252,6 +1240,18 @@ Format the includes list so I can easily copy each item individually.`;
                     <span className="hig-caption-2">Activate</span>
                   </>
                 )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                onClick={() => {
+                  setPreviewSheetOpen(false);
+                  router.push(`/dashboard/services/${previewService.id}`);
+                }}
+              >
+                <Pencil className="size-5" />
+                <span className="hig-caption-2">Edit</span>
               </Button>
               <Button
                 variant="ghost"

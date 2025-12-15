@@ -515,7 +515,7 @@ export function EmailTemplatesList() {
                       <div className="flex items-center gap-2">
                         <span className="text-[15px] font-semibold truncate">{template.name}</span>
                         {template.category && (
-                          <Badge variant="secondary" className="text-[11px] h-5 px-1.5 shrink-0">
+                          <Badge variant="secondary" className="shrink-0">
                             {getCategoryLabel(template.category)}
                           </Badge>
                         )}
@@ -544,7 +544,7 @@ export function EmailTemplatesList() {
                           {template.name}
                         </button>
                         {template.category && (
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary">
                             {getCategoryLabel(template.category)}
                           </Badge>
                         )}

@@ -125,7 +125,7 @@ export function WhatsIncluded() {
                   <p className="text-xs text-muted-foreground">Expand capabilities</p>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-xs">Soon</Badge>
+              <Badge variant="secondary">Soon</Badge>
             </div>
           </div>
           <div className="p-5">
