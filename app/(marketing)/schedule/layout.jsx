@@ -1,7 +1,6 @@
 // app/book or app/(booking)/layout.jsx
 import Link from "next/link";
 import { ThemeProvider } from "@/components/theme-provider";
-import "@/styles/enterprise-theme.css";
 
 export default function BookingLayout({ children }) {
   return (

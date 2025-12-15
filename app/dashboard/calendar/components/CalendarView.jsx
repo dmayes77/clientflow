@@ -431,7 +431,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 2).map((booking) => (
                     <div
                       key={booking.id}
-                      className={cn("text-2xs px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
+                      className={cn("text-[12px] leading-tight px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleBookingClick(booking);
@@ -440,7 +440,7 @@ export function CalendarView() {
                       {formatTimeInTz(booking.scheduledAt, "h:mma")} {booking.contact?.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && <div className="text-2xs text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
+                  {dayBookings.length > 2 && <div className="text-[12px] leading-tight text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
                 </div>
               </div>
             );
@@ -501,7 +501,7 @@ export function CalendarView() {
                       return (
                         <div
                           key={booking.id}
-                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white text-2xs overflow-hidden", statusConfig[booking.status]?.color)}
+                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white text-[12px] overflow-hidden", statusConfig[booking.status]?.color)}
                           style={{
                             top: `${topOffset}px`,
                             height: `${Math.max(height, 20)}px`,
@@ -572,7 +572,7 @@ export function CalendarView() {
                     return (
                       <div
                         key={booking.id}
-                        className={cn("absolute left-1 right-1 rounded px-2 text-white text-xs overflow-hidden", statusConfig[booking.status]?.color)}
+                        className={cn("absolute left-1 right-1 rounded px-2 text-white text-[12px] overflow-hidden", statusConfig[booking.status]?.color)}
                         style={{
                           top: `${topOffset}px`,
                           height: `${Math.max(height, 28)}px`,

@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import "@/styles/enterprise-theme.css";
 
 export const metadata = {
   title: "Privacy Policy | ClientFlow",

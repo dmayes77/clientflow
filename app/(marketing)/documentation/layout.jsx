@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Book, Code, Webhook, CreditCard, ChevronRight, Home } from "lucide-react";
-import "@/styles/enterprise-theme.css";
 
 const navItems = [
   {
