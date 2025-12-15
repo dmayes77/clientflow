@@ -37,7 +37,7 @@ function AccordionTrigger({
           "cursor-pointer focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
           "tablet:text-sm desktop:text-xs",
           /* HIG subheadline (mobile default) */
-          "text-[15px] tracking-[-0.24px] leading-[20px]",
+          "text-[15px] tracking-[-0.24px] leading-5",
           className
         )}
         {...props}>

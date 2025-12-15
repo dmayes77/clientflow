@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -10,6 +11,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/clerk(.*)",
   "/api/stripe/webhook(.*)",
 ]);
+
+const isAuthRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 
 // Check if route is a tenant public page (matches [slug] pattern)
 function isTenantRoute(pathname) {
@@ -29,13 +32,23 @@ function isTenantRoute(pathname) {
   return tenantPattern.test(pathname);
 }
 
-export default clerkMiddleware(async (auth, req) => {
+export const proxy = clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
+  const { userId } = await auth();
 
-  // Allow public routes and tenant public pages
-  if (!isPublicRoute(req) && !isTenantRoute(pathname)) {
-    await auth.protect();
+  // Redirect authenticated users away from auth pages to dashboard
+  if (userId && isAuthRoute(req)) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
+
+  // Protect non-public routes - redirects to sign-in if not authenticated
+  if (!isPublicRoute(req) && !isTenantRoute(pathname)) {
+    if (!userId) {
+      return NextResponse.redirect(new URL("/sign-in", req.url));
+    }
+  }
+
+  return NextResponse.next();
 });
 
 export const config = {

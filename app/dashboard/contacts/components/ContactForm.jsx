@@ -297,17 +297,17 @@ export function ContactForm({ mode = "create", contactId = null }) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" onClick={() => router.push("/dashboard/contacts")}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={() => router.back()}>
+          <ArrowLeft className="size-6" />
         </Button>
-        <div>
-          <h1>{mode === "edit" ? formData.name || "Edit Contact" : "New Contact"}</h1>
-          <p className="text-muted-foreground">{mode === "edit" ? "Update contact details" : "Add a new contact to your list"}</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="hig-title-2 truncate">{mode === "edit" ? formData.name || "Edit Contact" : "New Contact"}</h1>
+          <p className="hig-footnote text-muted-foreground">{mode === "edit" ? "Update contact details" : "Add a new contact to your list"}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
           {/* Left Column - Basic Info */}
           <Card>
             <CardContent className="p-6 space-y-4">
@@ -400,21 +400,21 @@ export function ContactForm({ mode = "create", contactId = null }) {
               {/* Stats (edit mode only) */}
               {mode === "edit" && stats && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
-                    <span className="block text-lg font-bold text-blue-700 dark:text-blue-400">{stats.totalBookings}</span>
-                    <span className="text-xs text-blue-600 dark:text-blue-500">Total Bookings</span>
+                  <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
+                    <span className="block text-2xl font-bold text-white">{stats.totalBookings}</span>
+                    <span className="text-sm text-blue-100">Total Bookings</span>
                   </div>
-                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
-                    <span className="block text-lg font-bold text-green-700 dark:text-green-400">{stats.completedBookings}</span>
-                    <span className="text-xs text-green-600 dark:text-green-500">Completed</span>
+                  <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
+                    <span className="block text-2xl font-bold text-white">{stats.completedBookings}</span>
+                    <span className="text-sm text-green-100">Completed</span>
                   </div>
-                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
-                    <span className="block text-lg font-bold text-amber-700 dark:text-amber-400">{stats.upcomingBookings}</span>
-                    <span className="text-xs text-amber-600 dark:text-amber-500">Upcoming</span>
+                  <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
+                    <span className="block text-2xl font-bold text-white">{stats.upcomingBookings}</span>
+                    <span className="text-sm text-amber-100">Upcoming</span>
                   </div>
-                  <div className="p-3 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900">
-                    <span className="block text-lg font-bold text-teal-700 dark:text-teal-400">{formatCurrency(stats.totalSpent)}</span>
-                    <span className="text-xs text-teal-600 dark:text-teal-500">Total Spent</span>
+                  <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
+                    <span className="block text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
+                    <span className="text-sm text-teal-100">Total Spent</span>
                   </div>
                 </div>
               )}

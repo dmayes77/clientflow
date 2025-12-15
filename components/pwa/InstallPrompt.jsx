@@ -76,7 +76,7 @@ export function InstallPrompt() {
       <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
         <div className="bg-card border border-border rounded-xl shadow-xl p-4 max-w-md mx-auto">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <Smartphone className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ export function InstallPrompt() {
     <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
       <div className="bg-card border border-border rounded-xl shadow-xl p-4 max-w-md mx-auto">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Download className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">

@@ -323,7 +323,7 @@ function SidebarGroupLabel({ className, asChild = false, ...props }) {
         "text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         "tablet:text-xs desktop:text-2xs",
         /* HIG caption-1 (mobile default) */
-        "text-[12px] tracking-[0px] leading-[16px]",
+        "text-[12px] tracking-[0px] leading-4",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className
       )}
@@ -384,13 +384,13 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       variant: {
         default: "",
-        outline: "bg-background shadow-[0_0_0_1px_oklch(var(--color-border))] hover:shadow-[0_0_0_1px_oklch(var(--color-accent))]",
+        outline: "bg-background shadow-[0_0_0_1px_var(--color-border)] hover:shadow-[0_0_0_1px_var(--color-accent)]",
       },
       size: {
         // Default: HIG footnote (13px) on mobile
         default: "h-8 tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-[18px]",
         // Small: HIG caption-1 (12px) on mobile
-        sm: "h-7 tablet:text-xs desktop:text-2xs text-[12px] tracking-[0px] leading-[16px]",
+        sm: "h-7 tablet:text-xs desktop:text-2xs text-[12px] tracking-[0px] leading-4",
         // Large: HIG footnote (13px) on mobile
         lg: "h-12 tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-[18px] group-data-[collapsible=icon]:p-0!",
       },
@@ -468,7 +468,7 @@ function SidebarMenuBadge({ className, ...props }) {
         "text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 font-medium tabular-nums select-none",
         "tablet:text-xs desktop:text-2xs",
         /* HIG caption-1 (mobile default) */
-        "text-[12px] tracking-[0px] leading-[16px]",
+        "text-[12px] tracking-[0px] leading-4",
         "peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
         "peer-data-[size=sm]/menu-button:top-1",
         "peer-data-[size=default]/menu-button:top-1.5",
@@ -533,7 +533,7 @@ function SidebarMenuSubButton({ asChild = false, size = "md", isActive = false, 
         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
         // Size variants with HIG typography
-        size === "sm" && "tablet:text-xs desktop:text-2xs text-[12px] tracking-[0px] leading-[16px]",
+        size === "sm" && "tablet:text-xs desktop:text-2xs text-[12px] tracking-[0px] leading-4",
         size === "md" && "tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-[18px]",
         "group-data-[collapsible=icon]:hidden",
         className

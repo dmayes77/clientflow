@@ -460,12 +460,12 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" onClick={() => router.push("/dashboard/invoices")}>
-          <ArrowLeft className="h-5 w-5" />
+        <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={() => router.back()}>
+          <ArrowLeft className="size-6" />
         </Button>
-        <div>
-          <h1 className="mb-0!">{mode === "edit" ? `Edit ${invoice?.invoiceNumber || "Invoice"}` : "New Invoice"}</h1>
-          <p className="text-muted-foreground">{mode === "edit" ? "Update invoice details" : "Create a new invoice"}</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="hig-title-2 truncate">{mode === "edit" ? `Edit ${invoice?.invoiceNumber || "Invoice"}` : "New Invoice"}</h1>
+          <p className="hig-footnote text-muted-foreground">{mode === "edit" ? "Update invoice details" : "Create a new invoice"}</p>
         </div>
       </div>
 

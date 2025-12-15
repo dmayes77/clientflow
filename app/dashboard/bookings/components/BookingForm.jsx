@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { fromZonedTime } from "date-fns-tz";
+import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -224,6 +224,18 @@ export function BookingForm({
   const fetchBooking = async () => {
     try {
       setLoading(true);
+
+      // Fetch tenant timezone first
+      let tz = timezone;
+      const tenantRes = await fetch("/api/tenant");
+      if (tenantRes.ok) {
+        const tenantData = await tenantRes.json();
+        if (tenantData.timezone) {
+          tz = tenantData.timezone;
+          setTimezone(tz);
+        }
+      }
+
       const response = await fetch(`/api/bookings/${bookingId}`);
 
       if (!response.ok) {
@@ -240,9 +252,15 @@ export function BookingForm({
       setAllTags(data.allTags || []);
       setAllServices(data.allServices || []);
       setAllPackages(data.allPackages || []);
+
+      // Convert UTC to tenant's timezone for display in datetime-local input
+      const utcDate = new Date(data.booking.scheduledAt);
+      const zonedDate = toZonedTime(utcDate, tz);
+      const localDateTimeString = format(zonedDate, "yyyy-MM-dd'T'HH:mm", { timeZone: tz });
+
       setFormData({
         contactId: data.booking.contactId,
-        scheduledAt: new Date(data.booking.scheduledAt).toISOString().slice(0, 16),
+        scheduledAt: localDateTimeString,
         scheduledTime: "",
         status: data.booking.status,
         duration: data.booking.duration || 60,
@@ -654,11 +672,14 @@ export function BookingForm({
         const finalPrice = formData.totalPrice > 0 ? formData.totalPrice : totalPrice / 100;
         const finalDuration = formData.duration > 0 ? formData.duration : totalDuration;
 
+        // Convert tenant timezone datetime back to UTC
+        const scheduledAt = fromZonedTime(formData.scheduledAt, timezone);
+
         const response = await fetch(`/api/bookings/${bookingId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            scheduledAt: new Date(formData.scheduledAt),
+            scheduledAt: scheduledAt.toISOString(),
             status: formData.status,
             duration: finalDuration || 60,
             notes: formData.notes || null,
@@ -776,9 +797,8 @@ export function BookingForm({
       <div className="space-y-3 pb-4 border-b">
         {/* Top row: Back button and actions */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => router.back()} className="gap-1">
-            <ArrowLeft className="size-4" />
-            <span className="hidden sm:inline">Back</span>
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="size-11 shrink-0">
+            <ArrowLeft className="size-6" />
           </Button>
           <div className="flex items-center gap-2">
             <Button variant="success" size="sm" onClick={handleSave} disabled={saving || (isEditMode && !hasChanges) || (!isEditMode && !formData.contactId)}>
@@ -809,7 +829,7 @@ export function BookingForm({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Booking Details */}
-        <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+        <div className="lg:col-span-2 space-y-6">
           {/* Contact Selection (create mode only) */}
           {!isEditMode && (
             <Card>
@@ -1124,7 +1144,7 @@ export function BookingForm({
         </div>
 
         {/* Right Column - Contact & Summary */}
-        <div className="space-y-6 order-1 lg:order-2">
+        <div className="space-y-6">
           {/* Contact Info */}
           {selectedContact && (
             <Card>
@@ -1280,7 +1300,7 @@ export function BookingForm({
           </Card>
 
           {/* Summary */}
-          <Card className="bg-zinc-50">
+          <Card className="bg-muted/50">
             <CardHeader className="pb-3">
               <CardTitle>Summary</CardTitle>
             </CardHeader>
@@ -1290,7 +1310,7 @@ export function BookingForm({
                   {currentServices.map((s) => (
                     <div key={s.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{s.name}</span>
-                      <span>{formatCurrency(s.price)}</span>
+                      <span className="text-foreground">{formatCurrency(s.price)}</span>
                     </div>
                   ))}
                 </div>
@@ -1301,7 +1321,7 @@ export function BookingForm({
                   {currentPackages.map((p) => (
                     <div key={p.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{p.name}</span>
-                      <span>{formatCurrency(p.price)}</span>
+                      <span className="text-foreground">{formatCurrency(p.price)}</span>
                     </div>
                   ))}
                 </div>
@@ -1311,16 +1331,16 @@ export function BookingForm({
 
               <div className="flex justify-between pt-2">
                 <span className="text-muted-foreground">Duration</span>
-                <span className="font-medium">{formatDuration(formData.duration)}</span>
+                <span className="font-medium text-foreground">{formatDuration(formData.duration)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Date</span>
-                <span className="font-medium">{formData.scheduledAt ? formatDate(formData.scheduledAt) : "—"}</span>
+                <span className="font-medium text-foreground">{formData.scheduledAt ? formatDate(formData.scheduledAt) : "—"}</span>
               </div>
-              <div className="border-t pt-2 mt-2">
+              <div className="border-t border-border pt-2 mt-2">
                 <div className="flex justify-between">
-                  <span className="font-medium">Total</span>
-                  <span className="font-semibold">{formatCurrency(formData.totalPrice > 0 ? formData.totalPrice * 100 : calculateTotals().totalPrice)}</span>
+                  <span className="font-medium text-foreground">Total</span>
+                  <span className="font-semibold text-foreground">{formatCurrency(formData.totalPrice > 0 ? formData.totalPrice * 100 : calculateTotals().totalPrice)}</span>
                 </div>
               </div>
             </CardContent>

@@ -43,7 +43,9 @@ import {
   Rocket,
   Loader2,
   X,
+  ChevronRight,
 } from "lucide-react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const TRIGGER_TYPES = [
   { value: "tag_added", label: "When tag is added", icon: Tag },
@@ -111,6 +113,7 @@ export function WorkflowsList() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
+  const isMobile = useMediaQuery("(max-width: 639px)");
 
   useEffect(() => {
     fetchData();
@@ -300,48 +303,106 @@ export function WorkflowsList() {
   return (
     <>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <TabsList>
-            <TabsTrigger value="workflows" className="gap-1.5">
-              <Settings className="h-3.5 w-3.5" />
-              Workflows
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+          <TabsList className="h-[34px] sm:h-9 p-1">
+            <TabsTrigger value="workflows" className="gap-1 sm:gap-1.5 text-[13px] sm:text-sm h-[26px] sm:h-7 px-2.5 sm:px-3 rounded-md">
+              <Settings className="size-[17px] sm:size-[18px]" />
+              <span className="hidden sm:inline">Workflows</span>
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="gap-1.5">
-              <Megaphone className="h-3.5 w-3.5" />
-              Campaigns
+            <TabsTrigger value="campaigns" className="gap-1 sm:gap-1.5 text-[13px] sm:text-sm h-[26px] sm:h-7 px-2.5 sm:px-3 rounded-md">
+              <Megaphone className="size-[17px] sm:size-[18px]" />
+              <span className="hidden sm:inline">Campaigns</span>
             </TabsTrigger>
           </TabsList>
 
           {activeTab === "workflows" && (
-            <Button size="sm" onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-1" />
-              Create Workflow
+            <Button size="sm" onClick={() => handleOpenDialog()} className="w-full sm:w-auto h-[34px] sm:h-9 text-[13px] sm:text-sm">
+              <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
+              {isMobile ? "New" : "Create Workflow"}
             </Button>
           )}
         </div>
 
         <TabsContent value="workflows" className="mt-0">
           {workflows.length === 0 ? (
-            <Card className="py-4 md:py-6">
-              <CardContent className="py-12">
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <Settings className="h-6 w-6 text-indigo-600" />
+            <Card className="py-3 sm:py-4 md:py-6">
+              <CardContent className="py-8 sm:py-12">
+                <div className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
+                  <div className="size-11 sm:size-14 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <Settings className="size-[22px] sm:size-7 text-indigo-600" />
                   </div>
                   <div>
-                    <h3>No workflows yet</h3>
-                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                    <h3 className="text-[15px] sm:text-base font-semibold">No workflows yet</h3>
+                    <p className="text-[13px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 max-w-sm">
                       Create workflows to automate actions. For example, send an email when a "hot-lead" tag is added.
                     </p>
                   </div>
-                  <Button size="sm" onClick={() => handleOpenDialog()} className="mt-2">
-                    <Plus className="h-4 w-4 mr-1" />
+                  <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-[34px] sm:h-9 text-[13px] sm:text-sm">
+                    <Plus className="size-4 mr-1.5" />
                     Create Your First Workflow
                   </Button>
                 </div>
               </CardContent>
             </Card>
+          ) : isMobile ? (
+            /* iOS-style Mobile List */
+            <Card className="p-0 overflow-hidden">
+              <div>
+                {workflows.map((workflow, index) => {
+                  const TriggerIcon = TRIGGER_TYPES.find((t) => t.value === workflow.triggerType)?.icon || Settings;
+                  return (
+                    <div
+                      key={workflow.id}
+                      className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+                      onClick={() => handleOpenDialog(workflow)}
+                    >
+                      {/* Icon with status indicator */}
+                      <div className={cn(
+                        "size-11 rounded-full flex items-center justify-center shrink-0",
+                        workflow.active ? "bg-indigo-100" : "bg-gray-100"
+                      )}>
+                        <TriggerIcon className={cn("size-[22px]", workflow.active ? "text-indigo-600" : "text-gray-400")} />
+                      </div>
+
+                      {/* Content with iOS-style divider */}
+                      <div className={cn(
+                        "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
+                        index < workflows.length - 1 && "border-b border-border"
+                      )}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[15px] font-semibold truncate">{workflow.name}</span>
+                            {!workflow.active && (
+                              <Badge variant="secondary" className="text-[11px] h-5 px-1.5 shrink-0">Off</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[13px] text-muted-foreground truncate">
+                              {TRIGGER_TYPES.find((t) => t.value === workflow.triggerType)?.label || workflow.triggerType}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground shrink-0">
+                              • {workflow.actions?.length || 0} action{(workflow.actions?.length || 0) !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={workflow.active}
+                          onCheckedChange={(e) => {
+                            e.stopPropagation?.();
+                            handleToggleActive(workflow);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0"
+                        />
+                        <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
           ) : (
+            /* Desktop Card List */
             <div className="space-y-3">
               {workflows.map((workflow) => (
                 <Card key={workflow.id} className="py-4 overflow-hidden">
@@ -428,12 +489,12 @@ export function WorkflowsList() {
           <Card className="py-4 md:py-6 overflow-hidden">
             <CardContent className="py-8 sm:py-12 px-4 sm:px-6">
               <div className="flex flex-col items-center gap-4 text-center">
-                <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                   <Megaphone className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <div>
                   <h2 className="mb-1">Campaign Workflows</h2>
-                  <Badge className="bg-gradient-to-r from-indigo-500 to-violet-600 text-white border-0">
+                  <Badge className="bg-linear-to-r from-indigo-500 to-violet-600 text-white border-0">
                     Coming Soon
                   </Badge>
                 </div>

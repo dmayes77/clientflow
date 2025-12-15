@@ -36,8 +36,9 @@ import {
   SuccessIcon,
   PhoneIcon,
 } from "@/lib/icons";
-import { Users, Search, Flame, Mail, Calendar, FileText, Pencil, Trash2, ExternalLink, Copy, Clock } from "lucide-react";
+import { Users, Search, Flame, Mail, Calendar, FileText, Pencil, Trash2, ExternalLink, Copy, Clock, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DeleteContactDialog } from "./DeleteContactDialog";
 
@@ -537,11 +538,14 @@ export function ContactsList() {
                 </Button>
               </div>
             ) : (
-              <div className="divide-y divide-border">
-                {filteredClients.map((client) => (
+              <div>
+                {filteredClients.map((client, index) => (
                   <div
                     key={client.id}
-                    className={`flex items-center gap-3 px-4 min-h-[56px] cursor-pointer active:bg-muted/70 ${selectedIds.has(client.id) ? "bg-primary/5" : ""}`}
+                    className={cn(
+                      "flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors",
+                      selectedIds.has(client.id) && "bg-primary/5"
+                    )}
                     onClick={() => {
                       setPreviewContact(client);
                       setPreviewSheetOpen(true);
@@ -550,7 +554,10 @@ export function ContactsList() {
                     {/* Selection checkbox - only show when in edit mode */}
                     {isEditMode && (
                       <button
-                        className={`shrink-0 size-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedIds.has(client.id) ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"}`}
+                        className={cn(
+                          "shrink-0 size-6 rounded-full border-2 flex items-center justify-center transition-colors",
+                          selectedIds.has(client.id) ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/30"
+                        )}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleSelect(client.id);
@@ -560,26 +567,29 @@ export function ContactsList() {
                       </button>
                     )}
 
-                    {/* Avatar - 40px matches iOS standard */}
-                    <div className={`shrink-0 size-10 rounded-full flex items-center justify-center text-sm font-semibold ${getAvatarBg(client)}`}>
+                    {/* iOS-style Avatar */}
+                    <div className="size-11 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 text-white flex items-center justify-center text-base font-medium shrink-0">
                       {getInitials(client.name)}
                     </div>
 
-                    {/* Contact info - simple two-line layout */}
-                    <div className="flex-1 min-w-0 py-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-medium hig-subheadline truncate">{client.name}</span>
-                        {hasTag(client, "lead") && (
-                          <Flame className="size-3.5 shrink-0 text-orange-500" />
-                        )}
+                    {/* Content with iOS-style divider */}
+                    <div className={cn(
+                      "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
+                      index < filteredClients.length - 1 && "border-b border-border"
+                    )}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-[15px] font-semibold truncate">{client.name}</span>
+                            {hasTag(client, "lead") && (
+                              <Flame className="size-3.5 shrink-0 text-orange-500" />
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[15px] text-muted-foreground truncate">{client.phone || client.email}</p>
                       </div>
-                      <div className="hig-footnote text-muted-foreground truncate">
-                        {client.phone || client.email}
-                      </div>
+                      <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
                     </div>
-
-                    {/* Chevron - standard iOS disclosure indicator */}
-                    <NextIcon className="size-5 text-muted-foreground/40 shrink-0" />
                   </div>
                 ))}
               </div>

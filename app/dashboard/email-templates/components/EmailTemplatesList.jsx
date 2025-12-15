@@ -26,7 +26,10 @@ import {
   LinkIcon,
   Variable,
   Eye,
+  ChevronRight,
 } from "lucide-react";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -260,6 +263,7 @@ export function EmailTemplatesList() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
+  const isMobile = useMediaQuery("(max-width: 639px)");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -437,23 +441,28 @@ export function EmailTemplatesList() {
 
   return (
     <>
-      <Card className="py-4 md:py-6 overflow-hidden">
-        <CardHeader>
+      <Card className={cn("py-3 sm:py-4 md:py-6 overflow-hidden", isMobile && filteredTemplates.length > 0 && "pb-0")}>
+        <CardHeader className="pb-3 sm:pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <CardTitle>Email Templates</CardTitle>
-              <CardDescription className="truncate sm:whitespace-normal">Create reusable email templates with dynamic variables</CardDescription>
+              <CardTitle className="text-[15px] sm:text-lg font-semibold flex items-center gap-2">
+                <Mail className="size-[17px] sm:size-5 text-primary" />
+                Templates
+              </CardTitle>
+              <CardDescription className="text-[13px] sm:text-sm truncate sm:whitespace-normal mt-1">
+                {filteredTemplates.length} template{filteredTemplates.length !== 1 ? "s" : ""}
+              </CardDescription>
             </div>
-            <Button onClick={handleOpenCreate} className="shrink-0 w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-2" />
-              New Template
+            <Button onClick={handleOpenCreate} size="sm" className="shrink-0 w-full sm:w-auto h-[34px] sm:h-9 text-[13px] sm:text-sm">
+              <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
+              {isMobile ? "New" : "New Template"}
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="mb-4">
+        <CardContent className={cn(isMobile && filteredTemplates.length > 0 && "p-0")}>
+          <div className={cn("mb-3 sm:mb-4", isMobile && filteredTemplates.length > 0 && "px-4")}>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48 h-[34px] sm:h-9 text-[13px] sm:text-sm">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -468,28 +477,68 @@ export function EmailTemplatesList() {
           </div>
 
           {filteredTemplates.length === 0 ? (
-            <div className="text-center py-12">
-              <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="mb-1">No email templates</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div className="text-center py-8 sm:py-12">
+              <div className="size-11 sm:size-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Mail className="size-[22px] sm:size-7 text-primary" />
+              </div>
+              <h3 className="text-[15px] sm:text-base font-semibold mb-0.5 sm:mb-1">No email templates</h3>
+              <p className="text-[13px] sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                 {filterCategory === "all" ? "Create your first email template to get started" : "No templates found in this category"}
               </p>
               {filterCategory === "all" && (
-                <Button onClick={handleOpenCreate} variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button onClick={handleOpenCreate} variant="outline" size="sm" className="h-[34px] sm:h-9 text-[13px] sm:text-sm">
+                  <Plus className="size-4 mr-1.5" />
                   Create Template
                 </Button>
               )}
             </div>
+          ) : isMobile ? (
+            /* iOS-style Mobile List */
+            <div>
+              {filteredTemplates.map((template, index) => (
+                <div
+                  key={template.id}
+                  className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+                  onClick={() => handleOpenEdit(template)}
+                >
+                  {/* Icon */}
+                  <div className="size-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Mail className="size-[22px] text-primary" />
+                  </div>
+
+                  {/* Content with iOS-style divider */}
+                  <div className={cn(
+                    "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
+                    index < filteredTemplates.length - 1 && "border-b border-border"
+                  )}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[15px] font-semibold truncate">{template.name}</span>
+                        {template.category && (
+                          <Badge variant="secondary" className="text-[11px] h-5 px-1.5 shrink-0">
+                            {getCategoryLabel(template.category)}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[13px] text-muted-foreground truncate mt-0.5">
+                        {template.subject}
+                      </p>
+                    </div>
+                    <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
+            /* Desktop Card Grid */
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredTemplates.map((template) => (
-                <Card key={template.id} className="py-4 md:py-6 relative group overflow-hidden">
+                <Card key={template.id} className="py-4 relative group overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1 flex-1 min-w-0 overflow-hidden">
                         <button
-                          className="text-base font-semibold text-primary hover:underline truncate text-left w-full"
+                          className="text-sm font-semibold text-primary hover:underline truncate text-left w-full"
                           onClick={() => handleOpenEdit(template)}
                         >
                           {template.name}
@@ -502,7 +551,7 @@ export function EmailTemplatesList() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="shrink-0">
+                          <Button variant="ghost" size="sm" className="shrink-0 h-7 w-7 p-0">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

@@ -36,7 +36,9 @@ import {
   Receipt,
   Calendar,
   Layers,
+  ChevronRight,
 } from "lucide-react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const TAG_TYPES = [
   { value: "all", label: "All", icon: Layers },
@@ -84,6 +86,7 @@ export function TagsList() {
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [activeFilter, setActiveFilter] = useState("all");
+  const isMobile = useMediaQuery("(max-width: 639px)");
 
   useEffect(() => {
     fetchTags();
@@ -212,22 +215,22 @@ export function TagsList() {
   return (
     <>
       {/* Filter Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <Tabs value={activeFilter} onValueChange={setActiveFilter}>
-          <TabsList>
+          <TabsList className="h-[34px] sm:h-9 p-1">
             {TAG_TYPES.map((type) => {
               const Icon = type.icon;
               return (
-                <TabsTrigger key={type.value} value={type.value} className="gap-1.5">
-                  <Icon className="h-3.5 w-3.5" />
+                <TabsTrigger key={type.value} value={type.value} className="gap-1 sm:gap-1.5 text-[13px] sm:text-sm h-[26px] sm:h-7 px-2 sm:px-3 rounded-md">
+                  <Icon className="size-[17px] sm:size-[18px]" />
                   <span className="hidden sm:inline">{type.label}</span>
                 </TabsTrigger>
               );
             })}
           </TabsList>
         </Tabs>
-        <Button size="sm" onClick={() => handleOpenDialog()}>
-          <Plus className="h-4 w-4 mr-1" />
+        <Button size="sm" onClick={() => handleOpenDialog()} className="h-[34px] sm:h-9 text-[13px] sm:text-sm px-3 sm:px-4">
+          <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
           Create Tag
         </Button>
       </div>
@@ -239,27 +242,91 @@ export function TagsList() {
           </CardContent>
         </Card>
       ) : tags.length === 0 ? (
-        <Card className="py-4 md:py-6">
-          <CardContent className="py-12">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center">
-                <Tag className="h-6 w-6 text-rose-600" />
+        <Card className="py-3 sm:py-4 md:py-6">
+          <CardContent className="py-8 sm:py-12">
+            <div className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
+              <div className="size-11 sm:size-14 rounded-full bg-rose-100 flex items-center justify-center">
+                <Tag className="size-[22px] sm:size-7 text-rose-600" />
               </div>
               <div>
-                <h3>No tags yet</h3>
-                <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                <h3 className="text-[15px] sm:text-base font-semibold">No tags yet</h3>
+                <p className="text-[13px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 max-w-sm">
                   Create tags to categorize your contacts, invoices, and bookings. Tags can trigger automated workflows.
                 </p>
               </div>
-              <Button size="sm" onClick={() => handleOpenDialog()} className="mt-2">
+              <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-8 sm:h-9 text-[13px] sm:text-sm">
                 <Plus className="h-4 w-4 mr-1" />
                 Create Your First Tag
               </Button>
             </div>
           </CardContent>
         </Card>
+      ) : isMobile ? (
+        /* iOS-style Mobile List */
+        <Card className="p-0 overflow-hidden">
+          <div>
+            {tags.map((tag, index) => {
+              const colorClasses = getColorClasses(tag.color);
+              const TypeIcon = TAG_TYPES.find((t) => t.value === tag.type)?.icon || Tag;
+              const totalCount = (tag._count?.contacts || 0) + (tag._count?.invoices || 0) + (tag._count?.bookings || 0);
+              return (
+                <div
+                  key={tag.id}
+                  className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+                  onClick={() => handleOpenDialog(tag)}
+                >
+                  {/* Color dot indicator */}
+                  <div className={cn("size-11 rounded-full flex items-center justify-center shrink-0", colorClasses.bg)}>
+                    <Tag className={cn("size-[22px]", colorClasses.text)} />
+                  </div>
+
+                  {/* Content with iOS-style divider */}
+                  <div className={cn(
+                    "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
+                    index < tags.length - 1 && "border-b border-border"
+                  )}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[15px] font-semibold truncate">{tag.name}</span>
+                        <Badge variant="outline" className="text-[11px] h-5 px-1.5 shrink-0">
+                          <TypeIcon className="size-3 mr-1" />
+                          {getTypeLabel(tag.type)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        {(tag.type === "general" || tag.type === "contact") && tag._count?.contacts > 0 && (
+                          <span className="text-[13px] text-muted-foreground flex items-center gap-1">
+                            <Users className="size-3" />
+                            {tag._count.contacts}
+                          </span>
+                        )}
+                        {(tag.type === "general" || tag.type === "invoice") && tag._count?.invoices > 0 && (
+                          <span className="text-[13px] text-muted-foreground flex items-center gap-1">
+                            <Receipt className="size-3" />
+                            {tag._count.invoices}
+                          </span>
+                        )}
+                        {(tag.type === "general" || tag.type === "booking") && tag._count?.bookings > 0 && (
+                          <span className="text-[13px] text-muted-foreground flex items-center gap-1">
+                            <Calendar className="size-3" />
+                            {tag._count.bookings}
+                          </span>
+                        )}
+                        {totalCount === 0 && (
+                          <span className="text-[13px] text-muted-foreground">No items</span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        /* Desktop Card Grid */
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {tags.map((tag) => {
             const colorClasses = getColorClasses(tag.color);
             const TypeIcon = TAG_TYPES.find((t) => t.value === tag.type)?.icon || Tag;

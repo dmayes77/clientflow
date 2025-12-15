@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, CalendarPlus, Users, UserPlus, DollarSign, TrendingUp, TrendingDown, Clock, ArrowRight, Package, Loader2, FilePlus2 } from "lucide-react";
+import { Calendar, CalendarPlus, Users, UserPlus, DollarSign, TrendingUp, TrendingDown, Clock, ArrowRight, Package, Loader2, FilePlus2, ChevronRight } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isSameDay, isWithinInterval, subMonths } from "date-fns";
+import { format, formatDistanceToNow, subDays, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isSameDay, isWithinInterval, subMonths } from "date-fns";
 
 const CHART_COLORS = {
   inquiry: "#f59e0b",
@@ -330,28 +330,30 @@ export default function DashboardPage() {
                       <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(var(--color-border))" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 10, fill: "oklch(var(--color-muted-foreground))" }}
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                     tickLine={false}
-                    axisLine={{ stroke: "oklch(var(--color-border))" }}
+                    axisLine={{ stroke: "var(--color-border)" }}
                     interval="preserveStartEnd"
                   />
                   <YAxis
                     width={45}
-                    tick={{ fontSize: 10, fill: "oklch(var(--color-muted-foreground))" }}
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                     tickLine={false}
-                    axisLine={{ stroke: "oklch(var(--color-border))" }}
+                    axisLine={{ stroke: "var(--color-border)" }}
                     tickFormatter={(value) => `$${value}`}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "oklch(var(--color-card))",
-                      border: "1px solid oklch(var(--color-border))",
+                      backgroundColor: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
                       borderRadius: "8px",
                       fontSize: "11px",
                     }}
+                    labelStyle={{ color: "var(--color-foreground)" }}
+                    itemStyle={{ color: "var(--color-foreground)" }}
                     formatter={(value) => [`$${value}`, "Revenue"]}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} fill="url(#revenueGradient)" />
@@ -378,11 +380,13 @@ export default function DashboardPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "oklch(var(--color-card))",
-                      border: "1px solid oklch(var(--color-border))",
+                      backgroundColor: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
                       borderRadius: "8px",
                       fontSize: "11px",
                     }}
+                    labelStyle={{ color: "var(--color-foreground)" }}
+                    itemStyle={{ color: "var(--color-foreground)" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -413,27 +417,29 @@ export default function DashboardPage() {
             <div style={{ height: "180px" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={weeklyBookingData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(var(--color-border))" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                   <XAxis
                     dataKey="day"
-                    tick={{ fontSize: 10, fill: "oklch(var(--color-muted-foreground))" }}
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                     tickLine={false}
-                    axisLine={{ stroke: "oklch(var(--color-border))" }}
+                    axisLine={{ stroke: "var(--color-border)" }}
                   />
                   <YAxis
                     width={30}
-                    tick={{ fontSize: 10, fill: "oklch(var(--color-muted-foreground))" }}
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
                     tickLine={false}
-                    axisLine={{ stroke: "oklch(var(--color-border))" }}
+                    axisLine={{ stroke: "var(--color-border)" }}
                     allowDecimals={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "oklch(var(--color-card))",
-                      border: "1px solid oklch(var(--color-border))",
+                      backgroundColor: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
                       borderRadius: "8px",
                       fontSize: "11px",
                     }}
+                    labelStyle={{ color: "var(--color-foreground)" }}
+                    itemStyle={{ color: "var(--color-foreground)" }}
                   />
                   <Bar dataKey="bookings" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -527,9 +533,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Contacts */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
+        {/* Recent Contacts - iOS Messages Style */}
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0 border-b">
             <div className="flex items-center gap-2">
               <div className="size-2 rounded-full bg-purple-500 shrink-0" />
               <CardTitle className="text-sm font-medium leading-none">Recent Contacts</CardTitle>
@@ -539,7 +545,7 @@ export default function DashboardPage() {
               <ArrowRight className="size-3 ml-1" />
             </Button>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
+          <CardContent className="p-0">
             {recentClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <div className="size-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
@@ -551,21 +557,33 @@ export default function DashboardPage() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
-                {recentClients.map((client) => (
+              <div>
+                {recentClients.map((client, index) => (
                   <div
                     key={client.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/dashboard/contacts/${client.type === "lead" ? "leads" : "clients"}/${client.id}`)}
+                    className="flex items-center gap-3 pl-4 hover:bg-muted/50 active:bg-muted cursor-pointer transition-colors"
+                    onClick={() => router.push(`/dashboard/contacts/${client.id}`)}
                   >
-                    <div className="size-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-semibold">
+                    {/* iOS-style Avatar */}
+                    <div className="size-11 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 text-white flex items-center justify-center text-base font-medium shrink-0">
                       {client.name?.charAt(0)?.toUpperCase() || "?"}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{client.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{client.email}</p>
+                    {/* Content with iOS-style divider */}
+                    <div className={cn(
+                      "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
+                      index < recentClients.length - 1 && "border-b border-border"
+                    )}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="text-[15px] font-semibold truncate">{client.name}</p>
+                          <span className="text-[13px] text-muted-foreground shrink-0">
+                            {formatDistanceToNow(parseISO(client.createdAt), { addSuffix: false })}
+                          </span>
+                        </div>
+                        <p className="text-[15px] text-muted-foreground truncate">{client.email}</p>
+                      </div>
+                      <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
                     </div>
-                    <Badge variant={client.status === "active" ? "success" : client.status === "lead" ? "info" : "secondary"}>{client.status || "lead"}</Badge>
                   </div>
                 ))}
               </div>

@@ -39,7 +39,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Percent, DollarSign, CreditCard, Send, FileText, Pencil, Trash2, ExternalLink, Download, User, Calendar, Clock, FileCheck } from "lucide-react";
+import { Percent, DollarSign, CreditCard, Send, FileText, Pencil, Trash2, ExternalLink, Download, User, Calendar, Clock, FileCheck, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   MoneyIcon,
   AddIcon,
@@ -323,39 +324,39 @@ export function InvoicesList() {
   return (
     <>
       {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground mb-2">Total Collected</p>
-          <div className="text-xl md:text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4 mb-4 sm:mb-6">
+        <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Total Collected</p>
+          <div className="text-[17px] sm:text-xl md:text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground mb-2">Outstanding</p>
-          <div className="text-xl md:text-2xl font-bold">{formatPrice(stats.outstandingAmount)}</div>
+        <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Outstanding</p>
+          <div className="text-[17px] sm:text-xl md:text-2xl font-bold">{formatPrice(stats.outstandingAmount)}</div>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground mb-2">Paid Invoices</p>
-          <div className="text-xl md:text-2xl font-bold">{stats.paid}</div>
+        <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Paid Invoices</p>
+          <div className="text-[17px] sm:text-xl md:text-2xl font-bold">{stats.paid}</div>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground mb-2">Overdue</p>
-          <div className="text-xl md:text-2xl font-bold text-destructive">{stats.overdue}</div>
+        <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Overdue</p>
+          <div className="text-[17px] sm:text-xl md:text-2xl font-bold text-destructive">{stats.overdue}</div>
         </div>
       </div>
 
-      <Card className="p-4">
-        <CardHeader className="p-0 flex flex-row items-center justify-between space-y-0 mb-4">
+      <Card className={cn("p-3 sm:p-4", isMobile && invoices.length > 0 && "pb-0")}>
+        <CardHeader className="p-0 flex flex-row items-center justify-between space-y-0 mb-3 sm:mb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <MoneyIcon className="h-5 w-5 text-success" />
+            <CardTitle className="flex items-center gap-2 text-[15px] sm:text-lg font-semibold">
+              <MoneyIcon className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
               Invoices
             </CardTitle>
-            <p className="text-sm mt-2 text-muted-foreground">
+            <p className="text-[13px] sm:text-sm mt-1 sm:mt-2 text-muted-foreground">
               {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
             </p>
           </div>
           <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
             <AddIcon className="h-4 w-4 mr-1" />
-            Create Invoice
+            {isMobile ? "New" : "Create Invoice"}
           </Button>
         </CardHeader>
         <CardContent className="p-0">
@@ -373,13 +374,61 @@ export function InvoicesList() {
                 Create Invoice
               </Button>
             </div>
+          ) : isMobile ? (
+            /* iOS-style Mobile List */
+            <div className="-mx-3 sm:-mx-4">
+              {invoices.map((invoice, index) => (
+                <div
+                  key={invoice.id}
+                  className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+                  onClick={() => {
+                    setPreviewInvoice(invoice);
+                    setPreviewSheetOpen(true);
+                  }}
+                >
+                  {/* Status Icon */}
+                  <div className={cn(
+                    "size-11 rounded-full flex items-center justify-center shrink-0",
+                    invoice.status === "paid" ? "bg-green-100 text-green-600" :
+                    invoice.status === "overdue" ? "bg-red-100 text-red-600" :
+                    invoice.status === "sent" || invoice.status === "viewed" ? "bg-blue-100 text-blue-600" :
+                    "bg-gray-100 text-gray-500"
+                  )}>
+                    {invoice.status === "paid" ? <CompleteIcon className="size-5" /> :
+                     invoice.status === "overdue" ? <WarningIcon className="size-5" /> :
+                     <InvoiceIcon className="size-5" />}
+                  </div>
+
+                  {/* Content with iOS-style divider */}
+                  <div className={cn(
+                    "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
+                    index < invoices.length - 1 && "border-b border-border"
+                  )}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[15px] font-semibold truncate">{invoice.contactName}</span>
+                        <span className="text-[15px] font-semibold shrink-0">{formatPrice(invoice.total)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <span className="text-[13px] text-muted-foreground">{invoice.invoiceNumber}</span>
+                        <Badge variant={statusConfig[invoice.status]?.variant || "secondary"} className="text-[11px] h-5">
+                          {statusConfig[invoice.status]?.label || invoice.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
+            /* Desktop Table View */
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Invoice</TableHead>
-                    <TableHead className="hidden sm:table-cell">Client</TableHead>
+                    <TableHead>Client</TableHead>
                     <TableHead className="hidden md:table-cell">Due Date</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
@@ -408,7 +457,7 @@ export function InvoicesList() {
                           {invoice.invoiceNumber}
                         </button>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+                      <TableCell>
                         <div>
                           <p className="text-sm font-medium">{invoice.contactName}</p>
                           <p className="text-xs text-muted-foreground">{invoice.contactEmail}</p>

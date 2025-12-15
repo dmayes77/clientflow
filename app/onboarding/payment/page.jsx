@@ -167,7 +167,7 @@ export default function PaymentPage() {
           You&apos;re eligible for 1 year of free Professional access
         </p>
 
-        <Card className="mx-auto max-w-md border-amber-500/50 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
+        <Card className="mx-auto max-w-md border-amber-500/50 bg-linear-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold">
               $0

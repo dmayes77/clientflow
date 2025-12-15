@@ -29,7 +29,7 @@ const TabsTrigger = React.forwardRef(({ className, ...props }, ref) => (
       "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-2 min-h-[calc(var(--height-md)-0.5rem)] font-medium ring-offset-card transition-all",
       "tablet:text-sm desktop:text-xs",
       /* HIG subheadline (mobile default) */
-      "text-[15px] tracking-[-0.24px] leading-[20px]",
+      "text-[15px] tracking-[-0.24px] leading-5",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2",
       "disabled:pointer-events-none disabled:opacity-50",
       "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm",

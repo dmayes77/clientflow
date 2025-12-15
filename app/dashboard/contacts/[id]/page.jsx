@@ -404,34 +404,45 @@ export default function ClientDetailPage({ params }) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" onClick={() => router.push("/dashboard/contacts")}>
-          <BackIcon className="h-5 w-5" />
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="truncate">{formData.name || "Unnamed"}</h1>
-            <Badge variant={client.status === "lead" ? "warning" : "info"}>
-              {client.status === "lead" ? "Lead" : "Contact"}
-            </Badge>
+      <div className="space-y-3">
+        {/* Top row - back button, name, status */}
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={() => router.back()}>
+            <BackIcon className="size-6" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="hig-title-2 truncate">{formData.name || "Unnamed"}</h1>
+              <Badge variant={client.status === "lead" ? "warning" : "info"}>
+                {client.status === "lead" ? "Lead" : "Contact"}
+              </Badge>
+            </div>
+            <p className="hig-footnote text-muted-foreground">Added {formatFullDateTime(client.createdAt)}</p>
           </div>
-          <p className="text-muted-foreground">Added {formatFullDateTime(client.createdAt)}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button size="sm" variant={hasChanges ? "default" : "outline"} onClick={handleSave} disabled={saving || !hasChanges}>
-            {saving ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
-            <span className="hidden sm:inline">Save</span>
-          </Button>
-          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push(`/dashboard/bookings/new?clientId=${id}`)}>
-            <NewBookingIcon className="size-4 sm:mr-1" />
-            <span className="hidden sm:inline">Book</span>
-          </Button>
-          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
-            <NewInvoiceIcon className="size-4 sm:mr-1" />
-            <span className="hidden sm:inline">Invoice</span>
-          </Button>
-          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteDialogOpen(true)}>
+          {/* Desktop delete button */}
+          <Button variant="ghost" size="icon" className="hidden tablet:flex text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0" onClick={() => setDeleteDialogOpen(true)}>
             <DeleteIcon className="size-4" />
+          </Button>
+        </div>
+
+        {/* Action buttons row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant={hasChanges ? "default" : "outline"} onClick={handleSave} disabled={saving || !hasChanges} className="flex-1 fold:flex-none">
+            {saving ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
+            Save
+          </Button>
+          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white flex-1 fold:flex-none" onClick={() => router.push(`/dashboard/bookings/new?clientId=${id}`)}>
+            <NewBookingIcon className="size-4 mr-1" />
+            Book
+          </Button>
+          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white flex-1 fold:flex-none" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
+            <NewInvoiceIcon className="size-4 mr-1" />
+            Invoice
+          </Button>
+          {/* Mobile delete button */}
+          <Button variant="outline" size="sm" className="tablet:hidden text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteDialogOpen(true)}>
+            <DeleteIcon className="size-4 mr-1" />
+            Delete
           </Button>
         </div>
       </div>
@@ -440,27 +451,27 @@ export default function ClientDetailPage({ params }) {
       {/* Stats Summary - shown early on mobile for quick glance */}
       {stats && isMobile && (
         <div className="grid grid-cols-2 gap-3">
-          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
-            <span className="block text-xl font-bold text-blue-700 dark:text-blue-400">{stats.totalBookings}</span>
-            <span className="text-xs text-blue-600 dark:text-blue-500">Total Bookings</span>
+          <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
+            <span className="block text-2xl font-bold text-white">{stats.totalBookings}</span>
+            <span className="text-sm text-blue-100">Total Bookings</span>
           </div>
-          <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
-            <span className="block text-xl font-bold text-green-700 dark:text-green-400">{stats.completedBookings}</span>
-            <span className="text-xs text-green-600 dark:text-green-500">Completed</span>
+          <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
+            <span className="block text-2xl font-bold text-white">{stats.completedBookings}</span>
+            <span className="text-sm text-green-100">Completed</span>
           </div>
-          <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
-            <span className="block text-xl font-bold text-amber-700 dark:text-amber-400">{stats.upcomingBookings}</span>
-            <span className="text-xs text-amber-600 dark:text-amber-500">Upcoming</span>
+          <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
+            <span className="block text-2xl font-bold text-white">{stats.upcomingBookings}</span>
+            <span className="text-sm text-amber-100">Upcoming</span>
           </div>
-          <div className="p-4 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900">
-            <span className="block text-xl font-bold text-teal-700 dark:text-teal-400">{formatCurrency(stats.totalSpent)}</span>
-            <span className="text-xs text-teal-600 dark:text-teal-500">Total Spent</span>
+          <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
+            <span className="block text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
+            <span className="text-sm text-teal-100">Total Spent</span>
           </div>
         </div>
       )}
 
       {/* Two Column Form Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
         {/* Left Column - Contact Info */}
         <div className="space-y-4">
           <div className="space-y-2">
@@ -602,21 +613,21 @@ export default function ClientDetailPage({ params }) {
           {/* Stats Summary - desktop only (mobile shown above) */}
           {stats && !isMobile && (
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
-                <span className="block text-xl font-bold text-blue-700 dark:text-blue-400">{stats.totalBookings}</span>
-                <span className="text-xs text-blue-600 dark:text-blue-500">Total Bookings</span>
+              <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
+                <span className="block text-2xl font-bold text-white">{stats.totalBookings}</span>
+                <span className="text-sm text-blue-100">Total Bookings</span>
               </div>
-              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
-                <span className="block text-xl font-bold text-green-700 dark:text-green-400">{stats.completedBookings}</span>
-                <span className="text-xs text-green-600 dark:text-green-500">Completed</span>
+              <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
+                <span className="block text-2xl font-bold text-white">{stats.completedBookings}</span>
+                <span className="text-sm text-green-100">Completed</span>
               </div>
-              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
-                <span className="block text-xl font-bold text-amber-700 dark:text-amber-400">{stats.upcomingBookings}</span>
-                <span className="text-xs text-amber-600 dark:text-amber-500">Upcoming</span>
+              <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
+                <span className="block text-2xl font-bold text-white">{stats.upcomingBookings}</span>
+                <span className="text-sm text-amber-100">Upcoming</span>
               </div>
-              <div className="p-4 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900">
-                <span className="block text-xl font-bold text-teal-700 dark:text-teal-400">{formatCurrency(stats.totalSpent)}</span>
-                <span className="text-xs text-teal-600 dark:text-teal-500">Total Spent</span>
+              <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
+                <span className="block text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
+                <span className="text-sm text-teal-100">Total Spent</span>
               </div>
             </div>
           )}
@@ -687,7 +698,7 @@ export default function ClientDetailPage({ params }) {
                     <BookingStatusBadge status={booking.status} />
                   </div>
                 </div>
-                <NextIcon className="size-5 text-muted-foreground flex-shrink-0" />
+                <NextIcon className="size-5 text-muted-foreground shrink-0" />
               </div>
             ))}
           </div>

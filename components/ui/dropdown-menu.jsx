@@ -24,7 +24,7 @@ const DropdownMenuSubTrigger = React.forwardRef(
         "flex cursor-pointer select-none items-center rounded-sm px-2 py-1 outline-none focus:bg-accent",
         "tablet:text-sm desktop:text-xs",
         /* HIG subheadline (mobile default) */
-        "text-[15px] tracking-[-0.24px] leading-[20px]",
+        "text-[15px] tracking-[-0.24px] leading-5",
         inset && "pl-8",
         className
       )}
@@ -80,7 +80,7 @@ const DropdownMenuItem = React.forwardRef(
         "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 min-h-md outline-none transition-colors",
         "tablet:text-sm desktop:text-xs",
         /* HIG subheadline (mobile default) */
-        "text-[15px] tracking-[-0.24px] leading-[20px]",
+        "text-[15px] tracking-[-0.24px] leading-5",
         "focus:bg-accent focus:text-accent-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:size-4 [&_svg]:shrink-0",
@@ -101,7 +101,7 @@ const DropdownMenuCheckboxItem = React.forwardRef(
         "relative flex cursor-pointer select-none items-center rounded-sm py-1 pl-8 pr-2 outline-none transition-colors",
         "tablet:text-sm desktop:text-xs",
         /* HIG subheadline (mobile default) */
-        "text-[15px] tracking-[-0.24px] leading-[20px]",
+        "text-[15px] tracking-[-0.24px] leading-5",
         "focus:bg-accent focus:text-accent-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className
@@ -128,7 +128,7 @@ const DropdownMenuRadioItem = React.forwardRef(
         "relative flex cursor-pointer select-none items-center rounded-sm py-1 pl-8 pr-2 outline-none transition-colors",
         "tablet:text-sm desktop:text-xs",
         /* HIG subheadline (mobile default) */
-        "text-[15px] tracking-[-0.24px] leading-[20px]",
+        "text-[15px] tracking-[-0.24px] leading-5",
         "focus:bg-accent focus:text-accent-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className

@@ -1,12 +1,12 @@
 "use client";
 
 import { useSignIn } from "@clerk/nextjs";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { User, KeyRound, Eye, EyeOff, Lock, Loader2 } from "lucide-react";
+import { User, KeyRound, Eye, EyeOff, Lock, Loader2, ArrowLeft } from "lucide-react";
 
-export default function SignInPage() {
+function SignInContent() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,6 +15,8 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromMarketing = searchParams.get("from") === "marketing";
 
   const handleGoogleSignIn = async () => {
     if (!isLoaded) return;
@@ -64,10 +66,24 @@ export default function SignInPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4"
+      className="min-h-screen flex flex-col px-4"
       style={{ background: "linear-gradient(180deg, #e8f4fc 0%, #f5e6fa 50%, #e0f0f8 100%)" }}
     >
+      {/* Back link - only show when coming from marketing */}
+      {fromMarketing && (
+        <div className="pt-4 sm:pt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to home
+          </Link>
+        </div>
+      )}
+
       {/* Card - Fixed generous sizing for auth pages */}
+      <div className="flex-1 flex items-center justify-center py-8">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl px-8 py-10 sm:px-10 sm:py-12">
         {/* Logo */}
         <h1 className="text-center mb-8 sm:mb-10">
@@ -198,6 +214,19 @@ export default function SignInPage() {
       <p className="mt-10 text-sm text-gray-400 text-center max-w-sm">
         ClientFlow helps service businesses manage clients, bookings, and invoices all in one place.
       </p>
+      </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "linear-gradient(180deg, #e8f4fc 0%, #f5e6fa 50%, #e0f0f8 100%)" }}>
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }

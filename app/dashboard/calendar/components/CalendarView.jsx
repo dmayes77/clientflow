@@ -25,27 +25,9 @@ import {
 } from "date-fns";
 import { toZonedTime, format as formatTz } from "date-fns-tz";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  PreviewSheet,
-  PreviewSheetHeader,
-  PreviewSheetContent,
-  PreviewSheetSection,
-} from "@/components/ui/preview-sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PreviewSheet, PreviewSheetHeader, PreviewSheetContent, PreviewSheetSection } from "@/components/ui/preview-sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar,
@@ -277,9 +259,7 @@ export function CalendarView() {
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
     const calendarEnd = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-    const selectedDayBookings = getBookingsForDay(selectedDate).sort(
-      (a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)
-    );
+    const selectedDayBookings = getBookingsForDay(selectedDate).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
     return (
       <div className="flex flex-col h-full overflow-hidden">
@@ -337,9 +317,7 @@ export function CalendarView() {
 
         {/* Agenda Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 shrink-0">
-          <span className="text-sm font-medium">
-            {isToday(selectedDate) ? "Today" : format(selectedDate, "EEEE, MMM d")}
-          </span>
+          <span className="text-sm font-medium">{isToday(selectedDate) ? "Today" : format(selectedDate, "EEEE, MMM d")}</span>
           <span className="text-xs text-muted-foreground">
             {selectedDayBookings.length} booking{selectedDayBookings.length !== 1 ? "s" : ""}
           </span>
@@ -363,38 +341,40 @@ export function CalendarView() {
               </Button>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {selectedDayBookings.map((booking) => (
+            <div>
+              {selectedDayBookings.map((booking, index) => (
                 <div
                   key={booking.id}
-                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
                   onClick={() => handleBookingClick(booking)}
                 >
-                  <div className="flex flex-col items-center text-center w-12">
-                    <span className="text-sm font-semibold">
-                      {formatTimeInTz(booking.scheduledAt, "h:mm")}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatTimeInTz(booking.scheduledAt, "a")}
-                    </span>
-                  </div>
-
-                  <div className={cn("w-1 h-10 rounded-full", statusConfig[booking.status]?.color)} />
-
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium truncate block">{booking.contact?.name || "Unknown"}</span>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="size-3" />
-                        {booking.duration} min
-                      </span>
-                      {(booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name) && (
-                        <span className="truncate">{booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name}</span>
-                      )}
+                  {/* Time + Status indicator */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col items-center text-center w-10">
+                      <span className="text-[13px] font-semibold">{formatTimeInTz(booking.scheduledAt, "h:mm")}</span>
+                      <span className="text-[11px] text-muted-foreground">{formatTimeInTz(booking.scheduledAt, "a")}</span>
                     </div>
+                    <div className={cn("w-1 h-10 rounded-full shrink-0", statusConfig[booking.status]?.color)} />
                   </div>
 
-                  <ChevronRight className="size-4 text-muted-foreground shrink-0" />
+                  {/* Content with iOS-style divider */}
+                  <div className={cn("flex-1 min-w-0 flex items-center gap-2 py-3 pr-4", index < selectedDayBookings.length - 1 && "border-b border-border")}>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[15px] font-semibold truncate block">{booking.contact?.name || "Unknown"}</span>
+                      <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3" />
+                          {booking.duration} min
+                        </span>
+                        {(booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name) && (
+                          <span className="truncate">
+                            {booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -451,10 +431,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 2).map((booking) => (
                     <div
                       key={booking.id}
-                      className={cn(
-                        "text-2xs px-1 py-0.5 rounded truncate text-white",
-                        statusConfig[booking.status]?.color
-                      )}
+                      className={cn("text-2xs px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleBookingClick(booking);
@@ -463,9 +440,7 @@ export function CalendarView() {
                       {formatTimeInTz(booking.scheduledAt, "h:mma")} {booking.contact?.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && (
-                    <div className="text-2xs text-muted-foreground px-1">+{dayBookings.length - 2} more</div>
-                  )}
+                  {dayBookings.length > 2 && <div className="text-2xs text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
                 </div>
               </div>
             );
@@ -526,10 +501,7 @@ export function CalendarView() {
                       return (
                         <div
                           key={booking.id}
-                          className={cn(
-                            "absolute left-0.5 right-0.5 rounded px-1 text-white text-2xs overflow-hidden",
-                            statusConfig[booking.status]?.color
-                          )}
+                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white text-2xs overflow-hidden", statusConfig[booking.status]?.color)}
                           style={{
                             top: `${topOffset}px`,
                             height: `${Math.max(height, 20)}px`,
@@ -541,9 +513,7 @@ export function CalendarView() {
                           }}
                         >
                           <div className="font-medium truncate">{booking.contact?.name}</div>
-                          {height > 30 && (
-                            <div className="opacity-80">{formatTimeInTz(booking.scheduledAt, "h:mm a")}</div>
-                          )}
+                          {height > 30 && <div className="opacity-80">{formatTimeInTz(booking.scheduledAt, "h:mm a")}</div>}
                         </div>
                       );
                     })}
@@ -602,10 +572,7 @@ export function CalendarView() {
                     return (
                       <div
                         key={booking.id}
-                        className={cn(
-                          "absolute left-1 right-1 rounded px-2 text-white text-xs overflow-hidden",
-                          statusConfig[booking.status]?.color
-                        )}
+                        className={cn("absolute left-1 right-1 rounded px-2 text-white text-xs overflow-hidden", statusConfig[booking.status]?.color)}
                         style={{
                           top: `${topOffset}px`,
                           height: `${Math.max(height, 28)}px`,
@@ -668,7 +635,11 @@ export function CalendarView() {
                               {formatTimeInTz(booking.scheduledAt, "h:mm a")} - {booking.duration}min
                             </div>
                             <div className="opacity-80 truncate">
-                              {booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name || "Custom"}
+                              {booking.services?.[0]?.service?.name ||
+                                booking.packages?.[0]?.package?.name ||
+                                booking.service?.name ||
+                                booking.package?.name ||
+                                "Custom"}
                             </div>
                           </>
                         )}
@@ -702,12 +673,14 @@ export function CalendarView() {
         </div>
 
         <div className="flex flex-wrap gap-3 mt-3 text-xs">
-          {Object.entries(statusConfig).slice(0, 4).map(([key, config]) => (
-            <div key={key} className="flex items-center gap-1.5">
-              <div className={cn("size-2 rounded-full", config.color)} />
-              <span className="text-muted-foreground">{config.label}</span>
-            </div>
-          ))}
+          {Object.entries(statusConfig)
+            .slice(0, 4)
+            .map(([key, config]) => (
+              <div key={key} className="flex items-center gap-1.5">
+                <div className={cn("size-2 rounded-full", config.color)} />
+                <span className="text-muted-foreground">{config.label}</span>
+              </div>
+            ))}
         </div>
 
         {/* Booking Preview Sheet */}
@@ -717,19 +690,14 @@ export function CalendarView() {
             onOpenChange={setPreviewSheetOpen}
             title={previewBooking?.contact?.name || "Booking Details"}
             header={
-              <PreviewSheetHeader
-                avatar={<CalendarClock className="size-6" />}
-                avatarClassName={cn("text-white", statusConfig[previewBooking.status]?.color)}
-              >
+              <PreviewSheetHeader avatar={<CalendarClock className="size-6" />} avatarClassName={cn("text-white", statusConfig[previewBooking.status]?.color)}>
                 <div className="flex items-center gap-2">
                   <h3 className="hig-headline truncate">{previewBooking.contact?.name || "Unknown Contact"}</h3>
                   <span className={cn("hig-caption-2 px-2 py-0.5 rounded-full text-white shrink-0", statusConfig[previewBooking.status]?.color)}>
                     {statusConfig[previewBooking.status]?.label}
                   </span>
                 </div>
-                <p className="hig-footnote text-muted-foreground">
-                  {formatTimeInTz(previewBooking.scheduledAt, "EEEE, MMMM d, yyyy")}
-                </p>
+                <p className="hig-footnote text-muted-foreground">{formatTimeInTz(previewBooking.scheduledAt, "EEEE, MMMM d, yyyy")}</p>
                 <p className="hig-footnote font-medium">
                   {formatTimeInTz(previewBooking.scheduledAt, "h:mm a")} • {previewBooking.duration} min
                 </p>
@@ -740,7 +708,11 @@ export function CalendarView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : "text-green-600"}`}
+                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${
+                    previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled"
+                      ? "opacity-40"
+                      : "text-green-600"
+                  }`}
                   disabled={previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled"}
                   onClick={() => {
                     handleStatusChange(previewBooking, "confirmed");
@@ -753,7 +725,9 @@ export function CalendarView() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : ""}`}
+                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${
+                    previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : ""
+                  }`}
                   disabled={previewBooking.status === "completed" || previewBooking.status === "cancelled"}
                   onClick={() => {
                     handleStatusChange(previewBooking, "completed");
@@ -804,16 +778,65 @@ export function CalendarView() {
             }
           >
             <PreviewSheetContent>
-              {/* Service/Package Info */}
+              {/* Services & Packages */}
               <PreviewSheetSection className="border-t border-border pt-3">
-                <div className="flex items-center gap-2 hig-footnote">
-                  <span className="text-muted-foreground">Service/Package:</span>
-                  <span className="font-medium">
-                    {previewBooking.services?.[0]?.service?.name || previewBooking.packages?.[0]?.package?.name || previewBooking.service?.name || previewBooking.package?.name || "Custom Booking"}
-                  </span>
-                </div>
+                {(() => {
+                  const packages = previewBooking.packages?.map((p) => p.package) || (previewBooking.package ? [previewBooking.package] : []);
+                  const services = previewBooking.services?.map((s) => s.service) || (previewBooking.service ? [previewBooking.service] : []);
+                  const hasItems = packages.length > 0 || services.length > 0;
+
+                  if (!hasItems) {
+                    return (
+                      <div className="flex items-center gap-2 hig-footnote">
+                        <span className="text-muted-foreground">Service/Package:</span>
+                        <span className="font-medium">Custom Booking</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      {packages.length > 0 && (
+                        <div>
+                          <span className="hig-caption-2 text-muted-foreground">{packages.length === 1 ? "Package" : "Packages"}</span>
+                          <div className="mt-1 flex flex-wrap">
+                            {packages.map((pkg, idx) => (
+                              <span key={pkg?.id || idx} className="hig-footnote font-medium bg-muted/50 px-2.5 rounded-md">
+                                {pkg?.name || "Unknown Package"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {services.length > 0 && (
+                        <div>
+                          <span className="hig-caption-2 text-muted-foreground">{services.length === 1 ? "Service" : "Services"}</span>
+                          <div className="mt-1 flex flex-wrap">
+                            {services.map((svc, idx) => (
+                              <span key={svc?.id || idx} className="hig-footnote font-medium bg-muted/50 px-2.5 rounded-md">
+                                {svc?.name || "Unknown Service"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {/* Total Duration & Price */}
+                      <div className="flex items-center gap-4 pt-1 hig-footnote text-muted-foreground">
+                        {previewBooking.duration > 0 && (
+                          <span className="flex items-center gap-1 hig-caption-1">
+                            <Clock className="size-3.5" />
+                            {previewBooking.duration} min
+                          </span>
+                        )}
+                        {previewBooking.totalPrice > 0 && (
+                          <span className="font-bold text-foreground hig-caption-1">${(previewBooking.totalPrice / 100).toFixed(2)}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
                 {previewBooking.notes && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <span className="hig-caption-2 text-muted-foreground">Notes:</span>
                     <p className="hig-footnote mt-1 p-2 bg-muted/50 rounded-md">{previewBooking.notes}</p>
                   </div>
@@ -822,17 +845,14 @@ export function CalendarView() {
 
               {/* Metadata Pills */}
               <PreviewSheetSection className="flex flex-wrap gap-2">
-                {previewBooking.contact?.email && (
-                  <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.email}</span>
-                )}
-                {previewBooking.contact?.phone && (
-                  <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.phone}</span>
-                )}
-                {previewBooking.tags?.length > 0 && previewBooking.tags.map((tag) => (
-                  <span key={tag.id} className={`hig-caption-2 px-2 py-1 rounded-full border ${getTagColorClass(tag.color)}`}>
-                    {tag.name}
-                  </span>
-                ))}
+                {previewBooking.contact?.email && <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.email}</span>}
+                {previewBooking.contact?.phone && <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.phone}</span>}
+                {previewBooking.tags?.length > 0 &&
+                  previewBooking.tags.map((tag) => (
+                    <span key={tag.id} className={`hig-caption-2 px-2 py-1 rounded-full border ${getTagColorClass(tag.color)}`}>
+                      {tag.name}
+                    </span>
+                  ))}
               </PreviewSheetSection>
             </PreviewSheetContent>
           </PreviewSheet>
@@ -842,9 +862,7 @@ export function CalendarView() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Delete Booking</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this booking? This action cannot be undone.
-              </DialogDescription>
+              <DialogDescription>Are you sure you want to delete this booking? This action cannot be undone.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
@@ -925,8 +943,7 @@ export function CalendarView() {
           <DialogHeader>
             <DialogTitle>Delete Booking</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this booking for {bookingToDelete?.client?.name}? This action cannot be
-              undone.
+              Are you sure you want to delete this booking for {bookingToDelete?.client?.name}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

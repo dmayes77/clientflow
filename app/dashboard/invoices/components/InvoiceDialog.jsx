@@ -815,10 +815,10 @@ export function InvoiceDialog({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Service / Description</TableHead>
-                    <TableHead className="w-[80px]">Qty</TableHead>
+                    <TableHead className="w-20">Qty</TableHead>
                     <TableHead className="w-[100px]">Price</TableHead>
                     <TableHead className="w-[100px]">Amount</TableHead>
-                    <TableHead className="w-[40px]"></TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

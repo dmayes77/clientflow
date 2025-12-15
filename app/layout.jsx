@@ -1,6 +1,5 @@
 import { Inter, Poppins } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-import { ThemeProvider } from "@/components/theme-provider";
 import { InstallPrompt, NetworkStatus } from "@/components/pwa";
 import "./globals.css";
 
@@ -28,6 +27,7 @@ export const viewport = {
 };
 
 export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: {
     default: "ClientFlow",
     template: "%s | ClientFlow",
@@ -105,11 +105,9 @@ export default function RootLayout({ children }) {
           signInFallbackRedirectUrl="/dashboard"
           signUpFallbackRedirectUrl="/dashboard"
         >
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <NetworkStatus />
-            {children}
-            <InstallPrompt />
-          </ThemeProvider>
+          <NetworkStatus />
+          {children}
+          <InstallPrompt />
         </ClerkProvider>
       </body>
     </html>

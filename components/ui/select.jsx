@@ -18,10 +18,11 @@ const SelectTrigger = React.forwardRef(
     <SelectPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex h-md w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 shadow-sm",
+        "flex w-full items-center justify-between rounded-md border border-input bg-background shadow-sm",
+        "px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5",
         "tablet:text-sm desktop:text-xs",
-        /* HIG body (mobile default) */
-        "text-[17px] tracking-[-0.408px] leading-[22px]",
+        /* Base 15px on mobile */
+        "text-[15px] leading-5",
         "placeholder:text-muted-foreground",
         "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -77,7 +78,7 @@ const SelectContent = React.forwardRef(
       <SelectPrimitive.Content
         ref={ref}
         className={cn(
-          "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md",
+          "relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           position === "popper" &&
@@ -92,7 +93,7 @@ const SelectContent = React.forwardRef(
           className={cn(
             "p-1",
             position === "popper" &&
-              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+              "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)"
           )}
         >
           {children}
@@ -124,12 +125,13 @@ const SelectItem = React.forwardRef(
     <SelectPrimitive.Item
       ref={ref}
       className={cn(
-        "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 pl-2 pr-8 min-h-md outline-none transition-colors",
+        "relative flex w-full cursor-pointer select-none items-center rounded-sm pl-2 pr-8 outline-none transition-colors",
+        "py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5",
         "tablet:text-sm desktop:text-xs",
-        /* HIG body (mobile default) */
-        "text-[17px] tracking-[-0.408px] leading-[22px]",
+        /* Base 15px on mobile */
+        "text-[15px] leading-5",
         "focus:bg-accent focus:text-accent-foreground",
-        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "data-disabled:pointer-events-none data-disabled:opacity-50",
         className
       )}
       {...props}
