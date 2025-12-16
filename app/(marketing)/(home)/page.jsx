@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { SectionContainer, FeatureSection } from "../components";
 import { HeroText, HeroCTA, HowItWorks, FAQSection, WhoItsFor } from "./components";
 import { Calendar, Users, Settings, Image, Code, CreditCard, Webhook, Shield, ChartLine, MessageCircleQuestion } from "lucide-react";
@@ -148,9 +149,9 @@ export default function MarketingHome() {
       <section className="py-20 md:py-28 text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-muted/30 to-transparent" />
         <div className="container max-w-4xl mx-auto px-4 relative">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary mft-small font-medium mb-6">
+          <Badge variant="outline" className="border-primary/30 text-primary mb-6">
             Platform Features
-          </span>
+          </Badge>
           <h2 className="mft-display-3 mb-6">
             Everything You Need to{" "}
             <span className="bg-linear-to-r from-primary via-violet-500 to-blue-500 bg-clip-text text-transparent">
@@ -394,7 +395,7 @@ export default function MarketingHome() {
       <section className="py-16 md:py-20 bg-muted/30">
         <SectionContainer>
           <div className="text-center mb-10">
-            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary mft-caption font-medium mb-3">FAQ</span>
+            <Badge variant="outline" className="border-primary/30 text-primary mb-3">FAQ</Badge>
             <h2 className="mft-h2 mb-3">Frequently Asked Questions</h2>
             <p className="mft-small text-muted-foreground max-w-2xl mx-auto">
               Everything you need to know about ClientFlow. Can&apos;t find the answer you&apos;re looking for? Reach out to our support team.

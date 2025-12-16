@@ -215,8 +215,8 @@ export default function DashboardPage() {
       {/* Page Header with Quick Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1>Overview</h1>
-          <p className="text-xs text-muted-foreground">Welcome back! Here's what's happening.</p>
+          <h1 className="text-[22px] sm:text-2xl font-bold">Overview</h1>
+          <p className="text-[13px] sm:text-sm text-muted-foreground">Welcome back! Here's what's happening.</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <Button size="sm" className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push("/dashboard/bookings/new")}>

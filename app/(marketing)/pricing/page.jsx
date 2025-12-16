@@ -112,7 +112,7 @@ export default function PricingPage() {
       <section className="py-16 md:py-24">
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center mb-12 md:mb-16 space-y-4">
-            <Badge variant="outline" className="text-sm px-3 py-1 border-violet-300 text-violet-600">
+            <Badge variant="outline" className="border-violet-300 text-violet-600">
               Everything You Need
             </Badge>
             <h2>

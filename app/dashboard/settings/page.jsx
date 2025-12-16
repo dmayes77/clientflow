@@ -9,8 +9,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1>API Keys</h1>
-        <p className="hig-subheadline text-muted-foreground">Manage your API keys for integrations</p>
+        <h1 className="text-[22px] sm:text-2xl font-bold">API Keys</h1>
+        <p className="text-[13px] sm:text-sm text-muted-foreground">Manage your API keys for integrations</p>
       </div>
       <APIKeysSettings />
     </div>

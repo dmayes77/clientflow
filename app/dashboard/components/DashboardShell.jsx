@@ -207,13 +207,13 @@ export function DashboardShell({ children }) {
       <SidebarNav businessName={businessName} />
 
       <SidebarInset className="overflow-auto min-h-0">
-        <header className="sticky top-0 z-10 flex h-14 items-center border-b border-border bg-background px-3 shadow-sm fold:h-12 tablet:h-11 desktop:h-10">
-          <div className="w-11 flex items-center justify-start desktop:w-auto">
+        <header className="sticky top-0 z-10 flex h-11 sm:h-10 items-center border-b border-border bg-background px-3 shadow-sm">
+          <div className="w-11 flex items-center justify-start sm:w-auto">
             <SidebarTrigger />
           </div>
-          <span className="flex-1 text-center text-sm font-semibold text-foreground truncate px-2 desktop:hidden">{businessName || "ClientFlow"}</span>
-          <div className="hidden desktop:block flex-1" />
-          <div className="w-11 flex items-center justify-end desktop:w-auto">{mounted && <UserButton afterSignOutUrl="/" />}</div>
+          <span className="flex-1 text-center text-[17px] sm:text-sm font-semibold text-foreground truncate px-2 sm:hidden">{businessName || "ClientFlow"}</span>
+          <div className="hidden sm:block flex-1" />
+          <div className="w-11 flex items-center justify-end sm:w-auto">{mounted && <UserButton afterSignOutUrl="/" />}</div>
         </header>
 
         <div className="flex-1 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">{children}</div>

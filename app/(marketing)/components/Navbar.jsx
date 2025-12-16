@@ -40,7 +40,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full shrink-0 border-b border-border/40 bg-background/95 backdrop-blur-md supports-backdrop-filter:bg-background/80">
-      <div className="container mx-auto flex h-14 items-center justify-between px-4">
+      <div className="container mx-auto flex h-11 md:h-14 items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="text-xl font-bold">
             Client<span className="text-blue-500">Flow</span>
@@ -135,18 +135,18 @@ export function Navbar() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
+              <Menu className="size-[22px]" />
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-full! max-w-full! sm:max-w-sm! gap-0! p-0! border-l [&>button]:hidden">
             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
             <div className="flex flex-col h-full">
               {/* Header - matches navbar positioning exactly */}
-              <div className="flex items-center justify-between h-14 px-4">
+              <div className="flex items-center justify-between h-11 px-4">
                 <span className="text-xl font-bold">Client<span className="text-blue-500">Flow</span></span>
                 <SheetClose asChild>
                   <Button variant="ghost" size="icon">
-                    <X className="h-5 w-5" />
+                    <X className="size-[22px]" />
                   </Button>
                 </SheetClose>
               </div>
@@ -154,10 +154,10 @@ export function Navbar() {
               {/* Auth CTAs */}
               <div className="space-y-3 mb-6 px-4">
                 <Link href="/sign-up?from=marketing" onClick={() => setOpen(false)} className="block">
-                  <Button className="w-full h-11 text-sm font-medium">Sign Up</Button>
+                  <Button className="w-full h-11 text-[17px] font-medium">Sign Up</Button>
                 </Link>
                 <Link href="/sign-in?from=marketing" onClick={() => setOpen(false)} className="block">
-                  <Button variant="outline" className="w-full h-11 text-sm font-medium">Log In</Button>
+                  <Button variant="outline" className="w-full h-11 text-[17px] font-medium">Log In</Button>
                 </Link>
               </div>
 
@@ -165,7 +165,7 @@ export function Navbar() {
               <nav className="flex-1 space-y-1 px-4">
                 {/* Features accordion */}
                 <Collapsible open={featuresOpen} onOpenChange={setFeaturesOpen}>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-[17px] text-muted-foreground hover:text-foreground transition-colors">
                     Features
                     <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${featuresOpen ? 'rotate-180' : ''}`} />
                   </CollapsibleTrigger>
@@ -177,7 +177,7 @@ export function Navbar() {
                           key={item.href}
                           href={item.href}
                           onClick={() => setOpen(false)}
-                          className="block py-2.5 text-sm text-foreground hover:text-foreground/70 transition-colors"
+                          className="block py-2.5 text-[17px] text-foreground hover:text-foreground/70 transition-colors"
                         >
                           {item.title}
                         </Link>
@@ -188,7 +188,7 @@ export function Navbar() {
                           key={item.href}
                           href={item.href}
                           onClick={() => setOpen(false)}
-                          className="block py-2.5 text-sm text-foreground hover:text-foreground/70 transition-colors"
+                          className="block py-2.5 text-[17px] text-foreground hover:text-foreground/70 transition-colors"
                         >
                           {item.title}
                         </Link>
@@ -200,7 +200,7 @@ export function Navbar() {
                 <Link
                   href="/website-development"
                   onClick={() => setOpen(false)}
-                  className="flex items-center py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center py-3 text-[17px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Website Development
                 </Link>
@@ -208,7 +208,7 @@ export function Navbar() {
                 <Link
                   href="/documentation"
                   onClick={() => setOpen(false)}
-                  className="flex items-center py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center py-3 text-[17px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Docs
                 </Link>
@@ -216,7 +216,7 @@ export function Navbar() {
                 <Link
                   href="/pricing"
                   onClick={() => setOpen(false)}
-                  className="flex items-center py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center py-3 text-[17px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Pricing
                 </Link>
@@ -224,7 +224,7 @@ export function Navbar() {
                 <Link
                   href="/support"
                   onClick={() => setOpen(false)}
-                  className="flex items-center py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center py-3 text-[17px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Contact
                 </Link>

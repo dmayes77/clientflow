@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Settings, Code, Rocket, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const steps = [
   {
@@ -126,12 +127,9 @@ export function HowItWorks() {
                     {/* Features list - anchored to bottom */}
                     <div className="flex flex-wrap gap-2 mt-6">
                       {step.features.map((feature, i) => (
-                        <span
-                          key={i}
-                          className={`px-3 py-1 mft-caption font-medium rounded-full ${step.badgeClass}`}
-                        >
+                        <Badge key={i} variant="outline" className={step.badgeClass}>
                           {feature}
-                        </span>
+                        </Badge>
                       ))}
                     </div>
                   </div>

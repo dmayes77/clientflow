@@ -141,7 +141,7 @@ export function WhoItsFor() {
       <div className="container max-w-7xl mx-auto px-4 relative">
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">
-          <Badge variant="outline" className="mft-small px-4 py-1.5 mb-6 border-primary/30 text-primary">
+          <Badge variant="outline" className="mb-6 border-primary/30 text-primary">
             Built For Service Businesses
           </Badge>
           <h2 className="mft-display-3 mb-6">
@@ -158,10 +158,10 @@ export function WhoItsFor() {
           {/* Quick comparison strip */}
           <div className="inline-flex flex-wrap justify-center gap-3 md:gap-4">
             {comparisonPoints.slice(0, 4).map((point, idx) => (
-              <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-50 border border-green-200">
+              <Badge key={idx} variant="outline" className="gap-2 px-3 py-1.5 bg-green-50 border-green-200 text-green-800">
                 <Check className="w-4 h-4 text-green-600" />
-                <span className="mft-small font-medium text-green-800">{point.feature}</span>
-              </div>
+                <span className="font-medium">{point.feature}</span>
+              </Badge>
             ))}
           </div>
         </div>
