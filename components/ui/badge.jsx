@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * Uses responsive theme variables for sizing.
  */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 px-2 py-0.5 sm:px-2.5 text-xs sm:text-[11px]",
+  "inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 px-2 py-0.5 sm:px-2.5 hig-footnote sm:text-[11px]",
   {
     variants: {
       variant: {
@@ -29,9 +29,7 @@ const badgeVariants = cva(
 );
 
 const Badge = React.forwardRef(({ className, variant, ...props }, ref) => {
-  return (
-    <div ref={ref} className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  return <div ref={ref} className={cn(badgeVariants({ variant }), className)} {...props} />;
 });
 Badge.displayName = "Badge";
 
