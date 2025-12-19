@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, CalendarPlus, Users, UserPlus, DollarSign, TrendingUp, TrendingDown, Clock, ArrowRight, Package, Loader2, FilePlus2, ChevronRight } from "lucide-react";
+import { Calendar, CalendarPlus, Users, UserPlus, DollarSign, TrendingUp, TrendingDown, Clock, ArrowRight, Package, Loader2, FilePlus2, ChevronRight, FileText } from "lucide-react";
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, formatDistanceToNow, subDays, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isSameDay, isWithinInterval, subMonths } from "date-fns";
 
@@ -17,6 +17,21 @@ const CHART_COLORS = {
   completed: "#22c55e",
   cancelled: "#71717a",
 };
+
+// Format currency - abbreviates large numbers for compact display
+function formatCurrency(cents) {
+  const dollars = cents / 100;
+  if (dollars >= 1000000) {
+    return `$${(dollars / 1000000).toFixed(1)}M`;
+  }
+  if (dollars >= 10000) {
+    return `$${(dollars / 1000).toFixed(0)}K`;
+  }
+  if (dollars >= 1000) {
+    return `$${(dollars / 1000).toFixed(1)}K`;
+  }
+  return `$${dollars.toFixed(2)}`;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -34,6 +49,7 @@ export default function DashboardPage() {
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,12 +58,13 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     try {
-      const [statsRes, bookingsRes, clientsRes, servicesRes, invoicesRes] = await Promise.all([
+      const [statsRes, bookingsRes, clientsRes, servicesRes, invoicesRes, paymentsRes] = await Promise.all([
         fetch("/api/stats"),
         fetch("/api/bookings"),
         fetch("/api/contacts"),
         fetch("/api/services"),
         fetch("/api/invoices"),
+        fetch("/api/payments"),
       ]);
 
       if (statsRes.ok) setStats(await statsRes.json());
@@ -58,6 +75,10 @@ export default function DashboardPage() {
         const data = await invoicesRes.json();
         setInvoices(Array.isArray(data) ? data : data.invoices || []);
       }
+      if (paymentsRes.ok) {
+        const data = await paymentsRes.json();
+        setPayments(data.payments || []);
+      }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
@@ -65,30 +86,30 @@ export default function DashboardPage() {
     }
   };
 
-  // Calculate revenue trend (last 30 days) from paid invoices
+  // Calculate revenue trend (last 30 days) from actual payments
   const revenueChartData = useMemo(() => {
     const last30Days = eachDayOfInterval({
       start: subDays(new Date(), 29),
       end: new Date(),
     });
 
-    const paidInvoices = invoices.filter((inv) => inv.status === "paid");
+    const succeededPayments = payments.filter((p) => p.status === "succeeded");
 
     return last30Days.map((date) => {
-      const dayInvoices = paidInvoices.filter((inv) => {
-        const paidDate = inv.paidAt ? parseISO(inv.paidAt) : parseISO(inv.updatedAt);
-        return isSameDay(paidDate, date);
+      const dayPayments = succeededPayments.filter((p) => {
+        const paymentDate = parseISO(p.createdAt);
+        return isSameDay(paymentDate, date);
       });
 
-      const revenue = dayInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+      const revenue = dayPayments.reduce((sum, p) => sum + (p.amount || 0), 0) / 100; // Convert cents to dollars
 
       return {
         date: format(date, "MMM d"),
         revenue,
-        invoices: dayInvoices.length,
+        payments: dayPayments.length,
       };
     });
-  }, [invoices]);
+  }, [payments]);
 
   // Calculate booking status distribution
   const bookingStatusData = useMemo(() => {
@@ -104,7 +125,7 @@ export default function DashboardPage() {
     }));
   }, [bookings]);
 
-  // Calculate monthly comparison (revenue from paid invoices, bookings count from bookings)
+  // Calculate monthly comparison (revenue from payments, bookings count from bookings)
   const monthlyComparison = useMemo(() => {
     const thisMonth = startOfMonth(new Date());
     const lastMonth = startOfMonth(subMonths(new Date(), 1));
@@ -121,21 +142,21 @@ export default function DashboardPage() {
       return isWithinInterval(date, { start: lastMonth, end: lastMonthEnd });
     });
 
-    // Revenue from paid invoices only
-    const paidInvoices = invoices.filter((inv) => inv.status === "paid");
+    // Revenue from actual payments (succeeded only)
+    const succeededPayments = payments.filter((p) => p.status === "succeeded");
 
-    const thisMonthPaidInvoices = paidInvoices.filter((inv) => {
-      const paidDate = inv.paidAt ? parseISO(inv.paidAt) : parseISO(inv.updatedAt);
-      return paidDate >= thisMonth;
+    const thisMonthPayments = succeededPayments.filter((p) => {
+      const paymentDate = parseISO(p.createdAt);
+      return paymentDate >= thisMonth;
     });
 
-    const lastMonthPaidInvoices = paidInvoices.filter((inv) => {
-      const paidDate = inv.paidAt ? parseISO(inv.paidAt) : parseISO(inv.updatedAt);
-      return isWithinInterval(paidDate, { start: lastMonth, end: lastMonthEnd });
+    const lastMonthPayments = succeededPayments.filter((p) => {
+      const paymentDate = parseISO(p.createdAt);
+      return isWithinInterval(paymentDate, { start: lastMonth, end: lastMonthEnd });
     });
 
-    const thisMonthRevenue = thisMonthPaidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-    const lastMonthRevenue = lastMonthPaidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const thisMonthRevenue = thisMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const lastMonthRevenue = lastMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
     const revenueChange = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : thisMonthRevenue > 0 ? 100 : 0;
 
@@ -154,7 +175,20 @@ export default function DashboardPage() {
       revenueChange,
       bookingsChange,
     };
-  }, [bookings, invoices]);
+  }, [bookings, payments]);
+
+  // Calculate average invoice value from paid invoices only (kept in cents for formatCurrency)
+  const averageInvoice = useMemo(() => {
+    const paidInvoices = invoices.filter((inv) => inv.status === "paid");
+    if (paidInvoices.length === 0) return 0;
+    const totalValue = paidInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    return totalValue / paidInvoices.length; // Keep in cents
+  }, [invoices]);
+
+  // Count of paid invoices for display
+  const paidInvoiceCount = useMemo(() => {
+    return invoices.filter((inv) => inv.status === "paid").length;
+  }, [invoices]);
 
   // Top services by bookings
   const topServices = useMemo(() => {
@@ -241,14 +275,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards - 2x2 on mobile, 4 cols on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* KPI Cards - 2 cols on mobile, 5 cols on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Revenue Card */}
         <div className="rounded-lg border bg-card p-4 border-l-4 border-l-green-500">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-xs text-green-600 font-medium">Revenue</p>
-              <p className="text-xl font-bold mt-1">${monthlyComparison.thisMonthRevenue.toFixed(0)}</p>
+              <p className="text-xl font-bold mt-1">{formatCurrency(monthlyComparison.thisMonthRevenue)}</p>
               <div className={cn("flex items-center gap-1 text-xs mt-1", monthlyComparison.revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
                 {monthlyComparison.revenueChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 <span>
@@ -307,6 +341,20 @@ export default function DashboardPage() {
             </div>
             <div className="size-10 rounded-full bg-amber-100 flex items-center justify-center">
               <Package className="size-5 text-amber-600" />
+            </div>
+          </div>
+        </div>
+
+        {/* Average Invoice Card */}
+        <div className="rounded-lg border bg-card p-4 border-l-4 border-l-teal-500 col-span-2 lg:col-span-1">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-teal-600 font-medium">Avg Invoice</p>
+              <p className="text-xl font-bold mt-1">{formatCurrency(averageInvoice)}</p>
+              <p className="text-xs text-muted-foreground mt-1">{paidInvoiceCount} paid</p>
+            </div>
+            <div className="size-10 rounded-full bg-teal-100 flex items-center justify-center">
+              <FileText className="size-5 text-teal-600" />
             </div>
           </div>
         </div>

@@ -781,8 +781,13 @@ export function CalendarView() {
               {/* Services & Packages */}
               <PreviewSheetSection className="border-t border-border pt-3">
                 {(() => {
-                  const packages = previewBooking.packages?.map((p) => p.package) || (previewBooking.package ? [previewBooking.package] : []);
-                  const services = previewBooking.services?.map((s) => s.service) || (previewBooking.service ? [previewBooking.service] : []);
+                  // Check for many-to-many relations first, then fall back to legacy single relations
+                  const packages = previewBooking.packages?.length > 0
+                    ? previewBooking.packages.map((p) => p.package)
+                    : (previewBooking.package ? [previewBooking.package] : []);
+                  const services = previewBooking.services?.length > 0
+                    ? previewBooking.services.map((s) => s.service)
+                    : (previewBooking.service ? [previewBooking.service] : []);
                   const hasItems = packages.length > 0 || services.length > 0;
 
                   if (!hasItems) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 
@@ -25,14 +25,58 @@ export async function POST(request) {
     });
 
     if (!tenant) {
-      // Create tenant if doesn't exist
+      // Fetch org and user details from Clerk
+      const client = await clerkClient();
+      const [org, user] = await Promise.all([
+        client.organizations.getOrganization({ organizationId: orgId }),
+        client.users.getUser(userId),
+      ]);
+
+      // Get primary email from user
+      const userEmail = user.emailAddresses.find(
+        (e) => e.id === user.primaryEmailAddressId
+      )?.emailAddress || "";
+
+      // Create tenant with org details and user email
       tenant = await prisma.tenant.create({
         data: {
           clerkOrgId: orgId,
-          name: "My Business",
-          email: "",
+          name: org.name || "My Business",
+          businessName: org.name || "My Business",
+          slug: org.slug || null,
+          email: userEmail,
         },
       });
+    } else if (!tenant.slug || !tenant.businessName || !tenant.email) {
+      // Tenant exists but missing data - try to sync from Clerk
+      const client = await clerkClient();
+      const [org, user] = await Promise.all([
+        client.organizations.getOrganization({ organizationId: orgId }),
+        client.users.getUser(userId),
+      ]);
+
+      const updateData = {};
+      if (!tenant.slug && org.slug) {
+        updateData.slug = org.slug;
+      }
+      if (!tenant.businessName && org.name) {
+        updateData.businessName = org.name;
+      }
+      if (!tenant.email) {
+        const userEmail = user.emailAddresses.find(
+          (e) => e.id === user.primaryEmailAddressId
+        )?.emailAddress;
+        if (userEmail) {
+          updateData.email = userEmail;
+        }
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        tenant = await prisma.tenant.update({
+          where: { id: tenant.id },
+          data: updateData,
+        });
+      }
     }
 
     // Get or create Stripe customer
@@ -40,6 +84,8 @@ export async function POST(request) {
 
     if (!customerId) {
       const customer = await stripe.customers.create({
+        email: tenant.email || undefined,
+        name: tenant.businessName || tenant.name,
         metadata: {
           tenantId: tenant.id,
           clerkOrgId: orgId,
@@ -66,7 +112,7 @@ export async function POST(request) {
         },
       ],
       subscription_data: {
-        trial_period_days: 14,
+        trial_period_days: 30,
         metadata: {
           tenantId: tenant.id,
         },

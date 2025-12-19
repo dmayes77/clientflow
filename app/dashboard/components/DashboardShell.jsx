@@ -42,12 +42,14 @@ import {
   Briefcase,
   User,
 } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 
 const businessItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Calendar", href: "/dashboard/calendar", icon: Calendar },
   { label: "Contacts", href: "/dashboard/contacts", icon: Users },
   { label: "Services", href: "/dashboard/services", icon: Package },
+  { label: "Payments", href: "/dashboard/payments", icon: CreditCard },
   { label: "Financials", href: "/dashboard/invoices", icon: DollarSign },
   { label: "Tags", href: "/dashboard/tags", icon: Tag },
   { label: "Templates", href: "/dashboard/email-templates", icon: Mail },
@@ -59,7 +61,7 @@ const accountItems = [
   { label: "Business", href: "/dashboard/settings/business", icon: Settings },
   { label: "Availability", href: "/dashboard/availability", icon: Clock },
   { label: "Billing", href: "/dashboard/settings/billing", icon: Receipt },
-  { label: "Integrations", href: "/dashboard/integrations", icon: CreditCard },
+  { label: "Integrations", href: "/dashboard/integrations", icon: Workflow },
   { label: "API Keys", href: "/dashboard/settings", icon: Key },
   { label: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
 ];
@@ -213,7 +215,14 @@ export function DashboardShell({ children }) {
           </div>
           <span className="flex-1 text-center text-[17px] sm:text-sm font-semibold text-foreground truncate px-2 sm:hidden">{businessName || "ClientFlow"}</span>
           <div className="hidden sm:block flex-1" />
-          <div className="w-11 flex items-center justify-end sm:w-auto">{mounted && <UserButton afterSignOutUrl="/" />}</div>
+          <div className="flex items-center justify-end gap-2 sm:w-auto">
+            {mounted && (
+              <>
+                <NotificationBell />
+                <UserButton afterSignOutUrl="/" />
+              </>
+            )}
+          </div>
         </header>
 
         <div className="flex-1 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">{children}</div>

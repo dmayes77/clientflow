@@ -31,6 +31,14 @@ export async function GET(request, { params }) {
         instagramUrl: true,
         linkedinUrl: true,
         youtubeUrl: true,
+        // Payment settings
+        requirePayment: true,
+        paymentType: true,
+        depositType: true,
+        depositValue: true,
+        payInFullDiscount: true,
+        stripeAccountId: true,
+        stripeAccountStatus: true,
         serviceCategories: {
           select: {
             id: true,
@@ -115,6 +123,11 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
+    // Determine if payment is enabled (require payment + Stripe connected)
+    const paymentEnabled = tenant.requirePayment &&
+      tenant.stripeAccountId &&
+      tenant.stripeAccountStatus === "active";
+
     // Transform the data
     const response = {
       business: {
@@ -140,6 +153,21 @@ export async function GET(request, { params }) {
         timezone: tenant.timezone,
         slotInterval: tenant.slotInterval,
       },
+      payment: paymentEnabled
+        ? {
+            enabled: true,
+            type: tenant.paymentType || "full",
+            deposit: tenant.paymentType === "deposit"
+              ? {
+                  type: tenant.depositType || "percentage",
+                  value: tenant.depositValue || 50,
+                }
+              : null,
+            payInFullDiscount: tenant.payInFullDiscount || 0,
+          }
+        : {
+            enabled: false,
+          },
       categories: tenant.serviceCategories,
       services: tenant.services,
       packages: tenant.packages.map((pkg) => ({

@@ -92,20 +92,20 @@
   --breakpoint-tablet: 640px;
   --breakpoint-desktop: 1024px;
 
-  /* Typography */
-  --font-size-2xs: 0.5625rem;
-  --font-size-xs: 0.625rem;
-  --font-size-sm: 0.6875rem;
-  --font-size-base: 0.75rem;
-  --font-size-lg: 0.8125rem;
-  --font-size-xl: 0.875rem;
-  --font-size-2xl: 1rem;
-  --font-size-3xl: 1.125rem;
-  --font-size-4xl: 1.5rem;
-  --font-size-5xl: 1.875rem;
-  --font-size-6xl: 2.25rem;
-  --font-size-7xl: 3rem;
-  --font-size-8xl: 3.75rem;
+  /* Typography - Standard Tailwind scale */
+  --font-size-2xs: 0.625rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+  --font-size-6xl: 3.75rem;
+  --font-size-7xl: 4.5rem;
+  --font-size-8xl: 6rem;
 
   /* Colors - reference :root variables */
   --color-background: var(--color-background);
@@ -159,11 +159,11 @@
   --shadow-xl: var(--shadow-xl);
 
   /* Icon sizes */
-  --size-icon-xs: 0.5rem;
-  --size-icon-sm: 0.625rem;
-  --size-icon-md: 0.75rem;
-  --size-icon-lg: 0.875rem;
-  --size-icon-xl: 1.25rem;
+  --size-icon-xs: 0.75rem;
+  --size-icon-sm: 1rem;
+  --size-icon-md: 1.25rem;
+  --size-icon-lg: 1.5rem;
+  --size-icon-xl: 2rem;
 }
 
 @layer utilities {
@@ -331,7 +331,7 @@
   }
 
   body {
-    @apply bg-background text-foreground tablet:text-base desktop:text-base;
+    @apply bg-background text-foreground tablet:text-sm desktop:text-base;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -345,7 +345,7 @@
   /* ADAPTIVE HEADINGS - HIG on mobile, Tailwind on larger screens */
 
   h1 {
-    @apply font-bold leading-tight tablet:text-2xl desktop:text-3xl;
+    @apply font-bold leading-tight tablet:text-xl desktop:text-2xl;
     /* HIG title-1 (mobile default) */
     font-size: 28px;
     letter-spacing: 0.364px;
@@ -353,7 +353,7 @@
   }
 
   h2 {
-    @apply font-bold leading-tight tablet:text-xl desktop:text-2xl;
+    @apply font-bold leading-tight tablet:text-lg desktop:text-xl;
     /* HIG title-2 (mobile default) */
     font-size: 22px;
     letter-spacing: 0.352px;
@@ -361,7 +361,7 @@
   }
 
   h3 {
-    @apply font-semibold leading-tight tablet:text-base desktop:text-xl;
+    @apply font-semibold leading-tight tablet:text-base desktop:text-lg;
     /* HIG title-3 (mobile default) */
     font-size: 20px;
     letter-spacing: 0.38px;
@@ -369,7 +369,7 @@
   }
 
   h4 {
-    @apply font-semibold leading-snug tablet:text-base desktop:text-lg;
+    @apply font-semibold leading-snug tablet:text-sm desktop:text-base;
     /* HIG headline (mobile default) */
     font-size: 17px;
     letter-spacing: -0.408px;
@@ -377,7 +377,7 @@
   }
 
   h5 {
-    @apply font-semibold leading-snug tablet:text-sm desktop:text-base;
+    @apply font-semibold leading-snug tablet:text-sm desktop:text-sm;
     /* HIG subheadline (mobile default) */
     font-size: 15px;
     letter-spacing: -0.24px;
@@ -401,7 +401,7 @@
 
 @layer components {
   .display-1 {
-    @apply fold:text-5xl tablet:text-3xl desktop:text-4xl;
+    @apply fold:text-3xl tablet:text-3xl desktop:text-4xl;
     @apply font-bold leading-none;
     /* HIG large-title (mobile default) */
     font-size: 34px;
@@ -410,7 +410,7 @@
   }
 
   .display-2 {
-    @apply fold:text-4xl tablet:text-2xl desktop:text-3xl;
+    @apply fold:text-2xl tablet:text-2xl desktop:text-3xl;
     @apply font-bold leading-none;
     /* HIG title-1 (mobile default) */
     font-size: 28px;
@@ -419,7 +419,7 @@
   }
 
   .display-3 {
-    @apply fold:text-3xl tablet:text-xl desktop:text-2xl;
+    @apply fold:text-xl tablet:text-xl desktop:text-2xl;
     @apply font-bold leading-tight;
     /* HIG title-2 (mobile default) */
     font-size: 22px;
@@ -437,7 +437,7 @@
   }
 
   .card-title {
-    @apply tablet:text-base desktop:text-lg;
+    @apply tablet:text-base desktop:text-base;
     @apply font-semibold leading-none;
     /* HIG headline (mobile default) */
     font-size: 17px;
@@ -446,7 +446,7 @@
   }
 
   .card-description {
-    @apply tablet:text-xs desktop:text-sm;
+    @apply tablet:text-sm desktop:text-sm;
     @apply text-muted-foreground;
     /* HIG footnote (mobile default) */
     font-size: 13px;
@@ -465,8 +465,8 @@
 
   .input {
     @apply flex w-full rounded-md border border-input bg-background;
-    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
-    @apply tablet:text-sm desktop:text-xs;
+    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-2;
+    @apply tablet:text-sm desktop:text-sm;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     /* HIG body (mobile default) */
@@ -476,7 +476,7 @@
   }
 
   .label {
-    @apply tablet:text-xs desktop:text-xs;
+    @apply tablet:text-sm desktop:text-sm;
     @apply font-medium;
     /* HIG footnote (mobile default) */
     font-size: 13px;
@@ -486,8 +486,8 @@
 
   .textarea {
     @apply flex min-h-20 w-full rounded-md border border-input bg-background;
-    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
-    @apply tablet:text-sm desktop:text-xs;
+    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-2;
+    @apply tablet:text-sm desktop:text-sm;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
     /* HIG body (mobile default) */
     font-size: 17px;
@@ -497,8 +497,8 @@
 
   .select {
     @apply flex w-full items-center justify-between rounded-md border border-input bg-background;
-    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5;
-    @apply tablet:text-sm desktop:text-xs;
+    @apply px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-2;
+    @apply tablet:text-sm desktop:text-sm;
     @apply focus:outline-none focus:ring-2 focus:ring-ring;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     /* HIG body (mobile default) */
@@ -509,7 +509,7 @@
 
   .badge {
     @apply inline-flex items-center rounded-full border font-semibold;
-    @apply px-2.5 py-0.5 fold:px-2 tablet:px-2 desktop:px-1.5;
+    @apply px-2.5 py-0.5 fold:px-2 tablet:px-2 desktop:px-2;
     @apply tablet:text-xs desktop:text-xs;
     /* HIG caption-2 (mobile default) */
     font-size: 11px;
@@ -552,7 +552,7 @@
   .table-head {
     @apply text-left font-medium text-muted-foreground;
     @apply p-4 fold:p-3 tablet:p-3 desktop:p-2;
-    @apply tablet:text-xs desktop:text-xs;
+    @apply tablet:text-sm desktop:text-sm;
     /* HIG footnote (mobile default) */
     font-size: 13px;
     letter-spacing: -0.078px;
@@ -562,7 +562,7 @@
   .table-cell {
     @apply align-middle;
     @apply p-4 fold:p-3 tablet:p-3 desktop:p-2;
-    @apply tablet:text-sm desktop:text-xs;
+    @apply tablet:text-sm desktop:text-sm;
     /* HIG body (mobile default) */
     font-size: 17px;
     letter-spacing: -0.408px;

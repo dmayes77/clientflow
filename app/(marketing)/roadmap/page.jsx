@@ -89,6 +89,36 @@ const ROADMAP_ITEMS = [
     phase: "shipped",
     items: [
       {
+        title: "Stripe Connect Payments",
+        description: "Accept payments directly to your bank with deposit or full payment options",
+        icon: CreditCard,
+      },
+      {
+        title: "Payment Dashboard",
+        description: "View transactions, track deposits/refunds, and manage disputes",
+        icon: CreditCard,
+      },
+      {
+        title: "Terminal Card Readers",
+        description: "In-person payments with Stripe Terminal hardware (S700, WisePOS E, WisePad 3)",
+        icon: CreditCard,
+      },
+      {
+        title: "Email Workflows",
+        description: "Automated email sequences triggered by bookings, tags, and lead events",
+        icon: Mail,
+      },
+      {
+        title: "Email Templates",
+        description: "Reusable email templates with rich text editor and categories",
+        icon: Mail,
+      },
+      {
+        title: "In-App Notifications",
+        description: "Real-time alerts for disputes, bookings, and account events",
+        icon: Mail,
+      },
+      {
         title: "Multi-tenant Architecture",
         description: "Secure tenant isolation with Clerk organizations",
         icon: Users,
@@ -109,9 +139,9 @@ const ROADMAP_ITEMS = [
         icon: Users,
       },
       {
-        title: "Invoices & Payments",
-        description: "Stripe Connect integration for online payments and invoice generation",
-        icon: CreditCard,
+        title: "Invoicing with Payment Links",
+        description: "Professional invoices with Stripe Payment Links for easy collection",
+        icon: Receipt,
       },
       {
         title: "Public REST API",
@@ -128,30 +158,20 @@ const ROADMAP_ITEMS = [
         description: "Real-time notifications for booking, client, and payment events",
         icon: Webhook,
       },
-      {
-        title: "Automated Email Notifications",
-        description: "Booking confirmations and reminders sent automatically",
-        icon: Mail,
-      },
-      {
-        title: "Dynamic SEO Metadata",
-        description: "Auto-generated meta tags for booking pages",
-        icon: Code,
-      },
     ],
   },
   {
     phase: "building-now",
     items: [
       {
+        title: "Mobile App (Tap to Pay)",
+        description: "Accept contactless payments by tapping cards to your iPhone or Android",
+        icon: Smartphone,
+      },
+      {
         title: "Dashboard Analytics",
         description: "Revenue, bookings, and client insights with visual reports",
         icon: BarChart3,
-      },
-      {
-        title: "Automated Reminders",
-        description: "Scheduled email and SMS reminders before appointments",
-        icon: Clock,
       },
     ],
   },
@@ -164,9 +184,14 @@ const ROADMAP_ITEMS = [
         icon: Smartphone,
       },
       {
-        title: "Calendar Integration",
-        description: "Sync with Google Calendar and Outlook for seamless scheduling",
+        title: "Google Calendar Sync",
+        description: "Two-way sync with Google Calendar for seamless scheduling",
         icon: Calendar,
+      },
+      {
+        title: "Automated Reminders",
+        description: "Scheduled email and SMS reminders before appointments",
+        icon: Clock,
       },
       {
         title: "Estimates & Quotes",
@@ -183,20 +208,15 @@ const ROADMAP_ITEMS = [
         description: "Sell and redeem gift certificates for your services",
         icon: Gift,
       },
-      {
-        title: "Custom Booking Themes",
-        description: "Customize colors, fonts, and branding on booking pages",
-        icon: Palette,
-      },
     ],
   },
   {
     phase: "exploring",
     items: [
       {
-        title: "Native Mobile Apps",
-        description: "Manage appointments and respond to clients from anywhere",
-        icon: Smartphone,
+        title: "Custom Booking Themes",
+        description: "Customize colors, fonts, and branding on booking pages",
+        icon: Palette,
       },
       {
         title: "Client Rewards",

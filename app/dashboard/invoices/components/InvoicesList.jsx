@@ -86,6 +86,21 @@ const getSafeDepositAmount = (invoice) => {
   return (!isNaN(parsed) && isFinite(parsed) && parsed >= 0) ? parsed : 0;
 };
 
+// Safe lineItems parser - handles JSON string or array
+const getSafeLineItems = (lineItems) => {
+  if (!lineItems) return [];
+  if (Array.isArray(lineItems)) return lineItems;
+  if (typeof lineItems === 'string') {
+    try {
+      const parsed = JSON.parse(lineItems);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 const getTagColorClass = (color) => {
   const colorMap = {
     blue: "bg-blue-100 text-blue-800 border-blue-200",
@@ -859,7 +874,9 @@ export function InvoicesList() {
             <PreviewSheetSection>
               <h4 className="hig-subheadline font-semibold mb-2">Line Items</h4>
               <div className="space-y-2">
-                {(previewInvoice.lineItems || []).map((item, index) => (
+                {getSafeLineItems(previewInvoice.lineItems)
+                  .filter(item => !item.description?.toLowerCase().includes('deposit'))
+                  .map((item, index) => (
                   <div key={index} className={`flex justify-between items-start hig-footnote ${item.isDiscount ? "text-red-600" : ""}`}>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{item.description || "Item"}</p>
@@ -902,24 +919,12 @@ export function InvoicesList() {
                 <span>{formatPrice(previewInvoice.total)}</span>
               </div>
 
-              {/* Deposit Info */}
-              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
-                <div className={`flex justify-between hig-footnote ${previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}`}>
-                  <span>Deposit ({getSafeDepositPercent(previewInvoice.depositPercent)}%)</span>
-                  <span>
-                    {previewInvoice.depositPaidAt ? "✓ " : ""}
-                    {formatPrice(getSafeDepositAmount(previewInvoice))}
-                  </span>
-                </div>
+              {/* Deposit - simple checkmark if paid */}
+              {previewInvoice.depositPaidAt && getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
+                <p className="hig-footnote text-green-600 pt-1">✓ Deposit Paid</p>
               )}
 
-              {/* Payment Info */}
-              {(previewInvoice.amountPaid || 0) > 0 && (
-                <div className="flex justify-between hig-footnote text-green-600">
-                  <span>Amount Paid</span>
-                  <span>{formatPrice(previewInvoice.amountPaid)}</span>
-                </div>
-              )}
+              {/* Balance Due */}
               {(previewInvoice.balanceDue || 0) > 0 && previewInvoice.status !== "paid" && (
                 <div className="flex justify-between hig-subheadline font-medium pt-2 border-t">
                   <span>Balance Due</span>

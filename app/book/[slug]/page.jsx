@@ -32,6 +32,9 @@ import {
   Globe,
   Phone,
   Mail,
+  CreditCard,
+  DollarSign,
+  Percent,
 } from "lucide-react";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -125,8 +128,8 @@ function groupTimeSlots(slots) {
 }
 
 // Vertical Stepper Component - Calendly style
-function VerticalStepper({ currentStep, selectedItems, selectedDate, selectedTime }) {
-  const steps = [
+function VerticalStepper({ currentStep, selectedItems, selectedDate, selectedTime, paymentEnabled }) {
+  const baseSteps = [
     {
       id: "select",
       label: "Select Services",
@@ -150,6 +153,16 @@ function VerticalStepper({ currentStep, selectedItems, selectedDate, selectedTim
       icon: User
     },
   ];
+
+  // Add payment step if enabled
+  const steps = paymentEnabled
+    ? [...baseSteps, {
+        id: "payment",
+        label: "Payment",
+        description: "Secure checkout",
+        icon: CreditCard
+      }]
+    : baseSteps;
 
   const currentIndex = steps.findIndex((s) => s.id === currentStep);
 
@@ -205,8 +218,9 @@ function VerticalStepper({ currentStep, selectedItems, selectedDate, selectedTim
 }
 
 // Mobile Progress Dots
-function MobileProgressDots({ currentStep }) {
-  const steps = ["select", "date", "details"];
+function MobileProgressDots({ currentStep, paymentEnabled }) {
+  const baseSteps = ["select", "date", "details"];
+  const steps = paymentEnabled ? [...baseSteps, "payment"] : baseSteps;
   const currentIndex = steps.indexOf(currentStep);
 
   return (
@@ -603,9 +617,12 @@ function TenantBookingPageContent({ params }) {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [weeklyAvailability, setWeeklyAvailability] = useState([]);
+  const [paymentSettings, setPaymentSettings] = useState(null);
 
   const [step, setStep] = useState("select");
   const [selectedItems, setSelectedItems] = useState([]);
+  const [paymentOption, setPaymentOption] = useState("full"); // "full" or "deposit"
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
@@ -629,6 +646,39 @@ function TenantBookingPageContent({ params }) {
     (sum, item) => sum + (item.duration || item.totalDuration || 0),
     0
   );
+
+  // Calculate payment amounts
+  const paymentAmounts = useMemo(() => {
+    if (!paymentSettings?.enabled || selectedTotal === 0) {
+      return { depositAmount: 0, fullAmount: selectedTotal, discountedAmount: selectedTotal, discount: 0, depositLabel: "" };
+    }
+
+    let depositAmount = 0;
+    let depositLabel = "";
+    if (paymentSettings.type === "deposit" && paymentSettings.deposit) {
+      if (paymentSettings.deposit.type === "fixed") {
+        depositAmount = Math.min(paymentSettings.deposit.value || 0, selectedTotal);
+        depositLabel = formatPrice(depositAmount);
+      } else {
+        // percentage
+        const depositPercent = paymentSettings.deposit.value || 50;
+        depositAmount = Math.round(selectedTotal * depositPercent / 100);
+        depositLabel = `${depositPercent}%`;
+      }
+    }
+
+    const discountPercent = paymentSettings.payInFullDiscount || 0;
+    const discount = Math.round(selectedTotal * discountPercent / 100);
+    const discountedAmount = selectedTotal - discount;
+
+    return {
+      depositAmount,
+      fullAmount: selectedTotal,
+      discountedAmount,
+      discount,
+      depositLabel,
+    };
+  }, [paymentSettings, selectedTotal]);
 
   // Filter services and packages by selected category
   const filteredServices = useMemo(() => {
@@ -658,6 +708,7 @@ function TenantBookingPageContent({ params }) {
         setPackages(result.packages || []);
         setCategories(result.categories || []);
         setWeeklyAvailability(result.availability || []);
+        setPaymentSettings(result.payment || null);
 
         // Auto-select if preselected
         if (preselectedServiceId) {
@@ -779,6 +830,11 @@ function TenantBookingPageContent({ params }) {
     setStep("details");
   };
 
+  const handleContinueToPayment = () => {
+    if (!formData.name || !formData.email) return;
+    setStep("payment");
+  };
+
   const handleBack = (toStep) => {
     setStep(toStep);
   };
@@ -797,6 +853,13 @@ function TenantBookingPageContent({ params }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // If payment is enabled, go to payment step instead of submitting
+    if (paymentSettings?.enabled && selectedTotal > 0 && step === "details") {
+      handleContinueToPayment();
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -841,12 +904,81 @@ function TenantBookingPageContent({ params }) {
     }
   };
 
+  // Handle payment checkout
+  const handlePayment = async () => {
+    setProcessingPayment(true);
+
+    try {
+      const [hours, minutes] = selectedTime.split(":").map(Number);
+      const scheduledAt = new Date(selectedDate);
+      scheduledAt.setHours(hours, minutes, 0, 0);
+
+      const serviceIds = selectedItems.filter((i) => i.type === "service").map((i) => i.id);
+      const packageIds = selectedItems.filter((i) => i.type === "package").map((i) => i.id);
+
+      // First create the booking
+      const bookingResponse = await fetch(`/api/public/${slug}/book`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serviceId: serviceIds.length === 1 ? serviceIds[0] : null,
+          packageId: packageIds.length === 1 && serviceIds.length === 0 ? packageIds[0] : null,
+          serviceIds: serviceIds.length > 0 ? serviceIds : undefined,
+          packageIds: packageIds.length > 0 ? packageIds : undefined,
+          scheduledAt: scheduledAt.toISOString(),
+          totalDuration: selectedDuration,
+          totalPrice: selectedTotal,
+          contactName: formData.name,
+          contactEmail: formData.email,
+          contactPhone: formData.phone || null,
+          notes: formData.notes || null,
+          paymentStatus: "pending", // Mark as pending payment
+        }),
+      });
+
+      const bookingResult = await bookingResponse.json();
+
+      if (!bookingResponse.ok) {
+        throw new Error(bookingResult.error || "Failed to create booking");
+      }
+
+      // Now create checkout session
+      const checkoutResponse = await fetch(`/api/public/${slug}/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: bookingResult.booking.id,
+          contactId: bookingResult.contact?.id,
+          contactEmail: formData.email,
+          contactName: formData.name,
+          paymentOption, // "full" or "deposit"
+          serviceTotal: selectedTotal,
+        }),
+      });
+
+      const checkoutResult = await checkoutResponse.json();
+
+      if (!checkoutResponse.ok) {
+        throw new Error(checkoutResult.error || "Failed to create checkout session");
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = checkoutResult.checkoutUrl;
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert(error.message || "Failed to process payment. Please try again.");
+      setProcessingPayment(false);
+    }
+  };
+
   const handleReset = () => {
     setStep("select");
     setSelectedItems([]);
     setSelectedDate(null);
     setSelectedTime(null);
     setFormData({ name: "", email: "", phone: "", notes: "" });
+    setPaymentOption("full");
+    setProcessingPayment(false);
     setBookingComplete(false);
     setBookingResult(null);
   };
@@ -963,7 +1095,7 @@ function TenantBookingPageContent({ params }) {
               <p className="text-xs text-muted-foreground">Book an appointment</p>
             </div>
           </div>
-          <MobileProgressDots currentStep={step} />
+          <MobileProgressDots currentStep={step} paymentEnabled={paymentSettings?.enabled && selectedTotal > 0} />
         </div>
       </div>
 
@@ -1005,6 +1137,7 @@ function TenantBookingPageContent({ params }) {
               selectedItems={selectedItems}
               selectedDate={selectedDate}
               selectedTime={selectedTime}
+              paymentEnabled={paymentSettings?.enabled && selectedTotal > 0}
             />
 
             {/* Cart Summary (when items selected) */}
@@ -1359,7 +1492,12 @@ function TenantBookingPageContent({ params }) {
                             {submitting ? (
                               <>
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Booking...
+                                {paymentSettings?.enabled && selectedTotal > 0 ? "Processing..." : "Booking..."}
+                              </>
+                            ) : paymentSettings?.enabled && selectedTotal > 0 ? (
+                              <>
+                                Continue to Payment
+                                <ChevronRight className="w-4 h-4 ml-2" />
                               </>
                             ) : (
                               <>
@@ -1370,6 +1508,204 @@ function TenantBookingPageContent({ params }) {
                           </Button>
                         </div>
                       </form>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+
+              {/* Step 4: Payment Selection */}
+              {step === "payment" && (
+                <motion.div
+                  key="payment"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleBack("details")}
+                      className="lg:hidden"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <div>
+                      <h2>Payment</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Choose how you'd like to pay
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Booking Summary */}
+                  <Card className="mb-6 bg-muted/50 border-0">
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Appointment</span>
+                          <span className="font-medium">
+                            {selectedDate?.toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}{" "}
+                            at {formatTime(selectedTime)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Contact</span>
+                          <span className="font-medium">{formData.name}</span>
+                        </div>
+                        {selectedItems.map((item) => (
+                          <div key={`${item.type}-${item.id}`} className="flex justify-between text-sm">
+                            <span className="truncate pr-2">{item.name}</span>
+                            <span className="text-green-600 font-medium shrink-0">{formatPrice(item.price)}</span>
+                          </div>
+                        ))}
+                        <div className="flex justify-between pt-2 border-t">
+                          <span className="font-semibold">Total</span>
+                          <span className="font-bold text-green-600">{formatPrice(selectedTotal)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Payment Options */}
+                  <Card>
+                    <CardContent className="p-4 lg:p-6 space-y-4">
+                      <h3 className="font-medium flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-primary" />
+                        Payment Options
+                      </h3>
+
+                      {/* Full Payment Option */}
+                      <div
+                        onClick={() => setPaymentOption("full")}
+                        className={`
+                          relative p-4 rounded-xl border-2 cursor-pointer transition-all
+                          ${paymentOption === "full"
+                            ? "border-primary bg-primary/5"
+                            : "border-transparent bg-muted/50 hover:border-muted-foreground/20"
+                          }
+                        `}
+                      >
+                        <div className={`
+                          absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                          ${paymentOption === "full" ? "bg-primary border-primary" : "border-muted-foreground/30"}
+                        `}>
+                          {paymentOption === "full" && <Check className="w-3 h-3 text-white" />}
+                        </div>
+
+                        <div className="pr-8">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">Pay in Full</span>
+                            {paymentAmounts.discount > 0 && (
+                              <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                                Save {paymentSettings.payInFullDiscount}%
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Complete payment now
+                          </p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-green-600">
+                              {formatPrice(paymentAmounts.discountedAmount)}
+                            </span>
+                            {paymentAmounts.discount > 0 && (
+                              <span className="text-sm text-muted-foreground line-through">
+                                {formatPrice(paymentAmounts.fullAmount)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Deposit Option - only show if tenant has deposit configured */}
+                      {paymentSettings?.type === "deposit" && paymentAmounts.depositAmount > 0 && (
+                        <div
+                          onClick={() => setPaymentOption("deposit")}
+                          className={`
+                            relative p-4 rounded-xl border-2 cursor-pointer transition-all
+                            ${paymentOption === "deposit"
+                              ? "border-primary bg-primary/5"
+                              : "border-transparent bg-muted/50 hover:border-muted-foreground/20"
+                            }
+                          `}
+                        >
+                          <div className={`
+                            absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
+                            ${paymentOption === "deposit" ? "bg-primary border-primary" : "border-muted-foreground/30"}
+                          `}>
+                            {paymentOption === "deposit" && <Check className="w-3 h-3 text-white" />}
+                          </div>
+
+                          <div className="pr-8">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium">Pay Deposit</span>
+                              <Badge variant="outline" className="text-xs">
+                                {paymentAmounts.depositLabel}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Secure your booking with a deposit
+                            </p>
+                            <div className="space-y-1">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-xl font-bold text-green-600">
+                                  {formatPrice(paymentAmounts.depositAmount)}
+                                </span>
+                                <span className="text-sm text-muted-foreground">due now</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                + {formatPrice(selectedTotal - paymentAmounts.depositAmount)} remaining balance
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Secure payment note */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        Secure payment powered by Stripe
+                      </div>
+
+                      {/* Navigation */}
+                      <div className="flex items-center justify-between pt-4 border-t">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleBack("details")}
+                          className="hidden lg:flex"
+                        >
+                          <ChevronLeft className="w-4 h-4 mr-2" />
+                          Back
+                        </Button>
+                        <Button
+                          onClick={handlePayment}
+                          disabled={processingPayment}
+                          className="w-full lg:w-auto"
+                          size="lg"
+                        >
+                          {processingPayment ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-4 h-4 mr-2" />
+                              Pay {formatPrice(paymentOption === "deposit" ? paymentAmounts.depositAmount : paymentAmounts.discountedAmount)}
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>

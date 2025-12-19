@@ -263,6 +263,11 @@ export async function POST(request, { params }) {
         totalPrice: booking.totalPrice,
         status: booking.status,
       },
+      contact: {
+        id: contact.id,
+        name: contact.name,
+        email: contact.email,
+      },
       message: "Your booking request has been submitted! We'll confirm your appointment shortly.",
     });
   } catch (error) {

@@ -66,14 +66,21 @@ export async function GET(request, { params }) {
 
     // Transform to simpler formats
     const bookingTags = booking.tags.map((bt) => bt.tag);
-    const selectedServices = booking.services.map((bs) => ({
-      ...bs.service,
-      quantity: bs.quantity,
-    }));
-    const selectedPackages = booking.packages.map((bp) => ({
-      ...bp.package,
-      quantity: bp.quantity,
-    }));
+
+    // Use many-to-many relations if they exist, otherwise fall back to legacy single relations
+    const selectedServices = booking.services.length > 0
+      ? booking.services.map((bs) => ({
+          ...bs.service,
+          quantity: bs.quantity,
+        }))
+      : (booking.service ? [{ ...booking.service, quantity: 1 }] : []);
+
+    const selectedPackages = booking.packages.length > 0
+      ? booking.packages.map((bp) => ({
+          ...bp.package,
+          quantity: bp.quantity,
+        }))
+      : (booking.package ? [{ ...booking.package, quantity: 1 }] : []);
     const bookingWithData = {
       ...booking,
       tags: bookingTags,

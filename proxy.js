@@ -5,13 +5,17 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/signup(.*)",
   "/book(.*)",
   "/offline",
+  "/sso-callback(.*)",
   "/api/public(.*)",
   "/api/webhooks/clerk(.*)",
   "/api/stripe/webhook(.*)",
+  "/api/signup(.*)",
 ]);
 
+// Only redirect from sign-in/sign-up pages, NOT signup wizard (users need to complete steps 2-3 after auth)
 const isAuthRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 
 // Check if route is a tenant public page (matches [slug] pattern)
@@ -19,6 +23,7 @@ function isTenantRoute(pathname) {
   // Skip API routes, auth routes, and static routes
   if (pathname.startsWith("/api/") ||
       pathname.startsWith("/sign-") ||
+      pathname.startsWith("/signup") ||
       pathname.startsWith("/_next/") ||
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/admin") ||

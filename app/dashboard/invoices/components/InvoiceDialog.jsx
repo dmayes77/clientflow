@@ -46,12 +46,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar } from "lucide-react";
+import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Send } from "lucide-react";
 import {
   AddIcon,
   LoadingIcon,
   CloseIcon,
 } from "@/lib/icons";
+
+// Safe lineItems parser - handles JSON string or array
+const getSafeLineItems = (lineItems) => {
+  if (!lineItems) return [];
+  if (Array.isArray(lineItems)) return lineItems;
+  if (typeof lineItems === 'string') {
+    try {
+      const parsed = JSON.parse(lineItems);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 const DEPOSIT_OPTIONS = [
   { value: 10, label: "10%" },
@@ -93,6 +108,7 @@ export function InvoiceDialog({
 }) {
   const isMobile = useIsMobile();
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
   const [servicePopoverOpen, setServicePopoverOpen] = useState({});
@@ -123,7 +139,7 @@ export function InvoiceDialog({
       setSaveSuccess(false);
       if (invoice) {
         // Editing existing invoice
-        const convertedLineItems = (invoice.lineItems || []).map(item => ({
+        const convertedLineItems = getSafeLineItems(invoice.lineItems).map(item => ({
           description: item.description || "",
           quantity: parseInt(item.quantity) || 1,
           unitPrice: (parseFloat(item.unitPrice) || 0) / 100,
@@ -516,6 +532,33 @@ export function InvoiceDialog({
     } catch (error) {
       toast.error("Failed to save invoice");
       setSaving(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!invoice?.id) {
+      toast.error("Please save the invoice first before sending");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const res = await fetch(`/api/invoices/${invoice.id}/send`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to send invoice");
+      }
+
+      toast.success("Invoice sent to " + formData.contactEmail);
+      setFormData((prev) => ({ ...prev, status: "sent" }));
+      onSave?.({ ...invoice, status: "sent" }, true);
+    } catch (error) {
+      toast.error(error.message || "Failed to send invoice");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -993,35 +1036,49 @@ export function InvoiceDialog({
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
           </div>
-          {/* Deposit Option */}
-          <div className="flex items-center justify-between text-sm pt-2 border-t">
-            <span className="text-muted-foreground">Deposit</span>
-            <Select
-              value={formData.depositPercent?.toString() || "none"}
-              onValueChange={(value) => setFormData({
-                ...formData,
-                depositPercent: value === "none" ? null : parseInt(value),
-              })}
-              disabled={invoice?.depositPaidAt}
-            >
-              <SelectTrigger className="w-20 h-8">
-                <SelectValue placeholder="None" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {DEPOSIT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value.toString()}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {getSafeDepositPercent() > 0 && (
-            <div className="flex justify-between text-sm text-blue-600">
-              <span>{invoice?.depositPaidAt ? "Deposit Paid" : "Deposit Due"} ({getSafeDepositPercent()}%)</span>
-              <span>${getDepositAmount().toFixed(2)}</span>
-            </div>
+          {/* Deposit Section */}
+          {invoice?.depositPaidAt ? (
+            <>
+              <div className="flex justify-between text-sm pt-2 border-t text-green-600">
+                <span>✓ Deposit Paid ({getSafeDepositPercent()}%)</span>
+                <span>-${getDepositAmount().toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                <span>Balance Due</span>
+                <span>${(total - getDepositAmount()).toFixed(2)}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between text-sm pt-2 border-t">
+                <span className="text-muted-foreground">Deposit</span>
+                <Select
+                  value={formData.depositPercent?.toString() || "none"}
+                  onValueChange={(value) => setFormData({
+                    ...formData,
+                    depositPercent: value === "none" ? null : parseInt(value),
+                  })}
+                >
+                  <SelectTrigger className="w-20 h-8">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {DEPOSIT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value.toString()}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {getSafeDepositPercent() > 0 && (
+                <div className="flex justify-between text-sm text-blue-600">
+                  <span>Deposit Due ({getSafeDepositPercent()}%)</span>
+                  <span>${getDepositAmount().toFixed(2)}</span>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -1042,10 +1099,26 @@ export function InvoiceDialog({
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1" disabled={saveSuccess}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1" disabled={saveSuccess || sending}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving || saveSuccess} className={`flex-1 ${saveSuccess ? "bg-green-600 hover:bg-green-600" : ""}`}>
+          {invoice && formData.contactEmail && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSend}
+              disabled={sending || saving || saveSuccess}
+              className="flex-1"
+            >
+              {sending ? (
+                <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send
+            </Button>
+          )}
+          <Button type="submit" disabled={saving || sending || saveSuccess} className={`flex-1 ${saveSuccess ? "bg-green-600 hover:bg-green-600" : ""}`}>
             {saving && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
             {saveSuccess && <Check className="h-4 w-4 mr-2" />}
             {saveSuccess ? "Saved!" : invoice ? "Save" : "Create"}

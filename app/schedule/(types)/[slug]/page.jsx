@@ -35,6 +35,13 @@ const callTypes = {
     bgColor: "bg-blue-100",
     accentColor: "bg-blue-500",
     ringColor: "ring-blue-200",
+    description: "Get a personalized walkthrough of the ClientFlow platform. We'll explore how our booking system, client management, and payment processing can streamline your business operations.",
+    includes: [
+      "Live platform demonstration",
+      "Feature Q&A session",
+      "Custom use case discussion",
+      "Pricing & setup overview",
+    ],
   },
   "technical-questions": {
     title: "Technical Questions",
@@ -44,6 +51,13 @@ const callTypes = {
     bgColor: "bg-teal-100",
     accentColor: "bg-teal-500",
     ringColor: "ring-teal-200",
+    description: "Deep dive into our REST API, webhooks, and integration capabilities. Perfect for developers planning implementation or evaluating technical requirements.",
+    includes: [
+      "API architecture overview",
+      "Authentication & endpoints",
+      "Webhook configuration",
+      "Integration best practices",
+    ],
   },
   "custom-development": {
     title: "Custom Development",
@@ -53,6 +67,13 @@ const callTypes = {
     bgColor: "bg-violet-100",
     accentColor: "bg-violet-500",
     ringColor: "ring-violet-200",
+    description: "Let's discuss building a custom booking experience tailored to your brand. We'll explore your requirements and create a plan for your unique business needs.",
+    includes: [
+      "Requirements discovery",
+      "Design & branding discussion",
+      "Technical feasibility review",
+      "Timeline & pricing estimate",
+    ],
   },
 };
 
@@ -68,9 +89,9 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export default function BookingTypePage({ params }) {
-  const { type } = use(params);
+  const { slug } = use(params);
   const router = useRouter();
-  const callType = callTypes[type];
+  const callType = callTypes[slug];
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
@@ -117,9 +138,9 @@ export default function BookingTypePage({ params }) {
         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
           <Calendar className="w-6 h-6 text-muted-foreground" />
         </div>
-        <h1 className="et-h4 mb-1.5">Call Type Not Found</h1>
-        <p className="et-small text-muted-foreground mb-4">The requested call type doesn&apos;t exist.</p>
-        <Link href="/book">
+        <h1 className="hig-title-2 mb-1.5">Call Type Not Found</h1>
+        <p className="hig-footnote text-muted-foreground mb-4">The requested call type doesn&apos;t exist.</p>
+        <Link href="/schedule">
           <Button size="sm">Back to Booking</Button>
         </Link>
       </div>
@@ -204,7 +225,7 @@ export default function BookingTypePage({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          type: type,
+          type: slug,
           date: selectedDate.toISOString(),
           time: selectedTime,
           name: formData.name,
@@ -221,13 +242,13 @@ export default function BookingTypePage({ params }) {
       }
 
       const searchParams = new URLSearchParams({
-        type: type,
+        type: slug,
         date: selectedDate.toISOString(),
         time: selectedTime,
         name: formData.name,
         meetLink: data.meetLink || "",
       });
-      router.push(`/book/confirmation?${searchParams.toString()}`);
+      router.push(`/schedule/confirmation?${searchParams.toString()}`);
     } catch (error) {
       console.error("Booking error:", error);
       alert("Failed to create booking. Please try again.");
@@ -241,32 +262,47 @@ export default function BookingTypePage({ params }) {
   };
 
   return (
-    <div className="h-full flex flex-col container max-w-3xl mx-auto px-4 py-3">
-      {/* Back link */}
-      <Link href="/book" className="inline-flex items-center gap-1 et-caption text-muted-foreground hover:text-foreground mb-3 transition-colors w-fit">
-        <ArrowLeft className="w-3.5 h-3.5" />
+    <div className="min-h-full flex flex-col container max-w-3xl mx-auto px-4 py-4 md:py-5">
+      {/* Back link - HIG 44px touch target */}
+      <Link href="/schedule" className="inline-flex items-center gap-1.5 hig-subhead text-muted-foreground hover:text-foreground mb-4 transition-colors w-fit h-11 -ml-2 px-2">
+        <ArrowLeft className="w-4 h-4" />
         Back to call types
       </Link>
 
-      <div className="flex-1 flex items-center">
-        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="flex-1 flex items-start lg:items-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left sidebar - Call info */}
           <div className="lg:col-span-1">
             <Card className="overflow-hidden py-0">
               {/* Colored accent bar */}
               <div className={`h-1 ${callType.accentColor}`} />
-              <CardContent className="p-4 pt-3">
-                <div className={`w-10 h-10 rounded-lg ${callType.bgColor} flex items-center justify-center mb-3 ring-1 ${callType.ringColor}`}>
+              <CardContent className="p-4">
+                <div className={`w-11 h-11 rounded-xl ${callType.bgColor} flex items-center justify-center mb-3 ring-1 ${callType.ringColor}`}>
                   <Icon className={`w-5 h-5 ${callType.color}`} />
                 </div>
-                <h2 className="et-body font-semibold mb-0.5">{callType.title}</h2>
-                <div className="flex items-center gap-1 et-caption text-muted-foreground mb-3">
-                  <Clock className="w-3.5 h-3.5" />
+                <h2 className="hig-headline font-semibold mb-1">{callType.title}</h2>
+                <div className="flex items-center gap-1.5 hig-footnote text-muted-foreground mb-3">
+                  <Clock className="w-4 h-4" />
                   {callType.duration} minutes
                 </div>
-                <p className="et-caption text-muted-foreground">
-                  Select a date and time that works for you. All times shown in your local timezone.
+                <p className="hig-footnote text-muted-foreground mb-4 leading-relaxed">
+                  {callType.description}
                 </p>
+
+                {/* What's included */}
+                <div className="pt-4 border-t">
+                  <p className="hig-caption font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    What&apos;s Included
+                  </p>
+                  <ul className="space-y-2">
+                    {callType.includes.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 hig-footnote text-muted-foreground">
+                        <span className={`mt-1.5 w-1.5 h-1.5 rounded-full ${callType.accentColor} shrink-0`} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -286,8 +322,8 @@ export default function BookingTypePage({ params }) {
                       exit="exit"
                       transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <h3 className="font-semibold et-small mb-3 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-primary" />
+                      <h3 className="font-semibold hig-subhead mb-4 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
                         Select a Date & Time
                       </h3>
 
@@ -302,7 +338,7 @@ export default function BookingTypePage({ params }) {
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                            <span className="font-medium et-caption">
+                            <span className="font-semibold hig-subhead">
                               {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                             </span>
                             <button
@@ -314,23 +350,23 @@ export default function BookingTypePage({ params }) {
                           </div>
 
                           {/* Day headers */}
-                          <div className="grid grid-cols-7 gap-0.5 mb-0.5">
+                          <div className="grid grid-cols-7 gap-0.5 mb-1">
                             {DAYS.map((day) => (
-                              <div key={day} className="text-center et-caption text-muted-foreground py-1 font-medium">
+                              <div key={day} className="text-center hig-caption text-muted-foreground py-1.5 font-semibold">
                                 {day}
                               </div>
                             ))}
                           </div>
 
                           {/* Calendar grid */}
-                          <div className="grid grid-cols-7 gap-0.5">
+                          <div className="grid grid-cols-7 gap-1">
                             {calendarDays.map((day, i) => (
                               <button
                                 key={i}
                                 disabled={!day.isAvailable}
                                 onClick={() => handleDateSelect(day)}
                                 className={`
-                                  aspect-square flex items-center justify-center rounded-md et-caption font-medium transition-all
+                                  aspect-square flex items-center justify-center rounded-lg hig-footnote font-medium transition-all
                                   ${!day.isCurrentMonth ? "invisible" : ""}
                                   ${day.isTooSoon || day.isSunday ? "text-muted-foreground/30 cursor-not-allowed" : ""}
                                   ${day.isAvailable && !isDateSelected(day) ? "hover:bg-primary/10 hover:text-primary cursor-pointer" : ""}
@@ -345,7 +381,7 @@ export default function BookingTypePage({ params }) {
 
                         {/* Time slots */}
                         <div>
-                          <p className="et-caption text-muted-foreground mb-2">
+                          <p className="hig-footnote text-muted-foreground mb-3">
                             {selectedDate
                               ? `Times for ${selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`
                               : "Select a date to see times"
@@ -353,22 +389,22 @@ export default function BookingTypePage({ params }) {
                           </p>
 
                           {loadingSlots ? (
-                            <div className="flex items-center justify-center py-6">
-                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                              <span className="ml-2 et-caption text-muted-foreground">Loading...</span>
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                              <span className="ml-2 hig-footnote text-muted-foreground">Loading...</span>
                             </div>
                           ) : selectedDate && timeSlots.length === 0 ? (
-                            <div className="py-6 text-center">
-                              <p className="et-caption text-muted-foreground">No availability</p>
+                            <div className="py-8 text-center">
+                              <p className="hig-footnote text-muted-foreground">No availability</p>
                             </div>
                           ) : (
-                            <div className="grid grid-cols-2 gap-1.5 max-h-[180px] overflow-y-auto pr-1">
+                            <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-1">
                               {timeSlots.map((time) => (
                                 <button
                                   key={time}
                                   onClick={() => handleTimeSelect(time)}
                                   className={`
-                                    px-2 py-2 rounded-md et-caption font-medium border transition-all
+                                    px-3 py-2.5 rounded-lg hig-footnote font-medium border transition-all h-11
                                     ${selectedTime === time
                                       ? "bg-primary text-primary-foreground border-primary shadow-sm"
                                       : "hover:border-primary hover:bg-primary/5 hover:text-primary"
@@ -405,49 +441,50 @@ export default function BookingTypePage({ params }) {
                       exit="exit"
                       transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
                     >
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-3 md:mb-4">
+                        {/* Back button - HIG 44px touch target */}
                         <button
                           onClick={handleBack}
-                          className="p-1.5 hover:bg-muted rounded-md transition-colors"
+                          className="w-11 h-11 md:w-8 md:h-8 flex items-center justify-center hover:bg-muted rounded-lg md:rounded-md transition-colors -ml-2 md:ml-0"
                         >
-                          <ArrowLeft className="w-3.5 h-3.5" />
+                          <ArrowLeft className="w-4 h-4 md:w-3.5 md:h-3.5" />
                         </button>
-                        <h3 className="font-semibold et-small flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-primary" />
+                        <h3 className="font-semibold hig-headline md:hig-subhead flex items-center gap-2">
+                          <User className="w-4 h-4 text-primary" />
                           Your Details
                         </h3>
                       </div>
 
                       {/* Selected date/time summary */}
-                      <div className="bg-muted/50 rounded-md p-3 mb-4 border border-primary/10">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-9 h-9 rounded-lg ${callType.bgColor} flex items-center justify-center`}>
-                            <Icon className={`w-4 h-4 ${callType.color}`} />
+                      <div className="bg-muted/50 rounded-xl p-3 md:p-4 mb-4 md:mb-5 border border-primary/10">
+                        <div className="flex items-center gap-2.5 md:gap-3">
+                          <div className={`w-10 h-10 md:w-11 md:h-11 rounded-xl ${callType.bgColor} flex items-center justify-center shrink-0`}>
+                            <Icon className={`w-5 h-5 ${callType.color}`} />
                           </div>
-                          <div>
-                            <p className="font-medium et-small">{callType.title}</p>
-                            <p className="et-caption text-muted-foreground">
+                          <div className="min-w-0">
+                            <p className="font-semibold hig-subhead md:hig-headline truncate">{callType.title}</p>
+                            <p className="text-[12px] md:text-[13px] text-muted-foreground">
                               {selectedDate?.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at {formatTime(selectedTime)}
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <form onSubmit={handleSubmit} className="space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                           <div>
-                            <Label htmlFor="name" className="et-caption font-medium">Name *</Label>
+                            <Label htmlFor="name" className="hig-caption md:hig-footnote font-semibold">Name *</Label>
                             <Input
                               id="name"
                               required
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                               placeholder="Your full name"
-                              className="mt-1 h-8 et-small"
+                              className="mt-1 md:mt-1.5 h-11 hig-subhead md:hig-body"
                             />
                           </div>
                           <div>
-                            <Label htmlFor="email" className="et-caption font-medium">Email *</Label>
+                            <Label htmlFor="email" className="hig-caption md:hig-footnote font-semibold">Email *</Label>
                             <Input
                               id="email"
                               type="email"
@@ -455,39 +492,39 @@ export default function BookingTypePage({ params }) {
                               value={formData.email}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                               placeholder="you@company.com"
-                              className="mt-1 h-8 et-small"
+                              className="mt-1 md:mt-1.5 h-11 hig-subhead md:hig-body"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="company" className="et-caption font-medium">Company</Label>
+                          <Label htmlFor="company" className="hig-caption md:hig-footnote font-semibold">Company</Label>
                           <Input
                             id="company"
                             value={formData.company}
                             onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                             placeholder="Your company (optional)"
-                            className="mt-1 h-8 et-small"
+                            className="mt-1 md:mt-1.5 h-11 hig-subhead md:hig-body"
                           />
                         </div>
 
                         <div>
-                          <Label htmlFor="notes" className="et-caption font-medium">Notes</Label>
+                          <Label htmlFor="notes" className="hig-caption md:hig-footnote font-semibold">Tell Us About Your Project</Label>
                           <Textarea
                             id="notes"
                             value={formData.notes}
                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                             placeholder="Anything you'd like us to know?"
-                            rows={2}
-                            className="mt-1 et-small"
+                            rows={3}
+                            className="mt-1 md:mt-1.5 hig-subhead md:hig-body"
                           />
                         </div>
 
-                        <div className="pt-1.5">
-                          <Button type="submit" disabled={submitting} size="sm" className="w-full md:w-auto">
+                        <div className="pt-2 md:pt-1.5">
+                          <Button type="submit" disabled={submitting} className="w-full md:w-auto h-11">
                             {submitting ? (
                               <>
-                                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                 Booking...
                               </>
                             ) : (

@@ -34,7 +34,8 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { slots } = body;
+    // Accept either "slots" or "availability" as the array key
+    const slots = body.slots || body.availability;
 
     if (!Array.isArray(slots)) {
       return NextResponse.json({ error: "Slots must be an array" }, { status: 400 });

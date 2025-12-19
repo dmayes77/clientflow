@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 
-// POST /api/stripe/connect/onboard - Create or continue Stripe Connect onboarding
+// POST /api/stripe/connect/onboard - Create Express account and start onboarding
 export async function POST(request) {
   try {
     const { userId, orgId } = await auth();
@@ -30,7 +30,7 @@ export async function POST(request) {
 
     let accountId = tenant.stripeAccountId;
 
-    // Create a new Connect account if one doesn't exist
+    // Create a new Express account if one doesn't exist
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: "express",
@@ -63,11 +63,11 @@ export async function POST(request) {
     // Get the base URL for redirects
     const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
 
-    // Create an account link for onboarding
+    // Create an account link for Stripe's hosted onboarding
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/dashboard/integrations?refresh=true`,
-      return_url: `${origin}/dashboard/integrations?success=true`,
+      refresh_url: `${origin}/dashboard/integrations/stripe?refresh=true`,
+      return_url: `${origin}/dashboard/integrations/stripe?success=true`,
       type: "account_onboarding",
     });
 

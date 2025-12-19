@@ -13,8 +13,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Trash2 } from "lucide-react";
+import { ArrowLeft, Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Trash2, Send } from "lucide-react";
 import { AddIcon, LoadingIcon, CloseIcon } from "@/lib/icons";
+
+// Safe lineItems parser - handles JSON string or array
+const getSafeLineItems = (lineItems) => {
+  if (!lineItems) return [];
+  if (Array.isArray(lineItems)) return lineItems;
+  if (typeof lineItems === 'string') {
+    try {
+      const parsed = JSON.parse(lineItems);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 const DEPOSIT_OPTIONS = [
   { value: 10, label: "10%" },
@@ -44,6 +59,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
   const [contacts, setContacts] = useState([]);
@@ -98,15 +114,22 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         const invoiceData = await invoiceRes.json();
         setInvoice(invoiceData);
 
-        const convertedLineItems = (invoiceData.lineItems || []).map((item) => ({
-          description: item.description || "",
-          quantity: parseInt(item.quantity) || 1,
-          unitPrice: (parseFloat(item.unitPrice) || 0) / 100,
-          amount: (parseFloat(item.amount) || 0) / 100,
-          serviceId: item.serviceId || null,
-          packageId: item.packageId || null,
-          isDiscount: item.isDiscount || false,
-        }));
+        const convertedLineItems = getSafeLineItems(invoiceData.lineItems).map((item) => {
+          const quantity = parseInt(item.quantity) || 1;
+          const unitPrice = (parseFloat(item.unitPrice) || 0) / 100;
+          const isDiscount = item.isDiscount || false;
+          // Recalculate amount from qty * price to ensure it's correct
+          const amount = isDiscount ? -Math.abs(quantity * unitPrice) : quantity * unitPrice;
+          return {
+            description: item.description || "",
+            quantity,
+            unitPrice,
+            amount,
+            serviceId: item.serviceId || null,
+            packageId: item.packageId || null,
+            isDiscount,
+          };
+        });
 
         let safeDepositPercent = null;
         if (invoiceData.depositPercent !== null && invoiceData.depositPercent !== undefined) {
@@ -430,6 +453,32 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!invoiceId) {
+      toast.error("Please save the invoice first before sending");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const res = await fetch(`/api/invoices/${invoiceId}/send`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to send invoice");
+      }
+
+      toast.success("Invoice sent to " + formData.contactEmail);
+      setFormData((prev) => ({ ...prev, status: "sent" }));
+    } catch (error) {
+      toast.error(error.message || "Failed to send invoice");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -809,39 +858,54 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
-                {/* Deposit Option */}
-                <div className="flex items-center justify-between text-sm pt-2 border-t">
-                  <span className="text-muted-foreground">Deposit</span>
-                  <Select
-                    value={formData.depositPercent?.toString() || "none"}
-                    onValueChange={(value) =>
-                      setFormData({
-                        ...formData,
-                        depositPercent: value === "none" ? null : parseInt(value),
-                      })
-                    }
-                    disabled={invoice?.depositPaidAt}
-                  >
-                    <SelectTrigger className="w-20 h-8">
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {DEPOSIT_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value.toString()}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {getSafeDepositPercent() > 0 && (
-                  <div className="flex justify-between text-sm text-blue-600">
-                    <span>
-                      {invoice?.depositPaidAt ? "Deposit Paid" : "Deposit Due"} ({getSafeDepositPercent()}%)
-                    </span>
-                    <span>${getDepositAmount().toFixed(2)}</span>
-                  </div>
+
+                {/* Deposit Section */}
+                {invoice?.depositPaidAt ? (
+                  /* Deposit was already collected - show it as paid */
+                  <>
+                    <div className="flex justify-between text-sm pt-2 border-t text-green-600">
+                      <span>✓ Deposit Paid ({getSafeDepositPercent()}%)</span>
+                      <span>-${getDepositAmount().toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                      <span>Balance Due</span>
+                      <span>${(total - getDepositAmount()).toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  /* No deposit collected yet - allow configuration */
+                  <>
+                    <div className="flex items-center justify-between text-sm pt-2 border-t">
+                      <span className="text-muted-foreground">Deposit</span>
+                      <Select
+                        value={formData.depositPercent?.toString() || "none"}
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            depositPercent: value === "none" ? null : parseInt(value),
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-20 h-8">
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {DEPOSIT_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value.toString()}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {getSafeDepositPercent() > 0 && (
+                      <div className="flex justify-between text-sm text-blue-600">
+                        <span>Deposit Due ({getSafeDepositPercent()}%)</span>
+                        <span>${getDepositAmount().toFixed(2)}</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -864,13 +928,29 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/invoices")}>
+        <div className="flex flex-wrap justify-end gap-2 mt-6">
+          <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")}>
             Cancel
           </Button>
-          <Button type="submit" variant="success" disabled={saving}>
+          {mode === "edit" && formData.contactEmail && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSend}
+              disabled={sending || saving}
+            >
+              {sending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-2" />
+              )}
+              Send
+            </Button>
+          )}
+          <Button type="submit" variant="success" size="sm" disabled={saving || sending}>
             {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {mode === "edit" ? "Save Changes" : "Create Invoice"}
+            {mode === "edit" ? "Save" : "Create"}
           </Button>
         </div>
       </form>

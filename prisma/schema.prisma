@@ -19,6 +19,7 @@ model Tenant {
   stripeSubscriptionId String?  @unique
   stripeAccountStatus String?   @default("pending")
   stripeOnboardingComplete Boolean @default(false)
+  stripeTerminalLocationId String?  // Stripe Terminal Location ID for in-person payments
   subscriptionStatus  String?   @default("trialing")
   planType            String?   @default("basic")
   currentPeriodEnd    DateTime?
@@ -50,6 +51,17 @@ model Tenant {
   metadata            Json?
   setupComplete       Boolean   @default(false)
 
+  onboardingStep        Int       @default(0)
+  onboardingCompletedAt DateTime?
+
+  // Payment settings for customer bookings
+  requirePayment        Boolean   @default(false)
+  paymentType           String?   @default("full")  // "full" or "deposit"
+  depositType           String?   @default("percentage")  // "fixed" or "percentage"
+  depositValue          Int?      @default(50)  // cents for fixed, percentage (0-100) for percentage
+  payInFullDiscount     Int?      @default(0)  // 0-15 percentage discount for paying full amount
+  balanceDueAt          String?   @default("completion")  // "arrival" or "completion"
+
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -69,6 +81,8 @@ model Tenant {
   tags                Tag[]
   workflows           Workflow[]
   emailTemplates      EmailTemplate[]
+  terminalReaders     TerminalReader[]
+  alerts              Alert[]
 
   @@index([clerkOrgId])
 }
@@ -166,12 +180,15 @@ model Contact {
   status    String?   @default("lead") // lead, client, active, inactive, unclassified
   notes     String?
 
+  stripeCustomerId String?  @unique  // Stripe Customer ID for saved payment methods
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   bookings  Booking[]
   invoices  Invoice[]
+  payments  Payment[]
   tags      ContactTag[]
 
   @@map("Client")
@@ -474,27 +491,47 @@ model WebhookDelivery {
 model Payment {
   id                    String    @id @default(cuid())
   tenantId              String
+  contactId             String?   // Links payment to Contact
   bookingId             String?
 
+  // Stripe IDs
   stripePaymentIntentId String    @unique
-  stripeAccountId       String
+  stripeChargeId        String?
+  stripeAccountId       String    // Connected account (tenant's)
+  stripeReceiptUrl      String?
 
-  amount                Int
+  // Amount
+  amount                Int       // cents - amount actually charged
   currency              String    @default("usd")
-  status                String
+  depositAmount         Int?      // if partial payment (null = full payment)
+  serviceTotal          Int?      // Total service price (for deposit context)
 
+  // Customer info (preserved at time of payment)
   clientEmail           String
   clientName            String
 
-  metadata              String?
+  // Card info (for chargeback evidence)
+  cardBrand             String?   // visa, mastercard, amex, etc.
+  cardLast4             String?
 
+  // Status
+  status                String    // succeeded, refunded, partial_refund, disputed
+  refundedAmount        Int?      @default(0)
+  disputeStatus         String?   // warning_needs_response, needs_response, won, lost
+
+  // Timestamps
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  capturedAt            DateTime?
+
+  metadata              String?   // JSON
 
   tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact               Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
   bookings              Booking[]
 
   @@index([tenantId])
+  @@index([contactId])
   @@index([stripePaymentIntentId])
   @@index([status])
   @@index([createdAt])
@@ -593,6 +630,8 @@ model Invoice {
 
   stripeCheckoutSessionId String?   @unique
   stripePaymentIntentId   String?   @unique
+  stripePaymentLinkId     String?   // Stripe Payment Link ID for balance payment
+  stripePaymentLinkUrl    String?   // URL for customer to pay balance
 
   notes           String?
   terms           String?
@@ -626,4 +665,77 @@ model FeatureRequest {
   @@index([email])
   @@index([status])
   @@index([createdAt])
+}
+
+model TerminalReader {
+  id              String    @id @default(cuid())
+  tenantId        String
+
+  stripeReaderId  String    @unique  // Stripe Reader ID (tmr_xxx)
+  label           String              // e.g., "Front Desk", "Room 1"
+  serialNumber    String?
+  deviceType      String?             // e.g., "stripe_s700", "bbpos_wisepos_e"
+  status          String    @default("offline")  // online, offline
+  ipAddress       String?
+  lastSeenAt      DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model Alert {
+  id          String    @id @default(cuid())
+  tenantId    String?   // Null for system-wide alerts
+
+  type        String    // "dispute", "payment_failed", "account_issue", "system", "announcement"
+  severity    String    @default("warning")  // "info", "warning", "error", "critical"
+  title       String
+  message     String
+  actionUrl   String?   // Optional link to take action
+  actionLabel String?   // Optional button text
+
+  read        Boolean   @default(false)
+  dismissed   Boolean   @default(false)
+  isGlobal    Boolean   @default(false)  // True for system-wide alerts to all tenants
+
+  // Reference to related entity
+  referenceType String?  // "payment", "booking", "invoice"
+  referenceId   String?
+
+  metadata    Json?
+
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime? // Optional expiration for announcements
+  readAt      DateTime?
+  dismissedAt DateTime?
+
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dismissals  GlobalAlertDismissal[]
+
+  @@index([tenantId])
+  @@index([read])
+  @@index([dismissed])
+  @@index([createdAt])
+  @@index([type])
+  @@index([isGlobal])
+}
+
+// Track which global alerts each tenant has dismissed
+model GlobalAlertDismissal {
+  id        String   @id @default(cuid())
+  alertId   String
+  tenantId  String
+
+  createdAt DateTime @default(now())
+
+  alert     Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@unique([alertId, tenantId])
+  @@index([tenantId])
+  @@index([alertId])
 }
