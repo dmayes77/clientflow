@@ -739,3 +739,116 @@ model GlobalAlertDismissal {
   @@index([tenantId])
   @@index([alertId])
 }
+
+// Roadmap items for public roadmap display
+model RoadmapItem {
+  id          String    @id @default(cuid())
+
+  title       String
+  description String?
+  status      String    @default("planned")  // planned, in_progress, completed, archived
+  category    String?   // feature, improvement, fix, etc.
+  priority    Int       @default(0)  // For ordering
+
+  votes       Int       @default(0)
+  votedBy     String[]  @default([])  // List of tenant IDs who voted
+
+  targetDate  DateTime?
+  completedAt DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?   // Admin user ID
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+// Changelog entries for release notes
+model ChangelogEntry {
+  id          String    @id @default(cuid())
+
+  version     String?   // e.g., "1.2.0"
+  title       String
+  content     String    @db.Text  // Markdown content
+  type        String    @default("feature")  // feature, improvement, fix, breaking
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?   // Admin user ID
+
+  @@index([published])
+  @@index([publishedAt])
+  @@index([createdAt])
+}
+
+// Platform-wide settings (singleton pattern - only one row)
+model PlatformSettings {
+  id                    String    @id @default("platform")
+
+  // Maintenance mode
+  maintenanceMode       Boolean   @default(false)
+  maintenanceMessage    String?
+  maintenanceEndTime    DateTime?
+
+  // Feature flags
+  signupsEnabled        Boolean   @default(true)
+  newTrialsEnabled      Boolean   @default(true)
+  paymentsEnabled       Boolean   @default(true)
+  bookingsEnabled       Boolean   @default(true)
+
+  // Trial settings
+  trialDays             Int       @default(14)
+  requirePaymentMethod  Boolean   @default(false)
+
+  // Branding / customization
+  platformName          String    @default("ClientFlow")
+  supportEmail          String?
+  supportUrl            String?
+
+  // Limits
+  maxTenantsPerDay      Int       @default(100)
+  maxBookingsPerTenant  Int       @default(1000)
+
+  updatedAt             DateTime  @updatedAt
+  updatedBy             String?   // Admin user ID who last updated
+}
+
+// Subscription plans - synced with Stripe
+model Plan {
+  id                String    @id @default(cuid())
+
+  // Display info
+  name              String    // e.g., "Platform", "Professional"
+  slug              String    @unique  // e.g., "platform", "professional"
+  description       String?
+  features          String[]  @default([])  // List of feature strings
+
+  // Pricing
+  priceMonthly      Int       // Price in cents per month
+  priceYearly       Int?      // Price in cents per year (optional)
+
+  // Stripe IDs
+  stripeProductId   String    @unique  // Stripe Product ID
+  stripePriceId     String    @unique  // Stripe Price ID (monthly)
+  stripePriceIdYearly String? @unique  // Stripe Price ID (yearly)
+
+  // Limits for this plan
+  maxContacts       Int?      // null = unlimited
+  maxBookings       Int?      // null = unlimited
+  maxServices       Int?      // null = unlimited
+
+  // Status
+  active            Boolean   @default(true)
+  isDefault         Boolean   @default(false)  // Default plan for new signups
+  sortOrder         Int       @default(0)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([active])
+  @@index([sortOrder])
+}

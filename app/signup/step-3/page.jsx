@@ -13,35 +13,39 @@ import {
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getSignupState, clearSignupState } from "@/lib/signup-state";
+import { getSignupState } from "@/lib/signup-state";
 
-const PLAN = {
-  id: "professional",
-  name: "Professional",
-  price: 149,
-  priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL,
-  description: "Everything you need to grow your business",
-  color: "violet",
-  features: [
-    "Unlimited bookings",
-    "Unlimited clients",
-    "Online scheduling page",
-    "Email notifications",
-    "Calendar integrations",
-    "Payment processing",
-    "API access & Webhooks",
-    "Custom branding",
-    "Advanced analytics",
-    "Priority support",
-    "Invoice management",
-  ],
-};
+function formatPrice(cents) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
 
 export default function Step3Page() {
   const router = useRouter();
   const { isLoaded, orgId, userId } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [plans, setPlans] = useState([]);
   const [redirecting, setRedirecting] = useState(false);
+
+  // Fetch plans from database
+  useEffect(() => {
+    async function fetchPlans() {
+      try {
+        const res = await fetch("/api/plans");
+        if (res.ok) {
+          const data = await res.json();
+          setPlans(data.plans || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch plans:", err);
+      }
+    }
+    fetchPlans();
+  }, []);
 
   // Redirect if not authenticated or no org
   useEffect(() => {
@@ -66,24 +70,21 @@ export default function Step3Page() {
   }, [isLoaded, userId, orgId, router]);
 
   const handleSelectPlan = async (plan) => {
-    console.log("handleSelectPlan called", { plan, priceId: plan.priceId });
+    const priceId = plan.stripePriceId;
 
-    if (!plan.priceId) {
-      console.error("Missing priceId. NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL:", process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL);
-      toast.error("Price ID not configured. Check environment variables.");
+    if (!priceId) {
+      toast.error("This plan is not configured for checkout.");
       return;
     }
 
     setRedirecting(true);
 
     try {
-      console.log("Creating checkout with priceId:", plan.priceId);
-
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: plan.priceId,
+          priceId,
           successUrl: `${window.location.origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${window.location.origin}/signup/step-3`,
         }),
@@ -92,7 +93,6 @@ export default function Step3Page() {
       const data = await res.json();
 
       if (!res.ok) {
-        console.error("Checkout error:", data);
         throw new Error(data.error || "Failed to create checkout");
       }
 
@@ -108,7 +108,7 @@ export default function Step3Page() {
     }
   };
 
-  if (loading) {
+  if (loading || plans.length === 0) {
     return (
       <div className="flex items-center justify-center py-12 min-h-[200px]">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -128,55 +128,86 @@ export default function Step3Page() {
         </p>
       </div>
 
-      {/* Plan card */}
-      <div className="space-y-4">
-        <div className="p-4 rounded-2xl border-2 border-violet-500 bg-violet-50">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <span className="text-[15px] font-semibold text-gray-900">{PLAN.name}</span>
-              <p className="text-[13px] text-gray-500 mt-0.5">{PLAN.description}</p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-bold text-gray-900">
-                ${PLAN.price}
-                <span className="text-[13px] font-normal text-gray-500">/mo</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5 mb-4">
-            {PLAN.features.map((feature) => (
-              <div
-                key={feature}
-                className="flex items-center gap-1.5 text-[11px] text-gray-600"
-              >
-                <Check className="w-3 h-3 shrink-0 text-violet-500" />
-                <span className="truncate">{feature}</span>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => handleSelectPlan(PLAN)}
-            disabled={redirecting}
+      {/* Plan cards */}
+      <div className="space-y-3">
+        {plans.map((plan) => (
+          <div
+            key={plan.id}
             className={cn(
-              "w-full h-11 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2",
-              redirecting && "opacity-50 cursor-not-allowed"
+              "p-4 rounded-2xl border-2 transition-colors",
+              plan.isDefault
+                ? "border-violet-500 bg-violet-50"
+                : "border-gray-200 bg-white"
             )}
           >
-            {redirecting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Redirecting to checkout...</span>
-              </>
-            ) : (
-              <>
-                Start Free Trial
-                <ArrowRight className="w-4 h-4" />
-              </>
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <span className="text-[15px] font-semibold text-gray-900">
+                  {plan.name}
+                </span>
+                {plan.description && (
+                  <p className="text-[13px] text-gray-500 mt-0.5">
+                    {plan.description}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-xl font-bold text-gray-900">
+                  {formatPrice(plan.priceMonthly)}
+                  <span className="text-[13px] font-normal text-gray-500">/mo</span>
+                </div>
+                {plan.priceYearly && (
+                  <div className="text-[11px] text-gray-500">
+                    or {formatPrice(plan.priceYearly)}/yr
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {plan.features && plan.features.length > 0 && (
+              <div className="grid grid-cols-2 gap-1.5 mb-4">
+                {plan.features.map((feature, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-1.5 text-[11px] text-gray-600"
+                  >
+                    <Check
+                      className={cn(
+                        "w-3 h-3 shrink-0",
+                        plan.isDefault ? "text-violet-500" : "text-blue-500"
+                      )}
+                    />
+                    <span className="truncate">{feature}</span>
+                  </div>
+                ))}
+              </div>
             )}
-          </button>
-        </div>
+
+            <button
+              onClick={() => handleSelectPlan(plan)}
+              disabled={redirecting}
+              className={cn(
+                "w-full h-11 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2",
+                plan.isDefault
+                  ? "bg-violet-600 hover:bg-violet-700 active:bg-violet-800"
+                  : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800",
+                redirecting && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {redirecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Redirecting to checkout...</span>
+                </>
+              ) : (
+                <>
+                  Start Free Trial
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Trust badges */}

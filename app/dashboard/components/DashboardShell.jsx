@@ -43,6 +43,7 @@ import {
   User,
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
+import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 
 const businessItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -205,10 +206,12 @@ export function DashboardShell({ children }) {
   }, []);
 
   return (
-    <SidebarProvider>
-      <SidebarNav businessName={businessName} />
+    <>
+      <ImpersonationBanner />
+      <SidebarProvider>
+        <SidebarNav businessName={businessName} />
 
-      <SidebarInset className="overflow-auto min-h-0">
+        <SidebarInset className="overflow-auto min-h-0">
         <header className="sticky top-0 z-10 flex h-11 sm:h-10 items-center border-b border-border bg-background px-3 shadow-sm">
           <div className="w-11 flex items-center justify-start sm:w-auto">
             <SidebarTrigger />
@@ -226,7 +229,8 @@ export function DashboardShell({ children }) {
         </header>
 
         <div className="flex-1 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </>
   );
 }

@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import {
-  HeroFeatureList,
-  PricingCardList,
+  PricingPlans,
   PricingFeatures,
   PricingSteps,
   PricingFAQ,
@@ -28,67 +27,61 @@ export const metadata = {
   },
 };
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  // Fetch plans from database
+  const plans = await prisma.plan.findMany({
+    where: { active: true },
+    orderBy: { sortOrder: "asc" },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      features: true,
+      priceMonthly: true,
+      priceYearly: true,
+      stripePriceId: true,
+      stripePriceIdYearly: true,
+      isDefault: true,
+    },
+  });
+
+  const hasMultiplePlans = plans.length > 1;
+
   return (
     <>
       {/* Hero Section with Pricing */}
       <section className="py-16 md:py-24 bg-linear-to-b from-primary/5 to-transparent">
         <div className="container max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: Value Proposition */}
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <Badge variant="secondary" className="text-sm px-3 py-1">
-                  Simple Pricing
-                </Badge>
-                <h1 className="mft-display-2">
+          <div className="text-center mb-12 space-y-4">
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              Simple Pricing
+            </Badge>
+            <h1 className="mft-display-2">
+              {hasMultiplePlans ? (
+                <>
+                  Choose your plan.
+                  <br />
+                  <span className="bg-linear-to-r from-primary to-cyan-500 bg-clip-text text-transparent">
+                    Scale as you grow.
+                  </span>
+                </>
+              ) : (
+                <>
                   One price.
                   <br />
                   <span className="bg-linear-to-r from-primary to-cyan-500 bg-clip-text text-transparent">
                     Everything included.
                   </span>
-                </h1>
-                <p className="mft-lead">
-                  No confusing tiers. No hidden fees. Get the complete backend for your service business—bookings, CRM, payments, and API access.
-                </p>
-              </div>
-
-              <HeroFeatureList />
-            </div>
-
-            {/* Right: Pricing Card */}
-            <Card className="relative border-2 border-primary/30 shadow-xl overflow-visible">
-              <Badge className="absolute -top-3 right-6 bg-linear-to-r from-primary to-cyan-500 text-white border-0">
-                14-Day Free Trial
-              </Badge>
-
-              <CardContent className="p-8 md:p-10 space-y-6">
-                <div>
-                  <p className="mft-text-lg font-semibold text-muted-foreground mb-2">
-                    ClientFlow Professional
-                  </p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="mft-text-3xl font-semibold text-primary">$</span>
-                    <span className="mft-text-6xl font-black text-primary">149</span>
-                    <span className="mft-text-xl text-muted-foreground">/month</span>
-                  </div>
-                </div>
-
-                <PricingCardList />
-
-                <Link href="/sign-up" className="block">
-                  <Button size="lg" className="w-full mft-text-lg bg-linear-to-r from-primary to-cyan-500 hover:opacity-90">
-                    Start Free Trial
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
-
-                <p className="mft-small text-muted-foreground text-center">
-                  Cancel anytime during trial
-                </p>
-              </CardContent>
-            </Card>
+                </>
+              )}
+            </h1>
+            <p className="mft-lead max-w-2xl mx-auto">
+              No hidden fees. Get the complete backend for your service business—bookings, CRM, payments, and API access.
+            </p>
           </div>
+
+          <PricingPlans plans={plans} />
         </div>
       </section>
 
@@ -171,7 +164,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <Link href="/sign-up">
+          <Link href="/signup">
             <Button size="lg" variant="secondary" className="mft-text-lg">
               Start Your Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />

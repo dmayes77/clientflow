@@ -100,6 +100,22 @@ export async function POST(request) {
       });
     }
 
+    // Look up the plan from database to get plan slug for metadata
+    const plan = await prisma.plan.findFirst({
+      where: {
+        OR: [
+          { stripePriceId: priceId },
+          { stripePriceIdYearly: priceId },
+        ],
+      },
+    });
+
+    // Get trial days from platform settings
+    const settings = await prisma.platformSettings.findUnique({
+      where: { id: "platform" },
+    });
+    const trialDays = settings?.trialDays ?? 14;
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -112,15 +128,17 @@ export async function POST(request) {
         },
       ],
       subscription_data: {
-        trial_period_days: 30,
+        trial_period_days: trialDays,
         metadata: {
           tenantId: tenant.id,
+          planSlug: plan?.slug || null,
         },
       },
       success_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/setup?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/payment`,
       metadata: {
         tenantId: tenant.id,
+        planSlug: plan?.slug || null,
       },
     });
 

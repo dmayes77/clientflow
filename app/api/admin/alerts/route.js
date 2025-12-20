@@ -11,7 +11,7 @@ async function isAdmin() {
   return ADMIN_USER_IDS.includes(userId);
 }
 
-// GET /api/admin/alerts - List all global alerts
+// GET /api/admin/alerts - List all alerts (platform-wide view for admin)
 export async function GET(request) {
   try {
     if (!(await isAdmin())) {
@@ -19,40 +19,65 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const includeExpired = searchParams.get("includeExpired") === "true";
+    const type = searchParams.get("type"); // dispute, payment_failed, etc.
+    const severity = searchParams.get("severity");
+    const globalOnly = searchParams.get("globalOnly") === "true";
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const alerts = await prisma.alert.findMany({
-      where: {
-        isGlobal: true,
-        ...(includeExpired
-          ? {}
-          : {
-              OR: [
-                { expiresAt: null },
-                { expiresAt: { gt: new Date() } },
-              ],
-            }),
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      include: {
-        _count: {
-          select: { dismissals: true },
-        },
-      },
-    });
+    const where = {};
 
-    // Get total tenant count for context
-    const tenantCount = await prisma.tenant.count();
+    if (globalOnly) {
+      where.isGlobal = true;
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
+    if (severity) {
+      where.severity = severity;
+    }
+
+    const [alerts, typeCounts, unreadCount, criticalCount] = await Promise.all([
+      prisma.alert.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              businessName: true,
+              email: true,
+            },
+          },
+        },
+      }),
+      prisma.alert.groupBy({
+        by: ["type"],
+        where: { dismissed: false },
+        _count: true,
+      }),
+      prisma.alert.count({
+        where: { read: false, dismissed: false },
+      }),
+      prisma.alert.count({
+        where: {
+          severity: { in: ["critical", "error"] },
+          dismissed: false,
+        },
+      }),
+    ]);
 
     return NextResponse.json({
-      alerts: alerts.map((alert) => ({
-        ...alert,
-        dismissalCount: alert._count.dismissals,
-        _count: undefined,
-      })),
-      tenantCount,
+      alerts,
+      typeCounts: typeCounts.reduce((acc, item) => {
+        acc[item.type] = item._count;
+        return acc;
+      }, {}),
+      unreadCount,
+      criticalCount,
     });
   } catch (error) {
     console.error("Error fetching admin alerts:", error);
@@ -60,7 +85,7 @@ export async function GET(request) {
   }
 }
 
-// POST /api/admin/alerts - Create a new global alert
+// POST /api/admin/alerts - Create alert (broadcast or per-tenant)
 export async function POST(request) {
   try {
     if (!(await isAdmin())) {
@@ -76,6 +101,8 @@ export async function POST(request) {
       actionUrl,
       actionLabel,
       expiresAt,
+      tenantIds, // Array of tenant IDs for per-tenant alerts, or empty/null for broadcast
+      broadcast = false, // If true, creates a global alert visible to all
     } = body;
 
     if (!title || !message) {
@@ -92,28 +119,54 @@ export async function POST(request) {
       );
     }
 
-    const alert = await prisma.alert.create({
-      data: {
-        tenantId: null, // Global alerts have no tenant
-        isGlobal: true,
-        type,
-        severity,
-        title,
-        message,
-        actionUrl,
-        actionLabel,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-      },
-    });
+    const alertData = {
+      type,
+      severity,
+      title,
+      message,
+      actionUrl,
+      actionLabel,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+    };
 
-    return NextResponse.json({ alert }, { status: 201 });
+    let alerts = [];
+
+    if (broadcast || (!tenantIds || tenantIds.length === 0)) {
+      // Create a single global broadcast alert
+      const alert = await prisma.alert.create({
+        data: {
+          ...alertData,
+          tenantId: null,
+          isGlobal: true,
+        },
+      });
+      alerts = [alert];
+    } else {
+      // Create individual alerts for each specified tenant
+      const createPromises = tenantIds.map((tenantId) =>
+        prisma.alert.create({
+          data: {
+            ...alertData,
+            tenantId,
+            isGlobal: false,
+          },
+        })
+      );
+      alerts = await Promise.all(createPromises);
+    }
+
+    return NextResponse.json({
+      alerts,
+      count: alerts.length,
+      broadcast: broadcast || (!tenantIds || tenantIds.length === 0),
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating admin alert:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// PATCH /api/admin/alerts - Update a global alert
+// PATCH /api/admin/alerts - Update or dismiss an alert
 export async function PATCH(request) {
   try {
     if (!(await isAdmin())) {
@@ -121,7 +174,7 @@ export async function PATCH(request) {
     }
 
     const body = await request.json();
-    const { alertId, ...updates } = body;
+    const { alertId, dismissed, ...updates } = body;
 
     if (!alertId) {
       return NextResponse.json(
@@ -130,7 +183,6 @@ export async function PATCH(request) {
       );
     }
 
-    // Verify it's a global alert
     const existing = await prisma.alert.findUnique({
       where: { id: alertId },
     });
@@ -139,14 +191,18 @@ export async function PATCH(request) {
       return NextResponse.json({ error: "Alert not found" }, { status: 404 });
     }
 
-    if (!existing.isGlobal) {
-      return NextResponse.json(
-        { error: "This route only manages global alerts" },
-        { status: 400 }
-      );
+    // Build update data
+    const updateData = {};
+
+    // Handle dismiss action
+    if (dismissed !== undefined) {
+      updateData.dismissed = dismissed;
+      if (dismissed) {
+        updateData.dismissedAt = new Date();
+      }
     }
 
-    // Filter allowed updates
+    // Filter allowed field updates
     const allowedFields = [
       "title",
       "message",
@@ -155,7 +211,6 @@ export async function PATCH(request) {
       "actionLabel",
       "expiresAt",
     ];
-    const updateData = {};
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
         updateData[field] =
@@ -177,7 +232,7 @@ export async function PATCH(request) {
   }
 }
 
-// DELETE /api/admin/alerts - Delete a global alert
+// DELETE /api/admin/alerts - Delete an alert
 export async function DELETE(request) {
   try {
     if (!(await isAdmin())) {
@@ -194,20 +249,12 @@ export async function DELETE(request) {
       );
     }
 
-    // Verify it's a global alert
     const existing = await prisma.alert.findUnique({
       where: { id: alertId },
     });
 
     if (!existing) {
       return NextResponse.json({ error: "Alert not found" }, { status: 404 });
-    }
-
-    if (!existing.isGlobal) {
-      return NextResponse.json(
-        { error: "This route only manages global alerts" },
-        { status: 400 }
-      );
     }
 
     // Delete the alert (cascades to dismissals)

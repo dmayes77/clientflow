@@ -271,12 +271,25 @@ async function handleCheckoutSessionCompleted(session) {
       updateData.subscriptionStatus = "active";
     }
 
-    // Determine plan type from price
-    const priceId = sub.items.data[0]?.price.id;
-    if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL) {
-      updateData.planType = "professional";
-    } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_PLATFORM) {
-      updateData.planType = "platform";
+    // Determine plan type from metadata first, then lookup by price
+    if (metadata?.planSlug) {
+      updateData.planType = metadata.planSlug;
+    } else {
+      // Lookup plan from database by price ID
+      const priceId = sub.items.data[0]?.price.id;
+      if (priceId) {
+        const plan = await prisma.plan.findFirst({
+          where: {
+            OR: [
+              { stripePriceId: priceId },
+              { stripePriceIdYearly: priceId },
+            ],
+          },
+        });
+        if (plan) {
+          updateData.planType = plan.slug;
+        }
+      }
     }
   }
 
@@ -334,12 +347,20 @@ async function handleSubscriptionUpdated(subscription) {
       updateData.stripeSubscriptionId = subscription.id;
     }
 
-    // Check for plan changes
+    // Check for plan changes - lookup from database
     const priceId = subscription.items?.data?.[0]?.price?.id;
-    if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL) {
-      updateData.planType = "professional";
-    } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PRICE_PLATFORM) {
-      updateData.planType = "platform";
+    if (priceId) {
+      const plan = await prisma.plan.findFirst({
+        where: {
+          OR: [
+            { stripePriceId: priceId },
+            { stripePriceIdYearly: priceId },
+          ],
+        },
+      });
+      if (plan) {
+        updateData.planType = plan.slug;
+      }
     }
 
     console.log("Updating tenant with:", updateData);
