@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -54,7 +54,7 @@ const STRIPE_FEATURES = [
   { icon: DollarSign, label: "Direct deposits to your bank" },
 ];
 
-export default function StripeIntegrationPage() {
+function StripeIntegrationPageContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -718,5 +718,36 @@ export default function StripeIntegrationPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function StripeIntegrationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/dashboard/integrations">
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Back
+              </Link>
+            </Button>
+          </div>
+          <div>
+            <h1 className="text-[22px] sm:text-2xl font-bold">Stripe Payments</h1>
+            <p className="text-[13px] sm:text-sm text-muted-foreground">Accept payments from your clients</p>
+          </div>
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <StripeIntegrationPageContent />
+    </Suspense>
   );
 }
