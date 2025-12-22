@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
+import { useServices, useCreateService, useUpdateService, useDeleteService } from "@/lib/hooks";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,14 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import {
-  PreviewSheet,
-  PreviewSheetHeader,
-  PreviewSheetContent,
-  PreviewSheetSection,
-} from "@/components/ui/preview-sheet";
-import { BottomSheet, BottomSheetFooter } from "@/components/ui/bottom-sheet";
-import { useIsMobile } from "@/hooks/use-media-query";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -29,7 +30,7 @@ import {
   Trash2,
   Loader2,
   Clock,
-  FolderOpen,
+  MoreHorizontal,
   X,
   Check,
   ImageIcon,
@@ -68,7 +69,7 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
         <GripVertical className="h-4 w-4" />
       </button>
       <Check className="h-4 w-4 text-green-600 shrink-0" />
-      <span className="flex-1 text-sm">{item}</span>
+      <span className="flex-1">{item}</span>
       <Button
         type="button"
         variant="ghost"
@@ -96,13 +97,16 @@ const initialFormState = {
 
 export function ServicesList() {
   const router = useRouter();
-  const isMobile = useIsMobile();
   const { formatDuration: formatBusinessDuration } = useBusinessHours();
-  const [services, setServices] = useState([]);
+
+  // TanStack Query hooks
+  const { data: services = [], isLoading: loading } = useServices();
+  const createService = useCreateService();
+  const updateService = useUpdateService();
+  const deleteService = useDeleteService();
+
   const [categories, setCategories] = useState([]);
   const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -114,8 +118,6 @@ export function ServicesList() {
   const [uploading, setUploading] = useState(false);
   const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
-  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
-  const [previewService, setPreviewService] = useState(null);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -260,24 +262,9 @@ Format the includes list so I can easily copy each item individually.`;
   };
 
   useEffect(() => {
-    fetchServices();
     fetchCategories();
     fetchImages();
   }, []);
-
-  const fetchServices = async () => {
-    try {
-      const res = await fetch("/api/services");
-      if (res.ok) {
-        const data = await res.json();
-        setServices(data);
-      }
-    } catch (error) {
-      toast.error("Failed to load services");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchCategories = async () => {
     try {
@@ -399,78 +386,55 @@ Format the includes list so I can easily copy each item individually.`;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
 
-    try {
-      const payload = {
-        name: formData.name,
-        description: formData.description,
-        duration: formData.duration,
-        price: Math.round(formData.price * 100),
-        active: formData.active,
-        includes: formData.includes,
-        imageId: formData.imageId,
-        ...(formData.categoryId && formData.categoryId !== "none" && { categoryId: formData.categoryId }),
-        ...(formData.newCategoryName && { newCategoryName: formData.newCategoryName }),
-      };
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      duration: formData.duration,
+      price: Math.round(formData.price * 100),
+      active: formData.active,
+      includes: formData.includes,
+      imageId: formData.imageId,
+      ...(formData.categoryId && formData.categoryId !== "none" && { categoryId: formData.categoryId }),
+      ...(formData.newCategoryName && { newCategoryName: formData.newCategoryName }),
+    };
 
-      if (formData.newCategoryName) {
-        delete payload.categoryId;
-      }
+    if (formData.newCategoryName) {
+      delete payload.categoryId;
+    }
 
-      const url = editingService ? `/api/services/${editingService.id}` : "/api/services";
-      const method = editingService ? "PATCH" : "POST";
+    const mutation = editingService ? updateService : createService;
+    const mutationData = editingService ? { id: editingService.id, ...payload } : payload;
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const savedService = await res.json();
-        if (editingService) {
-          setServices(services.map((s) => (s.id === savedService.id ? savedService : s)));
-          toast.success("Service updated");
-        } else {
-          setServices([savedService, ...services]);
-          toast.success("Service created");
-        }
+    mutation.mutate(mutationData, {
+      onSuccess: () => {
+        toast.success(editingService ? "Service updated" : "Service created");
         if (formData.newCategoryName) {
           fetchCategories();
         }
         handleCloseDialog();
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save service");
-      }
-    } catch (error) {
-      toast.error("Failed to save service");
-    } finally {
-      setSaving(false);
-    }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to save service");
+      },
+    });
   };
 
   const handleDelete = async () => {
     if (!serviceToDelete) return;
 
-    try {
-      const res = await fetch(`/api/services/${serviceToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setServices(services.filter((s) => s.id !== serviceToDelete.id));
+    deleteService.mutate(serviceToDelete.id, {
+      onSuccess: () => {
         toast.success("Service deleted");
-      } else {
+        setDeleteDialogOpen(false);
+        setServiceToDelete(null);
+      },
+      onError: () => {
         toast.error("Failed to delete service");
-      }
-    } catch (error) {
-      toast.error("Failed to delete service");
-    } finally {
-      setDeleteDialogOpen(false);
-      setServiceToDelete(null);
-    }
+        setDeleteDialogOpen(false);
+        setServiceToDelete(null);
+      },
+    });
   };
 
   const formatPrice = (cents) => {
@@ -485,6 +449,153 @@ Format the includes list so I can easily copy each item individually.`;
 
   const selectedImage = images.find((img) => img.id === formData.imageId);
 
+  // Define columns for DataTable
+  const columns = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Service" />
+      ),
+      cell: ({ row }) => {
+        const service = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-muted shrink-0">
+              <Image
+                src={service.images?.[0]?.url || "/default_img.webp"}
+                alt={service.name}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium truncate">{service.name}</p>
+              {service.category && (
+                <p className="text-muted-foreground truncate hig-caption2">{service.category.name}</p>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "description",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Description" />
+      ),
+      cell: ({ row }) => (
+        <p className="text-muted-foreground line-clamp-2 max-w-xs">
+          {row.original.description || "—"}
+        </p>
+      ),
+    },
+    {
+      accessorKey: "duration",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Duration" />
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <Clock className="h-3.5 w-3.5" />
+          {formatDuration(row.original.duration)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "price",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Price" />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{formatPrice(row.original.price)}</span>
+      ),
+    },
+    {
+      accessorKey: "includes",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Includes" />
+      ),
+      cell: ({ row }) => {
+        const includes = row.original.includes || [];
+        return (
+          <div className="flex items-center gap-1">
+            <Check className="h-3.5 w-3.5 text-green-600" />
+            <span className="text-muted-foreground">{includes.length} item{includes.length !== 1 ? "s" : ""}</span>
+          </div>
+        );
+      },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.includes?.length || 0;
+        const b = rowB.original.includes?.length || 0;
+        return a - b;
+      },
+    },
+    {
+      accessorKey: "active",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Status" />
+      ),
+      cell: ({ row }) => (
+        <Badge variant={row.original.active ? "success" : "secondary"}>
+          {row.original.active ? "Active" : "Off"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const service = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push(`/dashboard/services/${service.id}`)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditingService(null);
+                  setFormData({
+                    name: `${service.name} (Copy)`,
+                    description: service.description || "",
+                    duration: service.duration,
+                    price: service.price / 100,
+                    active: service.active,
+                    categoryId: service.categoryId || "",
+                    newCategoryName: "",
+                    includes: service.includes || [],
+                    imageId: service.images?.[0]?.id || null,
+                  });
+                  setDialogOpen(true);
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setServiceToDelete(service);
+                  setDeleteDialogOpen(true);
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      size: 50,
+    },
+  ];
+
   if (loading) {
     return (
       <Card>
@@ -497,270 +608,50 @@ Format the includes list so I can easily copy each item individually.`;
 
   return (
     <>
-      <Card className="py-0">
-        <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-amber-500" />
-            <span className="text-sm font-medium">Services</span>
-            <span className="text-xs text-muted-foreground">({services.length})</span>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 font-semibold">
+              <Wrench className="h-5 w-5 text-amber-500" />
+              Services
+            </CardTitle>
+            <p className="text-muted-foreground mt-1">
+              {services.length} service{services.length !== 1 ? "s" : ""}
+            </p>
           </div>
-          <Button size="xs" variant="success" onClick={() => router.push("/dashboard/services/new")}>
-            <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline ml-1">Add</span>
+          <Button size="sm" onClick={() => router.push("/dashboard/services/new")}>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Service
           </Button>
-        </div>
-        <CardContent className="p-0">
+        </CardHeader>
+        <CardContent>
           {services.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center mb-3">
-                <Wrench className="h-5 w-5 text-amber-600" />
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                <Wrench className="h-6 w-6 text-amber-600" />
               </div>
               <h3 className="text-zinc-900 mb-1">No services yet</h3>
-              <p className="text-xs text-muted-foreground mb-3">Create your first service to start booking</p>
-              <Button size="xs" variant="success" onClick={() => router.push("/dashboard/services/new")}>
-                <Plus className="h-3.5 w-3.5 mr-1" />
+              <p className="text-muted-foreground mb-4">Create your first service to start booking</p>
+              <Button size="sm" onClick={() => router.push("/dashboard/services/new")}>
+                <Plus className="h-4 w-4 mr-1" />
                 Create Service
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-3">
-              {services.map((service) => (
-                <button
-                  key={service.id}
-                  type="button"
-                  onClick={() => {
-                    if (isMobile) {
-                      setPreviewService(service);
-                      setPreviewSheetOpen(true);
-                    } else {
-                      router.push(`/dashboard/services/${service.id}`);
-                    }
-                  }}
-                  className="relative flex flex-col bg-card border rounded-lg overflow-hidden text-left hover:border-primary/50 transition-colors"
-                  style={{ aspectRatio: "3/4" }}
-                >
-                  {/* Inactive overlay */}
-                  {!service.active && (
-                    <div className="absolute inset-0 bg-white/30 z-10 pointer-events-none" />
-                  )}
-                  {/* Image - 1:1 ratio */}
-                  <div className="relative aspect-square bg-muted">
-                    <Image
-                      src={service.images?.[0]?.url || "/default_img.webp"}
-                      alt={service.name}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                      className="object-cover"
-                    />
-                    {/* Status badge - top left */}
-                    <Badge
-                      variant={service.active ? "success" : "secondary"}
-                      className="absolute top-2 left-2 text-[11px] px-1.5 py-0.5 z-20"
-                    >
-                      {service.active ? "Active" : "Off"}
-                    </Badge>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 p-2">
-                    <p className="font-medium truncate leading-tight mb-0" style={{ fontSize: "12px" }}>{service.name}</p>
-                    {service.category && (
-                      <p className="text-muted-foreground truncate mt-0.5 mb-0" style={{ fontSize: "11px" }}>{service.category.name}</p>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <DataTable
+              columns={columns}
+              data={services}
+              searchPlaceholder="Search services..."
+              pageSize={10}
+              onRowClick={(service) => router.push(`/dashboard/services/${service.id}`)}
+              emptyMessage="No services found."
+            />
           )}
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog - Mobile Bottom Sheet */}
-      {isMobile ? (
-        <BottomSheet
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          title={editingService ? "Edit Service" : "Create Service"}
-          description={editingService ? "Update your service details" : "Add a new service offering"}
-        >
-          <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-            <div className="p-4 space-y-4">
-              {/* Active Toggle */}
-              <div className="flex items-center justify-center gap-3 py-2 px-3 bg-muted/30 rounded-lg">
-                <Label className={`text-sm font-medium ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
-                  {formData.active ? "Active" : "Inactive"}
-                </Label>
-                <Switch checked={formData.active} onCheckedChange={(checked) => setFormData({ ...formData, active: checked })} />
-              </div>
-
-              {/* Service Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name-mobile">Service Name</Label>
-                <Input
-                  id="name-mobile"
-                  placeholder="e.g., Haircut, Consultation"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-
-              {/* Duration & Price */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Duration</Label>
-                  <DurationSelect
-                    value={formData.duration}
-                    onValueChange={(value) => setFormData({ ...formData, duration: value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Price ($)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    required
-                    className="py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label>Description (optional)</Label>
-                <Textarea
-                  placeholder="Marketing copy describing the end result"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
-                />
-              </div>
-
-              {/* Category */}
-              <div className="space-y-2">
-                <Label>Category (optional)</Label>
-                {isCreatingCategory ? (
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="New category name"
-                      value={formData.newCategoryName}
-                      onChange={(e) => setFormData({ ...formData, newCategoryName: e.target.value })}
-                      autoFocus
-                    />
-                    <Button type="button" variant="outline" size="sm" onClick={() => { setIsCreatingCategory(false); setFormData({ ...formData, newCategoryName: "" }); }}>
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Select value={formData.categoryId || "none"} onValueChange={(value) => setFormData({ ...formData, categoryId: value === "none" ? "" : value })}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No category</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button type="button" variant="outline" size="icon" onClick={() => setIsCreatingCategory(true)}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* What's Included */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>What's Included</Label>
-                  <span className="text-xs text-muted-foreground">{formData.includes.length}/20</span>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g., 30-minute consultation"
-                    value={newIncludeItem}
-                    onChange={(e) => setNewIncludeItem(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    maxLength={200}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={handleAddInclude}
-                    disabled={!newIncludeItem.trim() || formData.includes.length >= 20}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                {formData.includes.length > 0 && (
-                  <div className="space-y-1.5">
-                    {formData.includes.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 px-2 py-1.5 bg-muted/50 rounded text-sm">
-                        <Check className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                        <span className="flex-1 truncate">{item}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveInclude(index)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Duplicate & Delete Buttons - only when editing */}
-              {editingService && (
-                <div className="pt-4 border-t space-y-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleDuplicate}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Duplicate Service
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                    onClick={() => {
-                      setServiceToDelete(editingService);
-                      setDeleteDialogOpen(true);
-                      handleCloseDialog();
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Service
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center mt-2">Delete action cannot be undone</p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
-                  Cancel
-                </Button>
-                <Button type="submit" variant="success" disabled={saving} className="flex-1">
-                  {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {editingService ? "Save" : "Create"}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </BottomSheet>
-      ) : (
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-[95vw] sm:max-w-[90vw] lg:max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col p-0">
             <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
               <DialogTitle>{editingService ? "Edit Service" : "Create Service"}</DialogTitle>
@@ -769,7 +660,7 @@ Format the includes list so I can easily copy each item individually.`;
                   {editingService ? "Update your service details" : "Add a new service offering for your clients"}
                 </DialogDescription>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Label htmlFor="active" className={`text-sm font-medium leading-none mb-0! ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
+                  <Label htmlFor="active" className={`font-medium leading-none mb-0! ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
                     {formData.active ? "Active" : "Inactive"}
                   </Label>
                   <Switch id="active" checked={formData.active} onCheckedChange={(checked) => setFormData({ ...formData, active: checked })} />
@@ -802,14 +693,14 @@ Format the includes list so I can easily copy each item individually.`;
                           </Label>
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                            className="inline-flex items-center gap-1.5 hig-caption2 text-blue-600 hover:text-blue-700 hover:underline"
                             onClick={() => setAiPromptDialogOpen(true)}
                           >
                             <Sparkles className="h-3.5 w-3.5" />
                             Need help? Use AI
                           </button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="hig-caption2 text-muted-foreground mt-1">
                           Marketing copy describing the end result your client will achieve
                         </p>
                       </div>
@@ -938,12 +829,12 @@ Format the includes list so I can easily copy each item individually.`;
                   <div className="space-y-3">
                     <div className="flex items-center justify-between mb-1!">
                       <Label className="mb-0!">What's Included</Label>
-                      <span className="text-xs text-muted-foreground">{formData.includes.length}/20</span>
+                      <span className="hig-caption2 text-muted-foreground">{formData.includes.length}/20</span>
                     </div>
 
                     <Alert className="bg-amber-50 border-amber-200">
                       <Lightbulb className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="text-xs text-amber-800">
+                      <AlertDescription className="hig-caption2 text-amber-800">
                         We recommend adding 6-8 items that describe what clients receive with this service.
                       </AlertDescription>
                     </Alert>
@@ -973,8 +864,8 @@ Format the includes list so I can easily copy each item individually.`;
                       {formData.includes.length === 0 ? (
                         <div className="p-6 text-center text-muted-foreground">
                           <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                          <p className="text-sm">No items added yet</p>
-                          <p className="text-xs mt-1">Add items that describe what's included in this service</p>
+                          <p>No items added yet</p>
+                          <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
                         </div>
                       ) : (
                         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -1003,15 +894,14 @@ Format the includes list so I can easily copy each item individually.`;
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" variant="success" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" variant="success" disabled={createService.isPending || updateService.isPending}>
+                {(createService.isPending || updateService.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingService ? "Save Changes" : "Create Service"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-      )}
 
       {/* Image Selection Dialog */}
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
@@ -1025,7 +915,7 @@ Format the includes list so I can easily copy each item individually.`;
               <div className="py-8 text-center text-muted-foreground">
                 <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p>No images in your library</p>
-                <p className="text-sm">Upload an image to get started</p>
+                <p>Upload an image to get started</p>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-3 p-1">
@@ -1092,7 +982,7 @@ Format the includes list so I can easily copy each item individually.`;
           <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <Alert className="bg-violet-50 border-violet-200">
               <Lightbulb className="h-4 w-4 text-violet-600" />
-              <AlertDescription className="text-sm text-violet-800">
+              <AlertDescription className="text-violet-800">
                 {formData.includes.length > 0 ? (
                   <>
                     <strong>Mode:</strong> Generating marketing description only (you already have includes added).
@@ -1107,9 +997,9 @@ Format the includes list so I can easily copy each item individually.`;
             </Alert>
 
             <div className="flex-1 overflow-hidden">
-              <Label className="text-sm font-medium mb-2 block">Your Customized Prompt:</Label>
+              <Label className="font-medium mb-2 block">Your Customized Prompt:</Label>
               <ScrollArea className="h-64 rounded-md border bg-muted/30">
-                <pre className="p-4 text-sm whitespace-pre-wrap font-mono text-muted-foreground">{generateAiPrompt()}</pre>
+                <pre className="p-4 whitespace-pre-wrap font-mono text-muted-foreground">{generateAiPrompt()}</pre>
               </ScrollArea>
             </div>
 
@@ -1135,7 +1025,7 @@ Format the includes list so I can easily copy each item individually.`;
           </div>
 
           <DialogFooter className="border-t pt-4 mt-4">
-            <p className="text-xs text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
+            <p className="hig-caption2 text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
             <Button variant="outline" onClick={() => setAiPromptDialogOpen(false)}>
               Close
             </Button>
@@ -1143,160 +1033,6 @@ Format the includes list so I can easily copy each item individually.`;
         </DialogContent>
       </Dialog>
 
-      {/* Service Preview Sheet (Mobile) */}
-      {previewService && (
-        <PreviewSheet
-          open={previewSheetOpen}
-          onOpenChange={setPreviewSheetOpen}
-          title={previewService?.name || "Service Preview"}
-          actionColumns={4}
-          header={
-            <div className="flex items-start gap-3">
-              <div className="shrink-0 size-16 rounded-lg overflow-hidden bg-muted relative">
-                <Image
-                  src={previewService.images?.[0]?.url || "/default_img.webp"}
-                  alt={previewService.name}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="hig-headline truncate">{previewService.name}</h3>
-                  <Badge variant={previewService.active ? "success" : "secondary"} className="shrink-0">
-                    {previewService.active ? "Active" : "Off"}
-                  </Badge>
-                </div>
-                {previewService.category && (
-                  <p className="hig-footnote text-muted-foreground">{previewService.category.name}</p>
-                )}
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="hig-footnote font-semibold">{formatPrice(previewService.price)}</span>
-                  <span className="hig-footnote text-muted-foreground flex items-center gap-1">
-                    <Clock className="size-3" />
-                    {formatDuration(previewService.duration)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          }
-          actions={
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
-                  setEditingService(null);
-                  setFormData({
-                    name: `${previewService.name} (Copy)`,
-                    description: previewService.description || "",
-                    duration: previewService.duration,
-                    price: previewService.price / 100,
-                    active: previewService.active,
-                    categoryId: previewService.categoryId || "",
-                    newCategoryName: "",
-                    includes: previewService.includes || [],
-                    imageId: previewService.images?.[0]?.id || null,
-                  });
-                  setDialogOpen(true);
-                }}
-              >
-                <Copy className="size-5" />
-                <span className="hig-caption-2">Duplicate</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewService.active ? "text-amber-600" : "text-green-600"}`}
-                onClick={async () => {
-                  try {
-                    const res = await fetch(`/api/services/${previewService.id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ active: !previewService.active }),
-                    });
-                    if (res.ok) {
-                      const updated = await res.json();
-                      setServices(services.map((s) => (s.id === updated.id ? updated : s)));
-                      setPreviewService(updated);
-                      toast.success(updated.active ? "Service activated" : "Service deactivated");
-                    }
-                  } catch (error) {
-                    toast.error("Failed to update service");
-                  }
-                }}
-              >
-                {previewService.active ? (
-                  <>
-                    <X className="size-5" />
-                    <span className="hig-caption-2">Deactivate</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="size-5" />
-                    <span className="hig-caption-2">Activate</span>
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
-                  router.push(`/dashboard/services/${previewService.id}`);
-                }}
-              >
-                <Pencil className="size-5" />
-                <span className="hig-caption-2">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
-                  setServiceToDelete(previewService);
-                  setDeleteDialogOpen(true);
-                }}
-              >
-                <Trash2 className="size-5" />
-                <span className="hig-caption-2">Delete</span>
-              </Button>
-            </>
-          }
-        >
-          <PreviewSheetContent>
-            {/* Description */}
-            {previewService.description && (
-              <PreviewSheetSection>
-                <p className="hig-footnote text-muted-foreground line-clamp-3">{previewService.description}</p>
-              </PreviewSheetSection>
-            )}
-
-            {/* What's Included */}
-            {previewService.includes?.length > 0 && (
-              <PreviewSheetSection>
-                <p className="hig-caption-2 text-muted-foreground mb-1.5">What's Included:</p>
-                <div className="space-y-1">
-                  {previewService.includes.slice(0, 4).map((item, index) => (
-                    <div key={index} className="flex items-center gap-2 hig-footnote">
-                      <Check className="size-3.5 text-green-600 shrink-0" />
-                      <span className="truncate">{item}</span>
-                    </div>
-                  ))}
-                  {previewService.includes.length > 4 && (
-                    <p className="hig-caption-2 text-muted-foreground pl-5">+{previewService.includes.length - 4} more</p>
-                  )}
-                </div>
-              </PreviewSheetSection>
-            )}
-          </PreviewSheetContent>
-        </PreviewSheet>
-      )}
     </>
   );
 }

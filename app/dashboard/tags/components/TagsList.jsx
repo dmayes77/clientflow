@@ -221,7 +221,7 @@ export function TagsList() {
             {TAG_TYPES.map((type) => {
               const Icon = type.icon;
               return (
-                <TabsTrigger key={type.value} value={type.value} className="gap-1 sm:gap-1.5 text-[13px] sm:text-sm h-[26px] sm:h-7 px-2 sm:px-3 rounded-md">
+                <TabsTrigger key={type.value} value={type.value} className="gap-1 sm:gap-1.5 h-[26px] sm:h-7 px-2 sm:px-3 rounded-md">
                   <Icon className="size-[17px] sm:size-[18px]" />
                   <span className="hidden sm:inline">{type.label}</span>
                 </TabsTrigger>
@@ -229,7 +229,7 @@ export function TagsList() {
             })}
           </TabsList>
         </Tabs>
-        <Button size="sm" onClick={() => handleOpenDialog()} className="h-[34px] sm:h-9 text-[13px] sm:text-sm px-3 sm:px-4">
+        <Button size="sm" onClick={() => handleOpenDialog()} className="h-[34px] sm:h-9 px-3 sm:px-4">
           <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
           Create Tag
         </Button>
@@ -249,12 +249,12 @@ export function TagsList() {
                 <Tag className="size-[22px] sm:size-7 text-rose-600" />
               </div>
               <div>
-                <h3 className="text-[15px] sm:text-base font-semibold">No tags yet</h3>
-                <p className="text-[13px] sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 max-w-sm">
+                <h3 className="font-semibold">No tags yet</h3>
+                <p className="text-muted-foreground mt-0.5 sm:mt-1 max-w-sm">
                   Create tags to categorize your contacts, invoices, and bookings. Tags can trigger automated workflows.
                 </p>
               </div>
-              <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-8 sm:h-9 text-[13px] sm:text-sm">
+              <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-8 sm:h-9">
                 <Plus className="h-4 w-4 mr-1" />
                 Create Your First Tag
               </Button>
@@ -287,7 +287,7 @@ export function TagsList() {
                   )}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[15px] font-semibold truncate">{tag.name}</span>
+                        <span className="font-semibold truncate">{tag.name}</span>
                         <Badge variant="outline" className="shrink-0">
                           <TypeIcon className="size-3 mr-1" />
                           {getTypeLabel(tag.type)}
@@ -295,25 +295,25 @@ export function TagsList() {
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
                         {(tag.type === "general" || tag.type === "contact") && tag._count?.contacts > 0 && (
-                          <span className="text-[13px] text-muted-foreground flex items-center gap-1">
+                          <span className="hig-caption2 text-muted-foreground flex items-center gap-1">
                             <Users className="size-3" />
                             {tag._count.contacts}
                           </span>
                         )}
                         {(tag.type === "general" || tag.type === "invoice") && tag._count?.invoices > 0 && (
-                          <span className="text-[13px] text-muted-foreground flex items-center gap-1">
+                          <span className="hig-caption2 text-muted-foreground flex items-center gap-1">
                             <Receipt className="size-3" />
                             {tag._count.invoices}
                           </span>
                         )}
                         {(tag.type === "general" || tag.type === "booking") && tag._count?.bookings > 0 && (
-                          <span className="text-[13px] text-muted-foreground flex items-center gap-1">
+                          <span className="hig-caption2 text-muted-foreground flex items-center gap-1">
                             <Calendar className="size-3" />
                             {tag._count.bookings}
                           </span>
                         )}
                         {totalCount === 0 && (
-                          <span className="text-[13px] text-muted-foreground">No items</span>
+                          <span className="hig-caption2 text-muted-foreground">No items</span>
                         )}
                       </div>
                     </div>
@@ -343,7 +343,7 @@ export function TagsList() {
                       </Badge>
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <TypeIcon className="h-3 w-3" />
-                        <span className="text-xs">{getTypeLabel(tag.type)}</span>
+                        <span className="hig-caption2">{getTypeLabel(tag.type)}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -371,14 +371,14 @@ export function TagsList() {
                 </CardHeader>
                 <CardContent className="space-y-3 pt-0">
                   {tag.description && (
-                    <p className="text-sm text-muted-foreground">{tag.description}</p>
+                    <p className="text-muted-foreground">{tag.description}</p>
                   )}
 
                   <div className="flex flex-wrap items-center gap-3">
                     {(tag.type === "general" || tag.type === "contact") && (
                       <div className="flex items-center gap-1.5">
                         <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
+                        <span className="hig-caption2 text-muted-foreground">
                           {tag._count?.contacts || 0}
                         </span>
                       </div>
@@ -386,7 +386,7 @@ export function TagsList() {
                     {(tag.type === "general" || tag.type === "invoice") && (
                       <div className="flex items-center gap-1.5">
                         <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
+                        <span className="hig-caption2 text-muted-foreground">
                           {tag._count?.invoices || 0}
                         </span>
                       </div>
@@ -394,7 +394,7 @@ export function TagsList() {
                     {(tag.type === "general" || tag.type === "booking") && (
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
+                        <span className="hig-caption2 text-muted-foreground">
                           {tag._count?.bookings || 0}
                         </span>
                       </div>
@@ -432,7 +432,7 @@ export function TagsList() {
                   className={cn(errors.name && "border-red-500")}
                 />
                 {errors.name && (
-                  <p className="text-xs text-red-500">{errors.name}</p>
+                  <p className="hig-caption2 text-red-500">{errors.name}</p>
                 )}
               </div>
 

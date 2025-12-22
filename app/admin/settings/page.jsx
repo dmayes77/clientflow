@@ -23,9 +23,9 @@ function SettingRow({ label, description, children }) {
   return (
     <div className="flex items-start justify-between gap-4 py-3 border-b last:border-0">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium">{label}</div>
+        <div className="hig-body font-medium">{label}</div>
         {description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+          <p className="hig-caption2 text-muted-foreground mt-0.5">{description}</p>
         )}
       </div>
       <div className="shrink-0">{children}</div>
@@ -133,7 +133,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold">Error loading settings</h2>
+          <h2 className="hig-title-2 font-semibold">Error loading settings</h2>
           <p className="text-muted-foreground">{error}</p>
           <Button onClick={fetchSettings} className="mt-4">
             Retry
@@ -148,8 +148,8 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold sm:text-2xl">Settings</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="hig-title-1 font-bold">Settings</h1>
+          <p className="hig-body text-muted-foreground">
             Platform configuration
           </p>
         </div>
@@ -173,11 +173,11 @@ export default function SettingsPage() {
       {/* Maintenance Mode */}
       <Card className={settings?.maintenanceMode ? "border-yellow-300 bg-yellow-50/30" : ""}>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="hig-body flex items-center gap-2">
             <AlertTriangle className={`h-4 w-4 ${settings?.maintenanceMode ? "text-yellow-600" : ""}`} />
             Maintenance Mode
           </CardTitle>
-          <CardDescription className="text-xs">
+          <CardDescription className="hig-caption2">
             Enable to show maintenance page to all visitors
           </CardDescription>
         </CardHeader>
@@ -196,18 +196,18 @@ export default function SettingsPage() {
           {settings?.maintenanceMode && (
             <div className="mt-3 space-y-3">
               <div className="space-y-1">
-                <Label className="text-xs">Maintenance Message</Label>
+                <Label className="hig-caption2">Maintenance Message</Label>
                 <Textarea
                   value={settings?.maintenanceMessage || ""}
                   onChange={(e) => setSettings(prev => ({ ...prev, maintenanceMessage: e.target.value }))}
                   onBlur={(e) => updateSetting("maintenanceMessage", e.target.value)}
                   placeholder="We're currently performing maintenance..."
                   rows={2}
-                  className="text-sm"
+                  className="hig-body"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Expected End Time</Label>
+                <Label className="hig-caption2">Expected End Time</Label>
                 <Input
                   type="datetime-local"
                   value={settings?.maintenanceEndTime
@@ -226,11 +226,11 @@ export default function SettingsPage() {
       {/* Feature Flags */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="hig-body flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Feature Flags
           </CardTitle>
-          <CardDescription className="text-xs">
+          <CardDescription className="hig-caption2">
             Enable or disable platform features
           </CardDescription>
         </CardHeader>
@@ -281,7 +281,7 @@ export default function SettingsPage() {
       {/* Trial Settings */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="hig-body flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Trial Settings
           </CardTitle>
@@ -302,9 +302,9 @@ export default function SettingsPage() {
                 }}
                 min={1}
                 max={90}
-                className="w-16 h-8 text-sm"
+                className="w-16 h-8 hig-body"
               />
-              <span className="text-xs text-muted-foreground">days</span>
+              <span className="hig-caption2 text-muted-foreground">days</span>
             </div>
           </SettingRow>
           <SettingRow
@@ -323,7 +323,7 @@ export default function SettingsPage() {
       {/* Platform Info */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="hig-body flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Platform Info
           </CardTitle>
@@ -331,7 +331,7 @@ export default function SettingsPage() {
         <CardContent>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs">Platform Name</Label>
+              <Label className="hig-caption2">Platform Name</Label>
               <Input
                 value={settings?.platformName || "ClientFlow"}
                 onChange={(e) => setSettings(prev => ({ ...prev, platformName: e.target.value }))}
@@ -340,7 +340,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Support Email</Label>
+              <Label className="hig-caption2">Support Email</Label>
               <Input
                 type="email"
                 value={settings?.supportEmail || ""}
@@ -351,7 +351,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Support URL</Label>
+              <Label className="hig-caption2">Support URL</Label>
               <Input
                 type="url"
                 value={settings?.supportUrl || ""}
@@ -368,11 +368,11 @@ export default function SettingsPage() {
       {/* Limits */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="hig-body flex items-center gap-2">
             <Users className="h-4 w-4" />
             Rate Limits
           </CardTitle>
-          <CardDescription className="text-xs">
+          <CardDescription className="hig-caption2">
             Platform-wide limits and quotas
           </CardDescription>
         </CardHeader>
@@ -390,7 +390,7 @@ export default function SettingsPage() {
                 updateSetting("maxTenantsPerDay", isNaN(val) || val < 1 ? 100 : val);
               }}
               min={1}
-              className="w-20 h-8 text-sm"
+              className="w-20 h-8 hig-body"
             />
           </SettingRow>
           <SettingRow
@@ -406,7 +406,7 @@ export default function SettingsPage() {
                 updateSetting("maxBookingsPerTenant", isNaN(val) || val < 1 ? 1000 : val);
               }}
               min={1}
-              className="w-20 h-8 text-sm"
+              className="w-20 h-8 hig-body"
             />
           </SettingRow>
         </CardContent>
@@ -414,7 +414,7 @@ export default function SettingsPage() {
 
       {/* Last Updated */}
       {settings?.updatedAt && (
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="hig-caption2 text-muted-foreground text-center">
           Last updated: {new Date(settings.updatedAt).toLocaleString()}
         </p>
       )}

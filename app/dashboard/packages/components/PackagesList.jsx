@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useServices } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,20 +20,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign, Calendar } from "lucide-react";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar } from "lucide-react";
 
 const initialFormState = {
   name: "",
@@ -42,43 +37,28 @@ const initialFormState = {
   serviceIds: [],
 };
 
+const formatPrice = (cents) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(cents / 100);
+};
+
 export function PackagesList() {
-  const [packages, setPackages] = useState([]);
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // TanStack Query hooks
+  const { data: packages = [], isLoading: packagesLoading } = usePackages();
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const createPackage = useCreatePackage();
+  const updatePackage = useUpdatePackage();
+  const deletePackage = useDeletePackage();
+
+  const loading = packagesLoading || servicesLoading;
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [packageToDelete, setPackageToDelete] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [packagesRes, servicesRes] = await Promise.all([
-        fetch("/api/packages"),
-        fetch("/api/services"),
-      ]);
-
-      if (packagesRes.ok) {
-        const packagesData = await packagesRes.json();
-        setPackages(packagesData);
-      }
-
-      if (servicesRes.ok) {
-        const servicesData = await servicesRes.json();
-        setServices(servicesData);
-      }
-    } catch (error) {
-      toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenDialog = (pkg = null) => {
     if (pkg) {
@@ -114,75 +94,154 @@ export function PackagesList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
 
-    try {
-      const payload = {
-        ...formData,
-        price: Math.round(formData.price * 100),
-      };
+    const payload = {
+      ...formData,
+      price: Math.round(formData.price * 100),
+    };
 
-      const url = editingPackage
-        ? `/api/packages/${editingPackage.id}`
-        : "/api/packages";
-      const method = editingPackage ? "PATCH" : "POST";
+    const mutation = editingPackage ? updatePackage : createPackage;
+    const mutationData = editingPackage ? { id: editingPackage.id, ...payload } : payload;
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const savedPackage = await res.json();
-        if (editingPackage) {
-          setPackages(packages.map((p) => (p.id === savedPackage.id ? savedPackage : p)));
-          toast.success("Package updated");
-        } else {
-          setPackages([savedPackage, ...packages]);
-          toast.success("Package created");
-        }
+    mutation.mutate(mutationData, {
+      onSuccess: () => {
+        toast.success(editingPackage ? "Package updated" : "Package created");
         handleCloseDialog();
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save package");
-      }
-    } catch (error) {
-      toast.error("Failed to save package");
-    } finally {
-      setSaving(false);
-    }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to save package");
+      },
+    });
   };
 
   const handleDelete = async () => {
     if (!packageToDelete) return;
 
-    try {
-      const res = await fetch(`/api/packages/${packageToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setPackages(packages.filter((p) => p.id !== packageToDelete.id));
+    deletePackage.mutate(packageToDelete.id, {
+      onSuccess: () => {
         toast.success("Package deleted");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to delete package");
-      }
-    } catch (error) {
-      toast.error("Failed to delete package");
-    } finally {
-      setDeleteDialogOpen(false);
-      setPackageToDelete(null);
-    }
+        setDeleteDialogOpen(false);
+        setPackageToDelete(null);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to delete package");
+        setDeleteDialogOpen(false);
+        setPackageToDelete(null);
+      },
+    });
   };
 
-  const formatPrice = (cents) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
-  };
+  // Define columns for DataTable
+  const columns = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Package" />
+      ),
+      cell: ({ row }) => (
+        <div>
+          <p className="font-medium">{row.original.name}</p>
+          {row.original.description && (
+            <p className="text-muted-foreground truncate max-w-50">
+              {row.original.description}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "services",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Services" />
+      ),
+      cell: ({ row }) => {
+        const pkg = row.original;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {pkg.services?.length > 0 ? (
+              pkg.services.slice(0, 2).map((service) => (
+                <Badge key={service.id} variant="outline">
+                  {service.name}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-muted-foreground">No services</span>
+            )}
+            {pkg.services?.length > 2 && (
+              <Badge variant="outline">
+                +{pkg.services.length - 2}
+              </Badge>
+            )}
+          </div>
+        );
+      },
+      enableSorting: false,
+    },
+    {
+      accessorKey: "price",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Price" />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{formatPrice(row.original.price)}</span>
+      ),
+    },
+    {
+      accessorKey: "bookingCount",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Bookings" />
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          {row.original.bookingCount || 0}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "active",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Status" />
+      ),
+      cell: ({ row }) => (
+        <Badge variant={row.original.active ? "default" : "secondary"}>
+          {row.original.active ? "Active" : "Inactive"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const pkg = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleOpenDialog(pkg)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setPackageToDelete(pkg);
+                  setDeleteDialogOpen(true);
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      size: 50,
+    },
+  ];
 
   if (loading) {
     return (
@@ -199,11 +258,11 @@ export function PackagesList() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <CardTitle className="flex items-center gap-2 font-semibold">
               <Boxes className="h-5 w-5 text-emerald-500" />
               Packages
             </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1">
               {packages.length} package{packages.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -219,7 +278,7 @@ export function PackagesList() {
                 <Boxes className="h-6 w-6 text-emerald-600" />
               </div>
               <h3 className="text-zinc-900 mb-1">No packages yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-4">
                 Bundle your services into packages for clients
               </p>
               <Button size="sm" onClick={() => handleOpenDialog()}>
@@ -228,93 +287,13 @@ export function PackagesList() {
               </Button>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Package</TableHead>
-                    <TableHead className="hidden sm:table-cell">Services</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead className="hidden md:table-cell">Bookings</TableHead>
-                    <TableHead className="hidden md:table-cell">Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {packages.map((pkg) => (
-                    <TableRow key={pkg.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{pkg.name}</p>
-                          {pkg.description && (
-                            <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                              {pkg.description}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <div className="flex flex-wrap gap-1">
-                          {pkg.services?.length > 0 ? (
-                            pkg.services.slice(0, 2).map((service) => (
-                              <Badge key={service.id} variant="outline">
-                                {service.name}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-muted-foreground text-sm">No services</span>
-                          )}
-                          {pkg.services?.length > 2 && (
-                            <Badge variant="outline">
-                              +{pkg.services.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-medium">{formatPrice(pkg.price)}</span>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {pkg.bookingCount || 0}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Badge variant={pkg.active ? "default" : "secondary"}>
-                          {pkg.active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleOpenDialog(pkg)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setPackageToDelete(pkg);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable
+              columns={columns}
+              data={packages}
+              showSearch={false}
+              pageSize={10}
+              emptyMessage="No packages found."
+            />
           )}
         </CardContent>
       </Card>
@@ -382,7 +361,7 @@ export function PackagesList() {
                         />
                         <label
                           htmlFor={`service-${service.id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                          className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
                         >
                           {service.name}
                           <span className="text-muted-foreground ml-2">
@@ -392,7 +371,7 @@ export function PackagesList() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hig-caption2 text-muted-foreground">
                     {formData.serviceIds.length} service{formData.serviceIds.length !== 1 ? "s" : ""} selected
                   </p>
                 </div>
@@ -401,7 +380,7 @@ export function PackagesList() {
               <div className="flex items-center justify-between rounded-lg border p-3">
                 <div>
                   <Label htmlFor="active" className="font-medium">Active</Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground">
                     Inactive packages won't appear in booking options
                   </p>
                 </div>
@@ -417,8 +396,8 @@ export function PackagesList() {
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" disabled={createPackage.isPending || updatePackage.isPending}>
+                {(createPackage.isPending || updatePackage.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingPackage ? "Save Changes" : "Create Package"}
               </Button>
             </DialogFooter>

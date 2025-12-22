@@ -1,0 +1,304 @@
+/* ============================================
+   Button Component
+   References globals.css tokens - single source of truth
+   ============================================ */
+
+.button {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+  border: none;
+  outline: none;
+  transition: opacity 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+.button:focus-visible {
+  box-shadow: 0 0 0 0.125rem var(--color-background), 0 0 0 0.25rem var(--color-ring);
+}
+
+.button:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* SVG icons inside buttons */
+.button svg {
+  pointer-events: none;
+  flex-shrink: 0;
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
+}
+
+/* ============================================
+   Variants
+   ============================================ */
+
+.default {
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+  box-shadow: var(--shadow-sm);
+}
+.default:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.destructive {
+  background-color: var(--color-destructive);
+  color: var(--color-destructive-foreground);
+  box-shadow: var(--shadow-sm);
+}
+.destructive:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.outline {
+  background-color: var(--color-card);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+.outline:hover:not(:disabled) {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-foreground);
+}
+.secondary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--color-foreground);
+}
+.ghost:hover:not(:disabled) {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.link {
+  background-color: transparent;
+  color: var(--color-primary);
+  text-decoration-line: none;
+}
+.link:hover:not(:disabled) {
+  text-decoration-line: underline;
+}
+
+.success {
+  background-color: var(--color-success);
+  color: var(--color-success-foreground);
+  box-shadow: var(--shadow-sm);
+}
+.success:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.warning {
+  background-color: var(--color-warning);
+  color: var(--color-warning-foreground);
+  box-shadow: var(--shadow-sm);
+}
+.warning:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.info {
+  background-color: var(--color-info);
+  color: var(--color-primary-foreground);
+  box-shadow: var(--shadow-sm);
+}
+.info:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/* ============================================
+   Sizes - Responsive (mobile-first)
+   Using globals.css font-size tokens
+   ============================================ */
+
+/* Default size */
+.size-default {
+  padding: 0.625rem 1.25rem;
+  font-size: var(--text-body-size);
+  line-height: 1;
+  letter-spacing: var(--text-body-letter-spacing);
+}
+@media (min-width: 480px) {
+  .size-default {
+    padding: 0.625rem 1.25rem;
+  }
+}
+@media (min-width: 640px) {
+  .size-default {
+    padding: 0.5rem 1rem;
+    font-size: var(--text-callout-size);
+  }
+}
+@media (min-width: 1024px) {
+  .size-default {
+    padding: 0.375rem 0.75rem;
+    font-size: var(--text-footnote-size);
+  }
+}
+
+/* Small size */
+.size-sm {
+  padding: 0.5rem 1rem;
+  font-size: var(--text-callout-size);
+  line-height: 1;
+  letter-spacing: var(--text-callout-letter-spacing);
+  gap: 0.25rem;
+}
+@media (min-width: 480px) {
+  .size-sm {
+    padding: 0.375rem 0.75rem;
+  }
+}
+@media (min-width: 640px) {
+  .size-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: var(--text-footnote-size);
+  }
+}
+@media (min-width: 1024px) {
+  .size-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: var(--text-footnote-size);
+  }
+}
+
+/* Extra small size */
+.size-xs {
+  padding: 0.375rem 0.75rem;
+  font-size: var(--text-subheadline-size);
+  line-height: 1;
+  letter-spacing: var(--text-subheadline-letter-spacing);
+  gap: 0.25rem;
+  border-radius: var(--radius-sm);
+}
+@media (min-width: 640px) {
+  .size-xs {
+    font-size: var(--text-footnote-size);
+  }
+}
+@media (min-width: 1024px) {
+  .size-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: var(--text-caption-1-size);
+  }
+}
+
+/* Large size */
+.size-lg {
+  padding: 1rem 2rem;
+  font-size: var(--text-title-3-size);
+  line-height: 1;
+  letter-spacing: var(--text-title-3-letter-spacing);
+}
+@media (min-width: 480px) {
+  .size-lg {
+    padding: 0.875rem 1.75rem;
+  }
+}
+@media (min-width: 640px) {
+  .size-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: var(--text-body-size);
+  }
+}
+@media (min-width: 1024px) {
+  .size-lg {
+    padding: 0.625rem 1.25rem;
+    font-size: var(--text-callout-size);
+  }
+}
+
+/* Icon button sizes */
+.size-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+}
+@media (min-width: 480px) {
+  .size-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+@media (min-width: 640px) {
+  .size-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+@media (min-width: 1024px) {
+  .size-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+.size-icon-sm {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+}
+@media (min-width: 480px) {
+  .size-icon-sm {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .size-icon-sm {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+.size-icon-xs {
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border-radius: var(--radius-sm);
+}
+@media (min-width: 1024px) {
+  .size-icon-xs {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+.size-icon-lg {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+}
+@media (min-width: 480px) {
+  .size-icon-lg {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+@media (min-width: 640px) {
+  .size-icon-lg {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .size-icon-lg {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}

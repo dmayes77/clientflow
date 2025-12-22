@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { AdminShell } from "./components/AdminShell";
 
 // Admin user IDs - loaded at runtime
@@ -16,11 +16,9 @@ export default async function AdminLayout({ children }) {
   const { userId } = await auth();
   const adminUserIds = getAdminUserIds();
 
-  if (!userId) {
-    redirect("/sign-in");
-  }
-
-  if (!adminUserIds.includes(userId)) {
+  // Show 404 for both unauthenticated users and non-admins
+  // This hides the existence of the admin panel
+  if (!userId || !adminUserIds.includes(userId)) {
     notFound();
   }
 

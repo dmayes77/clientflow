@@ -24,7 +24,7 @@ export function StepIndicator({ currentStep }) {
               <div
                 className={cn(
                   "w-11 h-11 fold:w-10 fold:h-10 tablet:w-9 tablet:h-9 rounded-full flex items-center justify-center",
-                  "hig-callout tablet:text-sm font-semibold transition-colors",
+                  "hig-callout tablet:hig-body font-semibold transition-colors",
                   isCompleted && "bg-green-500 text-white",
                   isActive && "bg-blue-500 text-white",
                   !isActive && !isCompleted && "bg-gray-200 text-gray-500"
@@ -39,7 +39,7 @@ export function StepIndicator({ currentStep }) {
               {/* HIG caption-1 labels */}
               <span
                 className={cn(
-                  "mt-1.5 hig-caption-1 tablet:text-xs hidden fold:block",
+                  "mt-1.5 hig-caption-1 tablet:hig-caption2 hidden fold:block",
                   isActive && "text-blue-500 font-semibold",
                   isCompleted && "text-green-600 font-medium",
                   !isActive && !isCompleted && "text-gray-400"

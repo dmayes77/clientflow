@@ -263,7 +263,7 @@ export function TerminalReaders({ isStripeConnected = false }) {
               {/* Location Info */}
               <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{location.displayName}</span>
+                <span className="font-medium">{location.displayName}</span>
                 <Badge variant="success" className="ml-auto">Active</Badge>
               </div>
 
@@ -273,7 +273,7 @@ export function TerminalReaders({ isStripeConnected = false }) {
                   <CreditCard className="h-12 w-12 mx-auto text-muted-foreground/50" />
                   <div>
                     <p className="font-medium">No readers registered</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                       Add a Stripe Terminal reader to accept in-person card payments
                     </p>
                   </div>
@@ -298,8 +298,8 @@ export function TerminalReaders({ isStripeConnected = false }) {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-sm">{reader.label}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="font-medium">{reader.label}</p>
+                          <p className="hig-caption2 text-muted-foreground">
                             {formatDeviceType(reader.deviceType)}
                             {reader.serialNumber && ` · ${reader.serialNumber}`}
                           </p>
@@ -350,7 +350,7 @@ export function TerminalReaders({ isStripeConnected = false }) {
                 value={newReader.registrationCode}
                 onChange={(e) => setNewReader((prev) => ({ ...prev, registrationCode: e.target.value }))}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="hig-caption2 text-muted-foreground">
                 Find this code on your reader's display during setup
               </p>
             </div>
@@ -362,7 +362,7 @@ export function TerminalReaders({ isStripeConnected = false }) {
                 value={newReader.label}
                 onChange={(e) => setNewReader((prev) => ({ ...prev, label: e.target.value }))}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="hig-caption2 text-muted-foreground">
                 A name to identify this reader (e.g., "Front Desk", "Room 1")
               </p>
             </div>

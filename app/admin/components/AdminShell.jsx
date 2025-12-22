@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -64,7 +64,7 @@ function SidebarNav() {
               </div>
               <div>
                 <span className="truncate font-semibold">Admin Panel</span>
-                <p className="text-xs text-muted-foreground">ClientFlow</p>
+                <p className="text-muted-foreground hig-caption2">ClientFlow</p>
               </div>
             </div>
           </SidebarMenuItem>
@@ -113,6 +113,12 @@ function SidebarNav() {
 }
 
 export function AdminShell({ children }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <SidebarProvider>
       <SidebarNav />
@@ -122,12 +128,12 @@ export function AdminShell({ children }) {
           <div className="w-11 flex items-center justify-start sm:w-auto">
             <SidebarTrigger />
           </div>
-          <span className="flex-1 text-center text-[17px] sm:text-sm font-semibold text-foreground truncate px-2 sm:hidden">
+          <span className="flex-1 text-center font-semibold text-foreground truncate px-2 sm:hidden">
             Admin Panel
           </span>
           <div className="hidden sm:block flex-1" />
           <div className="w-11 flex items-center justify-end sm:w-auto">
-            <UserButton afterSignOutUrl="/" />
+            {mounted && <UserButton afterSignOutUrl="/" />}
           </div>
         </header>
 

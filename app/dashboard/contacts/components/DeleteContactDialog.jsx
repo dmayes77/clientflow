@@ -131,7 +131,7 @@ export function DeleteContactDialog({ contact, open, onOpenChange, onDeleted }) 
                     <p>
                       This contact cannot be deleted because they have completed business history:
                     </p>
-                    <ul className="list-disc list-inside text-sm space-y-1">
+                    <ul className="list-disc list-inside space-y-1">
                       {completedBookings.length > 0 && (
                         <li>{completedBookings.length} completed booking{completedBookings.length !== 1 ? "s" : ""}</li>
                       )}
@@ -139,7 +139,7 @@ export function DeleteContactDialog({ contact, open, onOpenChange, onDeleted }) 
                         <li>{paidInvoices.length} paid invoice{paidInvoices.length !== 1 ? "s" : ""}</li>
                       )}
                     </ul>
-                    <p className="text-sm mt-2">
+                    <p className="mt-2">
                       Contacts with completed bookings or paid invoices are preserved for your records.
                     </p>
                   </>
@@ -149,10 +149,10 @@ export function DeleteContactDialog({ contact, open, onOpenChange, onDeleted }) 
                     <p>
                       Are you sure you want to delete "{contact.name}"?
                     </p>
-                    <p className="text-sm">
+                    <p>
                       This will also delete:
                     </p>
-                    <ul className="list-disc list-inside text-sm space-y-1">
+                    <ul className="list-disc list-inside space-y-1">
                       {incompleteBookings.length > 0 && (
                         <li>{incompleteBookings.length} pending booking{incompleteBookings.length !== 1 ? "s" : ""}</li>
                       )}
@@ -160,7 +160,7 @@ export function DeleteContactDialog({ contact, open, onOpenChange, onDeleted }) 
                         <li>{unpaidInvoices.length} unpaid invoice{unpaidInvoices.length !== 1 ? "s" : ""}</li>
                       )}
                     </ul>
-                    <p className="text-sm font-medium text-destructive mt-2">
+                    <p className="font-medium text-destructive mt-2">
                       This action cannot be undone.
                     </p>
                   </>

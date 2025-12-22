@@ -13,6 +13,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/clerk(.*)",
   "/api/stripe/webhook(.*)",
   "/api/signup(.*)",
+  "/admin(.*)", // Let layout handle auth - shows 404 for non-admins
 ]);
 
 // Only redirect from sign-in/sign-up pages, NOT signup wizard (users need to complete steps 2-3 after auth)
@@ -37,7 +38,7 @@ function isTenantRoute(pathname) {
   return tenantPattern.test(pathname);
 }
 
-export const proxy = clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
   const { userId } = await auth();
 

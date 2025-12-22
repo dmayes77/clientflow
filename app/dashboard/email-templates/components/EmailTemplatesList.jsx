@@ -238,8 +238,8 @@ function RichTextEditor({ content, onChange, placeholder }) {
                   className="justify-start font-normal h-auto py-2 flex-col items-start"
                   onClick={() => insertVariable(variable.value)}
                 >
-                  <code className="text-xs bg-muted px-1 rounded">{variable.value}</code>
-                  <span className="text-xs text-muted-foreground">{variable.label}</span>
+                  <code className="hig-caption2 bg-muted px-1 rounded">{variable.value}</code>
+                  <span className="hig-caption2 text-muted-foreground">{variable.label}</span>
                 </Button>
               ))}
             </div>
@@ -249,7 +249,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
 
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none p-3 min-h-[200px] focus-within:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:text-xs [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0"
+        className="prose prose-sm max-w-none p-3 min-h-[200px] focus-within:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:hig-caption2 [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0"
       />
     </div>
   );
@@ -445,15 +445,15 @@ export function EmailTemplatesList() {
         <CardHeader className="pb-3 sm:pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <CardTitle className="text-[15px] sm:text-lg font-semibold flex items-center gap-2">
+              <CardTitle className="font-semibold flex items-center gap-2">
                 <Mail className="size-[17px] sm:size-5 text-primary" />
                 Templates
               </CardTitle>
-              <CardDescription className="text-[13px] sm:text-sm truncate sm:whitespace-normal mt-1">
+              <CardDescription className="truncate sm:whitespace-normal mt-1">
                 {filteredTemplates.length} template{filteredTemplates.length !== 1 ? "s" : ""}
               </CardDescription>
             </div>
-            <Button onClick={handleOpenCreate} size="sm" className="shrink-0 w-full sm:w-auto h-[34px] sm:h-9 text-[13px] sm:text-sm">
+            <Button onClick={handleOpenCreate} size="sm" className="shrink-0 w-full sm:w-auto h-[34px] sm:h-9">
               <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
               {isMobile ? "New" : "New Template"}
             </Button>
@@ -462,7 +462,7 @@ export function EmailTemplatesList() {
         <CardContent className={cn(isMobile && filteredTemplates.length > 0 && "p-0")}>
           <div className={cn("mb-3 sm:mb-4", isMobile && filteredTemplates.length > 0 && "px-4")}>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-full sm:w-48 h-[34px] sm:h-9 text-[13px] sm:text-sm">
+              <SelectTrigger className="w-full sm:w-48 h-[34px] sm:h-9">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -481,12 +481,12 @@ export function EmailTemplatesList() {
               <div className="size-11 sm:size-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <Mail className="size-[22px] sm:size-7 text-primary" />
               </div>
-              <h3 className="text-[15px] sm:text-base font-semibold mb-0.5 sm:mb-1">No email templates</h3>
-              <p className="text-[13px] sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+              <h3 className="font-semibold mb-0.5 sm:mb-1">No email templates</h3>
+              <p className="text-muted-foreground mb-3 sm:mb-4">
                 {filterCategory === "all" ? "Create your first email template to get started" : "No templates found in this category"}
               </p>
               {filterCategory === "all" && (
-                <Button onClick={handleOpenCreate} variant="outline" size="sm" className="h-[34px] sm:h-9 text-[13px] sm:text-sm">
+                <Button onClick={handleOpenCreate} variant="outline" size="sm" className="h-[34px] sm:h-9">
                   <Plus className="size-4 mr-1.5" />
                   Create Template
                 </Button>
@@ -513,14 +513,14 @@ export function EmailTemplatesList() {
                   )}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[15px] font-semibold truncate">{template.name}</span>
+                        <span className="font-semibold truncate">{template.name}</span>
                         {template.category && (
                           <Badge variant="secondary" className="shrink-0">
                             {getCategoryLabel(template.category)}
                           </Badge>
                         )}
                       </div>
-                      <p className="text-[13px] text-muted-foreground truncate mt-0.5">
+                      <p className="hig-caption2 text-muted-foreground truncate mt-0.5">
                         {template.subject}
                       </p>
                     </div>
@@ -538,7 +538,7 @@ export function EmailTemplatesList() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1 flex-1 min-w-0 overflow-hidden">
                         <button
-                          className="text-sm font-semibold text-primary hover:underline truncate text-left w-full"
+                          className="font-semibold text-primary hover:underline truncate text-left w-full"
                           onClick={() => handleOpenEdit(template)}
                         >
                           {template.name}
@@ -574,10 +574,10 @@ export function EmailTemplatesList() {
                     </div>
                   </CardHeader>
                   <CardContent className="overflow-hidden">
-                    <p className="text-sm text-muted-foreground truncate mb-2">
+                    <p className="text-muted-foreground truncate mb-2">
                       <span className="font-medium">Subject:</span> {template.subject}
                     </p>
-                    {template.description && <p className="text-xs text-muted-foreground line-clamp-2 wrap-break-word">{template.description}</p>}
+                    {template.description && <p className="hig-caption2 text-muted-foreground line-clamp-2 wrap-break-word">{template.description}</p>}
                   </CardContent>
                 </Card>
               ))}
@@ -631,7 +631,7 @@ export function EmailTemplatesList() {
                 placeholder="e.g., Welcome to {{business.name}}, {{contact.firstName}}!"
                 required
               />
-              <p className="text-xs text-muted-foreground">You can use variables like {"{{contact.name}}"} in the subject line</p>
+              <p className="hig-caption2 text-muted-foreground">You can use variables like {"{{contact.name}}"} in the subject line</p>
             </div>
 
             <div className="space-y-2">
@@ -676,11 +676,11 @@ export function EmailTemplatesList() {
           {selectedTemplate && (
             <div className="space-y-4">
               <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Subject</p>
-                <p className="text-base">{selectedTemplate.subject}</p>
+                <p className="hig-caption2 font-medium text-muted-foreground">Subject</p>
+                <p>{selectedTemplate.subject}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground">Body</p>
+                <p className="hig-caption2 font-medium text-muted-foreground">Body</p>
                 <div className="prose prose-sm max-w-none p-4 bg-muted/30 rounded-md" dangerouslySetInnerHTML={{ __html: selectedTemplate.body }} />
               </div>
             </div>

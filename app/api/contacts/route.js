@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { createContactSchema, validateRequest } from "@/lib/validations";
 import { triggerWorkflows } from "@/lib/workflow-executor";
+import { checkContactLimit } from "@/lib/plan-limits";
 
 // GET /api/contacts - List all contacts
 export async function GET(request) {
@@ -56,6 +57,16 @@ export async function POST(request) {
       return NextResponse.json({ error }, { status });
     }
     console.log("[API] Authenticated tenant:", tenant.id);
+
+    // Check plan limits
+    const limitCheck = await checkContactLimit(tenant.id);
+    if (!limitCheck.allowed) {
+      console.log("[API] Contact limit reached:", limitCheck);
+      return NextResponse.json(
+        { error: limitCheck.message, code: "LIMIT_REACHED", limit: limitCheck.limit, current: limitCheck.current },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     console.log("[API] Request body:", JSON.stringify(body));

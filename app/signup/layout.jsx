@@ -25,7 +25,7 @@ export default function SignupLayout({ children }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center py-6 fold:py-8 tablet:py-10">
         {/* Logo - HIG large-title on mobile */}
-        <h1 className="hig-large-title tablet:text-2xl desktop:text-3xl text-center mb-6 font-bold tracking-tight">
+        <h1 className="hig-large-title tablet:hig-title-1 desktop:hig-large-title text-center mb-6 font-bold tracking-tight">
           <span className="text-slate-800">Client</span>
           <span className="text-blue-500">Flow</span>
         </h1>
@@ -43,7 +43,7 @@ export default function SignupLayout({ children }) {
         </div>
 
         {/* Footer - HIG footnote */}
-        <p className="mt-8 hig-footnote tablet:text-sm text-gray-500 text-center max-w-sm">
+        <p className="mt-8 hig-footnote tablet:hig-body text-gray-500 text-center max-w-sm">
           Already have an account?{" "}
           <Link href="/sign-in" className="text-blue-500 hover:underline font-semibold">
             Sign in

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useInvoices, useUpdateInvoice, useDeleteInvoice, useSendInvoice } from "@/lib/hooks";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,19 +20,10 @@ import {
 } from "@/components/ui/dialog";
 import {
   PreviewSheet,
-  PreviewSheetHeader,
   PreviewSheetContent,
   PreviewSheetSection,
 } from "@/components/ui/preview-sheet";
 import { Separator } from "@/components/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,13 +31,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Percent, DollarSign, CreditCard, Send, FileText, Pencil, Trash2, ExternalLink, Download, User, Calendar, Clock, FileCheck, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck } from "lucide-react";
 import {
   MoneyIcon,
   AddIcon,
   MoreIcon,
-  DeleteIcon,
   LoadingIcon,
   InvoiceIcon,
   SendIcon,
@@ -116,11 +108,22 @@ const getTagColorClass = (color) => {
   return colorMap[color] || colorMap.gray;
 };
 
+const formatPrice = (cents) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(cents / 100);
+};
+
 export function InvoicesList() {
   const router = useRouter();
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  // TanStack Query hooks
+  const { data: invoices = [], isLoading: loading } = useInvoices();
+  const updateInvoice = useUpdateInvoice();
+  const deleteInvoice = useDeleteInvoice();
+  const sendInvoice = useSendInvoice();
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
@@ -128,50 +131,21 @@ export function InvoicesList() {
   const [paymentData, setPaymentData] = useState({ amount: 0, isDeposit: false, depositPercent: null });
   const [sendingId, setSendingId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewInvoice, setPreviewInvoice] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const res = await fetch("/api/invoices");
-      if (res.ok) setInvoices(await res.json());
-    } catch (error) {
-      toast.error("Failed to load invoices");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (invoice, newStatus) => {
-    try {
-      const res = await fetch(`/api/invoices/${invoice.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (res.ok) {
-        const updatedInvoice = await res.json();
-        setInvoices(invoices.map((i) => (i.id === updatedInvoice.id ? updatedInvoice : i)));
-        toast.success(`Invoice marked as ${newStatus}`);
-      } else {
-        toast.error("Failed to update invoice status");
+  const handleStatusChange = (invoice, newStatus) => {
+    updateInvoice.mutate(
+      { id: invoice.id, status: newStatus },
+      {
+        onSuccess: () => {
+          toast.success(`Invoice marked as ${newStatus}`);
+        },
+        onError: () => {
+          toast.error("Failed to update invoice status");
+        },
       }
-    } catch (error) {
-      toast.error("Failed to update invoice status");
-    }
+    );
   };
 
   const handleOpenPaymentDialog = (invoice) => {
@@ -190,67 +164,51 @@ export function InvoicesList() {
     setPaymentDialogOpen(true);
   };
 
-  const handleRecordPayment = async () => {
+  const handleRecordPayment = () => {
     if (!invoiceForPayment) return;
-    setSaving(true);
 
-    try {
-      const amountInCents = Math.round(paymentData.amount * 100);
-      const currentAmountPaid = invoiceForPayment.amountPaid || 0;
-      const newAmountPaid = currentAmountPaid + amountInCents;
-      const totalAmount = invoiceForPayment.total;
-      const newBalanceDue = totalAmount - newAmountPaid;
-      const isPaidInFull = newBalanceDue <= 0;
+    const amountInCents = Math.round(paymentData.amount * 100);
+    const currentAmountPaid = invoiceForPayment.amountPaid || 0;
+    const newAmountPaid = currentAmountPaid + amountInCents;
+    const totalAmount = invoiceForPayment.total;
+    const newBalanceDue = totalAmount - newAmountPaid;
+    const isPaidInFull = newBalanceDue <= 0;
 
-      const updateData = {
-        amountPaid: newAmountPaid,
-        balanceDue: Math.max(0, newBalanceDue),
-        ...(paymentData.isDeposit && { depositPaidAt: new Date().toISOString() }),
-        ...(isPaidInFull && { status: "paid", paidAt: new Date().toISOString() }),
-      };
+    const updateData = {
+      id: invoiceForPayment.id,
+      amountPaid: newAmountPaid,
+      balanceDue: Math.max(0, newBalanceDue),
+      ...(paymentData.isDeposit && { depositPaidAt: new Date().toISOString() }),
+      ...(isPaidInFull && { status: "paid", paidAt: new Date().toISOString() }),
+    };
 
-      const res = await fetch(`/api/invoices/${invoiceForPayment.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
-
-      if (res.ok) {
-        const updatedInvoice = await res.json();
-        setInvoices(invoices.map((i) => (i.id === updatedInvoice.id ? updatedInvoice : i)));
+    updateInvoice.mutate(updateData, {
+      onSuccess: () => {
         toast.success(paymentData.isDeposit ? "Deposit recorded" : isPaidInFull ? "Invoice marked as paid" : "Payment recorded");
         setPaymentDialogOpen(false);
         setInvoiceForPayment(null);
-      } else {
+      },
+      onError: () => {
         toast.error("Failed to record payment");
-      }
-    } catch (error) {
-      toast.error("Failed to record payment");
-    } finally {
-      setSaving(false);
-    }
+      },
+    });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!invoiceToDelete) return;
 
-    try {
-      const res = await fetch(`/api/invoices/${invoiceToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setInvoices(invoices.filter((i) => i.id !== invoiceToDelete.id));
+    deleteInvoice.mutate(invoiceToDelete.id, {
+      onSuccess: () => {
         toast.success("Invoice deleted");
-      } else {
+        setDeleteDialogOpen(false);
+        setInvoiceToDelete(null);
+      },
+      onError: () => {
         toast.error("Failed to delete invoice");
-      }
-    } catch (error) {
-      toast.error("Failed to delete invoice");
-    } finally {
-      setDeleteDialogOpen(false);
-      setInvoiceToDelete(null);
-    }
+        setDeleteDialogOpen(false);
+        setInvoiceToDelete(null);
+      },
+    });
   };
 
   const handleDownload = async (invoice) => {
@@ -276,39 +234,21 @@ export function InvoicesList() {
     }
   };
 
-  const handleSend = async (invoice) => {
-    try {
-      setSendingId(invoice.id);
-      const res = await fetch(`/api/invoices/${invoice.id}/send`, {
-        method: "POST",
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to send invoice");
-      }
-
-      const data = await res.json();
-      toast.success("Invoice sent successfully");
-      setInvoices(invoices.map((i) =>
-        i.id === invoice.id ? { ...i, status: "sent" } : i
-      ));
-
-      if (data.warning) {
-        toast.warning(data.warning);
-      }
-    } catch (error) {
-      toast.error(error.message || "Failed to send invoice");
-    } finally {
-      setSendingId(null);
-    }
-  };
-
-  const formatPrice = (cents) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
+  const handleSend = (invoice) => {
+    setSendingId(invoice.id);
+    sendInvoice.mutate(invoice.id, {
+      onSuccess: (data) => {
+        toast.success("Invoice sent successfully");
+        if (data.warning) {
+          toast.warning(data.warning);
+        }
+        setSendingId(null);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to send invoice");
+        setSendingId(null);
+      },
+    });
   };
 
   const stats = useMemo(() => {
@@ -326,6 +266,148 @@ export function InvoicesList() {
     };
   }, [invoices]);
 
+  // Define columns for DataTable
+  const columns = [
+    {
+      accessorKey: "invoiceNumber",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Invoice" />
+      ),
+      cell: ({ row }) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setPreviewInvoice(row.original);
+            setPreviewSheetOpen(true);
+          }}
+          className="font-medium text-primary hover:underline cursor-pointer"
+        >
+          {row.original.invoiceNumber}
+        </button>
+      ),
+    },
+    {
+      accessorKey: "contactName",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Client" />
+      ),
+      cell: ({ row }) => (
+        <div>
+          <p className="font-medium">{row.original.contactName}</p>
+          <p className="hig-caption2 text-muted-foreground">{row.original.contactEmail}</p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "dueDate",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Due Date" />
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <PendingIcon className="h-3.5 w-3.5" />
+          {format(new Date(row.original.dueDate), "MMM d, yyyy")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "total",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Amount" />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{formatPrice(row.original.total)}</span>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Status" />
+      ),
+      cell: ({ row }) => (
+        <Badge variant={statusConfig[row.original.status]?.variant || "secondary"}>
+          {statusConfig[row.original.status]?.label || row.original.status}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const invoice = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                <MoreIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDownload(invoice)}
+                disabled={downloadingId === invoice.id}
+              >
+                {downloadingId === invoice.id ? (
+                  <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <DownloadIcon className="h-4 w-4 mr-2" />
+                )}
+                {downloadingId === invoice.id ? "Downloading..." : "Download PDF"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {invoice.status === "draft" && (
+                <DropdownMenuItem
+                  onClick={() => handleSend(invoice)}
+                  disabled={sendingId === invoice.id}
+                >
+                  {sendingId === invoice.id ? (
+                    <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <SendIcon className="h-4 w-4 mr-2" />
+                  )}
+                  {sendingId === invoice.id ? "Sending..." : "Send Invoice"}
+                </DropdownMenuItem>
+              )}
+              {["sent", "viewed", "overdue"].includes(invoice.status) && (
+                <>
+                  <DropdownMenuItem onClick={() => handleOpenPaymentDialog(invoice)}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Record Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleStatusChange(invoice, "paid")}>
+                    <CompleteIcon className="h-4 w-4 mr-2" />
+                    Mark as Paid (Full)
+                  </DropdownMenuItem>
+                </>
+              )}
+              {invoice.status !== "cancelled" && invoice.status !== "paid" && (
+                <DropdownMenuItem onClick={() => handleStatusChange(invoice, "cancelled")}>
+                  <CloseIcon className="h-4 w-4 mr-2" />
+                  Cancel
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setInvoiceToDelete(invoice);
+                  setDeleteDialogOpen(true);
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      size: 50,
+    },
+  ];
+
   if (loading) {
     return (
       <Card className="py-4">
@@ -341,37 +423,37 @@ export function InvoicesList() {
       {/* Stats Cards */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4 mb-4 sm:mb-6">
         <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Total Collected</p>
-          <div className="text-[17px] sm:text-xl md:text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
+          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Total Collected</p>
+          <div className="font-bold">{formatPrice(stats.totalRevenue)}</div>
         </div>
         <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Outstanding</p>
-          <div className="text-[17px] sm:text-xl md:text-2xl font-bold">{formatPrice(stats.outstandingAmount)}</div>
+          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Outstanding</p>
+          <div className="font-bold">{formatPrice(stats.outstandingAmount)}</div>
         </div>
         <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Paid Invoices</p>
-          <div className="text-[17px] sm:text-xl md:text-2xl font-bold">{stats.paid}</div>
+          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Paid Invoices</p>
+          <div className="font-bold">{stats.paid}</div>
         </div>
         <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="text-[11px] sm:text-xs text-muted-foreground mb-1 sm:mb-2">Overdue</p>
-          <div className="text-[17px] sm:text-xl md:text-2xl font-bold text-destructive">{stats.overdue}</div>
+          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Overdue</p>
+          <div className="font-bold text-destructive">{stats.overdue}</div>
         </div>
       </div>
 
-      <Card className={cn("p-3 sm:p-4", isMobile && invoices.length > 0 && "pb-0")}>
+      <Card className="p-3 sm:p-4">
         <CardHeader className="p-0 flex flex-row items-center justify-between space-y-0 mb-3 sm:mb-4">
           <div>
-            <CardTitle className="flex items-center gap-2 text-[15px] sm:text-lg font-semibold">
+            <CardTitle className="flex items-center gap-2 font-semibold">
               <MoneyIcon className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
               Invoices
             </CardTitle>
-            <p className="text-[13px] sm:text-sm mt-1 sm:mt-2 text-muted-foreground">
+            <p className="mt-1 sm:mt-2 text-muted-foreground">
               {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
             </p>
           </div>
           <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
             <AddIcon className="h-4 w-4 mr-1" />
-            {isMobile ? "New" : "Create Invoice"}
+            Create Invoice
           </Button>
         </CardHeader>
         <CardContent className="p-0">
@@ -381,7 +463,7 @@ export function InvoicesList() {
                 <InvoiceIcon className="h-6 w-6 text-success" />
               </div>
               <h3 className="mb-3">No invoices yet</h3>
-              <p className="text-sm text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-6">
                 Create your first invoice to track payments
               </p>
               <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
@@ -389,183 +471,18 @@ export function InvoicesList() {
                 Create Invoice
               </Button>
             </div>
-          ) : isMobile ? (
-            /* iOS-style Mobile List */
-            <div className="-mx-3 sm:-mx-4">
-              {invoices.map((invoice, index) => (
-                <div
-                  key={invoice.id}
-                  className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
-                  onClick={() => {
-                    setPreviewInvoice(invoice);
-                    setPreviewSheetOpen(true);
-                  }}
-                >
-                  {/* Status Icon */}
-                  <div className={cn(
-                    "size-11 rounded-full flex items-center justify-center shrink-0",
-                    invoice.status === "paid" ? "bg-green-100 text-green-600" :
-                    invoice.status === "overdue" ? "bg-red-100 text-red-600" :
-                    invoice.status === "sent" || invoice.status === "viewed" ? "bg-blue-100 text-blue-600" :
-                    "bg-gray-100 text-gray-500"
-                  )}>
-                    {invoice.status === "paid" ? <CompleteIcon className="size-5" /> :
-                     invoice.status === "overdue" ? <WarningIcon className="size-5" /> :
-                     <InvoiceIcon className="size-5" />}
-                  </div>
-
-                  {/* Content with iOS-style divider */}
-                  <div className={cn(
-                    "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
-                    index < invoices.length - 1 && "border-b border-border"
-                  )}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[15px] font-semibold truncate">{invoice.contactName}</span>
-                        <span className="text-[15px] font-semibold shrink-0">{formatPrice(invoice.total)}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 mt-0.5">
-                        <span className="text-[13px] text-muted-foreground">{invoice.invoiceNumber}</span>
-                        <Badge variant={statusConfig[invoice.status]?.variant || "secondary"} className="shrink-0">
-                          {statusConfig[invoice.status]?.label || invoice.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
-                  </div>
-                </div>
-              ))}
-            </div>
           ) : (
-            /* Desktop Table View */
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead className="hidden md:table-cell">Due Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invoices.map((invoice) => (
-                    <TableRow
-                      key={invoice.id}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        setPreviewInvoice(invoice);
-                        setPreviewSheetOpen(true);
-                      }}
-                    >
-                      <TableCell>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewInvoice(invoice);
-                            setPreviewSheetOpen(true);
-                          }}
-                          className="text-sm font-medium text-primary hover:underline cursor-pointer"
-                        >
-                          {invoice.invoiceNumber}
-                        </button>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="text-sm font-medium">{invoice.contactName}</p>
-                          <p className="text-xs text-muted-foreground">{invoice.contactEmail}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <PendingIcon className="h-3.5 w-3.5" />
-                          {format(new Date(invoice.dueDate), "MMM d, yyyy")}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-medium">{formatPrice(invoice.total)}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusConfig[invoice.status]?.variant || "secondary"}>
-                          {statusConfig[invoice.status]?.label || invoice.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDownload(invoice)}
-                              disabled={downloadingId === invoice.id}
-                            >
-                              {downloadingId === invoice.id ? (
-                                <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <DownloadIcon className="h-4 w-4 mr-2" />
-                              )}
-                              {downloadingId === invoice.id ? "Downloading..." : "Download PDF"}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {invoice.status === "draft" && (
-                              <DropdownMenuItem
-                                onClick={() => handleSend(invoice)}
-                                disabled={sendingId === invoice.id}
-                              >
-                                {sendingId === invoice.id ? (
-                                  <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                  <SendIcon className="h-4 w-4 mr-2" />
-                                )}
-                                {sendingId === invoice.id ? "Sending..." : "Send Invoice"}
-                              </DropdownMenuItem>
-                            )}
-                            {["sent", "viewed", "overdue"].includes(invoice.status) && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleOpenPaymentDialog(invoice)}>
-                                  <CreditCard className="h-4 w-4 mr-2" />
-                                  Record Payment
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(invoice, "paid")}>
-                                  <CompleteIcon className="h-4 w-4 mr-2" />
-                                  Mark as Paid (Full)
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {invoice.status !== "cancelled" && invoice.status !== "paid" && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(invoice, "cancelled")}>
-                                <CloseIcon className="h-4 w-4 mr-2" />
-                                Cancel
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setInvoiceToDelete(invoice);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600"
-                            >
-                              <DeleteIcon className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable
+              columns={columns}
+              data={invoices}
+              searchPlaceholder="Search invoices..."
+              pageSize={25}
+              onRowClick={(invoice) => {
+                setPreviewInvoice(invoice);
+                setPreviewSheetOpen(true);
+              }}
+              emptyMessage="No invoices found."
+            />
           )}
         </CardContent>
       </Card>
@@ -605,17 +522,17 @@ export function InvoicesList() {
           {invoiceForPayment && (
             <div className="space-y-4 py-4">
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Invoice Total</span>
                   <span className="font-medium">{formatPrice(invoiceForPayment.total)}</span>
                 </div>
                 {(invoiceForPayment.amountPaid || 0) > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-green-600">
                     <span>Amount Paid</span>
                     <span>{formatPrice(invoiceForPayment.amountPaid || 0)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm font-medium border-t pt-2">
+                <div className="flex justify-between font-medium border-t pt-2">
                   <span>Balance Due</span>
                   <span>{formatPrice(invoiceForPayment.balanceDue || invoiceForPayment.total - (invoiceForPayment.amountPaid || 0))}</span>
                 </div>
@@ -623,7 +540,7 @@ export function InvoicesList() {
 
               {getSafeDepositPercent(invoiceForPayment.depositPercent) > 0 && !invoiceForPayment.depositPaidAt && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Payment Type</Label>
+                  <Label className="font-medium">Payment Type</Label>
                   <div className="flex gap-2">
                     <Button
                       type="button"
@@ -672,7 +589,7 @@ export function InvoicesList() {
                   />
                 </div>
                 {paymentData.isDeposit && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hig-caption2 text-muted-foreground">
                     Deposit: {getSafeDepositPercent(invoiceForPayment.depositPercent)}% of {formatPrice(invoiceForPayment.total)}
                   </p>
                 )}
@@ -683,8 +600,8 @@ export function InvoicesList() {
             <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleRecordPayment} disabled={saving || paymentData.amount <= 0}>
-              {saving && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
+            <Button onClick={handleRecordPayment} disabled={updateInvoice.isPending || paymentData.amount <= 0}>
+              {updateInvoice.isPending && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
               Record Payment
             </Button>
           </DialogFooter>

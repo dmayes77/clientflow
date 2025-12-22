@@ -8,6 +8,7 @@ import {
   dispatchInvoicePaid,
 } from "@/lib/webhooks";
 import { sendDisputeNotification } from "@/lib/email";
+import { triggerEventAlert, triggerEventAlertByStripeCustomer } from "@/lib/alert-runner";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -396,6 +397,11 @@ async function handleSubscriptionDeleted(subscription) {
       stripeSubscriptionId: null,
     },
   });
+
+  // Trigger automated subscription_cancelled alert
+  triggerEventAlert("subscription_cancelled", tenant.id).catch((err) =>
+    console.error("Error triggering subscription_cancelled alert:", err)
+  );
 }
 
 // Handler: Trial Will End
@@ -477,6 +483,13 @@ async function handleInvoicePaymentFailed(invoice) {
         where: { id: tenant.id },
         data: { subscriptionStatus: "past_due" },
       });
+
+      // Trigger automated payment_failed alert
+      triggerEventAlert("payment_failed", tenant.id, {
+        invoiceId: invoice.id,
+        amount: invoice.amount_due,
+        attemptCount: invoice.attempt_count,
+      }).catch((err) => console.error("Error triggering payment_failed alert:", err));
     }
   }
 }
@@ -730,6 +743,13 @@ async function handleConnectDisputeCreated(dispute, accountId) {
       },
     });
     console.log("In-app dispute alert created for tenant:", payment.tenantId);
+
+    // Trigger automated dispute_created alert rules
+    triggerEventAlert("dispute_created", payment.tenantId, {
+      disputeId: dispute.id,
+      reason,
+      amount,
+    }).catch((err) => console.error("Error triggering dispute_created alert:", err));
 
     // Send email notification
     if (tenant?.email) {

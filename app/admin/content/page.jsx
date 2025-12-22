@@ -76,22 +76,22 @@ function RoadmapItemCard({ item, onEdit, onDelete }) {
       <CardContent className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <div className="font-medium text-sm">{item.title}</div>
+            <div className="font-medium hig-body">{item.title}</div>
             {item.description && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+              <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
                 {item.description}
               </p>
             )}
           </div>
-          <Badge className={`shrink-0 text-[10px] ${statusConfig.color}`}>
+          <Badge className={`shrink-0 hig-caption2 ${statusConfig.color}`}>
             <StatusIcon className="h-2.5 w-2.5 mr-0.5" />
             {statusConfig.label}
           </Badge>
         </div>
         <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
             {item.category && (
-              <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
+              <Badge variant="outline" className="hig-caption2">{item.category}</Badge>
             )}
             {item.targetDate && (
               <span>Target: {formatDate(item.targetDate)}</span>
@@ -134,7 +134,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label className="text-xs">Title</Label>
+        <Label className="hig-caption2">Title</Label>
         <Input
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -143,7 +143,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
         />
       </div>
       <div className="space-y-1">
-        <Label className="text-xs">Description</Label>
+        <Label className="hig-caption2">Description</Label>
         <Textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -153,7 +153,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs">Status</Label>
+          <Label className="hig-caption2">Status</Label>
           <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -167,7 +167,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Category</Label>
+          <Label className="hig-caption2">Category</Label>
           <Input
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -178,7 +178,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs">Priority</Label>
+          <Label className="hig-caption2">Priority</Label>
           <Input
             type="number"
             value={form.priority}
@@ -187,7 +187,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Target Date</Label>
+          <Label className="hig-caption2">Target Date</Label>
           <Input
             type="date"
             value={form.targetDate}
@@ -217,37 +217,37 @@ function ChangelogEntryCard({ entry, onEdit, onDelete, onPublish }) {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="font-medium text-sm">{entry.title}</div>
+              <div className="font-medium hig-body">{entry.title}</div>
               {entry.version && (
-                <Badge variant="outline" className="text-[10px]">v{entry.version}</Badge>
+                <Badge variant="outline" className="hig-caption2">v{entry.version}</Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+            <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
               {entry.content.substring(0, 100)}...
             </p>
           </div>
           <div className="flex flex-col gap-1 shrink-0">
-            <Badge className={`text-[10px] ${typeConfig.color}`}>
+            <Badge className={`hig-caption2 ${typeConfig.color}`}>
               <TypeIcon className="h-2.5 w-2.5 mr-0.5" />
               {typeConfig.label}
             </Badge>
             {entry.published ? (
-              <Badge variant="outline" className="text-[10px] text-green-600">
+              <Badge variant="outline" className="hig-caption2 text-green-600">
                 <Eye className="h-2.5 w-2.5 mr-0.5" />
                 Published
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-[10px]">Draft</Badge>
+              <Badge variant="outline" className="hig-caption2">Draft</Badge>
             )}
           </div>
         </div>
         <div className="flex items-center justify-between mt-2">
-          <span className="text-[10px] text-muted-foreground">
+          <span className="hig-caption2 text-muted-foreground">
             {entry.publishedAt ? `Published ${formatDate(entry.publishedAt)}` : `Created ${formatDate(entry.createdAt)}`}
           </span>
           <div className="flex gap-1">
             {!entry.published && (
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={() => onPublish(entry.id)}>
+              <Button variant="ghost" size="sm" className="h-6 px-2 hig-caption2" onClick={() => onPublish(entry.id)}>
                 <Send className="h-3 w-3 mr-1" />
                 Publish
               </Button>
@@ -284,7 +284,7 @@ function ChangelogEditor({ entry, onSave, onCancel }) {
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="text-xs">Version (optional)</Label>
+          <Label className="hig-caption2">Version (optional)</Label>
           <Input
             value={form.version}
             onChange={(e) => setForm({ ...form, version: e.target.value })}
@@ -293,7 +293,7 @@ function ChangelogEditor({ entry, onSave, onCancel }) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Type</Label>
+          <Label className="hig-caption2">Type</Label>
           <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -308,7 +308,7 @@ function ChangelogEditor({ entry, onSave, onCancel }) {
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-xs">Title</Label>
+        <Label className="hig-caption2">Title</Label>
         <Input
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -317,13 +317,13 @@ function ChangelogEditor({ entry, onSave, onCancel }) {
         />
       </div>
       <div className="space-y-1">
-        <Label className="text-xs">Content (Markdown)</Label>
+        <Label className="hig-caption2">Content (Markdown)</Label>
         <Textarea
           value={form.content}
           onChange={(e) => setForm({ ...form, content: e.target.value })}
           placeholder="Describe the changes in detail..."
           rows={6}
-          className="font-mono text-xs"
+          className="font-mono hig-caption2"
         />
       </div>
       <div className="flex gap-2 justify-end">
@@ -461,8 +461,8 @@ export default function ContentManagementPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">Content</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="hig-title-1 font-bold">Content</h1>
+        <p className="hig-body text-muted-foreground">
           Manage roadmap and changelog
         </p>
       </div>
@@ -473,7 +473,7 @@ export default function ContentManagementPage() {
             <Map className="h-4 w-4 mr-1" />
             Roadmap
             {roadmapCounts.planned > 0 && (
-              <Badge variant="secondary" className="ml-1 text-[10px]">
+              <Badge variant="secondary" className="ml-1 hig-caption2">
                 {roadmapCounts.planned}
               </Badge>
             )}
@@ -482,7 +482,7 @@ export default function ContentManagementPage() {
             <FileText className="h-4 w-4 mr-1" />
             Changelog
             {changelogCounts.draft > 0 && (
-              <Badge variant="secondary" className="ml-1 text-[10px]">
+              <Badge variant="secondary" className="ml-1 hig-caption2">
                 {changelogCounts.draft}
               </Badge>
             )}
@@ -499,8 +499,8 @@ export default function ContentManagementPage() {
                 <Card key={status}>
                   <CardContent className="p-2 text-center">
                     <Icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                    <div className="text-lg font-bold">{roadmapCounts[status] || 0}</div>
-                    <div className="text-[10px] text-muted-foreground">{config.label}</div>
+                    <div className="hig-title-2 font-bold">{roadmapCounts[status] || 0}</div>
+                    <div className="hig-caption2 text-muted-foreground">{config.label}</div>
                   </CardContent>
                 </Card>
               );
@@ -567,20 +567,20 @@ export default function ContentManagementPage() {
           <div className="grid grid-cols-3 gap-2">
             <Card>
               <CardContent className="p-2 text-center">
-                <div className="text-lg font-bold">{changelogCounts.total || 0}</div>
-                <div className="text-[10px] text-muted-foreground">Total</div>
+                <div className="hig-title-2 font-bold">{changelogCounts.total || 0}</div>
+                <div className="hig-caption2 text-muted-foreground">Total</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-2 text-center">
-                <div className="text-lg font-bold text-green-600">{changelogCounts.published || 0}</div>
-                <div className="text-[10px] text-muted-foreground">Published</div>
+                <div className="hig-title-2 font-bold text-green-600">{changelogCounts.published || 0}</div>
+                <div className="hig-caption2 text-muted-foreground">Published</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-2 text-center">
-                <div className="text-lg font-bold text-yellow-600">{changelogCounts.draft || 0}</div>
-                <div className="text-[10px] text-muted-foreground">Drafts</div>
+                <div className="hig-title-2 font-bold text-yellow-600">{changelogCounts.draft || 0}</div>
+                <div className="hig-caption2 text-muted-foreground">Drafts</div>
               </CardContent>
             </Card>
           </div>

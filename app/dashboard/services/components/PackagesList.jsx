@@ -401,8 +401,8 @@ export function PackagesList() {
         <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4 text-amber-500" />
-            <span className="text-sm font-medium">Packages</span>
-            <span className="text-xs text-muted-foreground">({packages.length})</span>
+            <span className="font-medium">Packages</span>
+            <span className="hig-caption2 text-muted-foreground">({packages.length})</span>
           </div>
           <Button
             size="xs"
@@ -420,7 +420,7 @@ export function PackagesList() {
                 <Package className="h-5 w-5 text-amber-600" />
               </div>
               <h3 className="text-zinc-900 mb-1">Create services first</h3>
-              <p className="text-xs text-muted-foreground mb-3 max-w-xs">
+              <p className="hig-caption2 text-muted-foreground mb-3 max-w-xs">
                 Create individual services first, then bundle them here with a discount.
               </p>
             </div>
@@ -430,7 +430,7 @@ export function PackagesList() {
                 <Package className="h-5 w-5 text-amber-600" />
               </div>
               <h3 className="text-zinc-900 mb-1">Ready to create packages!</h3>
-              <p className="text-xs text-muted-foreground mb-3">
+              <p className="hig-caption2 text-muted-foreground mb-3">
                 Bundle your {services.length} service{services.length !== 1 ? "s" : ""} with a discount.
               </p>
               <Button size="xs" onClick={() => router.push("/dashboard/packages/new")}>
@@ -471,7 +471,7 @@ export function PackagesList() {
                     {/* Status badge - top left */}
                     <Badge
                       variant={pkg.active ? "success" : "secondary"}
-                      className="absolute top-2 left-2 text-[11px] px-1.5 py-0.5 z-20"
+                      className="absolute top-2 left-2 hig-caption2 px-1.5 py-0.5 z-20"
                     >
                       {pkg.active ? "Active" : "Off"}
                     </Badge>
@@ -503,7 +503,7 @@ export function PackagesList() {
             <div className="p-4 space-y-4">
               {/* Active Toggle */}
               <div className="flex items-center justify-center gap-3 py-2 px-3 bg-muted/30 rounded-lg">
-                <Label className={`text-sm font-medium ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
+                <Label className={`font-medium ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
                   {formData.active ? "Active" : "Inactive"}
                 </Label>
                 <Switch checked={formData.active} onCheckedChange={(checked) => setFormData({ ...formData, active: checked })} />
@@ -541,7 +541,7 @@ export function PackagesList() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Select Services</Label>
-                  <span className="text-xs text-muted-foreground">{formData.serviceIds.length} selected</span>
+                  <span className="hig-caption2 text-muted-foreground">{formData.serviceIds.length} selected</span>
                 </div>
                 <div className="border rounded-md max-h-48 overflow-y-auto">
                   {services.filter(s => s.active).map((service) => (
@@ -561,8 +561,8 @@ export function PackagesList() {
                         }}
                       />
                       <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                        <span className="text-sm truncate">{service.name}</span>
-                        <span className="text-xs text-muted-foreground">{formatPrice(service.price)}</span>
+                        <span className="truncate">{service.name}</span>
+                        <span className="hig-caption2 text-muted-foreground">{formatPrice(service.price)}</span>
                       </div>
                     </label>
                   ))}
@@ -572,7 +572,7 @@ export function PackagesList() {
               {/* Price Preview */}
               {pricePreview.serviceCount > 0 && (
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">{pricePreview.serviceCount} services</span>
                     <span className="font-bold text-green-600">{formatPrice(pricePreview.finalPrice)}</span>
                   </div>
@@ -604,7 +604,7 @@ export function PackagesList() {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Package
                   </Button>
-                  <p className="text-xs text-muted-foreground text-center mt-2">Delete action cannot be undone</p>
+                  <p className="hig-caption2 text-muted-foreground text-center mt-2">Delete action cannot be undone</p>
                 </div>
               )}
 
@@ -635,7 +635,7 @@ export function PackagesList() {
                     : "Select the services you want to include and choose a discount percentage"}
                 </DialogDescription>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Label htmlFor="active" className={`text-sm font-medium leading-none mb-0! ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
+                  <Label htmlFor="active" className={`font-medium leading-none mb-0! ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
                     {formData.active ? "Active" : "Inactive"}
                   </Label>
                   <Switch
@@ -747,7 +747,7 @@ export function PackagesList() {
                               {option.recommended && (
                                 <Badge
                                   variant="secondary"
-                                  className="absolute -top-2 -right-2 text-[9px] px-1 py-0"
+                                  className="absolute -top-2 -right-2 hig-caption2 px-1 py-0"
                                 >
                                   Best
                                 </Badge>
@@ -773,7 +773,7 @@ export function PackagesList() {
                               })}
                             >
                               {option.label}
-                              <span className="ml-1 text-xs opacity-60">{option.example}</span>
+                              <span className="ml-1 opacity-60">{option.example}</span>
                             </Button>
                           ))}
                         </div>
@@ -799,7 +799,7 @@ export function PackagesList() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>Select Services *</Label>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="hig-caption2 text-muted-foreground">
                         {formData.serviceIds.length} selected
                       </span>
                     </div>
@@ -849,7 +849,7 @@ export function PackagesList() {
                     {/* Grouped Services */}
                     <div className="border rounded-md max-h-64 lg:max-h-72 overflow-y-auto">
                       {groupedServices.length === 0 ? (
-                        <p className="p-3 text-sm text-muted-foreground text-center">
+                        <p className="p-3 text-muted-foreground text-center">
                           {serviceSearch ? "No services match your search" : "No active services available"}
                         </p>
                       ) : (
@@ -859,7 +859,7 @@ export function PackagesList() {
                             open={expandedCategories[group.id] !== false}
                             onOpenChange={() => toggleCategory(group.id)}
                           >
-                            <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 text-sm font-medium bg-muted/50 hover:bg-muted border-b">
+                            <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 font-medium bg-muted/50 hover:bg-muted border-b">
                               <ChevronRight
                                 className={`h-4 w-4 transition-transform ${
                                   expandedCategories[group.id] !== false ? "rotate-90" : ""
@@ -867,7 +867,7 @@ export function PackagesList() {
                               />
                               <Tag className="h-3.5 w-3.5 text-muted-foreground" />
                               {group.name}
-                              <span className="text-xs text-muted-foreground ml-auto mr-1">
+                              <span className="hig-caption2 text-muted-foreground ml-auto mr-1">
                                 {group.services.filter((s) => formData.serviceIds.includes(s.id)).length}/
                                 {group.services.length}
                               </span>
@@ -883,8 +883,8 @@ export function PackagesList() {
                                     onCheckedChange={() => handleServiceToggle(service.id)}
                                   />
                                   <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                                    <span className="text-sm truncate">{service.name}</span>
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    <span className="truncate">{service.name}</span>
+                                    <span className="hig-caption2 text-muted-foreground whitespace-nowrap">
                                       {formatDuration(service.duration)} • {formatPrice(service.price)}
                                     </span>
                                   </div>
@@ -903,21 +903,21 @@ export function PackagesList() {
                   <div className="rounded-lg border bg-muted/30 p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                       <div>
-                        <p className="text-xs text-muted-foreground">Services</p>
+                        <p className="hig-caption2 text-muted-foreground">Services</p>
                         <p className="font-semibold">{pricePreview.serviceCount}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Duration</p>
+                        <p className="hig-caption2 text-muted-foreground">Duration</p>
                         <p className="font-semibold">{formatDuration(pricePreview.totalDuration)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Original</p>
+                        <p className="hig-caption2 text-muted-foreground">Original</p>
                         <p className="font-semibold line-through text-muted-foreground">{formatPrice(pricePreview.originalPrice)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Package Price</p>
-                        <p className="font-bold text-lg text-green-600">{formatPrice(pricePreview.finalPrice)}</p>
-                        <p className="text-xs text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
+                        <p className="hig-caption2 text-muted-foreground">Package Price</p>
+                        <p className="font-bold text-green-600">{formatPrice(pricePreview.finalPrice)}</p>
+                        <p className="hig-caption2 text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
                       </div>
                     </div>
                   </div>

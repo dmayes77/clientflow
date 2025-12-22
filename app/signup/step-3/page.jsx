@@ -122,8 +122,8 @@ export default function Step3Page() {
         <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
           <CreditCard className="w-5 h-5 text-blue-500" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Choose your plan</h2>
-        <p className="mt-1 text-[13px] text-gray-500">
+        <h2 className="hig-title-2 font-semibold text-gray-900">Choose your plan</h2>
+        <p className="mt-1 hig-caption1 text-gray-500">
           Start with a 30-day free trial
         </p>
       </div>
@@ -142,22 +142,22 @@ export default function Step3Page() {
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <span className="text-[15px] font-semibold text-gray-900">
+                <span className="hig-body font-semibold text-gray-900">
                   {plan.name}
                 </span>
                 {plan.description && (
-                  <p className="text-[13px] text-gray-500 mt-0.5">
+                  <p className="hig-caption1 text-gray-500 mt-0.5">
                     {plan.description}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <div className="text-xl font-bold text-gray-900">
+                <div className="hig-title-1 font-bold text-gray-900">
                   {formatPrice(plan.priceMonthly)}
-                  <span className="text-[13px] font-normal text-gray-500">/mo</span>
+                  <span className="hig-caption1 font-normal text-gray-500">/mo</span>
                 </div>
                 {plan.priceYearly && (
-                  <div className="text-[11px] text-gray-500">
+                  <div className="hig-caption2 text-gray-500">
                     or {formatPrice(plan.priceYearly)}/yr
                   </div>
                 )}
@@ -169,7 +169,7 @@ export default function Step3Page() {
                 {plan.features.map((feature, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-1.5 text-[11px] text-gray-600"
+                    className="flex items-center gap-1.5 hig-caption2 text-gray-600"
                   >
                     <Check
                       className={cn(
@@ -187,7 +187,7 @@ export default function Step3Page() {
               onClick={() => handleSelectPlan(plan)}
               disabled={redirecting}
               className={cn(
-                "w-full h-11 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2",
+                "w-full h-11 text-white hig-body font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2",
                 plan.isDefault
                   ? "bg-violet-600 hover:bg-violet-700 active:bg-violet-800"
                   : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800",
@@ -212,12 +212,12 @@ export default function Step3Page() {
 
       {/* Trust badges */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-        <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
+        <div className="flex items-center gap-1.5 hig-caption2 text-gray-500">
           <Shield className="w-3.5 h-3.5" />
           <span>Secure checkout</span>
         </div>
-        <div className="text-[11px] text-gray-500">30-day free trial</div>
-        <div className="text-[11px] text-gray-500">Cancel anytime</div>
+        <div className="hig-caption2 text-gray-500">30-day free trial</div>
+        <div className="hig-caption2 text-gray-500">Cancel anytime</div>
       </div>
 
       {/* Back button */}
@@ -226,7 +226,7 @@ export default function Step3Page() {
           type="button"
           onClick={() => router.push("/signup/step-2")}
           disabled={redirecting}
-          className="min-h-11 flex items-center gap-2 text-[15px] text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors disabled:opacity-50"
+          className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors disabled:opacity-50"
         >
           <ArrowLeft className="w-4 h-4" />
           Back

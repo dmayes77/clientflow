@@ -347,7 +347,7 @@ export function MediaLibrary() {
                 <Video className="h-8 w-8 text-white drop-shadow-lg" />
               </div>
               {item.duration && (
-                <span className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                <span className="absolute bottom-1 right-1 bg-black/70 text-white hig-caption2 px-1.5 py-0.5 rounded">
                   {Math.floor(item.duration / 60)}:{String(Math.floor(item.duration % 60)).padStart(2, "0")}
                 </span>
               )}
@@ -389,8 +389,8 @@ export function MediaLibrary() {
         </div>
 
         <div className="p-1.5 sm:p-2 bg-card">
-          <p className="text-xs font-medium truncate">{item.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{formatFileSize(item.size)}</p>
+          <p className="hig-caption2 font-medium truncate">{item.name}</p>
+          <p className="hig-caption2 text-muted-foreground truncate">{formatFileSize(item.size)}</p>
         </div>
       </div>
     );
@@ -405,11 +405,11 @@ export function MediaLibrary() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <TabsList className="h-8">
-                <TabsTrigger value="images" className="h-7 gap-1.5 px-3 text-xs">
+                <TabsTrigger value="images" className="h-7 gap-1.5 px-3 hig-caption2">
                   <FileImage className="h-3.5 w-3.5" />
                   Images ({images.length})
                 </TabsTrigger>
-                <TabsTrigger value="videos" className="h-7 gap-1.5 px-3 text-xs">
+                <TabsTrigger value="videos" className="h-7 gap-1.5 px-3 hig-caption2">
                   <FileVideo className="h-3.5 w-3.5" />
                   Videos ({videos.length})
                 </TabsTrigger>
@@ -417,11 +417,11 @@ export function MediaLibrary() {
 
               <div className="flex items-center gap-2">
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger size="sm" className="h-8 px-2 text-xs gap-1">
+                  <SelectTrigger size="sm" className="h-8 px-2 hig-caption2 gap-1">
                     <Filter className="h-3 w-3 shrink-0" />
                     <SelectValue placeholder="Filter" />
                   </SelectTrigger>
-                  <SelectContent className="h-8 px-2 text-xs gap-1-content">
+                  <SelectContent className="h-8 px-2 hig-caption2 gap-1-content">
                     <SelectItem value="all">All Types</SelectItem>
                     {currentTypes.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
@@ -462,13 +462,13 @@ export function MediaLibrary() {
               onDrop={handleDrop}
             >
               <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-muted-foreground">
                 Drag and drop files here, or{" "}
                 <button className="text-primary underline hover:no-underline" onClick={() => fileInputRef.current?.click()}>
                   browse
                 </button>
               </p>
-              <p className="mt-1 text-xs text-muted-foreground/70">
+              <p className="mt-1 hig-caption2 text-muted-foreground/70">
                 {activeTab === "images" ? "Supports: JPG, PNG, GIF, WebP • Max 10MB" : "Supports: MP4, MOV, WebM • Max 100MB"}
               </p>
             </div>
@@ -500,7 +500,7 @@ export function MediaLibrary() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{image.name}</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Badge variant="outline">
                                 {currentTypes.find((t) => t.value === image.type)?.label || image.type}
                               </Badge>
@@ -554,7 +554,7 @@ export function MediaLibrary() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">{video.name}</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Badge variant="outline">
                                 {VIDEO_TYPES.find((t) => t.value === video.type)?.label || video.type}
                               </Badge>
@@ -605,8 +605,8 @@ export function MediaLibrary() {
                   <FileVideo className="h-8 w-8 text-purple-500" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{uploadForm.file.name}</p>
-                  <p className="text-xs text-muted-foreground">{formatFileSize(uploadForm.file.size)}</p>
+                  <p className="truncate font-medium">{uploadForm.file.name}</p>
+                  <p className="hig-caption2 text-muted-foreground">{formatFileSize(uploadForm.file.size)}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -659,7 +659,7 @@ export function MediaLibrary() {
 
             {uploading && (
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span>Uploading...</span>
                   <span>{uploadProgress}%</span>
                 </div>

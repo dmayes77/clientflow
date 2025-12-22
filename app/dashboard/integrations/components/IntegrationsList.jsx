@@ -143,7 +143,7 @@ export function IntegrationsList() {
                       {status.badge}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">{integration.description}</p>
+                  <p className="text-muted-foreground mt-0.5">{integration.description}</p>
                 </div>
                 {integration.available && (
                   <Button variant="ghost" size="sm" asChild>

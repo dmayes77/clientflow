@@ -104,7 +104,7 @@ export default function RetryPaymentPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-6">
-          <h1 className="text-xl font-bold">
+          <h1 className="hig-title-1 font-bold">
             <span className="text-foreground">Client</span>
             <span className="text-primary">Flow</span>
           </h1>
@@ -115,8 +115,8 @@ export default function RetryPaymentPage() {
             <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
               <CreditCard className="w-5 h-5 text-primary" />
             </div>
-            <CardTitle className="text-lg">Reactivate Your Account</CardTitle>
-            <CardDescription className="text-[13px]">
+            <CardTitle className="hig-title-2">Reactivate Your Account</CardTitle>
+            <CardDescription className="hig-caption1">
               Continue using ClientFlow with our Professional plan
             </CardDescription>
           </CardHeader>
@@ -126,13 +126,13 @@ export default function RetryPaymentPage() {
             <div className="p-4 rounded-2xl border-2 border-violet-500 bg-violet-50">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
-                  <span className="text-[15px] font-semibold text-gray-900">{PLAN.name}</span>
-                  <p className="text-[13px] text-gray-500 mt-0.5">{PLAN.description}</p>
+                  <span className="hig-body font-semibold text-gray-900">{PLAN.name}</span>
+                  <p className="hig-caption1 text-gray-500 mt-0.5">{PLAN.description}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-bold text-gray-900">
+                  <div className="hig-title-1 font-bold text-gray-900">
                     ${PLAN.price}
-                    <span className="text-[13px] font-normal text-gray-500">/mo</span>
+                    <span className="hig-caption1 font-normal text-gray-500">/mo</span>
                   </div>
                 </div>
               </div>
@@ -141,7 +141,7 @@ export default function RetryPaymentPage() {
                 {PLAN.features.map((feature) => (
                   <div
                     key={feature}
-                    className="flex items-center gap-1.5 text-[11px] text-gray-600"
+                    className="flex items-center gap-1.5 hig-caption2 text-gray-600"
                   >
                     <Check className="w-3 h-3 shrink-0 text-violet-500" />
                     <span className="truncate">{feature}</span>
@@ -152,7 +152,7 @@ export default function RetryPaymentPage() {
               <button
                 onClick={handleReactivate}
                 disabled={redirecting}
-                className={`w-full h-11 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 ${
+                className={`w-full h-11 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white hig-body font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 ${
                   redirecting ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
@@ -171,7 +171,7 @@ export default function RetryPaymentPage() {
             </div>
 
             {/* Trust indicators */}
-            <div className="flex items-center justify-center gap-3 pt-1 text-[11px] text-muted-foreground">
+            <div className="flex items-center justify-center gap-3 pt-1 hig-caption2 text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5" />
                 <span>Secure checkout</span>
@@ -185,7 +185,7 @@ export default function RetryPaymentPage() {
                 type="button"
                 onClick={() => router.push("/billing/payment-required")}
                 disabled={redirecting}
-                className="min-h-11 flex items-center gap-2 text-[15px] text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors disabled:opacity-50"
+                className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors disabled:opacity-50"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back

@@ -9,17 +9,17 @@ export default function ServicesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[22px] sm:text-2xl font-bold">Services & Packages</h1>
-        <p className="text-[13px] sm:text-sm text-muted-foreground">Manage your services and create packages</p>
+        <h1 className="font-bold">Services & Packages</h1>
+        <p className="text-muted-foreground">Manage your services and create packages</p>
       </div>
 
       <Tabs defaultValue="services" className="w-full">
         <TabsList className="h-9">
-          <TabsTrigger value="services" className="h-8 gap-1.5 px-3 text-xs">
+          <TabsTrigger value="services" className="h-8 gap-1.5 px-3">
             <Wrench className="h-3.5 w-3.5" />
             Services
           </TabsTrigger>
-          <TabsTrigger value="packages" className="h-8 gap-1.5 px-3 text-xs">
+          <TabsTrigger value="packages" className="h-8 gap-1.5 px-3">
             <Package className="h-3.5 w-3.5" />
             Packages
           </TabsTrigger>

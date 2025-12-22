@@ -203,10 +203,10 @@ function VerticalStepper({ currentStep, selectedItems, selectedDate, selectedTim
 
             {/* Step content */}
             <div className={`pb-6 ${isLast ? 'pb-0' : ''}`}>
-              <p className={`font-medium text-sm ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+              <p className={`font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {step.label}
               </p>
-              <p className={`text-xs ${isComplete ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <p className={`hig-caption2 ${isComplete ? 'text-green-600' : 'text-muted-foreground'}`}>
                 {step.description}
               </p>
             </div>
@@ -288,13 +288,13 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: category.color }}
           />
-          <span className="text-xs text-muted-foreground">{category.name}</span>
+          <span className="hig-caption2 text-muted-foreground">{category.name}</span>
         </div>
       )}
 
       {/* Description */}
       {item.description && (
-        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+        <p className="text-muted-foreground mt-2 line-clamp-2">
           {item.description}
         </p>
       )}
@@ -303,16 +303,16 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-muted">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Clock className="w-3.5 h-3.5" />
-          <span className="text-sm">
+          <span>
             {formatDuration(item.duration || item.totalDuration)}
           </span>
           {isPackage && item.services?.length > 0 && (
-            <span className="text-xs ml-1">
+            <span className="hig-caption2 ml-1">
               • {item.services.length} services
             </span>
           )}
         </div>
-        <span className={`font-bold text-sm ${isPackage ? 'text-violet-600' : 'text-green-600'}`}>
+        <span className={`font-bold ${isPackage ? 'text-violet-600' : 'text-green-600'}`}>
           {formatPrice(item.price)}
         </span>
       </div>
@@ -340,7 +340,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
       <button
         onClick={() => onSelect(null)}
         className={`
-          shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
+          shrink-0 px-4 py-2 rounded-full font-medium transition-all
           ${selectedCategory === null
             ? "bg-primary text-primary-foreground shadow-sm"
             : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -354,7 +354,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
           key={cat.id}
           onClick={() => onSelect(cat.id)}
           className={`
-            shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2
+            shrink-0 px-4 py-2 rounded-full font-medium transition-all flex items-center gap-2
             ${selectedCategory === cat.id
               ? "text-white shadow-sm"
               : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -375,7 +375,7 @@ function CategoryPills({ categories, selectedCategory, onSelect, services, packa
         <button
           onClick={() => onSelect("uncategorized")}
           className={`
-            shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all
+            shrink-0 px-4 py-2 rounded-full font-medium transition-all
             ${selectedCategory === "uncategorized"
               ? "bg-gray-600 text-white shadow-sm"
               : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -396,12 +396,12 @@ function CartSummary({ items, total, duration, onContinue, onClear }) {
   return (
     <div className="border-t pt-4 mt-4 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground">
           {items.length} service{items.length > 1 ? 's' : ''} • {formatDuration(duration)}
         </span>
         <button
           onClick={onClear}
-          className="text-xs text-destructive hover:underline"
+          className="hig-caption2 text-destructive hover:underline"
         >
           Clear
         </button>
@@ -409,7 +409,7 @@ function CartSummary({ items, total, duration, onContinue, onClear }) {
 
       <div className="space-y-1.5 max-h-32 overflow-y-auto">
         {items.map((item) => (
-          <div key={`${item.type}-${item.id}`} className="flex justify-between text-sm">
+          <div key={`${item.type}-${item.id}`} className="flex justify-between">
             <span className="truncate pr-2">{item.name}</span>
             <span className="text-green-600 font-medium shrink-0">{formatPrice(item.price)}</span>
           </div>
@@ -418,7 +418,7 @@ function CartSummary({ items, total, duration, onContinue, onClear }) {
 
       <div className="flex justify-between items-center pt-2 border-t">
         <span className="font-semibold">Total</span>
-        <span className="text-xl font-bold text-green-600">{formatPrice(total)}</span>
+        <span className="font-bold text-green-600">{formatPrice(total)}</span>
       </div>
 
       <Button onClick={onContinue} className="w-full" size="lg">
@@ -437,12 +437,12 @@ function MobileCartButton({ items, total, onClick }) {
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-linear-to-t from-background via-background to-transparent lg:hidden">
       <Button
         onClick={onClick}
-        className="w-full h-14 text-sm shadow-xl"
+        className="w-full h-14 hig-body shadow-xl"
         size="lg"
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <div className="bg-white/20 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+            <div className="bg-white/20 rounded-full w-6 h-6 flex items-center justify-center font-bold">
               {items.length}
             </div>
             <span>Continue</span>
@@ -480,7 +480,7 @@ function BookingCalendar({ currentMonth, calendarDays, selectedDate, onDateSelec
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {DAYS.map((day) => (
-          <div key={day} className="text-center text-xs text-muted-foreground font-medium py-2">
+          <div key={day} className="text-center hig-caption2 text-muted-foreground font-medium py-2">
             {day}
           </div>
         ))}
@@ -498,7 +498,7 @@ function BookingCalendar({ currentMonth, calendarDays, selectedDate, onDateSelec
               disabled={!day.isAvailable}
               onClick={() => day.isAvailable && onDateSelect(day)}
               className={`
-                aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all
+                aspect-square flex items-center justify-center rounded-lg font-medium transition-all
                 ${!day.isCurrentMonth ? "invisible" : ""}
                 ${!day.isAvailable ? "text-muted-foreground/30 cursor-not-allowed" : ""}
                 ${day.isAvailable && !isSelected ? "hover:bg-primary/10 hover:text-primary" : ""}
@@ -522,7 +522,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-5 h-5 animate-spin text-primary" />
-        <span className="ml-2 text-sm text-muted-foreground">Loading times...</span>
+        <span className="ml-2 text-muted-foreground">Loading times...</span>
       </div>
     );
   }
@@ -531,7 +531,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="text-center py-12">
         <Calendar className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground">
           Select a date to see available times
         </p>
       </div>
@@ -542,7 +542,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="text-center py-12">
         <X className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground">
           {availabilityData.reason || "Closed on this day"}
         </p>
       </div>
@@ -553,7 +553,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
     return (
       <div className="text-center py-12">
         <Clock className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground">
           No available times on this date
         </p>
       </div>
@@ -574,7 +574,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
 
         return (
           <div key={key}>
-            <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <p className="hig-caption2 font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{icon}</span> {label}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -583,7 +583,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
                   key={time}
                   onClick={() => onTimeSelect(time)}
                   className={`
-                    py-2.5 px-3 rounded-lg text-sm font-medium border transition-all
+                    py-2.5 px-3 rounded-lg font-medium border transition-all
                     ${selectedTime === time
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
                       : "hover:border-primary hover:bg-primary/5"
@@ -988,7 +988,7 @@ function TenantBookingPageContent({ params }) {
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">Loading booking page...</p>
+          <p className="text-muted-foreground">Loading booking page...</p>
         </div>
       </div>
     );
@@ -1003,7 +1003,7 @@ function TenantBookingPageContent({ params }) {
               <X className="w-6 h-6 text-destructive" />
             </div>
             <h1 className="mb-2">Error</h1>
-            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
             <Link href="/">
               <Button>Go Home</Button>
             </Link>
@@ -1034,14 +1034,14 @@ function TenantBookingPageContent({ params }) {
               </motion.div>
 
               <h1 className="mb-2">Booking Confirmed!</h1>
-              <p className="text-sm text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-6">
                 {bookingResult?.message || "We've sent a confirmation to your email."}
               </p>
 
               <div className="bg-muted/50 rounded-xl p-4 mb-6 text-left space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Date & Time</span>
-                  <span className="text-sm font-medium">
+                  <span className="text-muted-foreground">Date & Time</span>
+                  <span className="font-medium">
                     {selectedDate?.toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
@@ -1051,8 +1051,8 @@ function TenantBookingPageContent({ params }) {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Duration</span>
-                  <span className="text-sm font-medium">{formatDuration(selectedDuration)}</span>
+                  <span className="text-muted-foreground">Duration</span>
+                  <span className="font-medium">{formatDuration(selectedDuration)}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t">
                   <span className="font-semibold">Total</span>
@@ -1092,7 +1092,7 @@ function TenantBookingPageContent({ params }) {
             </Link>
             <div>
               <h1>{business?.name}</h1>
-              <p className="text-xs text-muted-foreground">Book an appointment</p>
+              <p className="hig-caption2 text-muted-foreground">Book an appointment</p>
             </div>
           </div>
           <MobileProgressDots currentStep={step} paymentEnabled={paymentSettings?.enabled && selectedTotal > 0} />
@@ -1106,7 +1106,7 @@ function TenantBookingPageContent({ params }) {
             {/* Back link */}
             <Link
               href={`/${slug}`}
-              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to website
@@ -1123,12 +1123,12 @@ function TenantBookingPageContent({ params }) {
                   className="rounded-xl mb-4"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg mb-4">
+                <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold hig-title-2 mb-4">
                   {business?.name?.[0] || "B"}
                 </div>
               )}
               <h1 className="mb-1">{business?.name}</h1>
-              <p className="text-sm text-muted-foreground">Book an appointment</p>
+              <p className="text-muted-foreground">Book an appointment</p>
             </div>
 
             {/* Vertical Stepper */}
@@ -1154,7 +1154,7 @@ function TenantBookingPageContent({ params }) {
           {business && (
             <div className="p-6 border-t space-y-2">
               {(business.address?.street || business.address?.city) && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>
                     {[
@@ -1166,13 +1166,13 @@ function TenantBookingPageContent({ params }) {
                 </div>
               )}
               {business.phone && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
                   <Phone className="w-3.5 h-3.5" />
                   <span>{business.phone}</span>
                 </div>
               )}
               {business.email && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
                   <Mail className="w-3.5 h-3.5" />
                   <span>{business.email}</span>
                 </div>
@@ -1195,7 +1195,7 @@ function TenantBookingPageContent({ params }) {
                   transition={{ duration: 0.2 }}
                 >
                   <h2 className="mb-1 hidden lg:block">Select Services</h2>
-                  <p className="text-sm text-muted-foreground mb-6 hidden lg:block">
+                  <p className="text-muted-foreground mb-6 hidden lg:block">
                     Choose the services you'd like to book
                   </p>
 
@@ -1256,7 +1256,7 @@ function TenantBookingPageContent({ params }) {
                   {filteredServices.length === 0 && filteredPackages.length === 0 && (
                     <div className="text-center py-16">
                       <Calendar className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         {selectedCategory
                           ? "No services in this category"
                           : "No services available"}
@@ -1295,7 +1295,7 @@ function TenantBookingPageContent({ params }) {
                     </Button>
                     <div>
                       <h2>Pick a Date & Time</h2>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         {selectedItems.length} service{selectedItems.length > 1 ? 's' : ''} • {formatDuration(selectedDuration)}
                       </p>
                     </div>
@@ -1375,7 +1375,7 @@ function TenantBookingPageContent({ params }) {
                     </Button>
                     <div>
                       <h2>Your Details</h2>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Almost done! We just need a few details.
                       </p>
                     </div>
@@ -1386,22 +1386,22 @@ function TenantBookingPageContent({ params }) {
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="font-medium text-sm">
+                          <p className="font-medium">
                             {selectedDate?.toLocaleDateString("en-US", {
                               weekday: "long",
                               month: "long",
                               day: "numeric",
                             })}
                           </p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground">
                             {formatTime(selectedTime)} • {formatDuration(selectedDuration)}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold text-green-600">{formatPrice(selectedTotal)}</p>
+                          <p className="font-bold text-green-600">{formatPrice(selectedTotal)}</p>
                           <button
                             onClick={() => handleBack("date")}
-                            className="text-xs text-primary hover:underline"
+                            className="hig-caption2 text-primary hover:underline"
                           >
                             Change
                           </button>
@@ -1416,7 +1416,7 @@ function TenantBookingPageContent({ params }) {
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="name" className="text-sm font-medium">
+                            <Label htmlFor="name" className="font-medium">
                               Full Name <span className="text-destructive">*</span>
                             </Label>
                             <Input
@@ -1429,7 +1429,7 @@ function TenantBookingPageContent({ params }) {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="email" className="text-sm font-medium">
+                            <Label htmlFor="email" className="font-medium">
                               Email <span className="text-destructive">*</span>
                             </Label>
                             <Input
@@ -1445,7 +1445,7 @@ function TenantBookingPageContent({ params }) {
                         </div>
 
                         <div>
-                          <Label htmlFor="phone" className="text-sm font-medium">
+                          <Label htmlFor="phone" className="font-medium">
                             Phone Number <span className="text-muted-foreground font-normal">(optional)</span>
                           </Label>
                           <Input
@@ -1459,7 +1459,7 @@ function TenantBookingPageContent({ params }) {
                         </div>
 
                         <div>
-                          <Label htmlFor="notes" className="text-sm font-medium">
+                          <Label htmlFor="notes" className="font-medium">
                             Notes <span className="text-muted-foreground font-normal">(optional)</span>
                           </Label>
                           <Textarea
@@ -1533,7 +1533,7 @@ function TenantBookingPageContent({ params }) {
                     </Button>
                     <div>
                       <h2>Payment</h2>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Choose how you'd like to pay
                       </p>
                     </div>
@@ -1543,7 +1543,7 @@ function TenantBookingPageContent({ params }) {
                   <Card className="mb-6 bg-muted/50 border-0">
                     <CardContent className="p-4">
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Appointment</span>
                           <span className="font-medium">
                             {selectedDate?.toLocaleDateString("en-US", {
@@ -1554,12 +1554,12 @@ function TenantBookingPageContent({ params }) {
                             at {formatTime(selectedTime)}
                           </span>
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Contact</span>
                           <span className="font-medium">{formData.name}</span>
                         </div>
                         {selectedItems.map((item) => (
-                          <div key={`${item.type}-${item.id}`} className="flex justify-between text-sm">
+                          <div key={`${item.type}-${item.id}`} className="flex justify-between hig-body">
                             <span className="truncate pr-2">{item.name}</span>
                             <span className="text-green-600 font-medium shrink-0">{formatPrice(item.price)}</span>
                           </div>
@@ -1607,15 +1607,15 @@ function TenantBookingPageContent({ params }) {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
+                          <p className="text-muted-foreground mb-2">
                             Complete payment now
                           </p>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-bold text-green-600">
+                            <span className="font-bold text-green-600">
                               {formatPrice(paymentAmounts.discountedAmount)}
                             </span>
                             {paymentAmounts.discount > 0 && (
-                              <span className="text-sm text-muted-foreground line-through">
+                              <span className="text-muted-foreground line-through">
                                 {formatPrice(paymentAmounts.fullAmount)}
                               </span>
                             )}
@@ -1645,21 +1645,21 @@ function TenantBookingPageContent({ params }) {
                           <div className="pr-8">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium">Pay Deposit</span>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="hig-caption2">
                                 {paymentAmounts.depositLabel}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className="hig-body text-muted-foreground mb-2">
                               Secure your booking with a deposit
                             </p>
                             <div className="space-y-1">
                               <div className="flex items-baseline gap-2">
-                                <span className="text-xl font-bold text-green-600">
+                                <span className="hig-title-1 font-bold text-green-600">
                                   {formatPrice(paymentAmounts.depositAmount)}
                                 </span>
-                                <span className="text-sm text-muted-foreground">due now</span>
+                                <span className="text-muted-foreground">due now</span>
                               </div>
-                              <p className="text-sm text-muted-foreground">
+                              <p className="hig-body text-muted-foreground">
                                 + {formatPrice(selectedTotal - paymentAmounts.depositAmount)} remaining balance
                               </p>
                             </div>
@@ -1668,7 +1668,7 @@ function TenantBookingPageContent({ params }) {
                       )}
 
                       {/* Secure payment note */}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+                      <div className="flex items-center gap-2 hig-caption2 text-muted-foreground pt-2">
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                           <path d="M7 11V7a5 5 0 0 1 10 0v4" />

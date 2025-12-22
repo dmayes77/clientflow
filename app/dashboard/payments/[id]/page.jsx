@@ -352,7 +352,7 @@ export default function PaymentDetailPage({ params }) {
                   <div key={idx} className="flex justify-between hig-body">
                     <span className="flex items-center gap-2">
                       {service.name}
-                      {service.isPackage && <Badge variant="outline" className="text-xs">Package</Badge>}
+                      {service.isPackage && <Badge variant="outline" className="hig-caption2">Package</Badge>}
                     </span>
                     <span className="font-medium">{formatPrice(service.price)}</span>
                   </div>

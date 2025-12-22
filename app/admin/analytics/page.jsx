@@ -36,7 +36,7 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
     <Card>
       <CardContent className="p-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="hig-caption2 font-medium text-muted-foreground uppercase tracking-wide">
             {title}
           </span>
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -45,9 +45,9 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
           <Skeleton className="h-6 w-20" />
         ) : (
           <>
-            <div className="text-xl font-bold">{value}</div>
+            <div className="font-bold">{value}</div>
             {subtitle && (
-              <span className="text-[10px] text-muted-foreground">{subtitle}</span>
+              <span className="hig-caption2 text-muted-foreground">{subtitle}</span>
             )}
           </>
         )}
@@ -81,7 +81,7 @@ function MiniBarChart({ data, loading }) {
             }}
             title={`${d.label}: ${d.count}`}
           />
-          <span className="text-[8px] text-muted-foreground mt-1">{d.label}</span>
+          <span className="hig-caption2 text-muted-foreground mt-1">{d.label}</span>
         </div>
       ))}
     </div>
@@ -93,7 +93,7 @@ function TopTenantsList({ title, tenants, metric, loading }) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">{title}</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -110,10 +110,10 @@ function TopTenantsList({ title, tenants, metric, loading }) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">{title}</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-muted-foreground">No data yet</p>
+          <p className="hig-caption2 text-muted-foreground">No data yet</p>
         </CardContent>
       </Card>
     );
@@ -122,7 +122,7 @@ function TopTenantsList({ title, tenants, metric, loading }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-1">
@@ -133,15 +133,15 @@ function TopTenantsList({ title, tenants, metric, loading }) {
               className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-medium text-muted-foreground w-4">
+                <span className="hig-caption2 font-medium text-muted-foreground w-4">
                   {i + 1}
                 </span>
-                <span className="text-xs font-medium truncate">
+                <span className="hig-caption2 font-medium truncate">
                   {tenant.businessName || tenant.name}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold">{tenant._count[metric]}</span>
+                <span className="hig-caption2 font-bold">{tenant._count[metric]}</span>
                 <ChevronRight className="h-3 w-3 text-muted-foreground" />
               </div>
             </Link>
@@ -157,7 +157,7 @@ function RecentSignupsList({ signups, loading }) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Recent Signups (7 days)</CardTitle>
+          <CardTitle>Recent Signups (7 days)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -174,10 +174,10 @@ function RecentSignupsList({ signups, loading }) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Recent Signups (7 days)</CardTitle>
+          <CardTitle>Recent Signups (7 days)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-muted-foreground">No recent signups</p>
+          <p className="hig-caption2 text-muted-foreground">No recent signups</p>
         </CardContent>
       </Card>
     );
@@ -186,9 +186,9 @@ function RecentSignupsList({ signups, loading }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
+        <CardTitle className="hig-body flex items-center gap-2">
           Recent Signups
-          <Badge variant="secondary" className="text-[10px]">
+          <Badge variant="secondary" className="hig-caption2">
             {signups.length} this week
           </Badge>
         </CardTitle>
@@ -202,17 +202,17 @@ function RecentSignupsList({ signups, loading }) {
               className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="min-w-0">
-                <div className="text-xs font-medium truncate">
+                <div className="hig-caption2 font-medium truncate">
                   {tenant.businessName || tenant.name}
                 </div>
-                <div className="text-[10px] text-muted-foreground truncate">
+                <div className="hig-caption2 text-muted-foreground truncate">
                   {tenant.email}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className="text-[10px] shrink-0"
+                  className="hig-caption2 shrink-0"
                 >
                   {tenant.subscriptionStatus === "trialing" ? "Trial" : tenant.subscriptionStatus}
                 </Badge>
@@ -231,7 +231,7 @@ function PlanDistribution({ planBreakdown, loading }) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Plan Distribution</CardTitle>
+          <CardTitle>Plan Distribution</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-20 w-full" />
@@ -257,10 +257,10 @@ function PlanDistribution({ planBreakdown, loading }) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Plan Distribution</CardTitle>
+          <CardTitle>Plan Distribution</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-xs text-muted-foreground">No active subscriptions</p>
+          <p className="hig-caption2 text-muted-foreground">No active subscriptions</p>
         </CardContent>
       </Card>
     );
@@ -269,7 +269,7 @@ function PlanDistribution({ planBreakdown, loading }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Plan Distribution</CardTitle>
+        <CardTitle>Plan Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Stacked bar */}
@@ -289,10 +289,10 @@ function PlanDistribution({ planBreakdown, loading }) {
           {plans.map(([plan, count]) => (
             <div key={plan} className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${colors[plan] || "bg-gray-400"}`} />
-              <span className="text-[10px] text-muted-foreground">
+              <span className="hig-caption2 text-muted-foreground">
                 {labels[plan] || plan}
               </span>
-              <span className="text-[10px] font-medium ml-auto">{count}</span>
+              <span className="hig-caption2 font-medium ml-auto">{count}</span>
             </div>
           ))}
         </div>
@@ -328,8 +328,8 @@ export default function AnalyticsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">Analytics</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="font-bold">Analytics</h1>
+        <p className="text-muted-foreground">
           Platform growth and performance
         </p>
       </div>
@@ -339,7 +339,7 @@ export default function AnalyticsPage() {
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <DollarSign className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Platform Revenue</span>
+            <span className="hig-body font-medium">Platform Revenue</span>
           </div>
           {loading ? (
             <div className="grid grid-cols-2 gap-4">
@@ -349,16 +349,16 @@ export default function AnalyticsPage() {
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-2xl font-bold text-primary">
+                <div className="font-bold text-primary">
                   {formatCurrency(overview.currentMrr || 0)}
                 </div>
-                <p className="text-xs text-muted-foreground">MRR (Monthly)</p>
+                <p className="hig-caption2 text-muted-foreground">MRR (Monthly)</p>
               </div>
               <div>
-                <div className="text-2xl font-bold">
+                <div className="font-bold">
                   {formatCurrency(overview.currentArr || 0)}
                 </div>
-                <p className="text-xs text-muted-foreground">ARR (Annual)</p>
+                <p className="hig-caption2 text-muted-foreground">ARR (Annual)</p>
               </div>
             </div>
           )}
@@ -415,7 +415,7 @@ export default function AnalyticsPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="hig-body flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Tenant Growth (12mo)
             </CardTitle>
@@ -427,7 +427,7 @@ export default function AnalyticsPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="hig-body flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Booking Volume (12mo)
             </CardTitle>
@@ -463,8 +463,8 @@ export default function AnalyticsPage() {
       {/* Tenant GMV Section */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Tenant GMV (All Time)</CardTitle>
-          <p className="text-[10px] text-muted-foreground">
+          <CardTitle>Tenant GMV (All Time)</CardTitle>
+          <p className="hig-caption2 text-muted-foreground">
             Total payments processed by tenants via Stripe Connect
           </p>
         </CardHeader>
@@ -474,16 +474,16 @@ export default function AnalyticsPage() {
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-2xl font-bold">
+                <div className="font-bold">
                   {formatCurrency(overview.tenantGmv || 0)}
                 </div>
-                <p className="text-xs text-muted-foreground">Total processed</p>
+                <p className="hig-caption2 text-muted-foreground">Total processed</p>
               </div>
               <div>
-                <div className="text-2xl font-bold">
+                <div className="font-bold">
                   {formatNumber(overview.tenantPaymentCount || 0)}
                 </div>
-                <p className="text-xs text-muted-foreground">Payments</p>
+                <p className="hig-caption2 text-muted-foreground">Payments</p>
               </div>
             </div>
           )}

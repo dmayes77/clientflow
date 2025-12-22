@@ -148,8 +148,8 @@ function AccountPageContent() {
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-[22px] sm:text-2xl font-bold">Account</h1>
-          <p className="text-[13px] sm:text-sm text-muted-foreground">Manage your payment account and settings</p>
+          <h1 className="font-bold">Account</h1>
+          <p className="text-muted-foreground">Manage your payment account and settings</p>
         </div>
         <Card>
           <CardContent className="flex items-center justify-center py-12">
@@ -175,8 +175,8 @@ function AccountPageContent() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[22px] sm:text-2xl font-bold">Account</h1>
-        <p className="text-[13px] sm:text-sm text-muted-foreground">Manage your payment account and settings</p>
+        <h1 className="font-bold">Account</h1>
+        <p className="text-muted-foreground">Manage your payment account and settings</p>
       </div>
 
       <div className="space-y-6">
@@ -319,7 +319,7 @@ function AccountPageContent() {
                 <Alert>
                   <AlertTitle className="mb-2">What you'll need to connect:</AlertTitle>
                   <AlertDescription>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
+                    <ul className="list-disc list-inside space-y-1">
                       <li>Valid government-issued ID</li>
                       <li>Business information (name, address)</li>
                       <li>Bank account for receiving payouts</li>
@@ -361,7 +361,7 @@ function AccountPageContent() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="requirePayment" className="font-medium">Require Payment for Bookings</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground">
                   Customers must pay when booking an appointment
                 </p>
               </div>
@@ -403,7 +403,7 @@ function AccountPageContent() {
                         <Banknote className="h-4 w-4 text-green-600" />
                         <span className="font-medium">Full Payment</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Customer pays the entire amount upfront
                       </p>
                     </button>
@@ -420,7 +420,7 @@ function AccountPageContent() {
                         <DollarSign className="h-4 w-4 text-blue-600" />
                         <span className="font-medium">Deposit</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Customer pays a deposit, balance due later
                       </p>
                     </button>
@@ -433,7 +433,7 @@ function AccountPageContent() {
                     <Label className="font-medium">Deposit Amount</Label>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="depositType" className="text-sm text-muted-foreground">Type</Label>
+                        <Label htmlFor="depositType" className="text-muted-foreground">Type</Label>
                         <Select
                           value={settings.depositType}
                           onValueChange={(v) => handleSettingChange("depositType", v)}
@@ -448,7 +448,7 @@ function AccountPageContent() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="depositValue" className="text-sm text-muted-foreground">
+                        <Label htmlFor="depositValue" className="text-muted-foreground">
                           {settings.depositType === "percentage" ? "Percentage" : "Amount"}
                         </Label>
                         <div className="relative">
@@ -480,7 +480,7 @@ function AccountPageContent() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                       Example: For a $100 service, deposit would be{" "}
                       <span className="font-medium text-foreground">
                         ${(depositAmount / 100).toFixed(2)}
@@ -500,7 +500,7 @@ function AccountPageContent() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="payInFullDiscount" className="font-medium">Pay-in-Full Discount</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         {settings.paymentType === "deposit"
                           ? "Offer a discount when customers pay the full amount instead of just the deposit"
                           : "Offer a discount for paying upfront"}
@@ -521,7 +521,7 @@ function AccountPageContent() {
                     <span className="text-muted-foreground">% off (max 15%)</span>
                   </div>
                   {settings.payInFullDiscount > 0 && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                       Example: For a $100 service, full payment with {settings.payInFullDiscount}% discount:{" "}
                       <span className="font-medium text-green-600">
                         ${(fullAmountWithDiscount / 100).toFixed(2)}
@@ -569,8 +569,8 @@ export default function AccountPage() {
       fallback={
         <div className="space-y-4">
           <div>
-            <h1 className="text-[22px] sm:text-2xl font-bold">Account</h1>
-            <p className="text-[13px] sm:text-sm text-muted-foreground">Manage your payment account and settings</p>
+            <h1 className="font-bold">Account</h1>
+            <p className="text-muted-foreground">Manage your payment account and settings</p>
           </div>
           <Card>
             <CardContent className="flex items-center justify-center py-12">

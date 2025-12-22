@@ -548,7 +548,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       <CommandList>
                         <CommandEmpty>
                           <div className="py-2 text-center">
-                            <p className="text-sm text-muted-foreground mb-2">No contacts found</p>
+                            <p className="text-muted-foreground mb-2">No contacts found</p>
                             <Button
                               variant="outline"
                               size="sm"
@@ -572,7 +572,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                             >
                               <div>
                                 <span className="font-medium">{c.name}</span>
-                                {c.email && <span className="text-muted-foreground ml-2 text-sm">{c.email}</span>}
+                                {c.email && <span className="text-muted-foreground ml-2">{c.email}</span>}
                               </div>
                               {formData.contactId === c.id && <Check className="h-4 w-4 text-primary" />}
                             </CommandItem>
@@ -757,7 +757,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       {/* Row 2: Qty, Price, Amount */}
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
-                          <Label className="text-xs text-muted-foreground mb-1 block">Qty</Label>
+                          <Label className="hig-caption2 text-muted-foreground mb-1 block">Qty</Label>
                           <Input
                             type="number"
                             min="1"
@@ -767,7 +767,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                           />
                         </div>
                         <div className="flex-1">
-                          <Label className="text-xs text-muted-foreground mb-1 block">Price</Label>
+                          <Label className="hig-caption2 text-muted-foreground mb-1 block">Price</Label>
                           <div className="flex items-center">
                             {item.isDiscount && <Minus className="h-3 w-3 mr-1 text-red-600" />}
                             <Input
@@ -781,7 +781,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                           </div>
                         </div>
                         <div className="flex-1">
-                          <Label className="text-xs text-muted-foreground mb-1 block">Amount</Label>
+                          <Label className="hig-caption2 text-muted-foreground mb-1 block">Amount</Label>
                           <div className={`h-9 flex items-center px-3 rounded-md bg-muted font-medium ${item.isDiscount ? "text-red-600" : ""}`}>
                             {item.isDiscount ? "-" : ""}${Math.abs(item.amount || 0).toFixed(2)}
                           </div>
@@ -804,17 +804,17 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
               {/* Totals */}
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
                 {lineDiscounts > 0 && (
-                  <div className="flex justify-between text-sm text-red-600">
+                  <div className="flex justify-between text-red-600">
                     <span>Discounts</span>
                     <span>-${lineDiscounts.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-sm pt-2 border-t">
+                <div className="flex items-center gap-2 pt-2 border-t">
                   <Percent className="h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Coupon"
@@ -833,12 +833,12 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                   />
                 </div>
                 {formData.discountAmount > 0 && (
-                  <div className="flex justify-between text-sm text-red-600">
+                  <div className="flex justify-between text-red-600">
                     <span>Coupon</span>
                     <span>-${formData.discountAmount.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between text-sm pt-2 border-t">
+                <div className="flex items-center justify-between pt-2 border-t">
                   <span className="text-muted-foreground">Tax (%)</span>
                   <Input
                     type="number"
@@ -850,11 +850,11 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                     onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>
                   <span>${taxAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                <div className="flex justify-between font-bold pt-2 border-t">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
@@ -863,11 +863,11 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 {invoice?.depositPaidAt ? (
                   /* Deposit was already collected - show it as paid */
                   <>
-                    <div className="flex justify-between text-sm pt-2 border-t text-green-600">
+                    <div className="flex justify-between pt-2 border-t text-green-600">
                       <span>✓ Deposit Paid ({getSafeDepositPercent()}%)</span>
                       <span>-${getDepositAmount().toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                    <div className="flex justify-between font-bold pt-2 border-t">
                       <span>Balance Due</span>
                       <span>${(total - getDepositAmount()).toFixed(2)}</span>
                     </div>
@@ -875,7 +875,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 ) : (
                   /* No deposit collected yet - allow configuration */
                   <>
-                    <div className="flex items-center justify-between text-sm pt-2 border-t">
+                    <div className="flex items-center justify-between pt-2 border-t">
                       <span className="text-muted-foreground">Deposit</span>
                       <Select
                         value={formData.depositPercent?.toString() || "none"}
@@ -900,7 +900,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       </Select>
                     </div>
                     {getSafeDepositPercent() > 0 && (
-                      <div className="flex justify-between text-sm text-blue-600">
+                      <div className="flex justify-between text-blue-600">
                         <span>Deposit Due ({getSafeDepositPercent()}%)</span>
                         <span>${getDepositAmount().toFixed(2)}</span>
                       </div>

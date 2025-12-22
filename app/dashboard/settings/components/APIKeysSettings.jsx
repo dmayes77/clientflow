@@ -231,7 +231,7 @@ export function APIKeysSettings() {
                       <TableRow key={apiKey.id}>
                         <TableCell className="font-medium">{apiKey.name}</TableCell>
                         <TableCell>
-                          <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
+                          <code className="bg-muted px-2 py-1 rounded font-mono hig-footnote">
                             {apiKey.key}
                           </code>
                         </TableCell>
@@ -283,7 +283,7 @@ export function APIKeysSettings() {
         <CardContent className="space-y-4">
           <div>
             <p className="hig-footnote mb-2">Include your API key in the Authorization header:</p>
-            <pre className="bg-muted p-3 tablet:p-4 rounded-lg overflow-x-auto text-xs tablet:text-sm">
+            <pre className="bg-muted p-3 tablet:p-4 rounded-lg overflow-x-auto hig-caption1">
               <code>{`curl -X GET "https://api.clientflow.com/v1/bookings" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json"`}</code>
@@ -347,7 +347,7 @@ export function APIKeysSettings() {
             </Alert>
             <Label>API Key</Label>
             <div className="flex items-center gap-2 mt-2">
-              <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono break-all">
+              <code className="flex-1 bg-muted px-3 py-2 rounded font-mono break-all hig-footnote">
                 {newlyCreatedKey?.key}
               </code>
               <Button

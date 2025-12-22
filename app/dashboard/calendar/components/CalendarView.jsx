@@ -266,7 +266,7 @@ export function CalendarView() {
         {/* Mini Calendar */}
         <div className="bg-card border-b border-border p-3 shrink-0">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold">{format(currentDate, "MMMM yyyy")}</span>
+            <span className="font-semibold">{format(currentDate, "MMMM yyyy")}</span>
             <div className="flex gap-1">
               <Button variant="ghost" size="icon-sm" onClick={() => navigate("prev")}>
                 <ChevronLeft className="size-4" />
@@ -279,7 +279,7 @@ export function CalendarView() {
 
           <div className="grid grid-cols-7 gap-0 text-center mb-1">
             {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
-              <div key={i} className="text-xs text-muted-foreground font-medium py-1">
+              <div key={i} className="hig-caption2 text-muted-foreground font-medium py-1">
                 {day}
               </div>
             ))}
@@ -303,7 +303,7 @@ export function CalendarView() {
                   )}
                   onClick={() => setSelectedDate(day)}
                 >
-                  <span className="text-sm">{format(day, "d")}</span>
+                  <span>{format(day, "d")}</span>
                   <div className="flex gap-0.5 mt-0.5 h-1">
                     {dotStatuses.map((status, i) => (
                       <div key={i} className={cn("size-1 rounded-full", statusConfig[status]?.color)} />
@@ -317,8 +317,8 @@ export function CalendarView() {
 
         {/* Agenda Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 shrink-0">
-          <span className="text-sm font-medium">{isToday(selectedDate) ? "Today" : format(selectedDate, "EEEE, MMM d")}</span>
-          <span className="text-xs text-muted-foreground">
+          <span className="font-medium">{isToday(selectedDate) ? "Today" : format(selectedDate, "EEEE, MMM d")}</span>
+          <span className="hig-caption2 text-muted-foreground">
             {selectedDayBookings.length} booking{selectedDayBookings.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -334,7 +334,7 @@ export function CalendarView() {
               <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
                 <CalendarDays className="size-6 text-muted-foreground" />
               </div>
-              <p className="text-sm text-muted-foreground mb-3">No bookings scheduled</p>
+              <p className="text-muted-foreground mb-3">No bookings scheduled</p>
               <Button size="sm" onClick={() => handleOpenDialog(selectedDate)}>
                 <Plus className="size-4 mr-1" />
                 Add Booking
@@ -351,8 +351,8 @@ export function CalendarView() {
                   {/* Time + Status indicator */}
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="flex flex-col items-center text-center w-10">
-                      <span className="text-[13px] font-semibold">{formatTimeInTz(booking.scheduledAt, "h:mm")}</span>
-                      <span className="text-[11px] text-muted-foreground">{formatTimeInTz(booking.scheduledAt, "a")}</span>
+                      <span className="hig-caption2 font-semibold">{formatTimeInTz(booking.scheduledAt, "h:mm")}</span>
+                      <span className="hig-caption2 text-muted-foreground">{formatTimeInTz(booking.scheduledAt, "a")}</span>
                     </div>
                     <div className={cn("w-1 h-10 rounded-full shrink-0", statusConfig[booking.status]?.color)} />
                   </div>
@@ -360,8 +360,8 @@ export function CalendarView() {
                   {/* Content with iOS-style divider */}
                   <div className={cn("flex-1 min-w-0 flex items-center gap-2 py-3 pr-4", index < selectedDayBookings.length - 1 && "border-b border-border")}>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[15px] font-semibold truncate block">{booking.contact?.name || "Unknown"}</span>
-                      <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                      <span className="font-semibold truncate block">{booking.contact?.name || "Unknown"}</span>
+                      <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="size-3" />
                           {booking.duration} min
@@ -395,7 +395,7 @@ export function CalendarView() {
       <div className="flex flex-col h-full">
         <div className="grid grid-cols-7 border-b border-border">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <div key={day} className="py-2 text-center text-xs font-medium text-muted-foreground">
+            <div key={day} className="py-2 text-center hig-caption2 font-medium text-muted-foreground">
               {day}
             </div>
           ))}
@@ -419,7 +419,7 @@ export function CalendarView() {
                 <div className="flex items-center justify-between mb-1">
                   <span
                     className={cn(
-                      "text-xs font-medium size-6 flex items-center justify-center rounded-full",
+                      "hig-caption2 font-medium size-6 flex items-center justify-center rounded-full",
                       isToday(day) && "bg-primary text-primary-foreground",
                       !isCurrentMonth && "text-muted-foreground"
                     )}
@@ -431,7 +431,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 2).map((booking) => (
                     <div
                       key={booking.id}
-                      className={cn("text-[12px] leading-tight px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
+                      className={cn("hig-caption2 leading-tight px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleBookingClick(booking);
@@ -440,7 +440,7 @@ export function CalendarView() {
                       {formatTimeInTz(booking.scheduledAt, "h:mma")} {booking.contact?.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && <div className="text-[12px] leading-tight text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
+                  {dayBookings.length > 2 && <div className="hig-caption2 leading-tight text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
                 </div>
               </div>
             );
@@ -461,10 +461,10 @@ export function CalendarView() {
           <div className="w-14 shrink-0" />
           {weekDays.map((day) => (
             <div key={day.toISOString()} className="flex-1 text-center py-2">
-              <div className="text-xs text-muted-foreground">{format(day, "EEE")}</div>
+              <div className="hig-caption2 text-muted-foreground">{format(day, "EEE")}</div>
               <div
                 className={cn(
-                  "text-sm font-medium size-8 flex items-center justify-center rounded-full mx-auto",
+                  "font-medium size-8 flex items-center justify-center rounded-full mx-auto",
                   isToday(day) && "bg-primary text-primary-foreground"
                 )}
               >
@@ -501,7 +501,7 @@ export function CalendarView() {
                       return (
                         <div
                           key={booking.id}
-                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white text-[12px] overflow-hidden", statusConfig[booking.status]?.color)}
+                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white hig-caption2 overflow-hidden", statusConfig[booking.status]?.color)}
                           style={{
                             top: `${topOffset}px`,
                             height: `${Math.max(height, 20)}px`,
@@ -534,10 +534,10 @@ export function CalendarView() {
         <div className="flex border-b border-border shrink-0">
           <div className="w-14 shrink-0" />
           <div className="flex-1 text-center py-2">
-            <div className="text-xs text-muted-foreground">{format(currentDate, "EEEE")}</div>
+            <div className="hig-caption2 text-muted-foreground">{format(currentDate, "EEEE")}</div>
             <div
               className={cn(
-                "text-sm font-medium size-8 flex items-center justify-center rounded-full mx-auto",
+                "font-medium size-8 flex items-center justify-center rounded-full mx-auto",
                 isToday(currentDate) && "bg-primary text-primary-foreground"
               )}
             >
@@ -572,7 +572,7 @@ export function CalendarView() {
                     return (
                       <div
                         key={booking.id}
-                        className={cn("absolute left-1 right-1 rounded px-2 text-white text-[12px] overflow-hidden", statusConfig[booking.status]?.color)}
+                        className={cn("absolute left-1 right-1 rounded px-2 text-white hig-caption2 overflow-hidden", statusConfig[booking.status]?.color)}
                         style={{
                           top: `${topOffset}px`,
                           height: `${Math.max(height, 28)}px`,
@@ -672,7 +672,7 @@ export function CalendarView() {
           <MobileAgendaView />
         </div>
 
-        <div className="flex flex-wrap gap-3 mt-3 text-xs">
+        <div className="flex flex-wrap gap-3 mt-3 hig-caption2">
           {Object.entries(statusConfig)
             .slice(0, 4)
             .map(([key, config]) => (
@@ -933,7 +933,7 @@ export function CalendarView() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mt-3 text-xs">
+      <div className="flex items-center gap-4 mt-3 hig-caption2">
         <span className="text-muted-foreground font-medium">Status:</span>
         {Object.entries(statusConfig).map(([key, config]) => (
           <div key={key} className="flex items-center gap-1.5">

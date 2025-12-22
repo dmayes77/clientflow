@@ -155,7 +155,7 @@ export function ChangelogList() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
+                <CardTitle className="flex items-center gap-2">
                   {release.isNew && <Sparkles className="h-4 w-4 text-amber-500" />}
                   {release.title}
                 </CardTitle>
@@ -163,7 +163,7 @@ export function ChangelogList() {
                   <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Latest</Badge>
                 )}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground">
                 v{release.version} &middot; {release.date}
               </div>
             </div>
@@ -178,12 +178,12 @@ export function ChangelogList() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{item.title}</span>
-                      <Badge variant="outline" className="text-xs">
+                      <span className="font-medium">{item.title}</span>
+                      <Badge variant="outline" className="hig-caption2">
                         {TYPE_LABELS[item.type]}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">
+                    <p className="text-muted-foreground mt-0.5">
                       {item.description}
                     </p>
                   </div>

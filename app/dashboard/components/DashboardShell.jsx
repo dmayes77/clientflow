@@ -41,6 +41,7 @@ import {
   Mail,
   Briefcase,
   User,
+  Bell,
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
@@ -62,6 +63,7 @@ const accountItems = [
   { label: "Business", href: "/dashboard/settings/business", icon: Settings },
   { label: "Availability", href: "/dashboard/availability", icon: Clock },
   { label: "Billing", href: "/dashboard/settings/billing", icon: Receipt },
+  { label: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
   { label: "Integrations", href: "/dashboard/integrations", icon: Workflow },
   { label: "API Keys", href: "/dashboard/settings", icon: Key },
   { label: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
@@ -76,6 +78,7 @@ function SidebarNav({ businessName }) {
     return pathname === "/dashboard/settings" ||
       pathname === "/dashboard/settings/billing" ||
       pathname === "/dashboard/settings/business" ||
+      pathname === "/dashboard/settings/notifications" ||
       pathname === "/dashboard/availability" ||
       pathname === "/dashboard/webhooks" ||
       pathname === "/dashboard/integrations"
@@ -216,7 +219,7 @@ export function DashboardShell({ children }) {
           <div className="w-11 flex items-center justify-start sm:w-auto">
             <SidebarTrigger />
           </div>
-          <span className="flex-1 text-center text-[17px] sm:text-sm font-semibold text-foreground truncate px-2 sm:hidden">{businessName || "ClientFlow"}</span>
+          <span className="flex-1 text-center font-semibold text-foreground truncate px-2 sm:hidden">{businessName || "ClientFlow"}</span>
           <div className="hidden sm:block flex-1" />
           <div className="flex items-center justify-end gap-2 sm:w-auto">
             {mounted && (

@@ -188,7 +188,7 @@ function SetupForm() {
               key={s.id}
               onClick={() => setStep(index)}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors",
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 hig-body transition-colors",
                 index === step
                   ? "bg-primary text-primary-foreground"
                   : index < step
@@ -331,7 +331,7 @@ function SetupForm() {
       {/* Step 3: Social Media */}
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center hig-body text-muted-foreground">
             Add your social media links to help clients find you
           </p>
 

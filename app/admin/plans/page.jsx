@@ -50,7 +50,7 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
     <Card>
       <CardContent className="p-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="hig-caption2 font-medium text-muted-foreground uppercase tracking-wide">
             {title}
           </span>
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -59,9 +59,9 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
           <Skeleton className="h-6 w-16" />
         ) : (
           <>
-            <div className="text-xl font-bold">{value}</div>
+            <div className="font-bold">{value}</div>
             {subtitle && (
-              <p className="text-[10px] text-muted-foreground">{subtitle}</p>
+              <p className="hig-caption2 text-muted-foreground">{subtitle}</p>
             )}
           </>
         )}
@@ -101,27 +101,27 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold">{plan.name}</h3>
               {plan.isDefault && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                <Badge variant="secondary" className="hig-caption2 h-4 px-1.5">
                   <Star className="h-2.5 w-2.5 mr-0.5" />
                   Default
                 </Badge>
               )}
               {!plan.active && (
-                <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                <Badge variant="outline" className="hig-caption2 h-4 px-1.5">
                   <Archive className="h-2.5 w-2.5 mr-0.5" />
                   Archived
                 </Badge>
               )}
             </div>
             {plan.description && (
-              <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+              <p className="text-muted-foreground mb-2">{plan.description}</p>
             )}
 
             <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-2xl font-bold">{formatPrice(plan.priceMonthly)}</span>
-              <span className="text-sm text-muted-foreground">/month</span>
+              <span className="font-bold">{formatPrice(plan.priceMonthly)}</span>
+              <span className="text-muted-foreground">/month</span>
               {plan.priceYearly && (
-                <span className="text-xs text-muted-foreground ml-2">
+                <span className="hig-caption2 text-muted-foreground ml-2">
                   or {formatPrice(plan.priceYearly)}/year
                 </span>
               )}
@@ -129,22 +129,17 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
 
             {plan.features.length > 0 && (
               <ul className="space-y-1">
-                {plan.features.slice(0, 5).map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2">
                     <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
-                {plan.features.length > 5 && (
-                  <li className="text-xs text-muted-foreground pl-5">
-                    +{plan.features.length - 5} more features
-                  </li>
-                )}
               </ul>
             )}
 
             {(plan.maxContacts || plan.maxBookings || plan.maxServices) && (
-              <div className="flex gap-3 mt-3 text-xs text-muted-foreground">
+              <div className="flex gap-3 mt-3 hig-caption2 text-muted-foreground">
                 {plan.maxContacts && (
                   <span>{plan.maxContacts} contacts</span>
                 )}
@@ -192,7 +187,7 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
 
         {plan.stripeProductId && (
           <div className="mt-3 pt-3 border-t">
-            <p className="text-[10px] text-muted-foreground">
+            <p className="hig-caption2 text-muted-foreground">
               Stripe Product: {plan.stripeProductId}
             </p>
           </div>
@@ -282,7 +277,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
             <RefreshCw className="h-4 w-4" />
             Sync from Stripe
           </DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogDescription>
             Import products and prices from Stripe.
           </DialogDescription>
         </DialogHeader>
@@ -290,16 +285,16 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
         {loading ? (
           <div className="py-6 text-center">
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Fetching Stripe products...</p>
+            <p className="hig-caption2 text-muted-foreground">Fetching Stripe products...</p>
           </div>
         ) : result ? (
           <div className="space-y-3 flex-1 overflow-auto">
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Check className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-sm text-green-800">Sync Complete</span>
+                <span className="font-medium text-green-800">Sync Complete</span>
               </div>
-              <div className="grid grid-cols-2 gap-1 text-xs text-green-700">
+              <div className="grid grid-cols-2 gap-1 hig-caption2 text-green-700">
                 <span>Created: {result.summary.created}</span>
                 <span>Updated: {result.summary.updated}</span>
                 <span>Skipped: {result.summary.skipped}</span>
@@ -307,7 +302,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
               </div>
             </div>
             {result.results.skipped.length > 0 && (
-              <div className="text-[11px] text-muted-foreground">
+              <div className="hig-caption2 text-muted-foreground">
                 <p className="font-medium mb-1">Skipped:</p>
                 <ul className="space-y-0.5">
                   {result.results.skipped.map((s, i) => (
@@ -323,7 +318,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
         ) : (
           <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
             {error && (
-              <div className="flex items-center gap-2 text-xs text-red-500 bg-red-50 p-2.5 rounded-lg">
+              <div className="flex items-center gap-2 hig-caption2 text-red-500 bg-red-50 p-2.5 rounded-lg">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 {error}
               </div>
@@ -332,19 +327,19 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
             {stripeProducts.length === 0 ? (
               <div className="py-6 text-center text-muted-foreground">
                 <CreditCard className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                <p className="text-xs">No products with recurring prices found</p>
+                <p className="hig-caption2">No products with recurring prices found</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="hig-caption2 text-muted-foreground">
                     {selectedIds.length}/{stripeProducts.length} selected
                   </span>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={selectAll}>
+                    <Button variant="ghost" size="sm" className="h-7 px-2" onClick={selectAll}>
                       All
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={selectNone}>
+                    <Button variant="ghost" size="sm" className="h-7 px-2" onClick={selectNone}>
                       None
                     </Button>
                   </div>
@@ -353,7 +348,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
                 <div className="space-y-2 flex-1 overflow-y-auto min-h-0 -mx-1 px-1">
                   {newProducts.length > 0 && (
                     <div>
-                      <p className="text-[11px] font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
+                      <p className="hig-caption2 font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
                         New ({newProducts.length})
                       </p>
                       <div className="space-y-1.5">
@@ -369,10 +364,10 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <span className="font-medium text-[13px] truncate">{product.name}</span>
-                                <Badge variant="secondary" className="text-[9px] shrink-0">New</Badge>
+                                <span className="font-medium truncate">{product.name}</span>
+                                <Badge variant="secondary" className="hig-caption2 shrink-0">New</Badge>
                               </div>
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="hig-caption2 text-muted-foreground">
                                 {product.monthlyPrice && (
                                   <span>{formatPrice(product.monthlyPrice.amount)}/mo</span>
                                 )}
@@ -389,7 +384,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
 
                   {existingProducts.length > 0 && (
                     <div>
-                      <p className="text-[11px] font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
+                      <p className="hig-caption2 font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
                         Already Synced ({existingProducts.length})
                       </p>
                       <div className="space-y-1.5">
@@ -405,13 +400,13 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <span className="font-medium text-[13px] truncate">{product.name}</span>
-                                <Badge variant="outline" className="text-[9px] shrink-0">
+                                <span className="font-medium truncate">{product.name}</span>
+                                <Badge variant="outline" className="hig-caption2 shrink-0">
                                   <Check className="h-2 w-2 mr-0.5" />
                                   Synced
                                 </Badge>
                               </div>
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="hig-caption2 text-muted-foreground">
                                 {product.monthlyPrice && (
                                   <span>{formatPrice(product.monthlyPrice.amount)}/mo</span>
                                 )}
@@ -434,7 +429,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
                       onCheckedChange={setUpdateExisting}
                       className="h-5 w-5"
                     />
-                    <span className="text-xs">Update existing with latest Stripe data</span>
+                    <span className="hig-caption2">Update existing with latest Stripe data</span>
                   </label>
                 )}
 
@@ -698,8 +693,8 @@ export default function PlansPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-xl font-bold sm:text-2xl">Subscription Plans</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-bold">Subscription Plans</h1>
+          <p className="text-muted-foreground">
             Manage pricing plans synced with Stripe
           </p>
         </div>
@@ -739,7 +734,7 @@ export default function PlansPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-3 rounded-lg">
+        <div className="flex items-center gap-2 text-red-500 bg-red-50 p-3 rounded-lg">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -751,7 +746,7 @@ export default function PlansPage() {
           <CardContent className="py-12 text-center">
             <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <h3 className="font-medium mb-1">No plans configured</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-muted-foreground mb-4">
               Create your first subscription plan to get started
             </p>
             <Button onClick={openCreateDialog}>
@@ -764,7 +759,7 @@ export default function PlansPage() {
         <>
           {activePlans.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-medium text-muted-foreground">
+              <h2 className="font-medium text-muted-foreground">
                 Active Plans ({activePlans.length})
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -790,7 +785,7 @@ export default function PlansPage() {
 
           {archivedPlans.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-medium text-muted-foreground">
+              <h2 className="font-medium text-muted-foreground">
                 Archived Plans ({archivedPlans.length})
               </h2>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -832,7 +827,7 @@ export default function PlansPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <Label className="text-xs">Plan Name *</Label>
+              <Label className="hig-caption2">Plan Name *</Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
@@ -845,7 +840,7 @@ export default function PlansPage() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Description</Label>
+              <Label className="hig-caption2">Description</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) =>
@@ -859,7 +854,7 @@ export default function PlansPage() {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
-                <Label className="text-xs">Monthly Price * (USD)</Label>
+                <Label className="hig-caption2">Monthly Price * (USD)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -875,11 +870,11 @@ export default function PlansPage() {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs">Yearly Price (USD)</Label>
+                  <Label className="hig-caption2">Yearly Price (USD)</Label>
                   {formData.priceMonthly && !formData.priceYearly && (
                     <button
                       type="button"
-                      className="text-[10px] text-primary hover:underline"
+                      className="hig-caption2 text-primary hover:underline"
                       onClick={() => {
                         const monthly = parseFloat(formData.priceMonthly);
                         if (!isNaN(monthly)) {
@@ -906,7 +901,7 @@ export default function PlansPage() {
                   className="h-9"
                 />
                 {formData.priceMonthly && formData.priceYearly && (
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="hig-caption2 text-muted-foreground">
                     {(() => {
                       const monthly = parseFloat(formData.priceMonthly);
                       const yearly = parseFloat(formData.priceYearly);
@@ -924,7 +919,7 @@ export default function PlansPage() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Features (one per line)</Label>
+              <Label className="hig-caption2">Features (one per line)</Label>
               <Textarea
                 value={formData.features}
                 onChange={(e) =>
@@ -932,13 +927,12 @@ export default function PlansPage() {
                 }
                 placeholder={"Unlimited contacts\nAdvanced analytics\nPriority support"}
                 rows={4}
-                className="text-sm"
               />
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Max Contacts</Label>
+                <Label className="hig-caption2">Max Contacts</Label>
                 <Input
                   type="number"
                   min="0"
@@ -951,7 +945,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Max Bookings</Label>
+                <Label className="hig-caption2">Max Bookings</Label>
                 <Input
                   type="number"
                   min="0"
@@ -964,7 +958,7 @@ export default function PlansPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Max Services</Label>
+                <Label className="hig-caption2">Max Services</Label>
                 <Input
                   type="number"
                   min="0"
@@ -986,13 +980,13 @@ export default function PlansPage() {
                   setFormData((p) => ({ ...p, isDefault: v }))
                 }
               />
-              <Label htmlFor="isDefault" className="text-sm cursor-pointer">
+              <Label htmlFor="isDefault" className="cursor-pointer">
                 Default plan for new signups
               </Label>
             </div>
 
             {error && (
-              <div className="text-xs text-red-500 bg-red-50 p-2 rounded">
+              <div className="hig-caption2 text-red-500 bg-red-50 p-2 rounded">
                 {error}
               </div>
             )}

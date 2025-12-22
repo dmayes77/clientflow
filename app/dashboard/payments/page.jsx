@@ -126,12 +126,12 @@ export default function PaymentsPage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
           <DollarSign className="size-5 text-green-100 mb-1" />
-          <span className="block text-2xl font-bold text-white">{formatPrice(stats.totalRevenue)}</span>
+          <span className="block font-bold text-white">{formatPrice(stats.totalRevenue)}</span>
           <span className="hig-footnote text-green-100">Total Revenue</span>
         </div>
         <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
           <Receipt className="size-5 text-blue-100 mb-1" />
-          <span className="block text-2xl font-bold text-white">{stats.paymentCount}</span>
+          <span className="block font-bold text-white">{stats.paymentCount}</span>
           <span className="hig-footnote text-blue-100">Payments</span>
         </div>
       </div>

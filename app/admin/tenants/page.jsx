@@ -55,7 +55,7 @@ function StatusBadge({ status, size = "default" }) {
   const Icon = config.icon;
 
   return (
-    <Badge className={`${config.color} ${size === "sm" ? "text-[10px] px-1.5 py-0" : ""}`}>
+    <Badge className={`${config.color} ${size === "sm" ? "hig-caption2 px-1.5 py-0" : ""}`}>
       <Icon className={size === "sm" ? "h-2.5 w-2.5 mr-0.5" : "h-3 w-3 mr-1"} />
       {config.label}
     </Badge>
@@ -69,17 +69,17 @@ function TenantCard({ tenant }) {
         <CardContent className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-sm truncate">
+              <div className="font-medium hig-body truncate">
                 {tenant.businessName || tenant.name || "Unnamed"}
               </div>
-              <div className="text-xs text-muted-foreground truncate">
+              <div className="hig-caption2 text-muted-foreground truncate">
                 {tenant.email}
               </div>
             </div>
             <StatusBadge status={tenant.subscriptionStatus} size="sm" />
           </div>
 
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 mt-2 hig-caption2 text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {tenant._count?.bookings || 0}
@@ -165,8 +165,8 @@ function TenantsTableContent() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">Tenants</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="hig-title-1 font-bold sm:hig-title-1">Tenants</h1>
+        <p className="hig-body text-muted-foreground">
           {pagination.total} total tenants
         </p>
       </div>
@@ -228,7 +228,7 @@ function TenantsTableContent() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <div className="text-xs text-muted-foreground">
+          <div className="hig-caption2 text-muted-foreground">
             Page {pagination.page} of {pagination.totalPages}
           </div>
           <div className="flex gap-2">

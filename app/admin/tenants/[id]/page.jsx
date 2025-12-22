@@ -80,7 +80,7 @@ function StatusBadge({ status, size = "default" }) {
   const Icon = config.icon;
 
   return (
-    <Badge className={`${config.color} ${size === "sm" ? "text-[10px] px-1.5 py-0" : ""}`}>
+    <Badge className={`${config.color} ${size === "sm" ? "hig-caption2 px-1.5 py-0" : ""}`}>
       <Icon className={size === "sm" ? "h-2.5 w-2.5 mr-0.5" : "h-3 w-3 mr-1"} />
       {config.label}
     </Badge>
@@ -92,8 +92,8 @@ function MiniStat({ icon: Icon, label, value }) {
     <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
       <div className="min-w-0">
-        <div className="text-lg font-semibold leading-none">{value}</div>
-        <div className="text-[10px] text-muted-foreground">{label}</div>
+        <div className="hig-title-2 font-semibold leading-none">{value}</div>
+        <div className="hig-caption2 text-muted-foreground">{label}</div>
       </div>
     </div>
   );
@@ -103,12 +103,12 @@ function BookingCard({ booking }) {
   return (
     <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium truncate">{booking.contact?.name || "Unknown"}</div>
-        <div className="text-xs text-muted-foreground">{formatDate(booking.createdAt)}</div>
+        <div className="hig-body font-medium truncate">{booking.contact?.name || "Unknown"}</div>
+        <div className="hig-caption2 text-muted-foreground">{formatDate(booking.createdAt)}</div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Badge variant="outline" className="text-[10px]">{booking.status}</Badge>
-        <span className="text-sm font-medium">
+        <Badge variant="outline" className="hig-caption2">{booking.status}</Badge>
+        <span className="hig-body font-medium">
           {booking.totalPrice ? formatCurrency(booking.totalPrice) : "-"}
         </span>
       </div>
@@ -227,7 +227,7 @@ export default function TenantDetailPage({ params }) {
         <div className="text-center">
           <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
           <h2 className="text-base font-semibold">Error loading tenant</h2>
-          <p className="text-sm text-muted-foreground mb-4">{error || "Tenant not found"}</p>
+          <p className="hig-body text-muted-foreground mb-4">{error || "Tenant not found"}</p>
           <Button size="sm" asChild>
             <Link href="/admin/tenants">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -251,10 +251,10 @@ export default function TenantDetailPage({ params }) {
         </Button>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h1 className="text-lg font-bold truncate sm:text-xl">
+            <h1 className="hig-title-2 font-bold truncate sm:hig-title-1">
               {tenant.businessName || tenant.name || "Unnamed"}
             </h1>
-            <p className="text-sm text-muted-foreground truncate">{tenant.email}</p>
+            <p className="hig-body text-muted-foreground truncate">{tenant.email}</p>
           </div>
           <StatusBadge status={tenant.subscriptionStatus} size="sm" />
         </div>
@@ -289,7 +289,7 @@ export default function TenantDetailPage({ params }) {
         <CardContent className="p-3 pt-0 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Status</Label>
+              <Label className="hig-caption2">Status</Label>
               <Select value={subscriptionStatus} onValueChange={setSubscriptionStatus}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select" />
@@ -303,7 +303,7 @@ export default function TenantDetailPage({ params }) {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Plan</Label>
+              <Label className="hig-caption2">Plan</Label>
               <Select value={planType} onValueChange={setPlanType}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select" />
@@ -316,7 +316,7 @@ export default function TenantDetailPage({ params }) {
             </div>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Period End</Label>
+            <Label className="hig-caption2">Period End</Label>
             <Input
               type="date"
               value={currentPeriodEnd}
@@ -374,16 +374,16 @@ export default function TenantDetailPage({ params }) {
         <CardContent className="p-3 pt-0">
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
-              <div className="text-xl font-bold">{usage?.bookingsThisMonth || 0}</div>
-              <div className="text-[10px] text-muted-foreground">Bookings</div>
+              <div className="hig-title-1 font-bold">{usage?.bookingsThisMonth || 0}</div>
+              <div className="hig-caption2 text-muted-foreground">Bookings</div>
             </div>
             <div>
-              <div className="text-xl font-bold">{formatCurrency(usage?.totalRevenue || 0)}</div>
-              <div className="text-[10px] text-muted-foreground">Revenue</div>
+              <div className="hig-title-1 font-bold">{formatCurrency(usage?.totalRevenue || 0)}</div>
+              <div className="hig-caption2 text-muted-foreground">Revenue</div>
             </div>
             <div>
-              <div className="text-xl font-bold">{usage?.totalPayments || 0}</div>
-              <div className="text-[10px] text-muted-foreground">Payments</div>
+              <div className="hig-title-1 font-bold">{usage?.totalPayments || 0}</div>
+              <div className="hig-caption2 text-muted-foreground">Payments</div>
             </div>
           </div>
         </CardContent>
@@ -395,16 +395,16 @@ export default function TenantDetailPage({ params }) {
           <CardTitle className="text-base">Details</CardTitle>
         </CardHeader>
         <CardContent className="p-3 pt-0 space-y-3">
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-2 gap-3 hig-body">
             <div>
-              <div className="text-[10px] text-muted-foreground uppercase">Slug</div>
+              <div className="hig-caption2 text-muted-foreground uppercase">Slug</div>
               <div className="flex items-center gap-1">
                 <Globe className="h-3 w-3 text-muted-foreground" />
                 <span className="truncate">/{tenant.slug || "-"}</span>
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-muted-foreground uppercase">Created</div>
+              <div className="hig-caption2 text-muted-foreground uppercase">Created</div>
               <div>{formatDate(tenant.createdAt)}</div>
             </div>
           </div>
@@ -412,19 +412,19 @@ export default function TenantDetailPage({ params }) {
           <Separator />
 
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase mb-1">Stripe Connect</div>
+            <div className="hig-caption2 text-muted-foreground uppercase mb-1">Stripe Connect</div>
             {tenant.stripeAccountId ? (
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="text-green-600 text-[10px]">
+                <Badge variant="outline" className="text-green-600 hig-caption2">
                   <CreditCard className="h-2.5 w-2.5 mr-0.5" />
                   Connected
                 </Badge>
-                <span className="text-xs text-muted-foreground">
+                <span className="hig-caption2 text-muted-foreground">
                   {tenant.stripeAccountStatus || "unknown"}
                 </span>
               </div>
             ) : (
-              <Badge variant="outline" className="text-muted-foreground text-[10px]">
+              <Badge variant="outline" className="text-muted-foreground hig-caption2">
                 Not Connected
               </Badge>
             )}
@@ -432,21 +432,21 @@ export default function TenantDetailPage({ params }) {
 
           <Separator />
 
-          <div className="grid grid-cols-3 gap-2 text-center text-sm">
+          <div className="grid grid-cols-3 gap-2 text-center hig-body">
             <div className="flex flex-col items-center gap-1">
               <Image className="h-4 w-4 text-muted-foreground" />
               <span>{tenant._count?.images || 0}</span>
-              <span className="text-[10px] text-muted-foreground">Images</span>
+              <span className="hig-caption2 text-muted-foreground">Images</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <Workflow className="h-4 w-4 text-muted-foreground" />
               <span>{tenant._count?.workflows || 0}</span>
-              <span className="text-[10px] text-muted-foreground">Workflows</span>
+              <span className="hig-caption2 text-muted-foreground">Workflows</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <Webhook className="h-4 w-4 text-muted-foreground" />
               <span>{tenant._count?.webhooks || 0}</span>
-              <span className="text-[10px] text-muted-foreground">Webhooks</span>
+              <span className="hig-caption2 text-muted-foreground">Webhooks</span>
             </div>
           </div>
         </CardContent>
@@ -469,7 +469,7 @@ export default function TenantDetailPage({ params }) {
       {/* IDs - collapsible or at bottom */}
       <Card>
         <CardContent className="p-3">
-          <div className="text-[10px] text-muted-foreground space-y-1">
+          <div className="hig-caption2 text-muted-foreground space-y-1">
             <div className="flex justify-between">
               <span>Tenant ID:</span>
               <span className="font-mono truncate ml-2">{tenant.id}</span>

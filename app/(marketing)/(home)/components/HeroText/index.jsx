@@ -1,7 +1,7 @@
 export function HeroText({ title, highlight, description, children }) {
   return (
     <section className="py-20 md:py-32 relative">
-      <div className="container mx-auto px-4 text-center relative">
+      <div className="container mx-auto max-w-325 px-4 text-center relative">
         <h1 className="mft-display-2">
           {title}{" "}
           {highlight && (

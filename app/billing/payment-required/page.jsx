@@ -89,7 +89,7 @@ export default function PaymentRequiredPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-6">
-          <h1 className="text-xl font-bold">
+          <h1 className="hig-title-1 font-bold">
             <span className="text-foreground">Client</span>
             <span className="text-primary">Flow</span>
           </h1>
@@ -100,12 +100,12 @@ export default function PaymentRequiredPage() {
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-destructive/10 flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 text-destructive" />
             </div>
-            <CardTitle className="text-lg">Payment Required</CardTitle>
+            <CardTitle className="hig-title-2">Payment Required</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-5">
             <div className="text-center">
-              <p className="text-[13px] text-muted-foreground mb-3">
+              <p className="hig-caption1 text-muted-foreground mb-3">
                 {subscriptionInfo?.subscriptionStatus === "past_due"
                   ? "Your payment is past due. Please update your payment method to continue using ClientFlow."
                   : subscriptionInfo?.subscriptionStatus === "canceled"
@@ -114,7 +114,7 @@ export default function PaymentRequiredPage() {
               </p>
 
               {subscriptionInfo?.currentPeriodEnd && (
-                <p className="text-[11px] text-muted-foreground">
+                <p className="hig-caption2 text-muted-foreground">
                   {subscriptionInfo.subscriptionStatus === "past_due" && (
                     <>Access will be suspended soon if payment is not received.</>
                   )}
@@ -125,7 +125,7 @@ export default function PaymentRequiredPage() {
             <Button
               onClick={handleUpdatePayment}
               disabled={updating}
-              className="w-full h-11 text-[15px] font-semibold rounded-xl"
+              className="w-full h-11 hig-body font-semibold rounded-xl"
               size="lg"
             >
               {updating ? (
@@ -145,14 +145,14 @@ export default function PaymentRequiredPage() {
             <div className="flex flex-col gap-2 text-center">
               <Link
                 href="/dashboard/settings/billing"
-                className="text-[13px] text-primary hover:underline"
+                className="hig-caption1 text-primary hover:underline"
               >
                 View billing details
               </Link>
 
               <button
                 onClick={() => signOut()}
-                className="text-[13px] text-muted-foreground hover:text-foreground"
+                className="hig-caption1 text-muted-foreground hover:text-foreground"
               >
                 Sign out
               </button>
@@ -164,7 +164,7 @@ export default function PaymentRequiredPage() {
         <div className="mt-5 text-center">
           <a
             href="mailto:support@getclientflow.app"
-            className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1.5 hig-caption2 text-muted-foreground hover:text-foreground"
           >
             <HelpCircle className="w-3.5 h-3.5" />
             Need help? Contact support

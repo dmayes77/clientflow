@@ -57,7 +57,7 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
         <GripVertical className="h-4 w-4" />
       </button>
       <Check className="h-4 w-4 text-green-600 shrink-0" />
-      <span className="flex-1 text-sm">{item}</span>
+      <span className="flex-1">{item}</span>
       <Button
         type="button"
         variant="ghost"
@@ -425,7 +425,7 @@ Format the includes list so I can easily copy each item individually.`;
           <p className="text-muted-foreground">Update your service details</p>
         </div>
         <div className="flex items-center gap-2">
-          <Label htmlFor="active" className={`text-sm font-medium ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
+          <Label htmlFor="active" className={`font-medium ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
             {formData.active ? "Active" : "Inactive"}
           </Label>
           <Switch
@@ -460,14 +460,14 @@ Format the includes list so I can easily copy each item individually.`;
                     </Label>
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                      className="inline-flex items-center gap-1.5 hig-caption2 text-blue-600 hover:text-blue-700 hover:underline"
                       onClick={() => setAiPromptDialogOpen(true)}
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                       Need help? Use AI
                     </button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="hig-caption2 text-muted-foreground mt-1">
                     Marketing copy describing the end result your client will achieve
                   </p>
                 </div>
@@ -598,12 +598,12 @@ Format the includes list so I can easily copy each item individually.`;
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center justify-between mb-1!">
                 <Label className="mb-0!">What's Included</Label>
-                <span className="text-xs text-muted-foreground">{formData.includes.length}/20</span>
+                <span className="hig-caption2 text-muted-foreground">{formData.includes.length}/20</span>
               </div>
 
               <Alert className="bg-amber-50 border-amber-200">
                 <Lightbulb className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-xs text-amber-800">
+                <AlertDescription className="hig-caption2 text-amber-800">
                   We recommend adding 6-8 items that describe what clients receive with this service.
                 </AlertDescription>
               </Alert>
@@ -633,8 +633,8 @@ Format the includes list so I can easily copy each item individually.`;
                 {formData.includes.length === 0 ? (
                   <div className="p-6 text-center text-muted-foreground">
                     <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No items added yet</p>
-                    <p className="text-xs mt-1">Add items that describe what's included in this service</p>
+                    <p>No items added yet</p>
+                    <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
                   </div>
                 ) : (
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -695,7 +695,7 @@ Format the includes list so I can easily copy each item individually.`;
               <div className="py-8 text-center text-muted-foreground">
                 <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p>No images in your library</p>
-                <p className="text-sm">Upload an image to get started</p>
+                <p>Upload an image to get started</p>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-3 p-1">
@@ -762,7 +762,7 @@ Format the includes list so I can easily copy each item individually.`;
           <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <Alert className="bg-violet-50 border-violet-200">
               <Lightbulb className="h-4 w-4 text-violet-600" />
-              <AlertDescription className="text-sm text-violet-800">
+              <AlertDescription className="text-violet-800">
                 {formData.includes.length > 0 ? (
                   <>
                     <strong>Mode:</strong> Generating marketing description only (you already have includes added).
@@ -777,9 +777,9 @@ Format the includes list so I can easily copy each item individually.`;
             </Alert>
 
             <div className="flex-1 overflow-hidden">
-              <Label className="text-sm font-medium mb-2 block">Your Customized Prompt:</Label>
+              <Label className="font-medium mb-2 block">Your Customized Prompt:</Label>
               <ScrollArea className="h-64 rounded-md border bg-muted/30">
-                <pre className="p-4 text-sm whitespace-pre-wrap font-mono text-muted-foreground">{generateAiPrompt()}</pre>
+                <pre className="p-4 whitespace-pre-wrap font-mono text-muted-foreground">{generateAiPrompt()}</pre>
               </ScrollArea>
             </div>
 
@@ -805,7 +805,7 @@ Format the includes list so I can easily copy each item individually.`;
           </div>
 
           <DialogFooter className="border-t pt-4 mt-4">
-            <p className="text-xs text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
+            <p className="hig-caption2 text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
             <Button variant="outline" onClick={() => setAiPromptDialogOpen(false)}>
               Close
             </Button>

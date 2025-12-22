@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useOrganization } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
+import { useTenant, useUpdateTenant } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,12 +48,15 @@ const COUNTRIES = [
 ];
 
 export function BusinessSettings() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const { organization } = useOrganization();
+
+  // TanStack Query hooks
+  const { data: tenantData, isLoading: loading } = useTenant();
+  const updateTenant = useUpdateTenant();
+
   const [formData, setFormData] = useState({
     businessName: "",
     businessDescription: "",
@@ -77,65 +81,43 @@ export function BusinessSettings() {
     setMounted(true);
   }, []);
 
+  // Sync form data when tenant data loads
   useEffect(() => {
-    fetchTenantData();
-  }, [organization]);
-
-  const fetchTenantData = async () => {
-    try {
-      const res = await fetch("/api/tenant");
-      if (res.ok) {
-        const data = await res.json();
-        setFormData({
-          // Use org name as fallback for business name if not set
-          businessName: data.businessName || organization?.name || "",
-          businessDescription: data.businessDescription || "",
-          businessAddress: data.businessAddress || "",
-          businessCity: data.businessCity || "",
-          businessState: data.businessState || "",
-          businessZip: data.businessZip || "",
-          businessCountry: data.businessCountry || "",
-          businessPhone: data.businessPhone || "",
-          businessWebsite: data.businessWebsite || "",
-          contactPerson: data.contactPerson || "",
-          slug: data.slug || "",
-          defaultTaxRate: data.defaultTaxRate || 0,
-          facebookUrl: data.facebookUrl || "",
-          twitterUrl: data.twitterUrl || "",
-          instagramUrl: data.instagramUrl || "",
-          linkedinUrl: data.linkedinUrl || "",
-          youtubeUrl: data.youtubeUrl || "",
-        });
-      }
-    } catch (error) {
-      toast.error("Failed to load business settings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      // Exclude slug from updates - it's auto-generated and shouldn't be changed by users
-      const { slug, ...dataToSave } = formData;
-      const res = await fetch("/api/tenant", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSave),
+    if (tenantData) {
+      setFormData({
+        businessName: tenantData.businessName || organization?.name || "",
+        businessDescription: tenantData.businessDescription || "",
+        businessAddress: tenantData.businessAddress || "",
+        businessCity: tenantData.businessCity || "",
+        businessState: tenantData.businessState || "",
+        businessZip: tenantData.businessZip || "",
+        businessCountry: tenantData.businessCountry || "",
+        businessPhone: tenantData.businessPhone || "",
+        businessWebsite: tenantData.businessWebsite || "",
+        contactPerson: tenantData.contactPerson || "",
+        slug: tenantData.slug || "",
+        defaultTaxRate: tenantData.defaultTaxRate || 0,
+        facebookUrl: tenantData.facebookUrl || "",
+        twitterUrl: tenantData.twitterUrl || "",
+        instagramUrl: tenantData.instagramUrl || "",
+        linkedinUrl: tenantData.linkedinUrl || "",
+        youtubeUrl: tenantData.youtubeUrl || "",
       });
-
-      if (res.ok) {
-        toast.success("Business settings saved successfully");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save settings");
-      }
-    } catch (error) {
-      toast.error("Failed to save settings");
-    } finally {
-      setSaving(false);
     }
+  }, [tenantData, organization]);
+
+  const handleSave = () => {
+    // Exclude slug from updates - it's auto-generated and shouldn't be changed by users
+    const { slug, ...dataToSave } = formData;
+
+    updateTenant.mutate(dataToSave, {
+      onSuccess: () => {
+        toast.success("Business settings saved successfully");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to save settings");
+      },
+    });
   };
 
   const handleChange = (field, value) => {
@@ -185,8 +167,8 @@ export function BusinessSettings() {
     <div className="space-y-6">
       {/* Save Button Header */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+        <Button onClick={handleSave} disabled={updateTenant.isPending}>
+          {updateTenant.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
           Save Changes
         </Button>
       </div>
@@ -232,7 +214,7 @@ export function BusinessSettings() {
                 System
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="hig-caption2 text-muted-foreground mt-2">
               Choose your preferred color scheme or sync with your device settings
             </p>
           </div>
@@ -258,7 +240,7 @@ export function BusinessSettings() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Input value={bookingUrl} readOnly className="font-mono text-sm" />
+              <Input value={bookingUrl} readOnly className="font-mono" />
               <Button
                 variant="outline"
                 size="icon"
@@ -463,9 +445,9 @@ export function BusinessSettings() {
                 onChange={(e) => handleChange("defaultTaxRate", parseFloat(e.target.value) || 0)}
                 className="w-24"
               />
-              <span className="text-sm text-muted-foreground">%</span>
+              <span className="text-muted-foreground">%</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="hig-caption2 text-muted-foreground">
               This rate will be automatically applied to new invoices. You can change it per invoice as needed.
             </p>
           </div>

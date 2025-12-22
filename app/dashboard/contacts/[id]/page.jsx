@@ -392,7 +392,7 @@ export default function ClientDetailPage({ params }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <LoadingIcon className="size-8 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground mt-2">Loading contact details...</p>
+        <p className="text-muted-foreground mt-2">Loading contact details...</p>
       </div>
     );
   }
@@ -452,20 +452,20 @@ export default function ClientDetailPage({ params }) {
       {stats && isMobile && (
         <div className="grid grid-cols-2 gap-3">
           <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
-            <span className="block text-2xl font-bold text-white">{stats.totalBookings}</span>
-            <span className="text-sm text-blue-100">Total Bookings</span>
+            <span className="block font-bold text-white">{stats.totalBookings}</span>
+            <span className="text-blue-100">Total Bookings</span>
           </div>
           <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
-            <span className="block text-2xl font-bold text-white">{stats.completedBookings}</span>
-            <span className="text-sm text-green-100">Completed</span>
+            <span className="block font-bold text-white">{stats.completedBookings}</span>
+            <span className="text-green-100">Completed</span>
           </div>
           <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
-            <span className="block text-2xl font-bold text-white">{stats.upcomingBookings}</span>
-            <span className="text-sm text-amber-100">Upcoming</span>
+            <span className="block font-bold text-white">{stats.upcomingBookings}</span>
+            <span className="text-amber-100">Upcoming</span>
           </div>
           <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
-            <span className="block text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
-            <span className="text-sm text-teal-100">Total Spent</span>
+            <span className="block font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
+            <span className="text-teal-100">Total Spent</span>
           </div>
         </div>
       )}
@@ -527,7 +527,7 @@ export default function ClientDetailPage({ params }) {
               {clientTags.map((tag) => (
                 <span
                   key={tag.id}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getTagColorClass(tag.color)}`}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full hig-caption2 font-medium border ${getTagColorClass(tag.color)}`}
                 >
                   {tag.name}
                   <button onClick={() => handleRemoveTag(tag.id)} className="hover:opacity-70 transition-opacity">
@@ -537,7 +537,7 @@ export default function ClientDetailPage({ params }) {
               ))}
               <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <button className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border hover:bg-accent transition-colors text-sm">
+                  <button className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border hover:bg-accent transition-colors">
                     <AddIcon className="size-3" /> Add Tag
                   </button>
                 </PopoverTrigger>
@@ -550,7 +550,7 @@ export default function ClientDetailPage({ params }) {
                           <button
                             onClick={handleCreateAndAddTag}
                             disabled={addingTag}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-accent cursor-pointer"
                           >
                             {addingTag ? <LoadingIcon className="h-4 w-4 animate-spin" /> : <AddIcon className="h-4 w-4" />}
                             Create "{newTagName.trim()}"
@@ -585,7 +585,7 @@ export default function ClientDetailPage({ params }) {
                 </PopoverContent>
               </Popover>
             </div>
-            {clientTags.length === 0 && <p className="text-sm text-muted-foreground">No tags assigned. Add tags to organize your contacts.</p>}
+            {clientTags.length === 0 && <p className="text-muted-foreground">No tags assigned. Add tags to organize your contacts.</p>}
           </div>
         </div>
 
@@ -614,20 +614,20 @@ export default function ClientDetailPage({ params }) {
           {stats && !isMobile && (
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
-                <span className="block text-2xl font-bold text-white">{stats.totalBookings}</span>
-                <span className="text-sm text-blue-100">Total Bookings</span>
+                <span className="block font-bold text-white">{stats.totalBookings}</span>
+                <span className="text-blue-100">Total Bookings</span>
               </div>
               <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
-                <span className="block text-2xl font-bold text-white">{stats.completedBookings}</span>
-                <span className="text-sm text-green-100">Completed</span>
+                <span className="block font-bold text-white">{stats.completedBookings}</span>
+                <span className="text-green-100">Completed</span>
               </div>
               <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
-                <span className="block text-2xl font-bold text-white">{stats.upcomingBookings}</span>
-                <span className="text-sm text-amber-100">Upcoming</span>
+                <span className="block font-bold text-white">{stats.upcomingBookings}</span>
+                <span className="text-amber-100">Upcoming</span>
               </div>
               <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
-                <span className="block text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
-                <span className="text-sm text-teal-100">Total Spent</span>
+                <span className="block font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
+                <span className="text-teal-100">Total Spent</span>
               </div>
             </div>
           )}
@@ -644,7 +644,7 @@ export default function ClientDetailPage({ params }) {
           </div>
 
           {/* Timestamps */}
-          <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="space-y-2 text-muted-foreground">
             <p className="flex items-center gap-2">
               <BookingIcon className="size-4" />
               Date Added: {formatFullDateTime(client.createdAt)}
@@ -674,8 +674,8 @@ export default function ClientDetailPage({ params }) {
             <div className="size-12 flex items-center justify-center text-muted-foreground mb-4">
               <BookingIcon className="size-8" />
             </div>
-            <p className="text-lg font-medium">No bookings yet</p>
-            <p className="text-sm text-muted-foreground">This contact hasn't made any bookings.</p>
+            <p className="font-medium">No bookings yet</p>
+            <p className="text-muted-foreground">This contact hasn't made any bookings.</p>
           </div>
         ) : isMobile ? (
           /* Mobile card list */
@@ -688,12 +688,12 @@ export default function ClientDetailPage({ params }) {
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-sm font-medium truncate">
+                    <span className="font-medium truncate">
                       {booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name || "—"}
                     </span>
-                    <span className="text-xs font-semibold">{formatCurrency(booking.totalPrice)}</span>
+                    <span className="hig-caption2 font-semibold">{formatCurrency(booking.totalPrice)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 hig-caption2 text-muted-foreground">
                     <span>{formatDateTime(booking.scheduledAt)}</span>
                     <BookingStatusBadge status={booking.status} />
                   </div>
@@ -719,12 +719,12 @@ export default function ClientDetailPage({ params }) {
                 <TableBody>
                   {client.bookings.map((booking) => (
                     <TableRow key={booking.id}>
-                      <TableCell className="text-sm">{formatDateTime(booking.scheduledAt)}</TableCell>
-                      <TableCell className="text-sm">{booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name || "—"}</TableCell>
+                      <TableCell>{formatDateTime(booking.scheduledAt)}</TableCell>
+                      <TableCell>{booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name || "—"}</TableCell>
                       <TableCell>
                         <BookingStatusBadge status={booking.status} />
                       </TableCell>
-                      <TableCell className="text-sm font-medium">{formatCurrency(booking.totalPrice)}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(booking.totalPrice)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Button
@@ -774,8 +774,8 @@ export default function ClientDetailPage({ params }) {
             <div className="size-12 flex items-center justify-center text-muted-foreground mb-4">
               <InvoiceIcon className="size-8" />
             </div>
-            <p className="text-lg font-medium">No invoices yet</p>
-            <p className="text-sm text-muted-foreground">No invoices have been created for this contact.</p>
+            <p className="font-medium">No invoices yet</p>
+            <p className="text-muted-foreground">No invoices have been created for this contact.</p>
           </div>
         ) : isMobile ? (
           /* Mobile card list */
@@ -789,13 +789,13 @@ export default function ClientDetailPage({ params }) {
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <button
                       onClick={(e) => handleOpenInvoice(invoice, e)}
-                      className="text-sm font-medium text-primary hover:underline cursor-pointer text-left"
+                      className="font-medium text-primary hover:underline cursor-pointer text-left"
                     >
                       {invoice.invoiceNumber}
                     </button>
-                    <span className="text-xs font-semibold">{formatCurrency(invoice.total)}</span>
+                    <span className="hig-caption2 font-semibold">{formatCurrency(invoice.total)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 hig-caption2 text-muted-foreground">
                     <span>Due {formatDate(invoice.dueDate)}</span>
                     <InvoiceStatusBadge status={invoice.status} />
                   </div>
@@ -823,14 +823,14 @@ export default function ClientDetailPage({ params }) {
                       <TableCell>
                         <button
                           onClick={(e) => handleOpenInvoice(invoice, e)}
-                          className="text-sm font-medium text-primary hover:underline cursor-pointer text-left"
+                          className="font-medium text-primary hover:underline cursor-pointer text-left"
                         >
                           {invoice.invoiceNumber}
                         </button>
                       </TableCell>
-                      <TableCell className="text-sm">{formatDate(invoice.issueDate)}</TableCell>
-                      <TableCell className="text-sm">{formatDate(invoice.dueDate)}</TableCell>
-                      <TableCell className="text-xs font-medium">{formatCurrency(invoice.total)}</TableCell>
+                      <TableCell>{formatDate(invoice.issueDate)}</TableCell>
+                      <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(invoice.total)}</TableCell>
                       <TableCell>
                         <InvoiceStatusBadge status={invoice.status} />
                       </TableCell>

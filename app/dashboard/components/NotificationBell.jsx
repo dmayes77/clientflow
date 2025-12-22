@@ -135,7 +135,7 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative h-8 w-8">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 hig-caption2 font-bold text-white">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -143,12 +143,12 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <h4 className="font-semibold text-sm">Notifications</h4>
+          <h4 className="font-semibold">Notifications</h4>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-auto py-1 px-2 text-muted-foreground hover:text-foreground"
               onClick={handleMarkAllRead}
             >
               <Check className="h-3 w-3 mr-1" />
@@ -165,7 +165,7 @@ export function NotificationBell() {
           ) : alerts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" />
-              <p className="text-sm text-muted-foreground">No notifications</p>
+              <p className="text-muted-foreground">No notifications</p>
             </div>
           ) : (
             <div className="divide-y">
@@ -186,7 +186,7 @@ export function NotificationBell() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`text-sm font-medium leading-tight ${!alert.read ? "text-foreground" : "text-muted-foreground"}`}>
+                        <p className={`font-medium leading-tight ${!alert.read ? "text-foreground" : "text-muted-foreground"}`}>
                           {alert.title}
                         </p>
                         <Button
@@ -198,15 +198,15 @@ export function NotificationBell() {
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                      <p className="text-muted-foreground line-clamp-2 mt-0.5 hig-caption2">
                         {alert.message}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-muted-foreground hig-caption2">
                           {formatTimeAgo(alert.createdAt)}
                         </span>
                         {alert.actionUrl && (
-                          <span className="flex items-center text-[10px] text-primary">
+                          <span className="flex items-center text-primary hig-caption2">
                             <ExternalLink className="h-2.5 w-2.5 mr-0.5" />
                             {alert.actionLabel || "View"}
                           </span>

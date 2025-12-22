@@ -112,8 +112,8 @@ export default function Step4Page() {
         <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-blue-500" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Business Profile</h2>
-        <p className="mt-1 text-[13px] text-gray-500">
+        <h2 className="hig-title-2 font-semibold text-gray-900">Business Profile</h2>
+        <p className="mt-1 hig-caption1 text-gray-500">
           Tell your clients about your business
         </p>
       </div>
@@ -142,7 +142,7 @@ export default function Step4Page() {
                 <Upload className="w-6 h-6 text-gray-400" />
               )}
             </div>
-            <p className="text-[11px] text-gray-400 text-center mt-1.5">
+            <p className="hig-caption2 text-gray-400 text-center mt-1.5">
               Logo (optional)
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function Step4Page() {
 
         <div className="space-y-3">
           <div>
-            <label htmlFor="businessName" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+            <label htmlFor="businessName" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
               Business Name *
             </label>
             <input
@@ -160,12 +160,12 @@ export default function Step4Page() {
               onChange={(e) => handleChange("businessName", e.target.value)}
               placeholder="Your business name"
               required
-              className="w-full h-11 px-3 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
+              className="w-full h-11 px-3 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
             />
           </div>
 
           <div>
-            <label htmlFor="businessDescription" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+            <label htmlFor="businessDescription" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
               Description
             </label>
             <textarea
@@ -174,13 +174,13 @@ export default function Step4Page() {
               onChange={(e) => handleChange("businessDescription", e.target.value)}
               placeholder="Tell clients what you do..."
               rows={3}
-              className="w-full px-3 py-2.5 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400 resize-none"
+              className="w-full px-3 py-2.5 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400 resize-none"
             />
           </div>
 
           <div className="grid gap-3 grid-cols-2">
             <div>
-              <label htmlFor="businessWebsite" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+              <label htmlFor="businessWebsite" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
                 Website
               </label>
               <input
@@ -189,11 +189,11 @@ export default function Step4Page() {
                 value={formData.businessWebsite}
                 onChange={(e) => handleChange("businessWebsite", e.target.value)}
                 placeholder="https://example.com"
-                className="w-full h-11 px-3 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
+                className="w-full h-11 px-3 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
               />
             </div>
             <div>
-              <label htmlFor="businessPhone" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+              <label htmlFor="businessPhone" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
                 Phone
               </label>
               <input
@@ -202,13 +202,13 @@ export default function Step4Page() {
                 value={formData.businessPhone}
                 onChange={(e) => handleChange("businessPhone", e.target.value)}
                 placeholder="(555) 123-4567"
-                className="w-full h-11 px-3 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
+                className="w-full h-11 px-3 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="contactPerson" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+            <label htmlFor="contactPerson" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
               Contact Person
             </label>
             <input
@@ -217,7 +217,7 @@ export default function Step4Page() {
               value={formData.contactPerson}
               onChange={(e) => handleChange("contactPerson", e.target.value)}
               placeholder="Primary contact name"
-              className="w-full h-11 px-3 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
+              className="w-full h-11 px-3 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
             />
           </div>
         </div>
@@ -226,7 +226,7 @@ export default function Step4Page() {
           <button
             type="submit"
             disabled={saving}
-            className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? (
               <>

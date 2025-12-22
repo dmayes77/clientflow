@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useStats, useBookings, useContacts, useServices, useInvoices, usePayments } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,9 @@ function formatCurrency(cents) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState({
+
+  // TanStack Query hooks - all requests run in parallel automatically
+  const { data: stats = {
     totalBookings: 0,
     totalClients: 0,
     totalServices: 0,
@@ -44,47 +47,19 @@ export default function DashboardPage() {
     thisMonthRevenue: 0,
     lastMonthRevenue: 0,
     lastMonthBookings: 0,
-  });
-  const [bookings, setBookings] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [services, setServices] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  }, isLoading: statsLoading } = useStats();
+  const { data: bookingsData = [], isLoading: bookingsLoading } = useBookings();
+  const { data: clients = [], isLoading: clientsLoading } = useContacts();
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const { data: invoicesData = [], isLoading: invoicesLoading } = useInvoices();
+  const { data: paymentsData = [], isLoading: paymentsLoading } = usePayments();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Normalize data formats
+  const bookings = Array.isArray(bookingsData) ? bookingsData : bookingsData.bookings || [];
+  const invoices = Array.isArray(invoicesData) ? invoicesData : invoicesData.invoices || [];
+  const payments = Array.isArray(paymentsData) ? paymentsData : paymentsData.payments || [];
 
-  const fetchData = async () => {
-    try {
-      const [statsRes, bookingsRes, clientsRes, servicesRes, invoicesRes, paymentsRes] = await Promise.all([
-        fetch("/api/stats"),
-        fetch("/api/bookings"),
-        fetch("/api/contacts"),
-        fetch("/api/services"),
-        fetch("/api/invoices"),
-        fetch("/api/payments"),
-      ]);
-
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (bookingsRes.ok) setBookings(await bookingsRes.json());
-      if (clientsRes.ok) setClients(await clientsRes.json());
-      if (servicesRes.ok) setServices(await servicesRes.json());
-      if (invoicesRes.ok) {
-        const data = await invoicesRes.json();
-        setInvoices(Array.isArray(data) ? data : data.invoices || []);
-      }
-      if (paymentsRes.ok) {
-        const data = await paymentsRes.json();
-        setPayments(data.payments || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = statsLoading || bookingsLoading || clientsLoading || servicesLoading || invoicesLoading || paymentsLoading;
 
   // Calculate revenue trend (last 30 days) from actual payments
   const revenueChartData = useMemo(() => {
@@ -226,7 +201,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center" style={{ height: "500px" }}>
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Loading analytics...</span>
+          <span className="text-muted-foreground">Loading analytics...</span>
         </div>
       </div>
     );
@@ -249,8 +224,8 @@ export default function DashboardPage() {
       {/* Page Header with Quick Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[22px] sm:text-2xl font-bold">Overview</h1>
-          <p className="text-[13px] sm:text-sm text-muted-foreground">Welcome back! Here's what's happening.</p>
+          <h1 className="font-bold">Overview</h1>
+          <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <Button size="sm" className="flex-1 sm:flex-none bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push("/dashboard/bookings/new")}>
@@ -281,9 +256,9 @@ export default function DashboardPage() {
         <div className="rounded-lg border bg-card p-4 border-l-4 border-l-green-500">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-green-600 font-medium">Revenue</p>
-              <p className="text-xl font-bold mt-1">{formatCurrency(monthlyComparison.thisMonthRevenue)}</p>
-              <div className={cn("flex items-center gap-1 text-xs mt-1", monthlyComparison.revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
+              <p className="text-green-600 font-medium">Revenue</p>
+              <p className="font-bold mt-1">{formatCurrency(monthlyComparison.thisMonthRevenue)}</p>
+              <div className={cn("flex items-center gap-1 hig-caption2 mt-1", monthlyComparison.revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
                 {monthlyComparison.revenueChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 <span>
                   {monthlyComparison.revenueChange >= 0 ? "+" : ""}
@@ -301,9 +276,9 @@ export default function DashboardPage() {
         <div className="rounded-lg border bg-card p-4 border-l-4 border-l-blue-500">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-blue-600 font-medium">Bookings</p>
-              <p className="text-xl font-bold mt-1">{monthlyComparison.thisMonthBookings}</p>
-              <div className={cn("flex items-center gap-1 text-xs mt-1", monthlyComparison.bookingsChange >= 0 ? "text-green-600" : "text-red-600")}>
+              <p className="text-blue-600 font-medium">Bookings</p>
+              <p className="font-bold mt-1">{monthlyComparison.thisMonthBookings}</p>
+              <div className={cn("flex items-center gap-1 hig-caption2 mt-1", monthlyComparison.bookingsChange >= 0 ? "text-green-600" : "text-red-600")}>
                 {monthlyComparison.bookingsChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 <span>
                   {monthlyComparison.bookingsChange >= 0 ? "+" : ""}
@@ -321,9 +296,9 @@ export default function DashboardPage() {
         <div className="rounded-lg border bg-card p-4 border-l-4 border-l-purple-500">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-purple-600 font-medium">Contacts</p>
-              <p className="text-xl font-bold mt-1">{clients.length}</p>
-              <p className="text-xs text-muted-foreground mt-1">{clients.filter((c) => c.status === "active").length} active</p>
+              <p className="text-purple-600 font-medium">Contacts</p>
+              <p className="font-bold mt-1">{clients.length}</p>
+              <p className="text-muted-foreground mt-1">{clients.filter((c) => c.status === "active").length} active</p>
             </div>
             <div className="size-10 rounded-full bg-purple-100 flex items-center justify-center">
               <Users className="size-5 text-purple-600" />
@@ -335,9 +310,9 @@ export default function DashboardPage() {
         <div className="rounded-lg border bg-card p-4 border-l-4 border-l-amber-500">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-amber-600 font-medium">Services</p>
-              <p className="text-xl font-bold mt-1">{services.filter((s) => s.active !== false).length}</p>
-              <p className="text-xs text-muted-foreground mt-1">{services.length} total</p>
+              <p className="text-amber-600 font-medium">Services</p>
+              <p className="font-bold mt-1">{services.filter((s) => s.active !== false).length}</p>
+              <p className="text-muted-foreground mt-1">{services.length} total</p>
             </div>
             <div className="size-10 rounded-full bg-amber-100 flex items-center justify-center">
               <Package className="size-5 text-amber-600" />
@@ -349,9 +324,9 @@ export default function DashboardPage() {
         <div className="rounded-lg border bg-card p-4 border-l-4 border-l-teal-500 col-span-2 lg:col-span-1">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-teal-600 font-medium">Avg Invoice</p>
-              <p className="text-xl font-bold mt-1">{formatCurrency(averageInvoice)}</p>
-              <p className="text-xs text-muted-foreground mt-1">{paidInvoiceCount} paid</p>
+              <p className="text-teal-600 font-medium">Avg Invoice</p>
+              <p className="font-bold mt-1">{formatCurrency(averageInvoice)}</p>
+              <p className="text-muted-foreground mt-1">{paidInvoiceCount} paid</p>
             </div>
             <div className="size-10 rounded-full bg-teal-100 flex items-center justify-center">
               <FileText className="size-5 text-teal-600" />
@@ -366,7 +341,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center gap-2 py-3 px-4 space-y-0">
             <div className="size-2 rounded-full bg-green-500 shrink-0" />
-            <CardTitle className="text-sm font-medium leading-none">Revenue (30 Days)</CardTitle>
+            <CardTitle className="font-medium leading-none">Revenue (30 Days)</CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <div style={{ height: "200px" }}>
@@ -415,7 +390,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center gap-2 py-3 px-4 space-y-0">
             <div className="size-2 rounded-full bg-blue-500 shrink-0" />
-            <CardTitle className="text-sm font-medium leading-none">Booking Status</CardTitle>
+            <CardTitle className="font-medium leading-none">Booking Status</CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <div style={{ height: "160px" }}>
@@ -443,7 +418,7 @@ export default function DashboardPage() {
               {bookingStatusData.map((entry) => (
                 <div key={entry.status} className="flex items-center gap-1">
                   <div className="size-2 rounded-full" style={{ backgroundColor: CHART_COLORS[entry.status] || "#71717a" }} />
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground hig-caption2">
                     {entry.name} ({entry.value})
                   </span>
                 </div>
@@ -459,7 +434,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center gap-2 py-3 px-4 space-y-0">
             <div className="size-2 rounded-full bg-blue-500 shrink-0" />
-            <CardTitle className="text-sm font-medium leading-none">Weekly Activity</CardTitle>
+            <CardTitle className="font-medium leading-none">Weekly Activity</CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             <div style={{ height: "180px" }}>
@@ -500,25 +475,25 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center gap-2 py-3 px-4 space-y-0">
             <div className="size-2 rounded-full bg-amber-500 shrink-0" />
-            <CardTitle className="text-sm font-medium leading-none">Top Services</CardTitle>
+            <CardTitle className="font-medium leading-none">Top Services</CardTitle>
           </CardHeader>
           <CardContent className="p-3 pt-0">
             {topServices.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <p className="text-sm text-muted-foreground">No booking data yet</p>
+                <p className="text-muted-foreground">No booking data yet</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {topServices.map((service, index) => (
                   <div key={service.name} className="flex items-center gap-3">
-                    <div className="size-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-semibold">{index + 1}</div>
+                    <div className="size-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center hig-caption2 font-semibold">{index + 1}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{service.name}</p>
+                      <p className="font-medium truncate">{service.name}</p>
                       <div className="h-1.5 w-full bg-muted rounded-full mt-1">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(service.bookings / topServices[0].bookings) * 100}%` }} />
                       </div>
                     </div>
-                    <span className="text-xs font-semibold text-amber-600">{service.bookings}</span>
+                    <span className="font-semibold text-amber-600 hig-caption2">{service.bookings}</span>
                   </div>
                 ))}
               </div>
@@ -534,7 +509,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0">
             <div className="flex items-center gap-2">
               <div className="size-2 rounded-full bg-blue-500 shrink-0" />
-              <CardTitle className="text-sm font-medium leading-none">Upcoming Bookings</CardTitle>
+              <CardTitle className="font-medium leading-none">Upcoming Bookings</CardTitle>
             </div>
             <Button variant="ghost" size="sm" className="text-blue-600" onClick={() => router.push("/dashboard/calendar")}>
               View All
@@ -547,7 +522,7 @@ export default function DashboardPage() {
                 <div className="size-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
                   <Calendar className="size-6 text-blue-600" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">No upcoming bookings</p>
+                <p className="text-muted-foreground mb-3">No upcoming bookings</p>
                 <Button size="sm" variant="success" onClick={() => router.push("/dashboard/calendar")}>
                   Create Booking
                 </Button>
@@ -567,12 +542,12 @@ export default function DashboardPage() {
                       <Clock className="size-4 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{booking.contact?.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{booking.service?.name || booking.package?.name}</p>
+                      <p className="font-medium truncate">{booking.contact?.name}</p>
+                      <p className="text-muted-foreground truncate">{booking.service?.name || booking.package?.name}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-medium">{format(parseISO(booking.scheduledAt), "MMM d")}</p>
-                      <p className="text-xs text-muted-foreground">{format(parseISO(booking.scheduledAt), "h:mm a")}</p>
+                      <p className="font-medium hig-caption2">{format(parseISO(booking.scheduledAt), "MMM d")}</p>
+                      <p className="text-muted-foreground">{format(parseISO(booking.scheduledAt), "h:mm a")}</p>
                     </div>
                   </div>
                 ))}
@@ -586,7 +561,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between py-3 px-4 space-y-0 border-b">
             <div className="flex items-center gap-2">
               <div className="size-2 rounded-full bg-purple-500 shrink-0" />
-              <CardTitle className="text-sm font-medium leading-none">Recent Contacts</CardTitle>
+              <CardTitle className="font-medium leading-none">Recent Contacts</CardTitle>
             </div>
             <Button variant="ghost" size="sm" className="text-purple-600" onClick={() => router.push("/dashboard/contacts")}>
               View All
@@ -599,7 +574,7 @@ export default function DashboardPage() {
                 <div className="size-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
                   <Users className="size-6 text-purple-600" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">No contacts yet</p>
+                <p className="text-muted-foreground mb-3">No contacts yet</p>
                 <Button size="sm" onClick={() => router.push("/dashboard/contacts")}>
                   Add Contact
                 </Button>
@@ -623,12 +598,12 @@ export default function DashboardPage() {
                     )}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
-                          <p className="text-[15px] font-semibold truncate">{client.name}</p>
-                          <span className="text-[13px] text-muted-foreground shrink-0">
+                          <p className="font-semibold truncate">{client.name}</p>
+                          <span className="hig-caption2 text-muted-foreground shrink-0">
                             {formatDistanceToNow(parseISO(client.createdAt), { addSuffix: false })}
                           </span>
                         </div>
-                        <p className="text-[15px] text-muted-foreground truncate">{client.email}</p>
+                        <p className="text-muted-foreground truncate">{client.email}</p>
                       </div>
                       <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
                     </div>

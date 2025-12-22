@@ -108,7 +108,7 @@ function SuccessPageContent({ params }) {
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">Confirming your booking...</p>
+          <p className="hig-body text-muted-foreground">Confirming your booking...</p>
         </div>
       </div>
     );
@@ -122,8 +122,8 @@ function SuccessPageContent({ params }) {
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-            <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
-            <p className="text-sm text-muted-foreground mb-6">{error}</p>
+            <h1 className="hig-title-1 font-bold mb-2">Something went wrong</h1>
+            <p className="hig-body text-muted-foreground mb-6">{error}</p>
             <Link href={`/book/${slug}`}>
               <Button>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -148,8 +148,8 @@ function SuccessPageContent({ params }) {
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
-            <h1 className="text-xl font-bold mb-1">Booking Confirmed!</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="hig-title-1 font-bold mb-1">Booking Confirmed!</h1>
+            <p className="hig-body text-muted-foreground">
               {paymentData
                 ? isDeposit
                   ? "Your deposit has been received"
@@ -164,7 +164,7 @@ function SuccessPageContent({ params }) {
               <Calendar className="w-5 h-5 text-primary shrink-0" />
               <div>
                 <p className="font-medium">{bookingData?.scheduledAt ? formatDate(bookingData.scheduledAt) : "Date TBD"}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="hig-body text-muted-foreground">
                   {bookingData?.scheduledAt ? formatTime(bookingData.scheduledAt) : "Time TBD"}
                 </p>
               </div>
@@ -176,7 +176,7 @@ function SuccessPageContent({ params }) {
                 <div>
                   <p className="font-medium">{bookingData.serviceName}</p>
                   {bookingData?.duration && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="hig-body text-muted-foreground">
                       {bookingData.duration >= 60
                         ? `${Math.floor(bookingData.duration / 60)}h ${bookingData.duration % 60 > 0 ? `${bookingData.duration % 60}m` : ""}`
                         : `${bookingData.duration} min`}
@@ -192,22 +192,22 @@ function SuccessPageContent({ params }) {
             <div className="border rounded-xl p-4 space-y-3 mb-6">
               <div className="flex items-center gap-2 mb-3">
                 <CreditCard className="w-4 h-4 text-green-600" />
-                <span className="font-medium text-sm">Payment Summary</span>
+                <span className="font-medium hig-body">Payment Summary</span>
               </div>
 
               {isDeposit ? (
                 <>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between hig-body">
                     <span className="text-muted-foreground">Service Total</span>
                     <span>{formatPrice(paymentData.serviceTotal)}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between hig-body">
                     <span className="text-muted-foreground">Deposit Paid</span>
                     <span className="text-green-600 font-medium">
                       {formatPrice(paymentData.amountPaid)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm pt-2 border-t">
+                  <div className="flex justify-between hig-body pt-2 border-t">
                     <span className="font-medium">Balance Due</span>
                     <span className="font-bold text-orange-600">
                       {formatPrice(remainingBalance)}
@@ -234,14 +234,14 @@ function SuccessPageContent({ params }) {
                   <p className="font-medium text-orange-800 dark:text-orange-200">
                     Balance Due: {formatPrice(remainingBalance)}
                   </p>
-                  <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
+                  <p className="hig-body text-orange-700 dark:text-orange-300 mb-3">
                     Pay the remaining balance before your appointment.
                   </p>
                   <a
                     href={paymentData.paymentLinkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-orange-700 dark:text-orange-300 hover:underline"
+                    className="inline-flex items-center gap-2 hig-body font-medium text-orange-700 dark:text-orange-300 hover:underline"
                   >
                     <Receipt className="w-4 h-4" />
                     Pay Balance Now
@@ -252,7 +252,7 @@ function SuccessPageContent({ params }) {
           )}
 
           {/* Confirmation Message */}
-          <p className="text-sm text-muted-foreground text-center mb-6">
+          <p className="hig-body text-muted-foreground text-center mb-6">
             A confirmation email has been sent to your email address with all the details.
           </p>
 
@@ -284,7 +284,7 @@ export default function SuccessPage({ params }) {
         <div className="min-h-screen flex items-center justify-center bg-muted/30">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="hig-body text-muted-foreground">Loading...</p>
           </div>
         </div>
       }

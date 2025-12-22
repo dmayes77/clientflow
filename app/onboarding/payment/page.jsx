@@ -171,14 +171,14 @@ export default function PaymentPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold">
               $0
-              <span className="text-lg font-normal text-muted-foreground">/year</span>
+              <span className="hig-title-2 font-normal text-muted-foreground">/year</span>
             </CardTitle>
             <CardDescription>Professional plan - 1 year free</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <ul className="space-y-2 text-left">
               {PLANS[1].features.map((feature) => (
-                <li key={feature} className="flex items-center gap-2 text-sm">
+                <li key={feature} className="flex items-center gap-2 hig-body">
                   <Check className="h-4 w-4 text-amber-600" />
                   {feature}
                 </li>
@@ -236,13 +236,13 @@ export default function PaymentPage() {
             )}
 
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">{plan.name}</CardTitle>
+              <CardTitle className="hig-title-1">{plan.name}</CardTitle>
               <CardDescription>{plan.description}</CardDescription>
               <div className="mt-4">
                 <span className="text-4xl font-bold">${plan.price}</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-2 hig-caption2 text-muted-foreground">
                 14-day free trial • Cancel anytime
               </p>
             </CardHeader>
@@ -250,7 +250,7 @@ export default function PaymentPage() {
             <CardContent className="space-y-4">
               <ul className="space-y-2 text-left">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm">
+                  <li key={feature} className="flex items-center gap-2 hig-body">
                     <Check
                       className={cn(
                         "h-4 w-4",

@@ -26,7 +26,7 @@ function LoadingFallback() {
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     </div>
   );

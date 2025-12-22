@@ -16,10 +16,7 @@ const Input = React.forwardRef(({ className, type, ...props }, ref) => {
       className={cn(
         "flex w-full rounded-md border border-input bg-background shadow-sm transition-colors",
         "px-3 py-3 fold:py-2.5 tablet:py-2 desktop:py-1.5",
-        "tablet:text-sm desktop:text-xs",
-        /* Base 15px on mobile */
-        "text-[15px] leading-5",
-        "file:border-0 file:bg-transparent file:text-sm file:font-medium",
+        "file:border-0 file:bg-transparent file:font-medium",
         "placeholder:text-muted-foreground",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring",
         "disabled:cursor-not-allowed disabled:opacity-50",

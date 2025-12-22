@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { createServiceSchema, validateRequest } from "@/lib/validations";
+import { checkServiceLimit } from "@/lib/plan-limits";
 
 // GET /api/services - List all services
 export async function GET(request) {
@@ -48,6 +49,15 @@ export async function POST(request) {
 
     if (!tenant) {
       return NextResponse.json({ error }, { status });
+    }
+
+    // Check plan limits
+    const limitCheck = await checkServiceLimit(tenant.id);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { error: limitCheck.message, code: "LIMIT_REACHED", limit: limitCheck.limit, current: limitCheck.current },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

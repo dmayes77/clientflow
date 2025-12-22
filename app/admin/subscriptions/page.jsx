@@ -71,7 +71,7 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, loading, variant 
     <Card className={variants[variant] || ""}>
       <CardContent className="p-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="hig-caption2 font-medium text-muted-foreground uppercase tracking-wide">
             {title}
           </span>
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -80,7 +80,7 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, loading, variant 
           <Skeleton className="h-6 w-16" />
         ) : (
           <>
-            <div className="text-xl font-bold">{value}</div>
+            <div className="hig-title-1 font-bold">{value}</div>
             {(subtitle || trend !== undefined) && (
               <div className="flex items-center gap-1 mt-0.5">
                 {trend !== undefined && (
@@ -90,13 +90,13 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, loading, variant 
                     ) : trend < 0 ? (
                       <TrendingDown className="h-2.5 w-2.5 text-red-500" />
                     ) : null}
-                    <span className={`text-[10px] ${trend > 0 ? "text-green-600" : trend < 0 ? "text-red-600" : ""}`}>
+                    <span className={`hig-caption2 ${trend > 0 ? "text-green-600" : trend < 0 ? "text-red-600" : ""}`}>
                       {trend > 0 ? "+" : ""}{trend}%
                     </span>
                   </>
                 )}
                 {subtitle && (
-                  <span className="text-[10px] text-muted-foreground">{subtitle}</span>
+                  <span className="hig-caption2 text-muted-foreground">{subtitle}</span>
                 )}
               </div>
             )}
@@ -128,12 +128,12 @@ function StatusFilter({ value, onChange, counts }) {
             key={status.value}
             variant={value === status.value ? "default" : "outline"}
             size="sm"
-            className="h-8 text-xs shrink-0"
+            className="h-8 hig-caption2 shrink-0"
             onClick={() => onChange(status.value)}
           >
             {status.label}
             {count > 0 && (
-              <span className="ml-1 text-[10px] opacity-70">({count})</span>
+              <span className="ml-1 hig-caption2 opacity-70">({count})</span>
             )}
           </Button>
         );
@@ -157,25 +157,25 @@ function TenantSubscriptionCard({ tenant }) {
         <CardContent className="p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-sm truncate">
+              <div className="font-medium hig-body truncate">
                 {tenant.businessName || tenant.name || "Unnamed"}
               </div>
-              <div className="text-xs text-muted-foreground truncate">
+              <div className="hig-caption2 text-muted-foreground truncate">
                 {tenant.email}
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <Badge className={`text-[10px] ${statusConfig.color}`}>
+              <Badge className={`hig-caption2 ${statusConfig.color}`}>
                 <StatusIcon className="h-2.5 w-2.5 mr-0.5" />
                 {statusConfig.label}
               </Badge>
-              <Badge variant="outline" className="text-[10px]">
+              <Badge variant="outline" className="hig-caption2">
                 {planConfig.label}
               </Badge>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-3 mt-2 hig-caption2 text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-2.5 w-2.5" />
               {tenant._count?.bookings || 0} bookings
@@ -194,7 +194,7 @@ function TenantSubscriptionCard({ tenant }) {
 
           {tenant.currentPeriodEnd && (
             <div className="mt-2 pt-2 border-t">
-              <div className="flex items-center justify-between text-[10px]">
+              <div className="flex items-center justify-between hig-caption2">
                 <span className="text-muted-foreground">
                   {tenant.subscriptionStatus === "trialing" ? "Trial ends" : "Renews"}
                 </span>
@@ -228,7 +228,7 @@ function AtRiskSection({ tenants, loading }) {
   return (
     <Card className="border-yellow-300 bg-yellow-50/30">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
+        <CardTitle className="hig-body flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           At-Risk Accounts ({atRiskTenants.length})
         </CardTitle>
@@ -242,10 +242,10 @@ function AtRiskSection({ tenants, loading }) {
               className="flex items-center justify-between p-2 rounded-lg bg-white hover:bg-muted/50 transition-colors"
             >
               <div className="min-w-0">
-                <div className="font-medium text-xs truncate">
+                <div className="font-medium hig-caption2 truncate">
                   {tenant.businessName || tenant.name}
                 </div>
-                <div className="text-[10px] text-muted-foreground">
+                <div className="hig-caption2 text-muted-foreground">
                   {tenant.subscriptionStatus === "past_due"
                     ? "Payment failed"
                     : `Trial ends ${formatDate(tenant.currentPeriodEnd)}`}
@@ -255,7 +255,7 @@ function AtRiskSection({ tenants, loading }) {
             </Link>
           ))}
           {atRiskTenants.length > 5 && (
-            <Button variant="ghost" size="sm" className="w-full h-8 text-xs">
+            <Button variant="ghost" size="sm" className="w-full h-8 hig-caption2">
               View all {atRiskTenants.length} at-risk accounts
             </Button>
           )}
@@ -270,7 +270,7 @@ function PlanBreakdown({ planCounts, loading }) {
     return (
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Active by Plan</CardTitle>
+          <CardTitle className="hig-body">Active by Plan</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -288,11 +288,11 @@ function PlanBreakdown({ planCounts, loading }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Active by Plan</CardTitle>
+        <CardTitle className="hig-body">Active by Plan</CardTitle>
       </CardHeader>
       <CardContent>
         {plans.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No active subscriptions</p>
+          <p className="hig-caption2 text-muted-foreground">No active subscriptions</p>
         ) : (
           <div className="space-y-2">
             {plans.map(([plan, count]) => {
@@ -302,7 +302,7 @@ function PlanBreakdown({ planCounts, loading }) {
 
               return (
                 <div key={plan} className="flex items-center gap-3">
-                  <Badge className={`text-[10px] w-20 justify-center ${config.color}`}>
+                  <Badge className={`hig-caption2 w-20 justify-center ${config.color}`}>
                     {config.label}
                   </Badge>
                   <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
@@ -311,7 +311,7 @@ function PlanBreakdown({ planCounts, loading }) {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium w-8 text-right">{count}</span>
+                  <span className="hig-caption2 font-medium w-8 text-right">{count}</span>
                 </div>
               );
             })}
@@ -357,8 +357,8 @@ export default function SubscriptionsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">Subscriptions</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="hig-title-1 font-bold">Subscriptions</h1>
+        <p className="hig-body text-muted-foreground">
           Revenue and subscription management
         </p>
       </div>

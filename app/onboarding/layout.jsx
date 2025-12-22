@@ -74,12 +74,12 @@ export default function OnboardingLayout({ children }) {
         {/* Logo */}
         <div className="mb-6 fold:mb-8 text-center">
           <Link href="/dashboard" className="inline-block">
-            <h1 className="hig-large-title tablet:text-2xl desktop:text-3xl font-bold tracking-tight">
+            <h1 className="hig-large-title tablet:hig-title-1 desktop:hig-large-title font-bold tracking-tight">
               <span className="text-slate-800 dark:text-slate-200">Client</span>
               <span className="text-primary">Flow</span>
             </h1>
           </Link>
-          <p className="hig-subhead tablet:text-sm text-muted-foreground mt-1">Let&apos;s set up your business</p>
+          <p className="hig-subhead tablet:hig-body text-muted-foreground mt-1">Let&apos;s set up your business</p>
         </div>
 
         {/* Stepper - HIG touch targets */}
@@ -114,7 +114,7 @@ export default function OnboardingLayout({ children }) {
                       <div className="mt-1.5 hidden fold:block text-center">
                         <p
                           className={cn(
-                            "hig-caption-1 tablet:text-xs font-medium",
+                            "hig-caption-1 tablet:hig-caption1 font-medium",
                             isActive && "text-primary",
                             isCompleted && "text-green-500",
                             !isActive && !isCompleted && "text-muted-foreground"
@@ -146,7 +146,7 @@ export default function OnboardingLayout({ children }) {
         </Card>
 
         {/* Skip to dashboard link - HIG footnote with 44px touch target */}
-        <p className="mt-6 fold:mt-8 text-center hig-footnote tablet:text-sm text-muted-foreground">
+        <p className="mt-6 fold:mt-8 text-center hig-footnote tablet:hig-body text-muted-foreground">
           Want to explore first?{" "}
           <Link
             href="/dashboard"

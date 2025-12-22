@@ -50,7 +50,7 @@ export function Navbar() {
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="text-sm text-muted-foreground bg-transparent hover:bg-transparent hover:text-foreground data-[state=open]:bg-transparent">
+                <NavigationMenuTrigger className="text-muted-foreground bg-transparent hover:bg-transparent hover:text-foreground data-[state=open]:bg-transparent">
                   Features
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -101,7 +101,7 @@ export function Navbar() {
                 <NavigationMenuLink asChild>
                   <Link
                     href="/website-development"
-                    className="text-sm text-muted-foreground hover:text-foreground px-3 py-2"
+                    className="text-muted-foreground hover:text-foreground px-3 py-2"
                   >
                     Website Development
                   </Link>
@@ -111,7 +111,7 @@ export function Navbar() {
                 <NavigationMenuLink asChild>
                   <Link
                     href="/pricing"
-                    className="text-sm text-muted-foreground hover:text-foreground px-3 py-2"
+                    className="text-muted-foreground hover:text-foreground px-3 py-2"
                   >
                     Pricing
                   </Link>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { createBookingSchema, validateRequest } from "@/lib/validations";
 import { triggerWorkflows } from "@/lib/workflow-executor";
+import { checkBookingLimit } from "@/lib/plan-limits";
 
 // GET /api/bookings - List all bookings
 export async function GET(request) {
@@ -66,6 +67,15 @@ export async function POST(request) {
 
     if (!tenant) {
       return NextResponse.json({ error }, { status });
+    }
+
+    // Check plan limits
+    const limitCheck = await checkBookingLimit(tenant.id);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { error: limitCheck.message, code: "LIMIT_REACHED", limit: limitCheck.limit, current: limitCheck.current },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

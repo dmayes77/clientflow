@@ -353,7 +353,7 @@ export function WebhooksList() {
                         <div className="flex items-center gap-2 mb-1">
                           <Badge
                             variant={webhook.active ? "default" : "secondary"}
-                            className="text-xs"
+                            className="hig-caption2"
                           >
                             {webhook.active ? "Active" : "Disabled"}
                           </Badge>
@@ -367,7 +367,7 @@ export function WebhooksList() {
                                 ? "warning"
                                 : "secondary"
                             }
-                            className="text-xs"
+                            className="hig-caption2"
                           >
                             {deliveryStatus.status === "success" && (
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -505,7 +505,7 @@ export function WebhooksList() {
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                   required
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="hig-caption2 text-muted-foreground">
                   The HTTPS URL that will receive webhook payloads
                 </p>
               </div>
@@ -548,7 +548,7 @@ export function WebhooksList() {
                             ) : (
                               <ChevronRight className="h-4 w-4" />
                             )}
-                            <span className="font-medium text-sm">{category}</span>
+                            <span className="font-medium">{category}</span>
                             {selectedCount > 0 && (
                               <Badge variant="secondary">
                                 {selectedCount}
@@ -559,7 +559,7 @@ export function WebhooksList() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-xs"
+                            className="h-6 hig-caption2"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleCategoryToggle(category);
@@ -579,7 +579,7 @@ export function WebhooksList() {
                                 />
                                 <label
                                   htmlFor={event.id}
-                                  className="text-sm cursor-pointer flex-1"
+                                  className="cursor-pointer flex-1"
                                 >
                                   {event.label}
                                 </label>
@@ -591,7 +591,7 @@ export function WebhooksList() {
                     );
                   })}
                 </ScrollArea>
-                <p className="text-xs text-muted-foreground">
+                <p className="hig-caption2 text-muted-foreground">
                   {formData.events.length} event{formData.events.length !== 1 ? "s" : ""} selected
                 </p>
               </div>
@@ -601,7 +601,7 @@ export function WebhooksList() {
                   <Label htmlFor="active" className="font-medium">
                     Active
                   </Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground">
                     Disabled webhooks won't receive events
                   </p>
                 </div>
@@ -720,15 +720,15 @@ export function WebhooksList() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <code className="text-xs">{delivery.event}</code>
+                            <code className="hig-caption2">{delivery.event}</code>
                           </TableCell>
                           <TableCell>
-                            <code className="text-xs">{delivery.statusCode || "—"}</code>
+                            <code className="hig-caption2">{delivery.statusCode || "—"}</code>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              <span className="text-xs">
+                              <span className="hig-caption2">
                                 {format(new Date(delivery.createdAt), "MMM d, h:mm a")}
                               </span>
                             </div>

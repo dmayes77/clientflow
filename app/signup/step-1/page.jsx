@@ -183,8 +183,8 @@ export default function Step1Page() {
           <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
             <Mail className="w-5 h-5 text-blue-500" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">Check your email</h2>
-          <p className="mt-1 text-[13px] text-gray-500">
+          <h2 className="font-semibold text-gray-900">Check your email</h2>
+          <p className="mt-1 hig-caption1 text-gray-500">
             We sent a verification code to <strong>{email}</strong>
           </p>
         </div>
@@ -196,18 +196,18 @@ export default function Step1Page() {
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="000000"
-              className="w-full h-11 px-4 text-center text-lg tracking-[0.3em] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full h-11 px-4 text-center tracking-[0.3em] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               maxLength={6}
               autoFocus
             />
           </div>
 
-          {error && <p className="text-red-500 text-[13px] text-center">{error}</p>}
+          {error && <p className="text-red-500 hig-caption1 text-center">{error}</p>}
 
           <button
             type="submit"
             disabled={loading || verificationCode.length !== 6}
-            className="w-full h-11 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full h-11 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -220,7 +220,7 @@ export default function Step1Page() {
           </button>
         </form>
 
-        <p className="text-center text-[13px] text-gray-500">
+        <p className="text-center hig-caption1 text-gray-500">
           Didn&apos;t receive the code?{" "}
           <button
             onClick={handleResendCode}
@@ -232,7 +232,7 @@ export default function Step1Page() {
 
         <button
           onClick={() => setPendingVerification(false)}
-          className="w-full min-h-11 text-[13px] text-gray-500 hover:text-gray-700"
+          className="w-full min-h-11 hig-caption1 text-gray-500 hover:text-gray-700"
         >
           Use a different email
         </button>
@@ -244,8 +244,8 @@ export default function Step1Page() {
   return (
     <div className="space-y-5">
       <div className="text-center">
-        <h2 className="text-lg font-semibold text-gray-900">Create your account</h2>
-        <p className="mt-1 text-[13px] text-gray-500">
+        <h2 className="font-semibold text-gray-900">Create your account</h2>
+        <p className="mt-1 hig-caption1 text-gray-500">
           Start your 30-day free trial
         </p>
       </div>
@@ -262,7 +262,7 @@ export default function Step1Page() {
         ) : (
           <>
             <GoogleIcon />
-            <span className="text-gray-700 text-[15px] font-medium">Sign up with Google</span>
+            <span className="text-gray-700 hig-body font-medium">Sign up with Google</span>
           </>
         )}
       </button>
@@ -270,7 +270,7 @@ export default function Step1Page() {
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-gray-300" />
-        <span className="text-gray-400 text-[12px]">or</span>
+        <span className="text-gray-400 hig-caption2">or</span>
         <div className="flex-1 h-px bg-gray-300" />
       </div>
 
@@ -283,7 +283,7 @@ export default function Step1Page() {
               placeholder="First name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="flex-1 min-w-0 px-3 text-[15px] outline-none bg-white text-gray-700 placeholder:text-gray-400"
+              className="flex-1 min-w-0 px-3 hig-body outline-none bg-white text-gray-700 placeholder:text-gray-400"
               required
             />
           </div>
@@ -293,7 +293,7 @@ export default function Step1Page() {
               placeholder="Last name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="flex-1 min-w-0 px-3 text-[15px] outline-none bg-white text-gray-700 placeholder:text-gray-400"
+              className="flex-1 min-w-0 px-3 hig-body outline-none bg-white text-gray-700 placeholder:text-gray-400"
               required
             />
           </div>
@@ -309,7 +309,7 @@ export default function Step1Page() {
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="flex-1 min-w-0 px-3 text-[15px] outline-none bg-white text-gray-700 placeholder:text-gray-400"
+            className="flex-1 min-w-0 px-3 hig-body outline-none bg-white text-gray-700 placeholder:text-gray-400"
             required
           />
         </div>
@@ -325,7 +325,7 @@ export default function Step1Page() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="flex-1 min-w-0 px-3 text-[15px] outline-none bg-white text-gray-700 placeholder:text-gray-400"
+              className="flex-1 min-w-0 px-3 hig-body outline-none bg-white text-gray-700 placeholder:text-gray-400"
               required
             />
             <button
@@ -348,13 +348,13 @@ export default function Step1Page() {
           )}
         </div>
 
-        {error && <p className="text-red-500 text-[13px] text-center">{error}</p>}
+        {error && <p className="text-red-500 hig-caption1 text-center">{error}</p>}
 
         {/* 44px button */}
         <button
           type="submit"
           disabled={loading || !isLoaded || !passwordValidation.isValid}
-          className="w-full h-11 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full h-11 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -367,7 +367,7 @@ export default function Step1Page() {
         </button>
       </form>
 
-      <p className="text-[11px] text-center text-gray-400">
+      <p className="hig-caption2 text-center text-gray-400">
         By signing up, you agree to our{" "}
         <a href="/legal/terms" className="text-blue-500 hover:underline">
           Terms of Service

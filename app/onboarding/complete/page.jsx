@@ -100,7 +100,7 @@ export default function CompletePage() {
                 </div>
                 <div>
                   <h3>{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                  <p className="hig-body text-muted-foreground">{step.description}</p>
                 </div>
               </CardContent>
             </Card>
@@ -114,7 +114,7 @@ export default function CompletePage() {
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="hig-body text-muted-foreground">
           Redirecting to dashboard in {countdown} seconds...
         </p>
       </div>

@@ -500,7 +500,7 @@ export function AvailabilitySettings() {
           {/* Quick Presets */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Quick Presets</CardTitle>
+              <CardTitle>Quick Presets</CardTitle>
               <CardDescription>Apply common schedule templates</CardDescription>
             </CardHeader>
             <CardContent>
@@ -623,7 +623,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">All appointments will be scheduled in this timezone</p>
+                  <p className="hig-caption2 text-muted-foreground">All appointments will be scheduled in this timezone</p>
                 </div>
 
                 <div className="space-y-2">
@@ -640,7 +640,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">How often booking slots are offered to clients</p>
+                  <p className="hig-caption2 text-muted-foreground">How often booking slots are offered to clients</p>
                 </div>
 
                 <div className="space-y-2">
@@ -657,7 +657,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hig-caption2 text-muted-foreground">
                     Deducted from daily hours when calculating business days for service/booking durations
                   </p>
                 </div>
@@ -688,7 +688,7 @@ export function AvailabilitySettings() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="hig-caption2 text-muted-foreground">
                   The calendar will open to this view by default
                 </p>
               </div>

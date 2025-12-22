@@ -21,7 +21,8 @@ model Tenant {
   stripeOnboardingComplete Boolean @default(false)
   stripeTerminalLocationId String?  // Stripe Terminal Location ID for in-person payments
   subscriptionStatus  String?   @default("trialing")
-  planType            String?   @default("basic")
+  planId              String?   // Link to Plan model for limits/features
+  planType            String?   @default("basic") // Legacy - kept for backwards compat
   currentPeriodEnd    DateTime?
 
   businessName        String?
@@ -62,6 +63,12 @@ model Tenant {
   payInFullDiscount     Int?      @default(0)  // 0-15 percentage discount for paying full amount
   balanceDueAt          String?   @default("completion")  // "arrival" or "completion"
 
+  // Push notification preferences
+  pushNotificationsEnabled Boolean @default(false)
+  notifyPayments           Boolean @default(true)  // Payment received, failed, disputed
+  notifyBookings           Boolean @default(true)  // New bookings, cancellations
+  notifySystem             Boolean @default(true)  // Trial expiring, account alerts
+
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -83,8 +90,11 @@ model Tenant {
   emailTemplates      EmailTemplate[]
   terminalReaders     TerminalReader[]
   alerts              Alert[]
+  pushSubscriptions   PushSubscription[]
+  plan                Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
 
   @@index([clerkOrgId])
+  @@index([planId])
 }
 
 model ServiceCategory {
@@ -740,6 +750,76 @@ model GlobalAlertDismissal {
   @@index([alertId])
 }
 
+// Automated alert rules for system-generated alerts
+model AlertRule {
+  id          String    @id @default(cuid())
+
+  name        String    // e.g., "Trial Expiring Soon", "Payment Failed"
+  description String?
+
+  // Trigger configuration
+  triggerType String    // "schedule" | "event" | "condition"
+
+  // For scheduled alerts (cron-based)
+  // e.g., "trial_expiring_3_days", "trial_expiring_1_day", "trial_expired"
+  scheduleType String?
+
+  // For event-based alerts (triggered by webhooks)
+  // e.g., "payment_failed", "subscription_cancelled", "dispute_created"
+  eventType   String?
+
+  // Custom filters (JSON) - additional tenant targeting
+  // e.g., { planIds: [], subscriptionStatuses: [], minBookings: 0, hasPaymentMethod: true }
+  filters     Json?
+
+  // Alert content
+  alertType     String    @default("warning")  // info, warning, error, critical
+  alertTitle    String    // Supports placeholders like {{tenantName}}
+  alertMessage  String    // Supports placeholders
+  actionUrl     String?   // Optional CTA link
+  actionLabel   String?   // Optional CTA text
+
+  // Behavior
+  active        Boolean   @default(true)
+  sendEmail     Boolean   @default(false)  // Also send email notification
+  emailSubject  String?
+  emailTemplate String?   // Template name or inline content
+
+  // Prevent duplicate alerts
+  cooldownHours Int       @default(24)  // Don't re-alert same tenant within X hours
+
+  // Stats
+  lastRunAt     DateTime?
+  alertsSent    Int       @default(0)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String?   // Admin user ID
+
+  @@index([triggerType])
+  @@index([active])
+  @@index([scheduleType])
+  @@index([eventType])
+}
+
+// Track which alerts have been sent to prevent duplicates
+model AlertRuleLog {
+  id          String    @id @default(cuid())
+  ruleId      String
+  tenantId    String
+  alertId     String?   // The created alert ID
+
+  status      String    @default("sent")  // sent, failed, skipped
+  error       String?
+
+  createdAt   DateTime  @default(now())
+
+  @@index([ruleId])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@unique([ruleId, tenantId, createdAt])
+}
+
 // Roadmap items for public roadmap display
 model RoadmapItem {
   id          String    @id @default(cuid())
@@ -849,6 +929,34 @@ model Plan {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
+  tenants           Tenant[]
+
   @@index([active])
   @@index([sortOrder])
+}
+
+// Push notification subscriptions for PWA
+model PushSubscription {
+  id          String    @id @default(cuid())
+  tenantId    String
+  clerkUserId String    // The specific user who subscribed
+
+  // Web Push subscription data
+  endpoint    String    @unique  // The push service endpoint URL
+  p256dh      String    // Public key for encryption
+  auth        String    // Authentication secret
+
+  // Device info
+  userAgent   String?
+  deviceName  String?   // e.g., "iPhone 14 Pro", "Chrome on MacOS"
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastUsedAt  DateTime?
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([clerkUserId])
+  @@index([endpoint])
 }

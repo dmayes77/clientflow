@@ -146,8 +146,8 @@ export default function Step5Page() {
         <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
           <Clock className="w-5 h-5 text-blue-500" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Set Your Availability</h2>
-        <p className="mt-1 text-[13px] text-gray-500">
+        <h2 className="hig-title-2 font-semibold text-gray-900">Set Your Availability</h2>
+        <p className="mt-1 hig-caption1 text-gray-500">
           When can clients book appointments with you?
         </p>
       </div>
@@ -155,11 +155,11 @@ export default function Step5Page() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Timezone */}
         <div>
-          <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
+          <label className="block hig-caption1 font-medium text-gray-700 mb-1.5">
             Timezone
           </label>
           <Select value={timezone} onValueChange={setTimezone}>
-            <SelectTrigger className="h-11 text-[15px] rounded-xl border-gray-300">
+            <SelectTrigger className="h-11 hig-body rounded-xl border-gray-300">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -178,7 +178,7 @@ export default function Step5Page() {
 
         {/* Days */}
         <div>
-          <label className="block text-[13px] font-medium text-gray-700 mb-1.5">
+          <label className="block hig-caption1 font-medium text-gray-700 mb-1.5">
             Working Hours
           </label>
           <div className="space-y-2">
@@ -194,7 +194,7 @@ export default function Step5Page() {
                     onCheckedChange={() => handleDayToggle(day.dayOfWeek)}
                     className="h-6 w-11 shrink-0 [&>span]:size-5 [&>span]:data-[state=checked]:translate-x-5"
                   />
-                  <span className="w-8 text-[13px] font-medium text-gray-700 shrink-0">
+                  <span className="w-8 hig-caption1 font-medium text-gray-700 shrink-0">
                     {dayInfo?.short}
                   </span>
                   {day.active ? (
@@ -205,7 +205,7 @@ export default function Step5Page() {
                           handleTimeChange(day.dayOfWeek, "startTime", v)
                         }
                       >
-                        <SelectTrigger className="flex-1 min-w-0 h-9 text-[13px] rounded-lg border-gray-300">
+                        <SelectTrigger className="flex-1 min-w-0 h-9 hig-caption1 rounded-lg border-gray-300">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -216,14 +216,14 @@ export default function Step5Page() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <span className="text-[12px] text-gray-400 shrink-0">–</span>
+                      <span className="hig-caption2 text-gray-400 shrink-0">–</span>
                       <Select
                         value={day.endTime}
                         onValueChange={(v) =>
                           handleTimeChange(day.dayOfWeek, "endTime", v)
                         }
                       >
-                        <SelectTrigger className="flex-1 min-w-0 h-9 text-[13px] rounded-lg border-gray-300">
+                        <SelectTrigger className="flex-1 min-w-0 h-9 hig-caption1 rounded-lg border-gray-300">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -236,7 +236,7 @@ export default function Step5Page() {
                       </Select>
                     </div>
                   ) : (
-                    <span className="text-[13px] text-gray-400">
+                    <span className="hig-caption1 text-gray-400">
                       Unavailable
                     </span>
                   )}
@@ -250,7 +250,7 @@ export default function Step5Page() {
           <button
             type="button"
             onClick={() => router.push("/onboarding/step-4")}
-            className="min-h-11 flex items-center gap-2 text-[15px] text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
+            className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -258,7 +258,7 @@ export default function Step5Page() {
           <button
             type="submit"
             disabled={saving}
-            className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? (
               <>

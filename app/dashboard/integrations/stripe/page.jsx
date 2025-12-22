@@ -215,8 +215,8 @@ function StripeIntegrationPageContent() {
           </Button>
         </div>
         <div>
-          <h1 className="text-[22px] sm:text-2xl font-bold">Stripe Payments</h1>
-          <p className="text-[13px] sm:text-sm text-muted-foreground">Accept payments from your clients</p>
+          <h1 className="font-bold">Stripe Payments</h1>
+          <p className="text-muted-foreground">Accept payments from your clients</p>
         </div>
         <Card>
           <CardContent className="flex items-center justify-center py-12">
@@ -241,8 +241,8 @@ function StripeIntegrationPageContent() {
         </Button>
       </div>
       <div>
-        <h1 className="text-[22px] sm:text-2xl font-bold">Stripe Payments</h1>
-        <p className="text-[13px] sm:text-sm text-muted-foreground">Accept payments from your clients</p>
+        <h1 className="font-bold">Stripe Payments</h1>
+        <p className="text-muted-foreground">Accept payments from your clients</p>
       </div>
 
       <div className="space-y-6">
@@ -398,7 +398,7 @@ function StripeIntegrationPageContent() {
                 <Alert>
                   <AlertTitle className="mb-2">What you'll need to connect:</AlertTitle>
                   <AlertDescription>
-                    <ul className="list-disc list-inside space-y-1 text-sm">
+                    <ul className="list-disc list-inside space-y-1">
                       <li>Valid government-issued ID</li>
                       <li>Business information (name, address)</li>
                       <li>Bank account for receiving payouts</li>
@@ -440,7 +440,7 @@ function StripeIntegrationPageContent() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="requirePayment" className="font-medium">Require Payment for Bookings</Label>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground">
                   Customers must pay when booking an appointment
                 </p>
               </div>
@@ -482,7 +482,7 @@ function StripeIntegrationPageContent() {
                         <Banknote className="h-4 w-4 text-green-600" />
                         <span className="font-medium">Full Payment</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Customer pays the entire amount upfront
                       </p>
                     </button>
@@ -499,7 +499,7 @@ function StripeIntegrationPageContent() {
                         <DollarSign className="h-4 w-4 text-blue-600" />
                         <span className="font-medium">Deposit</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         Customer pays a deposit, balance due later
                       </p>
                     </button>
@@ -512,7 +512,7 @@ function StripeIntegrationPageContent() {
                     <Label className="font-medium">Deposit Amount</Label>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="depositType" className="text-sm text-muted-foreground">Type</Label>
+                        <Label htmlFor="depositType" className="text-muted-foreground">Type</Label>
                         <Select
                           value={settings.depositType}
                           onValueChange={(v) => handleSettingChange("depositType", v)}
@@ -527,7 +527,7 @@ function StripeIntegrationPageContent() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="depositValue" className="text-sm text-muted-foreground">
+                        <Label htmlFor="depositValue" className="text-muted-foreground">
                           {settings.depositType === "percentage" ? "Percentage" : "Amount"}
                         </Label>
                         <div className="relative">
@@ -566,7 +566,7 @@ function StripeIntegrationPageContent() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                       Example: For a $100 service, deposit would be{" "}
                       <span className="font-medium text-foreground">
                         ${settings.depositType === "percentage"
@@ -598,7 +598,7 @@ function StripeIntegrationPageContent() {
                             <LogIn className="h-4 w-4 text-orange-600" />
                             <span className="font-medium">Upon Arrival</span>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground">
                             Customer pays balance when they arrive
                           </p>
                         </button>
@@ -615,7 +615,7 @@ function StripeIntegrationPageContent() {
                             <CalendarCheck className="h-4 w-4 text-green-600" />
                             <span className="font-medium">After Completion</span>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground">
                             Customer pays balance after services
                           </p>
                         </button>
@@ -631,7 +631,7 @@ function StripeIntegrationPageContent() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label htmlFor="payInFullDiscount" className="font-medium">Pay-in-Full Discount</Label>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         {settings.paymentType === "deposit"
                           ? "Offer a discount when customers pay the full amount instead of just the deposit"
                           : "Offer a discount for paying upfront"}
@@ -662,7 +662,7 @@ function StripeIntegrationPageContent() {
                     <span className="text-muted-foreground">% off (max 15%)</span>
                   </div>
                   {(settings.payInFullDiscount || 0) > 0 && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground">
                       Example: For a $100 service, full payment with {settings.payInFullDiscount}% discount:{" "}
                       <span className="font-medium text-green-600">
                         ${(100 * (1 - (settings.payInFullDiscount || 0) / 100)).toFixed(2)}
@@ -702,7 +702,7 @@ function StripeIntegrationPageContent() {
         {/* Features Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Payment Features</CardTitle>
+            <CardTitle>Payment Features</CardTitle>
             <CardDescription>What you can do with Stripe payments</CardDescription>
           </CardHeader>
           <CardContent>
@@ -736,8 +736,8 @@ export default function StripeIntegrationPage() {
             </Button>
           </div>
           <div>
-            <h1 className="text-[22px] sm:text-2xl font-bold">Stripe Payments</h1>
-            <p className="text-[13px] sm:text-sm text-muted-foreground">Accept payments from your clients</p>
+            <h1 className="font-bold">Stripe Payments</h1>
+            <p className="text-muted-foreground">Accept payments from your clients</p>
           </div>
           <Card>
             <CardContent className="flex items-center justify-center py-12">

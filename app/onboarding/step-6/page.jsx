@@ -105,8 +105,8 @@ export default function Step6Page() {
         <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
           <Briefcase className="w-5 h-5 text-blue-500" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Create Your First Service</h2>
-        <p className="mt-1 text-[13px] text-gray-500">
+        <h2 className="hig-title-2 font-semibold text-gray-900">Create Your First Service</h2>
+        <p className="mt-1 hig-caption1 text-gray-500">
           What service do you offer to clients?
         </p>
       </div>
@@ -114,7 +114,7 @@ export default function Step6Page() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-3">
           <div>
-            <label htmlFor="name" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+            <label htmlFor="name" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
               Service Name *
             </label>
             <input
@@ -124,12 +124,12 @@ export default function Step6Page() {
               onChange={(e) => handleChange("name", e.target.value)}
               placeholder="e.g., Consultation, Photo Session"
               required
-              className="w-full h-11 px-3 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
+              className="w-full h-11 px-3 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+            <label htmlFor="description" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
               Description
             </label>
             <textarea
@@ -138,13 +138,13 @@ export default function Step6Page() {
               onChange={(e) => handleChange("description", e.target.value)}
               placeholder="Describe what's included..."
               rows={3}
-              className="w-full px-3 py-2.5 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400 resize-none"
+              className="w-full px-3 py-2.5 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400 resize-none"
             />
           </div>
 
           <div className="grid gap-3 grid-cols-2">
             <div>
-              <label htmlFor="duration" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+              <label htmlFor="duration" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
                 Duration
               </label>
               <div className="relative">
@@ -153,7 +153,7 @@ export default function Step6Page() {
                   value={formData.duration.toString()}
                   onValueChange={(v) => handleChange("duration", parseInt(v))}
                 >
-                  <SelectTrigger className="h-11 pl-10 text-[15px] rounded-xl border-gray-300">
+                  <SelectTrigger className="h-11 pl-10 hig-body rounded-xl border-gray-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -168,7 +168,7 @@ export default function Step6Page() {
             </div>
 
             <div>
-              <label htmlFor="price" className="block text-[13px] font-medium text-gray-700 mb-1.5">
+              <label htmlFor="price" className="block hig-caption1 font-medium text-gray-700 mb-1.5">
                 Price
               </label>
               <div className="relative">
@@ -181,10 +181,10 @@ export default function Step6Page() {
                   value={formData.price}
                   onChange={(e) => handleChange("price", e.target.value)}
                   placeholder="0.00"
-                  className="w-full h-11 pl-10 pr-3 text-[15px] border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
+                  className="w-full h-11 pl-10 pr-3 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
                 />
               </div>
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="hig-caption2 text-gray-400 mt-1">
                 Leave empty for free
               </p>
             </div>
@@ -195,7 +195,7 @@ export default function Step6Page() {
           <button
             type="button"
             onClick={() => router.push("/onboarding/step-5")}
-            className="min-h-11 flex items-center gap-2 text-[15px] text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
+            className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -206,14 +206,14 @@ export default function Step6Page() {
               type="button"
               onClick={handleSkip}
               disabled={skipping || saving}
-              className="h-11 px-4 text-[15px] text-gray-600 hover:text-gray-900 active:text-gray-800 border border-gray-300 rounded-xl transition-colors disabled:opacity-50"
+              className="h-11 px-4 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 border border-gray-300 rounded-xl transition-colors disabled:opacity-50"
             >
               {skipping ? "Skipping..." : "Skip"}
             </button>
             <button
               type="submit"
               disabled={saving || skipping}
-              className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {saving ? (
                 <>

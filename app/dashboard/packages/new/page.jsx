@@ -259,7 +259,7 @@ export default function PackageNewPage() {
           <p className="text-muted-foreground">Create a new package by bundling services</p>
         </div>
         <div className="flex items-center gap-2">
-          <Label htmlFor="active" className={`text-sm font-medium ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
+          <Label htmlFor="active" className={`font-medium ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
             {formData.active ? "Active" : "Inactive"}
           </Label>
           <Switch
@@ -369,7 +369,7 @@ export default function PackageNewPage() {
                         {option.recommended && (
                           <Badge
                             variant="secondary"
-                            className="absolute -top-2 -right-2 text-[9px] px-1 py-0"
+                            className="absolute -top-2 -right-2 hig-caption2 px-1 py-0"
                           >
                             Best
                           </Badge>
@@ -395,7 +395,7 @@ export default function PackageNewPage() {
                         })}
                       >
                         {option.label}
-                        <span className="ml-1 text-xs opacity-60">{option.example}</span>
+                        <span className="ml-1 hig-caption2 opacity-60">{option.example}</span>
                       </Button>
                     ))}
                   </div>
@@ -421,21 +421,21 @@ export default function PackageNewPage() {
                 <div className="rounded-lg border bg-muted/30 p-4">
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
-                      <p className="text-xs text-muted-foreground">Services</p>
+                      <p className="hig-caption2 text-muted-foreground">Services</p>
                       <p className="font-semibold">{pricePreview.serviceCount}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Duration</p>
+                      <p className="hig-caption2 text-muted-foreground">Duration</p>
                       <p className="font-semibold">{formatDuration(pricePreview.totalDuration)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Original</p>
+                      <p className="hig-caption2 text-muted-foreground">Original</p>
                       <p className="font-semibold line-through text-muted-foreground">{formatPrice(pricePreview.originalPrice)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Package Price</p>
-                      <p className="font-bold text-lg text-green-600">{formatPrice(pricePreview.finalPrice)}</p>
-                      <p className="text-xs text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
+                      <p className="hig-caption2 text-muted-foreground">Package Price</p>
+                      <p className="font-bold text-green-600">{formatPrice(pricePreview.finalPrice)}</p>
+                      <p className="hig-caption2 text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
                     </div>
                   </div>
                 </div>
@@ -448,7 +448,7 @@ export default function PackageNewPage() {
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Select Services *</Label>
-                <span className="text-xs text-muted-foreground">
+                <span className="hig-caption2 text-muted-foreground">
                   {formData.serviceIds.length} selected
                 </span>
               </div>
@@ -498,7 +498,7 @@ export default function PackageNewPage() {
               {/* Grouped Services */}
               <div className="border rounded-md max-h-64 lg:max-h-96 overflow-y-auto">
                 {groupedServices.length === 0 ? (
-                  <p className="p-3 text-sm text-muted-foreground text-center">
+                  <p className="p-3 text-muted-foreground text-center">
                     {serviceSearch ? "No services match your search" : "No active services available"}
                   </p>
                 ) : (
@@ -508,7 +508,7 @@ export default function PackageNewPage() {
                       open={expandedCategories[group.id] !== false}
                       onOpenChange={() => toggleCategory(group.id)}
                     >
-                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 text-sm font-medium bg-muted/50 hover:bg-muted border-b">
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 font-medium bg-muted/50 hover:bg-muted border-b">
                         <ChevronRight
                           className={`h-4 w-4 transition-transform ${
                             expandedCategories[group.id] !== false ? "rotate-90" : ""
@@ -516,7 +516,7 @@ export default function PackageNewPage() {
                         />
                         <Tag className="h-3.5 w-3.5 text-muted-foreground" />
                         {group.name}
-                        <span className="text-xs text-muted-foreground ml-auto mr-1">
+                        <span className="hig-caption2 text-muted-foreground ml-auto mr-1">
                           {group.services.filter((s) => formData.serviceIds.includes(s.id)).length}/
                           {group.services.length}
                         </span>
@@ -532,8 +532,8 @@ export default function PackageNewPage() {
                               onCheckedChange={() => handleServiceToggle(service.id)}
                             />
                             <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                              <span className="text-sm truncate">{service.name}</span>
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              <span className="truncate">{service.name}</span>
+                              <span className="hig-caption2 text-muted-foreground whitespace-nowrap">
                                 {formatDuration(service.duration)} • {formatPrice(service.price)}
                               </span>
                             </div>

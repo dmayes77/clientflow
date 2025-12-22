@@ -137,8 +137,8 @@ export default function Step7Page() {
         <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
           <Eye className="w-5 h-5 text-blue-500" />
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">Ready to Launch!</h2>
-        <p className="mt-1 text-[13px] text-gray-500">
+        <h2 className="hig-title-2 font-semibold text-gray-900">Ready to Launch!</h2>
+        <p className="mt-1 hig-caption1 text-gray-500">
           Review your setup before going live
         </p>
       </div>
@@ -165,7 +165,7 @@ export default function Step7Page() {
                   )}
                 </div>
                 <span
-                  className={`text-[13px] ${
+                  className={`hig-caption1 ${
                     item.done ? "text-gray-900" : "text-gray-500"
                   }`}
                 >
@@ -175,7 +175,7 @@ export default function Step7Page() {
               {!item.done && (
                 <button
                   onClick={() => router.push(item.link)}
-                  className="text-[13px] text-blue-500 hover:text-blue-600 active:text-blue-700 font-medium"
+                  className="hig-caption1 text-blue-500 hover:text-blue-600 active:text-blue-700 font-medium"
                 >
                   Set up
                 </button>
@@ -190,14 +190,14 @@ export default function Step7Page() {
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-gray-900">Your Booking Page</p>
-              <p className="text-[11px] text-gray-500 truncate">
+              <p className="hig-caption1 font-medium text-gray-900">Your Booking Page</p>
+              <p className="hig-caption2 text-gray-500 truncate">
                 clientflow.app/{tenant.slug}
               </p>
             </div>
             <button
               onClick={handlePreview}
-              className="shrink-0 h-9 px-3 text-[13px] font-medium text-blue-600 hover:text-blue-700 border border-blue-300 rounded-lg bg-white flex items-center gap-1.5"
+              className="shrink-0 h-9 px-3 hig-caption1 font-medium text-blue-600 hover:text-blue-700 border border-blue-300 rounded-lg bg-white flex items-center gap-1.5"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Preview
@@ -209,12 +209,12 @@ export default function Step7Page() {
       {/* Status message */}
       <div className="text-center">
         {completedCount === totalCount ? (
-          <p className="text-[13px] text-green-600 flex items-center justify-center gap-1">
+          <p className="hig-caption1 text-green-600 flex items-center justify-center gap-1">
             <CheckCircle2 className="w-4 h-4" />
             All steps completed!
           </p>
         ) : (
-          <p className="text-[13px] text-gray-500">
+          <p className="hig-caption1 text-gray-500">
             {completedCount} of {totalCount} steps completed
           </p>
         )}
@@ -224,7 +224,7 @@ export default function Step7Page() {
         <button
           type="button"
           onClick={() => router.push("/onboarding/step-6")}
-          className="min-h-11 flex items-center gap-2 text-[15px] text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
+          className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -233,7 +233,7 @@ export default function Step7Page() {
         <button
           onClick={handleComplete}
           disabled={completing}
-          className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {completing ? (
             <>

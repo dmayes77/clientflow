@@ -1,19 +1,48 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShieldX } from "lucide-react";
+import { Home, ArrowLeft, HelpCircle } from "lucide-react";
 
 export default function AdminNotFound() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <ShieldX className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-        <p className="text-muted-foreground mb-6">
-          You don't have permission to access this page.
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-background to-muted/30 px-4">
+      <div className="text-center max-w-md">
+        {/* Simple styled 404 */}
+        <h1 className="text-8xl sm:text-9xl font-black bg-linear-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent mb-4">
+          404
+        </h1>
+
+        {/* Message */}
+        <h2 className="hig-title-1 sm:hig-title-1 font-semibold mb-3">
+          Page not found
+        </h2>
+        <p className="text-muted-foreground mb-8">
+          The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
-        <Button asChild>
-          <Link href="/">Go Home</Link>
-        </Button>
+
+        {/* Action buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+          <Button asChild size="lg">
+            <Link href="/">
+              <Home className="w-4 h-4 mr-2" />
+              Go Home
+            </Link>
+          </Button>
+          <Button variant="outline" size="lg" asChild>
+            <Link href="/dashboard">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Dashboard
+            </Link>
+          </Button>
+        </div>
+
+        {/* Help link */}
+        <p className="hig-body text-muted-foreground">
+          Need help?{" "}
+          <Link href="/support" className="text-primary hover:underline inline-flex items-center gap-1">
+            <HelpCircle className="w-3 h-3" />
+            Contact support
+          </Link>
+        </p>
       </div>
     </div>
   );

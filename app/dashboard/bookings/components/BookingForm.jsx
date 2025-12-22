@@ -785,7 +785,7 @@ export function BookingForm({
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="size-6 animate-spin text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -821,7 +821,7 @@ export function BookingForm({
             <h1 className="mb-0!">{isEditMode ? booking?.contact?.name || "Booking Details" : "New Booking"}</h1>
             {isEditMode && <BookingStatusBadge status={formData.status} />}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="hig-caption2 text-muted-foreground">
             {isEditMode ? `Booking #${booking?.id.slice(-6).toUpperCase()} · Created ${formatDate(booking?.createdAt)}` : "Create a new booking for a contact"}
           </p>
         </div>
@@ -860,7 +860,7 @@ export function BookingForm({
                         <CommandList>
                           <CommandEmpty>
                             <div className="py-2 text-center">
-                              <p className="text-sm text-muted-foreground mb-2">No contacts found</p>
+                              <p className="text-muted-foreground mb-2">No contacts found</p>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -887,7 +887,7 @@ export function BookingForm({
                               >
                                 <div>
                                   <span className="font-medium">{contact.name}</span>
-                                  {contact.email && <span className="text-muted-foreground ml-2 text-sm">{contact.email}</span>}
+                                  {contact.email && <span className="text-muted-foreground ml-2">{contact.email}</span>}
                                 </div>
                                 {formData.contactId === contact.id && <span className="text-primary">✓</span>}
                               </CommandItem>
@@ -978,7 +978,7 @@ export function BookingForm({
           {/* Services Selection */}
           <Card className="overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-              <span className="flex items-center gap-1.5 text-sm font-medium">
+              <span className="flex items-center gap-1.5 font-medium">
                 <Receipt className="size-3.5" />
                 Services
                 {currentServices.length > 0 && (
@@ -1003,7 +1003,7 @@ export function BookingForm({
                           .map((service) => (
                             <CommandItem key={service.id} value={service.name} onSelect={() => handleAddService(service.id)} className="flex justify-between">
                               <span>{service.name}</span>
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-muted-foreground hig-caption2">
                                 {formatCurrency(service.price)} · {service.duration}min
                               </span>
                             </CommandItem>
@@ -1020,8 +1020,8 @@ export function BookingForm({
                   {currentServices.map((service) => (
                     <div key={service.id} className="flex items-center justify-between px-2 py-1.5 bg-background rounded border">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate mb-0">{service.name}</p>
-                        <p className="text-xs text-muted-foreground mb-0">
+                        <p className="font-medium truncate mb-0">{service.name}</p>
+                        <p className="hig-caption2 text-muted-foreground mb-0">
                           {formatCurrency(service.price)} · {service.duration}min
                         </p>
                       </div>
@@ -1036,7 +1036,7 @@ export function BookingForm({
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">No services selected</p>
+                <p className="hig-caption2 text-muted-foreground text-center py-3">No services selected</p>
               )}
             </div>
           </Card>
@@ -1044,7 +1044,7 @@ export function BookingForm({
           {/* Packages Selection */}
           <Card className="overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-              <span className="flex items-center gap-1.5 text-sm font-medium">
+              <span className="flex items-center gap-1.5 font-medium">
                 <Package className="size-3.5" />
                 Packages
                 {currentPackages.length > 0 && (
@@ -1069,7 +1069,7 @@ export function BookingForm({
                           .map((pkg) => (
                             <CommandItem key={pkg.id} value={pkg.name} onSelect={() => handleAddPackage(pkg.id)} className="flex justify-between">
                               <span>{pkg.name}</span>
-                              <span className="text-muted-foreground text-xs">{formatCurrency(pkg.price)}</span>
+                              <span className="text-muted-foreground hig-caption2">{formatCurrency(pkg.price)}</span>
                             </CommandItem>
                           ))}
                       </CommandGroup>
@@ -1084,8 +1084,8 @@ export function BookingForm({
                   {currentPackages.map((pkg) => (
                     <div key={pkg.id} className="flex items-center justify-between px-2 py-1.5 bg-background rounded border">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate mb-0">{pkg.name}</p>
-                        <p className="text-xs text-muted-foreground mb-0">{formatCurrency(pkg.price)}</p>
+                        <p className="font-medium truncate mb-0">{pkg.name}</p>
+                        <p className="hig-caption2 text-muted-foreground mb-0">{formatCurrency(pkg.price)}</p>
                       </div>
                       <button
                         type="button"
@@ -1098,7 +1098,7 @@ export function BookingForm({
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">No packages selected</p>
+                <p className="hig-caption2 text-muted-foreground text-center py-3">No packages selected</p>
               )}
             </div>
           </Card>
@@ -1122,7 +1122,7 @@ export function BookingForm({
                   value={formData.totalPrice}
                   onChange={(e) => handleInputChange("totalPrice", parseFloat(e.target.value) || 0)}
                 />
-                <p className="text-xs text-muted-foreground">Price auto-updates when selecting a service or package. You can override it manually.</p>
+                <p className="hig-caption2 text-muted-foreground">Price auto-updates when selecting a service or package. You can override it manually.</p>
               </div>
             </CardContent>
           </Card>
@@ -1158,8 +1158,8 @@ export function BookingForm({
                 <div className="space-y-3">
                   <div>
                     <p className="font-medium">{selectedContact.name}</p>
-                    {selectedContact.email && <p className="text-sm text-muted-foreground">{selectedContact.email}</p>}
-                    {selectedContact.phone && <p className="text-sm text-muted-foreground">{selectedContact.phone}</p>}
+                    {selectedContact.email && <p className="text-muted-foreground">{selectedContact.email}</p>}
+                    {selectedContact.phone && <p className="text-muted-foreground">{selectedContact.phone}</p>}
                   </div>
                   {isEditMode && (
                     <Button variant="outline" size="sm" className="w-full" onClick={() => router.push(`/dashboard/contacts/${booking?.contactId}`)}>
@@ -1188,18 +1188,18 @@ export function BookingForm({
                       <div>
                         <button
                           onClick={() => setInvoiceDialogOpen(true)}
-                          className="text-sm font-medium text-primary hover:underline cursor-pointer text-left"
+                          className="font-medium text-primary hover:underline cursor-pointer text-left"
                         >
                           {booking.invoice.invoiceNumber}
                         </button>
-                        <p className="text-xs text-muted-foreground">{formatCurrency(booking.invoice.total)}</p>
+                        <p className="hig-caption2 text-muted-foreground">{formatCurrency(booking.invoice.total)}</p>
                       </div>
                       <InvoiceStatusBadge status={booking.invoice.status} />
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">No invoice created yet.</p>
+                    <p className="text-muted-foreground">No invoice created yet.</p>
                     <Button variant="outline" size="sm" className="w-full" onClick={handleCreateInvoice} disabled={!booking?.contact}>
                       <Plus className="size-3 mr-2" />
                       Create Invoice
@@ -1234,7 +1234,7 @@ export function BookingForm({
                       );
                     })
                   ) : (
-                    <p className="text-sm text-muted-foreground">No tags assigned</p>
+                    <p className="text-muted-foreground">No tags assigned</p>
                   )}
                 </div>
                 <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
@@ -1250,7 +1250,7 @@ export function BookingForm({
                       <CommandList>
                         <CommandEmpty>
                           <div className="py-2 text-center">
-                            <p className="text-sm text-muted-foreground mb-2">No tags found</p>
+                            <p className="text-muted-foreground mb-2">No tags found</p>
                             <Button
                               variant="outline"
                               size="sm"
@@ -1308,7 +1308,7 @@ export function BookingForm({
               {currentServices.length > 0 && (
                 <div className="space-y-1">
                   {currentServices.map((s) => (
-                    <div key={s.id} className="flex justify-between text-sm">
+                    <div key={s.id} className="flex justify-between">
                       <span className="text-muted-foreground">{s.name}</span>
                       <span className="text-foreground">{formatCurrency(s.price)}</span>
                     </div>
@@ -1319,7 +1319,7 @@ export function BookingForm({
               {currentPackages.length > 0 && (
                 <div className="space-y-1">
                   {currentPackages.map((p) => (
-                    <div key={p.id} className="flex justify-between text-sm">
+                    <div key={p.id} className="flex justify-between">
                       <span className="text-muted-foreground">{p.name}</span>
                       <span className="text-foreground">{formatCurrency(p.price)}</span>
                     </div>
@@ -1327,7 +1327,7 @@ export function BookingForm({
                 </div>
               )}
 
-              {!currentServices.length && !currentPackages.length && <p className="text-sm text-muted-foreground">No items selected</p>}
+              {!currentServices.length && !currentPackages.length && <p className="text-muted-foreground">No items selected</p>}
 
               <div className="flex justify-between pt-2">
                 <span className="text-muted-foreground">Duration</span>
@@ -1437,7 +1437,7 @@ export function BookingForm({
               </div>
             </div>
             <div className="pt-2">
-              <p className="text-sm text-muted-foreground">Preview:</p>
+              <p className="text-muted-foreground">Preview:</p>
               <Badge variant="secondary" className={cn(TAG_COLORS[newTagData.color]?.bg, TAG_COLORS[newTagData.color]?.text, "mt-1")}>
                 {newTagData.name || "Tag name"}
               </Badge>

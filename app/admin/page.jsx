@@ -31,7 +31,7 @@ function StatCard({ title, value, description, icon: Icon, trend, loading }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between p-3 pb-1 sm:p-4 sm:pb-2">
-        <CardTitle className="text-xs font-medium text-muted-foreground sm:text-sm">
+        <CardTitle className="font-medium text-muted-foreground hig-caption1">
           {title}
         </CardTitle>
         <Icon className="h-3.5 w-3.5 text-muted-foreground sm:h-4 sm:w-4" />
@@ -41,9 +41,9 @@ function StatCard({ title, value, description, icon: Icon, trend, loading }) {
           <Skeleton className="h-6 w-16 sm:h-8 sm:w-24" />
         ) : (
           <>
-            <div className="text-lg font-bold sm:text-2xl">{value}</div>
+            <div className="font-bold">{value}</div>
             {description && (
-              <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1 sm:text-xs sm:mt-1">
+              <p className="text-muted-foreground mt-0.5 flex items-center gap-1 hig-caption2">
                 {trend !== undefined && (
                   <>
                     {trend > 0 ? (
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold">Error loading dashboard</h2>
+          <h2 className="font-semibold">Error loading dashboard</h2>
           <p className="text-muted-foreground">{error}</p>
         </div>
       </div>
@@ -150,8 +150,8 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold sm:text-2xl">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground">
             Monitor and manage ClientFlow
           </p>
         </div>
@@ -223,7 +223,7 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Quick Actions</CardTitle>
+          <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">

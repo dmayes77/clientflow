@@ -619,7 +619,7 @@ export function InvoiceDialog({
                 <CommandList>
                   <CommandEmpty>
                     <div className="py-2 text-center">
-                      <p className="text-sm text-muted-foreground mb-2">No contacts found</p>
+                      <p className="text-muted-foreground mb-2">No contacts found</p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -644,7 +644,7 @@ export function InvoiceDialog({
                         <div>
                           <span className="font-medium">{c.name}</span>
                           {c.email && (
-                            <span className="text-muted-foreground ml-2 text-sm">{c.email}</span>
+                            <span className="text-muted-foreground ml-2">{c.email}</span>
                           )}
                         </div>
                         {formData.contactId === c.id && <span className="text-primary">✓</span>}
@@ -769,7 +769,7 @@ export function InvoiceDialog({
                                   <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
                                     <Wrench className="mr-2 h-4 w-4 text-muted-foreground" />
                                     <span className="flex-1 truncate">{option.name}</span>
-                                    <span className="text-muted-foreground text-xs">${option.price.toFixed(2)}</span>
+                                    <span className="text-muted-foreground hig-caption2">${option.price.toFixed(2)}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -780,7 +780,7 @@ export function InvoiceDialog({
                                   <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
                                     <Package className="mr-2 h-4 w-4 text-violet-500" />
                                     <span className="flex-1 truncate">{option.name}</span>
-                                    <span className="text-muted-foreground text-xs">${option.price.toFixed(2)}</span>
+                                    <span className="text-muted-foreground hig-caption2">${option.price.toFixed(2)}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -808,7 +808,7 @@ export function InvoiceDialog({
                 </div>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1">
-                    <Label className="text-xs text-muted-foreground">Qty</Label>
+                    <Label className="hig-caption2 text-muted-foreground">Qty</Label>
                     <Input
                       type="number"
                       min="1"
@@ -817,7 +817,7 @@ export function InvoiceDialog({
                     />
                   </div>
                   <div className="flex-1">
-                    <Label className="text-xs text-muted-foreground">{item.isDiscount ? "Discount" : "Price"}</Label>
+                    <Label className="hig-caption2 text-muted-foreground">{item.isDiscount ? "Discount" : "Price"}</Label>
                     <div className="flex items-center">
                       {item.isDiscount && <Minus className="h-3 w-3 mr-1 text-red-600" />}
                       <Input
@@ -831,8 +831,8 @@ export function InvoiceDialog({
                     </div>
                   </div>
                   <div className="w-20 text-right">
-                    <Label className="text-xs text-muted-foreground">Amount</Label>
-                    <p className={`font-medium text-sm py-2 ${item.isDiscount ? "text-red-600" : ""}`}>
+                    <Label className="hig-caption2 text-muted-foreground">Amount</Label>
+                    <p className={`font-medium py-2 ${item.isDiscount ? "text-red-600" : ""}`}>
                       {item.isDiscount ? "-" : ""}${Math.abs(item.amount || 0).toFixed(2)}
                     </p>
                   </div>
@@ -982,17 +982,17 @@ export function InvoiceDialog({
 
         {/* Totals */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between">
             <span className="text-muted-foreground">Subtotal</span>
             <span>${subtotal.toFixed(2)}</span>
           </div>
           {lineDiscounts > 0 && (
-            <div className="flex justify-between text-sm text-red-600">
+            <div className="flex justify-between text-red-600">
               <span>Discounts</span>
               <span>-${lineDiscounts.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex items-center gap-2 text-sm pt-2 border-t">
+          <div className="flex items-center gap-2 pt-2 border-t">
             <Percent className="h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Coupon"
@@ -1011,12 +1011,12 @@ export function InvoiceDialog({
             />
           </div>
           {formData.discountAmount > 0 && (
-            <div className="flex justify-between text-sm text-red-600">
+            <div className="flex justify-between text-red-600">
               <span>Coupon</span>
               <span>-${formData.discountAmount.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between text-sm pt-2 border-t">
+          <div className="flex items-center justify-between pt-2 border-t">
             <span className="text-muted-foreground">Tax (%)</span>
             <Input
               type="number"
@@ -1028,29 +1028,29 @@ export function InvoiceDialog({
               onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) || 0 })}
             />
           </div>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between">
             <span className="text-muted-foreground">Tax</span>
             <span>${taxAmount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between font-bold text-lg pt-2 border-t">
+          <div className="flex justify-between font-bold pt-2 border-t">
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
           </div>
           {/* Deposit Section */}
           {invoice?.depositPaidAt ? (
             <>
-              <div className="flex justify-between text-sm pt-2 border-t text-green-600">
+              <div className="flex justify-between pt-2 border-t text-green-600">
                 <span>✓ Deposit Paid ({getSafeDepositPercent()}%)</span>
                 <span>-${getDepositAmount().toFixed(2)}</span>
               </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t">
+              <div className="flex justify-between font-bold pt-2 border-t">
                 <span>Balance Due</span>
                 <span>${(total - getDepositAmount()).toFixed(2)}</span>
               </div>
             </>
           ) : (
             <>
-              <div className="flex items-center justify-between text-sm pt-2 border-t">
+              <div className="flex items-center justify-between pt-2 border-t">
                 <span className="text-muted-foreground">Deposit</span>
                 <Select
                   value={formData.depositPercent?.toString() || "none"}
@@ -1073,7 +1073,7 @@ export function InvoiceDialog({
                 </Select>
               </div>
               {getSafeDepositPercent() > 0 && (
-                <div className="flex justify-between text-sm text-blue-600">
+                <div className="flex justify-between text-blue-600">
                   <span>Deposit Due ({getSafeDepositPercent()}%)</span>
                   <span>${getDepositAmount().toFixed(2)}</span>
                 </div>

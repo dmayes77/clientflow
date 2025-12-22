@@ -85,7 +85,7 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       {/* Slug input */}
       <div className="relative">
         <div className="flex h-11 items-center border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
-          <span className="px-3 bg-gray-100 text-gray-500 text-[13px] border-r border-gray-300 h-full flex items-center">
+          <span className="px-3 bg-gray-100 text-gray-500 hig-caption1 border-r border-gray-300 h-full flex items-center">
             clientflow.app/
           </span>
           <input
@@ -98,7 +98,7 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
             }}
             placeholder="your-business"
             className={cn(
-              "flex-1 min-w-0 px-3 text-[15px] outline-none",
+              "flex-1 min-w-0 px-3 hig-body outline-none",
               isEditing ? "bg-white" : "bg-gray-50"
             )}
             disabled={!isEditing && !value}
@@ -125,25 +125,25 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       </div>
 
       {/* Status message */}
-      {error && <p className="text-[11px] text-red-500">{error}</p>}
+      {error && <p className="hig-caption2 text-red-500">{error}</p>}
       {!error && available === true && (
-        <p className="text-[11px] text-green-600">This URL is available!</p>
+        <p className="hig-caption2 text-green-600">This URL is available!</p>
       )}
       {!error && available === false && !checking && (
-        <p className="text-[11px] text-red-500">This URL is already taken</p>
+        <p className="hig-caption2 text-red-500">This URL is already taken</p>
       )}
 
       {/* Suggestions */}
       {suggestions.length > 0 && (
         <div className="space-y-1">
-          <p className="text-[11px] text-gray-500">Try one of these:</p>
+          <p className="hig-caption2 text-gray-500">Try one of these:</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="px-2 py-1 text-[11px] bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+                className="px-2 py-1 hig-caption2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
               >
                 {suggestion}
               </button>
@@ -153,7 +153,7 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       )}
 
       {/* Helper text */}
-      <p className="text-[11px] text-gray-400">
+      <p className="hig-caption2 text-gray-400">
         This will be your booking page URL
       </p>
     </div>

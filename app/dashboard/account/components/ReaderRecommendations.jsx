@@ -104,32 +104,32 @@ export function ReaderRecommendations() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-medium text-sm">{reader.name}</h4>
-                    <Badge variant="outline" className="text-xs">
+                    <h4 className="font-medium">{reader.name}</h4>
+                    <Badge variant="outline" className="hig-caption2">
                       {reader.type}
                     </Badge>
                     {reader.usOnly && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="hig-caption2">
                         US Only
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="hig-caption2 text-muted-foreground mt-0.5">
                     {reader.bestFor}
                   </p>
                   <div className="mt-2 space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
                       <Wifi className="h-3 w-3" />
                       <span>{reader.connectivity}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
                       <Battery className="h-3 w-3" />
                       <span>{reader.display}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {reader.features.map((feature) => (
-                      <Badge key={feature} variant="secondary" className="text-xs font-normal">
+                      <Badge key={feature} variant="secondary" className="hig-caption2 font-normal">
                         {feature}
                       </Badge>
                     ))}
@@ -142,10 +142,10 @@ export function ReaderRecommendations() {
 
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="how-to-purchase" className="border-b-0">
-            <AccordionTrigger className="text-sm hover:no-underline">
+            <AccordionTrigger className="hover:no-underline">
               How do I purchase a reader?
             </AccordionTrigger>
-            <AccordionContent className="text-sm text-muted-foreground space-y-2">
+            <AccordionContent className="text-muted-foreground space-y-2">
               <p>
                 Card readers are purchased directly from Stripe through their Terminal shop.
                 The process is simple:
@@ -173,7 +173,7 @@ export function ReaderRecommendations() {
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="hig-caption2 text-muted-foreground text-center">
           Readers are shipped directly from Stripe. Processing fees are the same as online payments.
         </p>
       </CardContent>

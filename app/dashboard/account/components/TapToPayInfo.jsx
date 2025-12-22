@@ -55,7 +55,7 @@ export function TapToPayInfo() {
           <div>
             <div className="flex items-center gap-2">
               <CardTitle>Accept Payments on Your Phone</CardTitle>
-              <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+              <Badge variant="secondary" className="hig-caption2">Coming Soon</Badge>
             </div>
             <CardDescription className="hig-caption-1">
               Turn your iPhone or Android into a payment terminal
@@ -65,15 +65,15 @@ export function TapToPayInfo() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="rounded-lg bg-muted/50 p-4 space-y-4">
-          <h4 className="font-medium text-sm">Compatible Devices</h4>
+          <h4 className="font-medium">Compatible Devices</h4>
           <div className="grid gap-4 tablet:grid-cols-2">
             {/* iPhone */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Apple className="h-4 w-4" />
-                <span className="font-medium text-sm">iPhone</span>
+                <span className="font-medium">iPhone</span>
               </div>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+              <ul className="text-muted-foreground space-y-1 ml-6">
                 <li className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                   iPhone XS or newer
@@ -93,9 +93,9 @@ export function TapToPayInfo() {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <AndroidIcon className="h-4 w-4" />
-                <span className="font-medium text-sm">Android</span>
+                <span className="font-medium">Android</span>
               </div>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-6">
+              <ul className="text-muted-foreground space-y-1 ml-6">
                 <li className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                   Android 13 or later
@@ -115,11 +115,11 @@ export function TapToPayInfo() {
 
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="iphone-models" className="border-b-0">
-            <AccordionTrigger className="text-sm hover:no-underline">
+            <AccordionTrigger className="hover:no-underline">
               View all compatible iPhones
             </AccordionTrigger>
             <AccordionContent>
-              <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+              <div className="grid grid-cols-2 gap-2 text-muted-foreground">
                 {compatibleIPhones.map((model) => (
                   <span key={model}>{model}</span>
                 ))}
@@ -129,7 +129,7 @@ export function TapToPayInfo() {
         </Accordion>
 
         <div className="rounded-lg border border-dashed p-4 text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground">
             The ClientFlow mobile app is coming soon. Get notified when it's available.
           </p>
           <div className="flex justify-center gap-2">
@@ -144,7 +144,7 @@ export function TapToPayInfo() {
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground text-center space-y-1">
+        <div className="hig-caption2 text-muted-foreground text-center space-y-1">
           <p>
             Tap to Pay lets customers pay by tapping their card, Apple Pay, or Google Pay
             directly on your phone—no additional hardware needed.

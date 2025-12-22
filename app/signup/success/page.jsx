@@ -66,10 +66,10 @@ function SuccessContent() {
     return (
       <div className="text-center py-8">
         <Loader2 className="w-8 h-8 mx-auto animate-spin text-blue-500 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="hig-title-2 font-semibold text-gray-900">
           Setting up your account...
         </h2>
-        <p className="mt-2 text-[13px] text-gray-500">
+        <p className="mt-2 hig-caption1 text-gray-500">
           This will only take a moment
         </p>
       </div>
@@ -80,15 +80,15 @@ function SuccessContent() {
     return (
       <div className="text-center py-8">
         <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
-          <span className="text-lg">!</span>
+          <span className="hig-title-2">!</span>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="hig-title-2 font-semibold text-gray-900">
           Something went wrong
         </h2>
-        <p className="mt-1 text-[13px] text-gray-500">{error}</p>
+        <p className="mt-1 hig-caption1 text-gray-500">{error}</p>
         <button
           onClick={() => router.push("/signup/step-3")}
-          className="mt-5 h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors"
+          className="mt-5 h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors"
         >
           Try Again
         </button>
@@ -108,32 +108,32 @@ function SuccessContent() {
         </div>
       </div>
 
-      <h2 className="text-lg font-bold text-gray-900 mb-1">
+      <h2 className="hig-title-2 font-bold text-gray-900 mb-1">
         Welcome to ClientFlow!
       </h2>
-      <p className="text-[13px] text-gray-500 mb-1">
+      <p className="hig-caption1 text-gray-500 mb-1">
         Your account is set up and ready to go.
       </p>
-      <p className="text-[11px] text-gray-400 mb-5">
+      <p className="hig-caption2 text-gray-400 mb-5">
         Your 30-day free trial has started
       </p>
 
       {/* What's next */}
       <div className="bg-gray-50 rounded-xl p-4 mb-5 text-left">
-        <p className="text-[13px] font-medium text-gray-700 mb-2">
+        <p className="hig-caption1 font-medium text-gray-700 mb-2">
           Next, let&apos;s set up your business:
         </p>
-        <ul className="space-y-1.5 text-[13px] text-gray-600">
+        <ul className="space-y-1.5 hig-caption1 text-gray-600">
           <li className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[11px] flex items-center justify-center font-medium">1</span>
+            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption2 flex items-center justify-center font-medium">1</span>
             Add your business profile
           </li>
           <li className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[11px] flex items-center justify-center font-medium">2</span>
+            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption2 flex items-center justify-center font-medium">2</span>
             Set your availability
           </li>
           <li className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-[11px] flex items-center justify-center font-medium">3</span>
+            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption2 flex items-center justify-center font-medium">3</span>
             Create your first service
           </li>
         </ul>
@@ -141,7 +141,7 @@ function SuccessContent() {
 
       <button
         onClick={handleContinue}
-        className="w-full h-11 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-[15px] font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+        className="w-full h-11 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
       >
         Continue Setup
         <ArrowRight className="w-4 h-4" />

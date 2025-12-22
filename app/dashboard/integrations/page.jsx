@@ -19,8 +19,8 @@ export default function IntegrationsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[22px] sm:text-2xl font-bold">Integrations</h1>
-        <p className="text-[13px] sm:text-sm text-muted-foreground">Connect third-party services to ClientFlow</p>
+        <h1 className="font-bold">Integrations</h1>
+        <p className="text-muted-foreground">Connect third-party services to ClientFlow</p>
       </div>
       <Suspense fallback={<LoadingFallback />}>
         <IntegrationsList />

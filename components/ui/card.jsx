@@ -45,10 +45,7 @@ const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
   <p
     ref={ref}
     className={cn(
-      "text-muted-foreground mb-0",
-      "tablet:text-xs desktop:text-sm",
-      /* HIG footnote (mobile default) */
-      "text-[13px] tracking-[-0.078px] leading-[18px]",
+      "text-muted-foreground mb-0 hig-footnote",
       className
     )}
     {...props}

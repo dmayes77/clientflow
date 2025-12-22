@@ -401,20 +401,20 @@ export function ContactForm({ mode = "create", contactId = null }) {
               {mode === "edit" && stats && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
-                    <span className="block text-2xl font-bold text-white">{stats.totalBookings}</span>
-                    <span className="text-sm text-blue-100">Total Bookings</span>
+                    <span className="block font-bold text-white">{stats.totalBookings}</span>
+                    <span className="text-blue-100">Total Bookings</span>
                   </div>
                   <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
-                    <span className="block text-2xl font-bold text-white">{stats.completedBookings}</span>
-                    <span className="text-sm text-green-100">Completed</span>
+                    <span className="block font-bold text-white">{stats.completedBookings}</span>
+                    <span className="text-green-100">Completed</span>
                   </div>
                   <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
-                    <span className="block text-2xl font-bold text-white">{stats.upcomingBookings}</span>
-                    <span className="text-sm text-amber-100">Upcoming</span>
+                    <span className="block font-bold text-white">{stats.upcomingBookings}</span>
+                    <span className="text-amber-100">Upcoming</span>
                   </div>
                   <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
-                    <span className="block text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
-                    <span className="text-sm text-teal-100">Total Spent</span>
+                    <span className="block font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
+                    <span className="text-teal-100">Total Spent</span>
                   </div>
                 </div>
               )}
@@ -430,7 +430,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
                     {clientTags.map((tag) => (
                       <span
                         key={tag.id}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getTagColorClass(tag.color)}`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full hig-caption2 font-medium border ${getTagColorClass(tag.color)}`}
                       >
                         {tag.name}
                         <button type="button" onClick={() => handleRemoveTag(tag.id)} className="hover:opacity-70 transition-opacity">
@@ -440,7 +440,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
                     ))}
                     <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
                       <PopoverTrigger asChild>
-                        <button type="button" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border hover:bg-accent transition-colors text-sm">
+                        <button type="button" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border hover:bg-accent transition-colors">
                           <AddIcon className="size-3" /> Add Tag
                         </button>
                       </PopoverTrigger>
@@ -454,7 +454,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
                                   type="button"
                                   onClick={handleCreateAndAddTag}
                                   disabled={addingTag}
-                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent cursor-pointer"
+                                  className="flex items-center gap-2 w-full px-3 py-2 hover:bg-accent cursor-pointer"
                                 >
                                   {addingTag ? <LoadingIcon className="h-4 w-4 animate-spin" /> : <AddIcon className="h-4 w-4" />}
                                   Create "{newTagName.trim()}"
