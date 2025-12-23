@@ -39,6 +39,8 @@ function SignInContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
     if (!isLoaded) return;
 
     setError("");
@@ -46,7 +48,7 @@ function SignInContent() {
 
     try {
       const result = await signIn.create({
-        identifier: email,
+        identifier: email.trim(),
         password,
       });
 
@@ -54,10 +56,12 @@ function SignInContent() {
         await setActive({ session: result.createdSessionId });
         router.push("/dashboard");
       } else {
+        console.error("Sign in incomplete:", result);
         setError("Sign in failed. Please try again.");
       }
     } catch (err) {
-      const errorMessage = err.errors?.[0]?.message || "Invalid email or password";
+      console.error("Sign in error:", err);
+      const errorMessage = err.errors?.[0]?.message || err.message || "Invalid email or password";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -141,6 +145,9 @@ function SignInContent() {
               </div>
               <input
                 type="email"
+                name="email"
+                id="email"
+                autoComplete="email username"
                 placeholder="Username or email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -156,6 +163,9 @@ function SignInContent() {
               </div>
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
+                id="password"
+                autoComplete="current-password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -165,6 +175,7 @@ function SignInContent() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
                 className="w-11 sm:w-14 shrink-0 flex items-center justify-center text-gray-400 hover:text-gray-600 bg-white border-l border-gray-300"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
