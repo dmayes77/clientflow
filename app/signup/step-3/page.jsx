@@ -81,10 +81,36 @@ export default function Step3Page() {
     }
   };
 
-  if (loading || plansLoading || plans.length === 0) {
+  if (loading || plansLoading) {
     return (
       <div className="flex items-center justify-center py-12 min-h-[200px]">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (plans.length === 0) {
+    return (
+      <div className="space-y-5">
+        <div className="text-center">
+          <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-red-500" />
+          </div>
+          <h2 className="hig-title-2 font-semibold text-gray-900">No Plans Available</h2>
+          <p className="mt-1 hig-caption1 text-gray-500">
+            Please contact support or check back later.
+          </p>
+        </div>
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => router.push("/signup/step-2")}
+            className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+        </div>
       </div>
     );
   }
