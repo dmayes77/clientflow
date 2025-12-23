@@ -3,16 +3,23 @@
 /**
  * Utility to clear stuck PostgreSQL advisory locks
  * Run this manually if migrations keep timing out
+ * Uses direct database connection (not pooler) for more reliable lock management
  */
 
 const { Client } = require('pg');
 
 async function clearLocks() {
-  const databaseUrl = process.env.DATABASE_URL;
+  let databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
     console.error('❌ DATABASE_URL environment variable not set');
     process.exit(1);
+  }
+
+  // If using Neon pooler, convert to direct connection
+  if (databaseUrl.includes('-pooler.')) {
+    databaseUrl = databaseUrl.replace('-pooler.', '.');
+    console.log('🔄 Using direct database connection (non-pooler)\n');
   }
 
   console.log('🔓 Connecting to database...');
@@ -40,10 +47,20 @@ async function clearLocks() {
       console.table(locksResult.rows);
       console.log('');
 
-      // Release all advisory locks
-      console.log('🔓 Releasing all advisory locks...');
-      await client.query('SELECT pg_advisory_unlock_all()');
-      console.log('✅ All advisory locks released\n');
+      // Get the PIDs holding the locks
+      const pids = locksResult.rows.map(row => row.pid);
+
+      // Terminate sessions holding advisory locks
+      console.log('🔓 Terminating sessions holding advisory locks...');
+      for (const pid of pids) {
+        try {
+          await client.query('SELECT pg_terminate_backend($1)', [pid]);
+          console.log(`  ✅ Terminated session ${pid}`);
+        } catch (err) {
+          console.log(`  ⚠️  Could not terminate session ${pid}: ${err.message}`);
+        }
+      }
+      console.log('✅ All lock-holding sessions terminated\n');
     }
 
     console.log('✨ Done! You can now retry your migration.');

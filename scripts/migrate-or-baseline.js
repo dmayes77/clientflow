@@ -3,6 +3,7 @@
 /**
  * Migration script that handles existing databases
  *
+ * - Uses direct database connection (not pooler) for migrations
  * - Clears any stuck advisory locks
  * - Tries to deploy migrations normally
  * - If database has existing schema without migration history, baselines it first
@@ -14,6 +15,35 @@ const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
 
+// Convert pooler URL to direct connection for migrations
+// Neon pooler connections have stricter timeouts that can cause P1002 errors
+function getDirectDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    console.log('⚠️  DATABASE_URL not set');
+    return databaseUrl;
+  }
+
+  let directUrl = databaseUrl;
+
+  // If using Neon pooler, convert to direct connection
+  if (databaseUrl.includes('-pooler.')) {
+    directUrl = databaseUrl.replace('-pooler.', '.');
+    console.log('🔄 Using direct database connection for migrations (non-pooler)');
+  }
+
+  // Add connection timeout parameters to the URL
+  const url = new URL(directUrl);
+  url.searchParams.set('connect_timeout', '300'); // 5 minutes
+  url.searchParams.set('pool_timeout', '300');
+  url.searchParams.set('statement_timeout', '300000'); // 5 minutes in ms
+
+  return url.toString();
+}
+
+const DIRECT_DATABASE_URL = getDirectDatabaseUrl();
+
 // Increase migration lock timeout to prevent P1002 errors (default is 10s)
 process.env.PRISMA_MIGRATE_LOCK_TIMEOUT = '60000'; // 60 seconds
 
@@ -23,7 +53,11 @@ function exec(command) {
     const output = execSync(command, {
       encoding: 'utf8',
       stdio: 'pipe',
-      env: { ...process.env, PRISMA_MIGRATE_LOCK_TIMEOUT: '60000' }
+      env: {
+        ...process.env,
+        DATABASE_URL: DIRECT_DATABASE_URL,
+        PRISMA_MIGRATE_LOCK_TIMEOUT: '60000'
+      }
     });
     console.log(output);
     return { success: true, output };
@@ -33,9 +67,7 @@ function exec(command) {
 }
 
 async function clearAdvisoryLocks() {
-  const databaseUrl = process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
+  if (!DIRECT_DATABASE_URL) {
     console.log('⚠️  DATABASE_URL not set, skipping lock cleanup');
     return;
   }
@@ -43,14 +75,29 @@ async function clearAdvisoryLocks() {
   console.log('🔓 Clearing any stuck advisory locks...');
 
   const client = new Client({
-    connectionString: databaseUrl,
+    connectionString: DIRECT_DATABASE_URL,
   });
 
   try {
     await client.connect();
 
-    // Release all advisory locks
-    await client.query('SELECT pg_advisory_unlock_all()');
+    // Check for advisory locks
+    const locksResult = await client.query(`
+      SELECT pid FROM pg_locks WHERE locktype = 'advisory'
+    `);
+
+    if (locksResult.rows.length > 0) {
+      console.log(`Found ${locksResult.rows.length} advisory lock(s), terminating sessions...`);
+
+      // Terminate sessions holding advisory locks
+      for (const row of locksResult.rows) {
+        try {
+          await client.query('SELECT pg_terminate_backend($1)', [row.pid]);
+        } catch (err) {
+          // Ignore errors - process might have already terminated
+        }
+      }
+    }
 
     console.log('✅ Advisory locks cleared\n');
   } catch (error) {
