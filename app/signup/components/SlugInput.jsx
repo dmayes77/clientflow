@@ -58,7 +58,8 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [value, checkSlug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]); // Only re-run when value changes, not when checkSlug reference changes
 
   const handleSuggestionClick = (suggestion) => {
     onChange(suggestion);
