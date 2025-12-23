@@ -21,6 +21,7 @@ model Tenant {
   stripeOnboardingComplete Boolean @default(false)
   stripeTerminalLocationId String?  // Stripe Terminal Location ID for in-person payments
   subscriptionStatus  String?   @default("trialing")
+  accountType         String    @default("standard") // "standard", "demo" (demo = full access, no charges, never expires)
   planId              String?   // Link to Plan model for limits/features
   planType            String?   @default("basic") // Legacy - kept for backwards compat
   currentPeriodEnd    DateTime?

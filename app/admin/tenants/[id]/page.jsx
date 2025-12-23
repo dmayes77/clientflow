@@ -126,6 +126,7 @@ export default function TenantDetailPage({ params }) {
   const [subscriptionStatus, setSubscriptionStatus] = useState("");
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState("");
   const [planType, setPlanType] = useState("");
+  const [accountType, setAccountType] = useState("standard");
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -142,6 +143,7 @@ export default function TenantDetailPage({ params }) {
         ? new Date(data.tenant.currentPeriodEnd).toISOString().split("T")[0]
         : "");
       setPlanType(data.tenant.planType || "basic");
+      setAccountType(data.tenant.accountType || "standard");
     },
   });
 
@@ -186,6 +188,7 @@ export default function TenantDetailPage({ params }) {
       subscriptionStatus,
       currentPeriodEnd: currentPeriodEnd || null,
       planType,
+      accountType,
     });
   };
 
@@ -302,6 +305,18 @@ export default function TenantDetailPage({ params }) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="hig-caption2">Account Type</Label>
+            <Select value={accountType} onValueChange={setAccountType}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="demo">Demo (Full Access, No Charges)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <Label className="hig-caption2">Period End</Label>

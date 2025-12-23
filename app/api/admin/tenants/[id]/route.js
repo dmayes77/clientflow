@@ -1,19 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",").map(id => id.trim()) || [];
-
-async function isAdmin() {
-  const { userId } = await auth();
-  if (!userId) return false;
-  return ADMIN_USER_IDS.includes(userId);
-}
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // GET /api/admin/tenants/[id] - Get tenant details
 export async function GET(request, { params }) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -96,7 +88,7 @@ export async function GET(request, { params }) {
 // PATCH /api/admin/tenants/[id] - Update tenant
 export async function PATCH(request, { params }) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -108,6 +100,7 @@ export async function PATCH(request, { params }) {
       "subscriptionStatus",
       "currentPeriodEnd",
       "planType",
+      "accountType",
     ];
 
     const updateData = {};
@@ -136,7 +129,7 @@ export async function PATCH(request, { params }) {
 // DELETE /api/admin/tenants/[id] - Delete tenant (careful!)
 export async function DELETE(request, { params }) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

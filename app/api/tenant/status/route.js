@@ -17,6 +17,7 @@ export async function GET() {
         id: true,
         subscriptionStatus: true,
         planType: true,
+        accountType: true,
         stripeCustomerId: true,
         setupComplete: true,
         currentPeriodEnd: true,
@@ -27,15 +28,22 @@ export async function GET() {
       return NextResponse.json({
         subscriptionStatus: null,
         planType: null,
+        accountType: "standard",
         setupComplete: false,
       });
     }
 
+    // Demo accounts always have "active" status and full access
+    const isDemo = tenant.accountType === "demo";
+    const effectiveStatus = isDemo ? "active" : tenant.subscriptionStatus;
+
     return NextResponse.json({
-      subscriptionStatus: tenant.subscriptionStatus,
+      subscriptionStatus: effectiveStatus,
       planType: tenant.planType,
+      accountType: tenant.accountType || "standard",
+      isDemo,
       setupComplete: tenant.setupComplete,
-      hasSubscription: !!tenant.stripeCustomerId,
+      hasSubscription: isDemo || !!tenant.stripeCustomerId,
       currentPeriodEnd: tenant.currentPeriodEnd,
     });
   } catch (error) {
