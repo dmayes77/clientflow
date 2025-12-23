@@ -125,9 +125,9 @@ export function CameraCapture({
         className={className}
       >
         {isCapturing ? (
-          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          <Loader2 className={`w-4 h-4 ${buttonText ? "mr-2" : ""} animate-spin`} />
         ) : (
-          <Camera className="w-4 h-4 mr-2" />
+          <Camera className={`w-4 h-4 ${buttonText ? "mr-2" : ""}`} />
         )}
         {buttonText}
       </Button>
