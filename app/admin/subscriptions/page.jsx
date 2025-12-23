@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useAdminSubscriptions } from "@/lib/hooks/use-admin";
+import { useAdminPlans } from "@/lib/hooks/use-admin-plans";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,14 +30,6 @@ const STATUS_CONFIG = {
   canceled: { label: "Canceled", icon: XCircle, color: "bg-red-100 text-red-700" },
   incomplete: { label: "Incomplete", icon: AlertCircle, color: "bg-orange-100 text-orange-700" },
   none: { label: "None", icon: XCircle, color: "bg-zinc-100 text-zinc-600" },
-};
-
-const PLAN_CONFIG = {
-  basic: { label: "Basic", color: "bg-zinc-100 text-zinc-700" },
-  starter: { label: "Starter", color: "bg-emerald-100 text-emerald-700" },
-  professional: { label: "Professional", color: "bg-purple-100 text-purple-700" },
-  platform: { label: "Platform", color: "bg-blue-100 text-blue-700" },
-  default: { label: "Unknown", color: "bg-zinc-100 text-zinc-600" },
 };
 
 function formatCurrency(cents) {
@@ -146,9 +139,9 @@ function StatusFilter({ value, onChange, counts }) {
   );
 }
 
-function TenantSubscriptionCard({ tenant }) {
+function TenantSubscriptionCard({ tenant, planConfigMap }) {
   const statusConfig = STATUS_CONFIG[tenant.subscriptionStatus] || STATUS_CONFIG.none;
-  const planConfig = PLAN_CONFIG[tenant.planType] || PLAN_CONFIG.default;
+  const planConfig = planConfigMap[tenant.planType] || planConfigMap.default || { label: tenant.planType || "Unknown", color: "bg-zinc-100 text-zinc-600" };
   const StatusIcon = statusConfig.icon;
   const days = daysUntil(tenant.currentPeriodEnd);
 
@@ -269,7 +262,7 @@ function AtRiskSection({ tenants, loading }) {
   );
 }
 
-function PlanBreakdown({ planCounts, loading }) {
+function PlanBreakdown({ planCounts, loading, planConfigMap }) {
   if (loading) {
     return (
       <Card>
@@ -300,7 +293,7 @@ function PlanBreakdown({ planCounts, loading }) {
         ) : (
           <div className="space-y-2">
             {plans.map(([plan, count]) => {
-              const config = PLAN_CONFIG[plan] || PLAN_CONFIG.basic;
+              const config = planConfigMap[plan] || planConfigMap.default || { label: plan, color: "bg-zinc-100 text-zinc-600" };
               const total = Object.values(planCounts).reduce((a, b) => a + b, 0);
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
 
@@ -332,6 +325,31 @@ export default function SubscriptionsPage() {
   const { data, isLoading: loading } = useAdminSubscriptions({
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
+
+  const { data: plansData } = useAdminPlans();
+  const plans = plansData?.plans || [];
+
+  // Create dynamic plan config from database plans
+  const dynamicPlanConfig = useMemo(() => {
+    const config = {};
+    const colors = [
+      "bg-blue-100 text-blue-700",
+      "bg-purple-100 text-purple-700",
+      "bg-emerald-100 text-emerald-700",
+      "bg-orange-100 text-orange-700",
+      "bg-pink-100 text-pink-700",
+    ];
+
+    plans.forEach((plan, index) => {
+      config[plan.slug] = {
+        label: plan.name,
+        color: colors[index % colors.length],
+      };
+    });
+
+    config.default = { label: "Unknown", color: "bg-zinc-100 text-zinc-600" };
+    return config;
+  }, [plans]);
 
   const tenants = data?.tenants || [];
   const stats = data?.stats || {};
@@ -410,7 +428,7 @@ export default function SubscriptionsPage() {
       <AtRiskSection tenants={tenants} loading={loading} />
 
       {/* Plan Breakdown */}
-      <PlanBreakdown planCounts={planBreakdown} loading={loading} />
+      <PlanBreakdown planCounts={planBreakdown} loading={loading} planConfigMap={dynamicPlanConfig} />
 
       {/* Filter */}
       <StatusFilter
@@ -435,7 +453,7 @@ export default function SubscriptionsPage() {
       ) : (
         <div className="space-y-2">
           {tenants.map((tenant) => (
-            <TenantSubscriptionCard key={tenant.id} tenant={tenant} />
+            <TenantSubscriptionCard key={tenant.id} tenant={tenant} planConfigMap={dynamicPlanConfig} />
           ))}
         </div>
       )}
