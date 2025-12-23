@@ -76,13 +76,10 @@ function SidebarNav({ businessName }) {
 
   // Determine initial section from pathname
   const getInitialSection = () => {
-    return pathname === "/dashboard/settings" ||
-      pathname === "/dashboard/settings/billing" ||
-      pathname === "/dashboard/settings/business" ||
-      pathname === "/dashboard/settings/notifications" ||
-      pathname === "/dashboard/availability" ||
-      pathname === "/dashboard/webhooks" ||
-      pathname === "/dashboard/integrations"
+    return pathname.startsWith("/dashboard/settings") ||
+      pathname.startsWith("/dashboard/availability") ||
+      pathname.startsWith("/dashboard/webhooks") ||
+      pathname.startsWith("/dashboard/integrations")
       ? "account"
       : "business";
   };
