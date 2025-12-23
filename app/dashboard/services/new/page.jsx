@@ -128,10 +128,10 @@ export default function ServiceNewPage() {
   };
 
   const generateAiPrompt = () => {
-    const serviceName = formData.name || "[Your Service Name]";
-    const hasIncludes = formData.includes.length > 0;
+    const serviceName = formData?.name || "[Your Service Name]";
+    const hasIncludes = formData?.includes?.length > 0;
     const includesList = hasIncludes ? formData.includes.map((item, i) => `${i + 1}. ${item}`).join("\n") : null;
-    const currentDescription = formData.description || null;
+    const currentDescription = formData?.description || null;
 
     if (hasIncludes) {
       return `Act as an expert marketing guru with 20+ years of experience in copywriting, SEO, and conversion optimization. You specialize in crafting compelling service descriptions that convert browsers into buyers.
@@ -310,7 +310,7 @@ Format the includes list so I can easily copy each item individually.`;
     }
   };
 
-  const selectedImage = images.find((img) => img.id === formData.imageId);
+  const selectedImage = images.find((img) => img.id === formData?.imageId);
 
   const loading = categoriesLoading || imagesLoading;
 
