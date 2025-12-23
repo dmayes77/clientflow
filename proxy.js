@@ -14,6 +14,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/clerk(.*)",
   "/api/stripe/webhook(.*)",
   "/api/signup(.*)",
+  "/api/setup", // One-time setup endpoint for initial plans
   "/admin(.*)", // Let layout handle auth - shows 404 for non-admins
 ]);
 
