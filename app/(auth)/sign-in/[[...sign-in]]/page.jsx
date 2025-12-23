@@ -287,10 +287,10 @@ function SignInContent() {
 
           {secondFactor ? (
             // Two-Factor Authentication Form
-            <form onSubmit={handleSecondFactor} className="space-y-4" noValidate>
-              <div className="text-center">
-                <h2 className="text-lg font-semibold text-gray-800">Email Verification</h2>
-                <p className="text-sm text-gray-600 mt-2">
+            <form onSubmit={handleSecondFactor} className="space-y-5 sm:space-y-6" noValidate>
+              <div className="text-center space-y-2">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Email Verification</h2>
+                <p className="text-sm text-gray-600">
                   Enter the 6-digit code we sent to your email
                 </p>
               </div>
@@ -321,10 +321,10 @@ function SignInContent() {
               </div>
 
               {/* Error */}
-              {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>}
+              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
               {/* Submit Button */}
-              <div className="flex flex-col gap-3 mt-4">
+              <div className="space-y-4">
                 <button
                   type="submit"
                   disabled={loading || code.length !== 6}
@@ -336,7 +336,7 @@ function SignInContent() {
                     <>Verify</>
                   )}
                 </button>
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-3 text-sm">
                   <button
                     type="button"
                     onClick={() => {
@@ -346,7 +346,7 @@ function SignInContent() {
                       setError("");
                       isSubmitting.current = false;
                     }}
-                    className="text-sm text-gray-600 hover:text-gray-800"
+                    className="text-gray-600 hover:text-gray-800 transition-colors"
                   >
                     Back to sign in
                   </button>
@@ -369,7 +369,7 @@ function SignInContent() {
                         setError("Failed to resend code. Please try again.");
                       }
                     }}
-                    className="text-sm text-blue-500 hover:text-blue-700"
+                    className="text-blue-500 hover:text-blue-700 transition-colors"
                   >
                     Resend Code
                   </button>

@@ -36,8 +36,6 @@ const initialFormState = {
   notes: "",
 };
 
-const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-
 function formatDate(dateString) {
   return (
     new Date(dateString).toLocaleDateString("en-US", {
@@ -72,7 +70,6 @@ export function ContactsList() {
   const [clientToDelete, setClientToDelete] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedLetter, setSelectedLetter] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -102,7 +99,7 @@ export function ContactsList() {
     return contact.tags?.some((tag) => statusTags.includes(tag.name.toLowerCase()));
   };
 
-  // Filter clients based on search, letter, and tags
+  // Filter clients based on search and tags
   const filteredClients = useMemo(() => {
     let result = clients;
 
@@ -115,11 +112,6 @@ export function ContactsList() {
       }
     }
 
-    // Letter filter
-    if (selectedLetter) {
-      result = result.filter((c) => c.name.toUpperCase().startsWith(selectedLetter));
-    }
-
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -129,7 +121,7 @@ export function ContactsList() {
     }
 
     return result;
-  }, [clients, searchQuery, selectedLetter, statusFilter]);
+  }, [clients, searchQuery, statusFilter]);
 
   // Count by tags
   const statusCounts = useMemo(() => {
@@ -511,29 +503,6 @@ export function ContactsList() {
                   Unclassified ({statusCounts.unclassified})
                 </Button>
               </div>
-
-              {/* Alphabet Filter */}
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  variant={selectedLetter === null ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setSelectedLetter(null)}
-                  className="h-7 w-7 p-0"
-                >
-                  All
-                </Button>
-                {ALPHABET.map((letter) => (
-                  <Button
-                    key={letter}
-                    variant={selectedLetter === letter ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setSelectedLetter(selectedLetter === letter ? null : letter)}
-                    className="h-7 w-7 p-0"
-                  >
-                    {letter}
-                  </Button>
-                ))}
-              </div>
             </div>
           </CardHeader>
 
@@ -594,7 +563,6 @@ export function ContactsList() {
                   size="sm"
                   onClick={() => {
                     setSearchQuery("");
-                    setSelectedLetter(null);
                     setStatusFilter("all");
                   }}
                 >

@@ -317,13 +317,14 @@ Format the includes list so I can easily copy each item individually.`;
   const handleCameraCapture = async (photoFile) => {
     const formDataUpload = new FormData();
     formDataUpload.append("file", photoFile);
-    formDataUpload.append("name", `${formData.name || "Service"} photo`);
-    formDataUpload.append("alt", `Photo for ${formData.name || "service"}`);
+    const serviceName = formData?.name || service?.name || "Service";
+    formDataUpload.append("name", `${serviceName} photo`);
+    formDataUpload.append("alt", `Photo for ${serviceName}`);
     formDataUpload.append("type", "product");
 
     try {
       const newImage = await uploadImageMutation.mutateAsync(formDataUpload);
-      setFormData({ ...formData, imageId: newImage.id });
+      setFormData((prev) => ({ ...prev, imageId: newImage.id }));
       toast.success("Service photo captured and uploaded");
     } catch (error) {
       toast.error(error.message || "Failed to upload photo");
