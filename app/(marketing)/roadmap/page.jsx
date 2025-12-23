@@ -189,9 +189,14 @@ const ROADMAP_ITEMS = [
     phase: "building-now",
     items: [
       {
-        title: "Mobile App (Tap to Pay)",
-        description: "Accept contactless payments by tapping cards to your iPhone or Android",
-        icon: Smartphone,
+        title: "Estimates & Quotes",
+        description: "Create and send professional estimates that convert to bookings with approval workflow",
+        icon: Receipt,
+      },
+      {
+        title: "Automated Reminders",
+        description: "Scheduled email reminders before appointments to reduce no-shows",
+        icon: Clock,
       },
     ],
   },
@@ -199,24 +204,14 @@ const ROADMAP_ITEMS = [
     phase: "up-next",
     items: [
       {
-        title: "SMS Notifications",
-        description: "Text message confirmations and reminders for appointments",
-        icon: Smartphone,
-      },
-      {
         title: "Google Calendar Sync",
         description: "Two-way sync with Google Calendar for seamless scheduling",
         icon: Calendar,
       },
       {
-        title: "Automated Reminders",
-        description: "Scheduled email and SMS reminders before appointments",
-        icon: Clock,
-      },
-      {
-        title: "Estimates & Quotes",
-        description: "Create and send professional estimates that convert to bookings",
-        icon: Receipt,
+        title: "SMS Notifications",
+        description: "Text message confirmations and reminders for appointments",
+        icon: Smartphone,
       },
       {
         title: "Automated Google Reviews",
