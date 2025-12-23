@@ -183,6 +183,41 @@ const ROADMAP_ITEMS = [
         description: "Revenue trends, booking metrics, top services, weekly activity charts, and performance insights",
         icon: BarChart3,
       },
+      {
+        title: "Progressive Web App (PWA)",
+        description: "Full PWA capabilities: offline support, installable app, push notifications, and native-like experience",
+        icon: Smartphone,
+      },
+      {
+        title: "Web Share API",
+        description: "Share invoices, bookings, and contacts using native share sheet with fallback support",
+        icon: Mail,
+      },
+      {
+        title: "Background Sync",
+        description: "Automatic retry of failed requests when connection restored for reliable offline operation",
+        icon: Zap,
+      },
+      {
+        title: "File System Access",
+        description: "Direct file uploads and downloads with native file picker for better file management",
+        icon: FileText,
+      },
+      {
+        title: "Contact Picker API",
+        description: "Import contacts directly from device contact list for faster client onboarding",
+        icon: Users,
+      },
+      {
+        title: "Geolocation API",
+        description: "Location tracking for route optimization and location-based features",
+        icon: Navigation,
+      },
+      {
+        title: "Camera & Media Capture",
+        description: "Document scanning, photo capture, and media recording directly from the app",
+        icon: Image,
+      },
     ],
   },
   {

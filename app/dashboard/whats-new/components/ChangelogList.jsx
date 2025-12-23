@@ -22,14 +22,68 @@ import {
   Activity,
   Link2,
   Boxes,
+  Navigation,
+  Share2,
+  Download,
+  Camera,
 } from "lucide-react";
 
 const CHANGELOG = [
   {
+    version: "1.4.0",
+    date: "December 2024",
+    title: "Complete PWA Feature Set",
+    isNew: true,
+    items: [
+      {
+        type: "feature",
+        icon: Share2,
+        title: "Web Share API",
+        description: "Share invoices, bookings, and contacts using native share sheet. Automatic fallback to clipboard copy on unsupported browsers.",
+      },
+      {
+        type: "feature",
+        icon: Zap,
+        title: "Background Sync",
+        description: "Failed API requests automatically retry when connection is restored. No data loss during offline periods.",
+      },
+      {
+        type: "feature",
+        icon: Download,
+        title: "File System Access API",
+        description: "Direct file uploads and downloads with native file picker. Better file management with proper save dialogs.",
+      },
+      {
+        type: "feature",
+        icon: Users,
+        title: "Contact Picker API",
+        description: "Import contacts directly from your device contact list for faster client onboarding (Android/ChromeOS).",
+      },
+      {
+        type: "feature",
+        icon: Navigation,
+        title: "Geolocation API",
+        description: "Location tracking for route optimization between appointments. Calculate distances and plan efficient travel routes.",
+      },
+      {
+        type: "feature",
+        icon: Camera,
+        title: "Camera & Media Capture",
+        description: "Document scanning, photo capture, and media recording directly in the app. Perfect for job site photos and receipts.",
+      },
+      {
+        type: "improvement",
+        icon: Smartphone,
+        title: "Full PWA Capabilities",
+        description: "Complete progressive web app experience with all modern browser APIs. Works offline, installs like a native app.",
+      },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "December 2024",
     title: "TanStack Suite & Developer Experience",
-    isNew: true,
+    isNew: false,
     items: [
       {
         type: "improvement",
