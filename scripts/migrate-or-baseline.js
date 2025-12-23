@@ -12,10 +12,17 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// Increase migration lock timeout to prevent P1002 errors (default is 10s)
+process.env.PRISMA_MIGRATE_LOCK_TIMEOUT = '60000'; // 60 seconds
+
 function exec(command) {
   try {
     console.log(`Running: ${command}`);
-    const output = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
+    const output = execSync(command, {
+      encoding: 'utf8',
+      stdio: 'pipe',
+      env: { ...process.env, PRISMA_MIGRATE_LOCK_TIMEOUT: '60000' }
+    });
     console.log(output);
     return { success: true, output };
   } catch (error) {

@@ -4,6 +4,9 @@
 # Tries to deploy migrations, and if database has existing schema without migration history,
 # baselines it first then deploys
 
+# Increase migration lock timeout to prevent P1002 errors (default is 10s)
+export PRISMA_MIGRATE_LOCK_TIMEOUT=60000
+
 echo "Running database migrations..."
 
 # Try to deploy migrations
