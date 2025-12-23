@@ -61,15 +61,27 @@ export default function Step2Page() {
     setLoading(true);
 
     try {
+      console.log("Creating organization with:", { name: businessName.trim(), slug });
+
       // Create Clerk organization
       const org = await createOrganization({
         name: businessName.trim(),
         slug: slug,
       });
 
-      if (!org || !org.id) {
+      console.log("Organization created:", org);
+
+      if (!org) {
+        console.error("Organization creation returned null/undefined");
         throw new Error("Failed to create organization - no organization returned");
       }
+
+      if (!org.id) {
+        console.error("Organization created but has no ID:", org);
+        throw new Error("Organization created but missing ID");
+      }
+
+      console.log("Setting active organization:", org.id);
 
       // Set as active organization (required for API routes that check orgId)
       await setActive({ organization: org.id });
@@ -85,8 +97,13 @@ export default function Step2Page() {
       // Redirect to payment (use window.location for full reload to ensure org state propagates)
       window.location.href = "/signup/step-3";
     } catch (err) {
-      console.error("Error creating organization:", err);
-      const errorMessage = err.errors?.[0]?.message || err.message || "Failed to create business";
+      console.error("Error creating organization - full error:", err);
+      console.error("Error details:", {
+        message: err.message,
+        errors: err.errors,
+        stack: err.stack,
+      });
+      const errorMessage = err.errors?.[0]?.message || err.message || "Failed to create business. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
