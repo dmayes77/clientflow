@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserButton } from "@clerk/nextjs";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Sidebar,
@@ -32,6 +31,7 @@ import {
   Building2,
   FileText,
   Package,
+  LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -113,11 +113,21 @@ function SidebarNav() {
 }
 
 export function AdminShell({ children }) {
-  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+
+    try {
+      await fetch("/api/admin/auth", { method: "DELETE" });
+      window.location.href = "/admin/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -133,7 +143,15 @@ export function AdminShell({ children }) {
           </span>
           <div className="hidden sm:block flex-1" />
           <div className="w-11 flex items-center justify-end sm:w-auto">
-            {mounted && <UserButton afterSignOutUrl="/" />}
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </header>
 
