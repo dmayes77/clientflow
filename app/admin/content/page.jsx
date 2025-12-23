@@ -43,6 +43,7 @@ import {
   Bug,
   Zap,
   AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 
 const STATUS_CONFIG = {
