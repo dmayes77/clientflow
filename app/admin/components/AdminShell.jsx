@@ -32,10 +32,14 @@ import {
   FileText,
   Package,
   LogOut,
+  Inbox,
 } from "lucide-react";
+import { useUnreadSupportCount } from "@/lib/hooks";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { label: "Overview", href: "/admin", icon: LayoutDashboard },
+  { label: "Inbox", href: "/admin/inbox", icon: Inbox, showBadge: true },
   { label: "Tenants", href: "/admin/tenants", icon: Building2 },
   { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
   { label: "Plans", href: "/admin/plans", icon: Package },
@@ -48,6 +52,7 @@ const navItems = [
 function SidebarNav() {
   const pathname = usePathname();
   const { setOpenMobile, isMobile } = useSidebar();
+  const { data: unreadCount = 0 } = useUnreadSupportCount();
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
@@ -80,12 +85,21 @@ function SidebarNav() {
                 const Icon = item.icon;
                 const isActive = pathname === item.href ||
                   (item.href !== "/admin" && pathname.startsWith(item.href));
+                const showBadge = item.showBadge && unreadCount > 0;
+
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.label} onClick={handleNavClick}>
-                      <Link href={item.href}>
-                        <Icon />
-                        <span>{item.label}</span>
+                      <Link href={item.href} className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Icon />
+                          <span>{item.label}</span>
+                        </div>
+                        {showBadge && (
+                          <Badge variant="destructive" className="ml-auto">
+                            {unreadCount}
+                          </Badge>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

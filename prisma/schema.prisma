@@ -92,6 +92,7 @@ model Tenant {
   terminalReaders     TerminalReader[]
   alerts              Alert[]
   pushSubscriptions   PushSubscription[]
+  supportMessages     SupportMessage[]
   plan                Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
 
   @@index([clerkOrgId])
@@ -960,4 +961,30 @@ model PushSubscription {
   @@index([tenantId])
   @@index([clerkUserId])
   @@index([endpoint])
+}
+
+model SupportMessage {
+  id          String    @id @default(cuid())
+  type        String    @default("support")  // "support", "bug", "feature", "error"
+  subject     String
+  message     String    @db.Text
+  name        String?   // Name from marketing site form
+  email       String?   // Email from marketing site form
+  tenantId    String?   // null if from marketing site, populated if from tenant dashboard
+  status      String    @default("unread")  // "unread", "read", "resolved", "archived"
+  priority    String    @default("normal")  // "low", "normal", "high", "urgent"
+
+  // Metadata: browser info, error stack, page URL, etc.
+  metadata    Json?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  resolvedAt  DateTime?
+
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([type])
+  @@index([tenantId])
+  @@index([createdAt])
 }
