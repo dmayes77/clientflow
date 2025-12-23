@@ -104,9 +104,6 @@ function SortableRoadmapItem({ item, onEdit, onDelete }) {
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.planned;
-  const StatusIcon = statusConfig.icon;
-
   return (
     <div ref={setNodeRef} style={style}>
       <Card>
@@ -119,19 +116,13 @@ function SortableRoadmapItem({ item, onEdit, onDelete }) {
             >
               <GripVertical className="h-4 w-4" />
             </button>
-            <div className="flex items-start justify-between gap-2 flex-1 min-w-0">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium hig-body">{item.title}</div>
-                {item.description && (
-                  <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
-                    {item.description}
-                  </p>
-                )}
-              </div>
-              <Badge className={`shrink-0 hig-caption2 ${statusConfig.color}`}>
-                <StatusIcon className="h-2.5 w-2.5 mr-0.5" />
-                {statusConfig.label}
-              </Badge>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium hig-body">{item.title}</div>
+              {item.description && (
+                <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
+                  {item.description}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-between mt-2 ml-6">
@@ -393,6 +384,13 @@ export default function ContentManagementPage() {
 
     if (!over || active.id === over.id) return;
 
+    // Find the items being moved
+    const activeItem = localRoadmapItems.find((item) => item.id === active.id);
+    const overItem = localRoadmapItems.find((item) => item.id === over.id);
+
+    // Only allow reordering within the same status
+    if (!activeItem || !overItem || activeItem.status !== overItem.status) return;
+
     const oldIndex = localRoadmapItems.findIndex((item) => item.id === active.id);
     const newIndex = localRoadmapItems.findIndex((item) => item.id === over.id);
 
@@ -400,11 +398,13 @@ export default function ContentManagementPage() {
     const newItems = arrayMove(localRoadmapItems, oldIndex, newIndex);
     setLocalRoadmapItems(newItems);
 
-    // Update priorities in database
-    // Assign new priorities based on position (higher position = higher priority)
-    const updates = newItems.map((item, index) => ({
+    // Update priorities only for items in this status group
+    const status = activeItem.status;
+    const statusItems = newItems.filter((item) => item.status === status);
+
+    const updates = statusItems.map((item, index) => ({
       id: item.id,
-      priority: 1000 - index, // Start from 1000 and decrement
+      priority: 1000 - index, // Higher position = higher priority
     }));
 
     // Batch update priorities
@@ -551,7 +551,7 @@ export default function ContentManagementPage() {
             </DialogContent>
           </Dialog>
 
-          {/* Items List */}
+          {/* Items List - Grouped by Status */}
           {roadmapLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
@@ -563,30 +563,60 @@ export default function ContentManagementPage() {
               </CardContent>
             </Card>
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={localRoadmapItems.map((item) => item.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {localRoadmapItems.map((item) => (
-                    <SortableRoadmapItem
-                      key={item.id}
-                      item={item}
-                      onEdit={(item) => {
-                        setEditingRoadmap(item);
-                        setShowRoadmapDialog(true);
-                      }}
-                      onDelete={handleDeleteRoadmap}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+            <div className="space-y-6">
+              {["planned", "in_progress", "completed", "archived"].map((status) => {
+                const statusItems = localRoadmapItems.filter((item) => item.status === status);
+                if (statusItems.length === 0) return null;
+
+                const config = STATUS_CONFIG[status];
+                const Icon = config.icon;
+
+                return (
+                  <Card key={status}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1.5 rounded ${config.color}`}>
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <CardTitle className="hig-body">{config.label}</CardTitle>
+                        <Badge variant="outline" className="hig-caption2 ml-auto">
+                          {statusItems.length}
+                        </Badge>
+                      </div>
+                      <CardDescription className="hig-caption2">
+                        Drag to reorder priority within this status
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext
+                          items={statusItems.map((item) => item.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-2">
+                            {statusItems.map((item) => (
+                              <SortableRoadmapItem
+                                key={item.id}
+                                item={item}
+                                onEdit={(item) => {
+                                  setEditingRoadmap(item);
+                                  setShowRoadmapDialog(true);
+                                }}
+                                onDelete={handleDeleteRoadmap}
+                              />
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </TabsContent>
 

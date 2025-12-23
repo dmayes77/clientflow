@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sparkles,
   CreditCard,
@@ -26,189 +28,121 @@ import {
   Share2,
   Download,
   Camera,
+  Bug,
+  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 
-const CHANGELOG = [
-  {
-    version: "1.4.0",
-    date: "December 2025",
-    title: "Complete PWA Feature Set",
-    isNew: true,
-    items: [
-      {
-        type: "feature",
-        icon: Share2,
-        title: "Web Share API",
-        description: "Share invoices, bookings, and contacts using native share sheet. Automatic fallback to clipboard copy on unsupported browsers.",
-      },
-      {
-        type: "feature",
-        icon: Zap,
-        title: "Background Sync",
-        description: "Failed API requests automatically retry when connection is restored. No data loss during offline periods.",
-      },
-      {
-        type: "feature",
-        icon: Download,
-        title: "File System Access API",
-        description: "Direct file uploads and downloads with native file picker. Better file management with proper save dialogs.",
-      },
-      {
-        type: "feature",
-        icon: Users,
-        title: "Contact Picker API",
-        description: "Import contacts directly from your device contact list for faster client onboarding (Android/ChromeOS).",
-      },
-      {
-        type: "feature",
-        icon: Navigation,
-        title: "Geolocation API (Ready for Smart Routing)",
-        description: "Location tracking infrastructure ready for route optimization. UI features coming in future updates.",
-      },
-      {
-        type: "feature",
-        icon: Camera,
-        title: "Camera & Media Capture (Ready for Job Photos)",
-        description: "Camera API infrastructure ready for job site photos and receipt scanning. UI components coming in future updates.",
-      },
-      {
-        type: "improvement",
-        icon: Smartphone,
-        title: "Full PWA Capabilities",
-        description: "Complete progressive web app experience with all modern browser APIs. Works offline, installs like a native app.",
-      },
-    ],
-  },
-  {
-    version: "1.2.0",
-    date: "December 2025",
-    title: "Stripe Connect & Payment Processing",
-    isNew: false,
-    items: [
-      {
-        type: "feature",
-        icon: CreditCard,
-        title: "Stripe Connect Integration",
-        description: "Accept payments directly to your bank account with full Stripe Connect setup. Configure deposit or full payment options with optional pay-in-full discounts.",
-      },
-      {
-        type: "feature",
-        icon: Receipt,
-        title: "Payment Dashboard",
-        description: "View all customer payments with full transaction details. Track deposits, refunds, and disputes. Export chargeback evidence when needed.",
-      },
-      {
-        type: "feature",
-        icon: Smartphone,
-        title: "Terminal Reader Support",
-        description: "Connect Stripe Terminal hardware readers (S700, WisePOS E, WisePad 3) for in-person card payments.",
-      },
-      {
-        type: "feature",
-        icon: Receipt,
-        title: "Auto-Invoice on Deposits",
-        description: "When customers pay a deposit, an invoice is automatically created with a Stripe Payment Link for the remaining balance.",
-      },
-    ],
-  },
-  {
-    version: "1.1.0",
-    date: "November 2024",
-    title: "Automation & Notifications",
-    items: [
-      {
-        type: "feature",
-        icon: Workflow,
-        title: "Email Workflows",
-        description: "Create automated email sequences triggered by events like tag additions, new leads, or booking confirmations.",
-      },
-      {
-        type: "feature",
-        icon: Mail,
-        title: "Email Templates",
-        description: "Design reusable email templates with a rich text editor. Organize by category for quick access.",
-      },
-      {
-        type: "feature",
-        icon: Bell,
-        title: "In-App Notifications",
-        description: "Real-time alerts for payment disputes, booking updates, and important account events.",
-      },
-      {
-        type: "improvement",
-        icon: Shield,
-        title: "Dispute Alerts",
-        description: "Get notified immediately when a payment dispute is opened, with evidence gathering support.",
-      },
-    ],
-  },
-  {
-    version: "1.0.0",
-    date: "October 2024",
-    title: "Platform Launch",
-    items: [
-      {
-        type: "feature",
-        icon: Calendar,
-        title: "Booking Management",
-        description: "Full-featured calendar with week/day views, booking status tracking, and client assignment.",
-      },
-      {
-        type: "feature",
-        icon: Users,
-        title: "Client CRM",
-        description: "Manage unlimited clients with contact details, booking history, tags, and notes.",
-      },
-      {
-        type: "feature",
-        icon: Package,
-        title: "Services & Packages",
-        description: "Create services with pricing and duration. Bundle into packages with discount options.",
-      },
-      {
-        type: "feature",
-        icon: Receipt,
-        title: "Invoicing",
-        description: "Generate professional invoices with line items, taxes, and discounts. Send via email.",
-      },
-      {
-        type: "feature",
-        icon: Code,
-        title: "REST API",
-        description: "Full headless API for custom integrations. No limiting widgets—build your own booking experience.",
-      },
-      {
-        type: "feature",
-        icon: Webhook,
-        title: "Webhooks",
-        description: "Real-time event notifications for bookings, clients, payments, and invoices.",
-      },
-      {
-        type: "feature",
-        icon: Image,
-        title: "Media Library",
-        description: "CDN-powered image storage for services, packages, and branding.",
-      },
-    ],
-  },
-];
+// Icon mapping
+const ICON_MAP = {
+  Sparkles,
+  CreditCard,
+  Smartphone,
+  Bell,
+  Receipt,
+  Workflow,
+  Mail,
+  Shield,
+  Zap,
+  Calendar,
+  Users,
+  Package,
+  Image,
+  Code,
+  Webhook,
+  FileText,
+  Activity,
+  Link2,
+  Boxes,
+  Navigation,
+  Share2,
+  Download,
+  Camera,
+  Bug,
+  AlertTriangle,
+};
 
 const TYPE_STYLES = {
   feature: "bg-green-100 text-green-700",
   improvement: "bg-blue-100 text-blue-700",
   fix: "bg-orange-100 text-orange-700",
+  breaking: "bg-red-100 text-red-700",
 };
 
 const TYPE_LABELS = {
   feature: "New",
   improvement: "Improved",
   fix: "Fixed",
+  breaking: "Breaking",
 };
 
 export function ChangelogList() {
+  const [changelog, setChangelog] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/public/changelog")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.changelog) {
+          setChangelog(data.changelog);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch changelog:", err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {[1, 2, 3].map((j) => (
+                <Skeleton key={j} className="h-20 w-full" />
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-muted-foreground">Failed to load changelog</p>
+          <p className="text-sm text-muted-foreground mt-2">{error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (changelog.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-muted-foreground">No releases yet</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Check back soon for updates!
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {CHANGELOG.map((release) => (
+      {changelog.map((release) => (
         <Card key={release.version}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -221,33 +155,51 @@ export function ChangelogList() {
                   <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Latest</Badge>
                 )}
               </div>
-              <div className="text-muted-foreground">
-                v{release.version} &middot; {release.date}
+              <div className="text-muted-foreground flex items-center gap-2">
+                <span>v{release.version} &middot; {release.date}</span>
+                {release.htmlUrl && (
+                  <a
+                    href={release.htmlUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {release.items.map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className={`p-2 rounded-lg ${TYPE_STYLES[item.type]}`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{item.title}</span>
-                      <Badge variant="outline" className="hig-caption2">
-                        {TYPE_LABELS[item.type]}
-                      </Badge>
+            {release.items && release.items.length > 0 ? (
+              release.items.map((item, index) => {
+                const Icon = ICON_MAP[item.icon] || Sparkles;
+                return (
+                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className={`p-2 rounded-lg ${TYPE_STYLES[item.type] || TYPE_STYLES.feature}`}>
+                      <Icon className="h-4 w-4" />
                     </div>
-                    <p className="text-muted-foreground mt-0.5">
-                      {item.description}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{item.title}</span>
+                        <Badge variant="outline" className="hig-caption2">
+                          {TYPE_LABELS[item.type] || TYPE_LABELS.feature}
+                        </Badge>
+                      </div>
+                      {item.description && item.description !== item.title && (
+                        <p className="text-muted-foreground mt-0.5">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="p-3 rounded-lg bg-muted/50">
+                <p className="text-muted-foreground">See full release notes for details.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
