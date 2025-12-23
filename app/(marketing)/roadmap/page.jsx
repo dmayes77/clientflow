@@ -239,6 +239,11 @@ const ROADMAP_ITEMS = [
         description: "Sell and redeem gift certificates for your services",
         icon: Gift,
       },
+      {
+        title: "Zapier Integration",
+        description: "Connect to 5000+ apps including Google Sheets, Slack, Gmail, Mailchimp, and Airtable",
+        icon: Zap,
+      },
     ],
   },
   {

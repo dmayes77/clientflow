@@ -1,0 +1,35 @@
+{
+  "name": "clientflow-zapier",
+  "version": "1.0.0",
+  "description": "ClientFlow integration for Zapier - Connect to 5000+ apps",
+  "main": "index.js",
+  "scripts": {
+    "test": "zapier test",
+    "validate": "zapier validate",
+    "push": "zapier push",
+    "promote": "zapier promote"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
+  },
+  "dependencies": {
+    "zapier-platform-core": "^15.0.0"
+  },
+  "devDependencies": {
+    "zapier-platform-cli": "^15.0.0"
+  },
+  "keywords": [
+    "zapier",
+    "clientflow",
+    "booking",
+    "crm",
+    "invoicing",
+    "scheduling",
+    "payments",
+    "webhooks"
+  ],
+  "author": "ClientFlow",
+  "license": "UNLICENSED",
+  "private": true
+}
