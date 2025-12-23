@@ -317,7 +317,12 @@ export async function DELETE(request) {
 
     if (tenantsUsingPlan > 0) {
       // Don't delete, just archive
-      await stripe.products.update(plan.stripeProductId, { active: false });
+      try {
+        await stripe.products.update(plan.stripeProductId, { active: false });
+      } catch (stripeError) {
+        console.error("Error archiving in Stripe (product may not exist):", stripeError.message);
+        // Continue with database archival even if Stripe fails
+      }
 
       const archivedPlan = await prisma.plan.update({
         where: { id },
@@ -331,12 +336,18 @@ export async function DELETE(request) {
     }
 
     // Archive in Stripe (don't delete, just deactivate)
-    await stripe.products.update(plan.stripeProductId, { active: false });
-    if (plan.stripePriceId) {
-      await stripe.prices.update(plan.stripePriceId, { active: false });
-    }
-    if (plan.stripePriceIdYearly) {
-      await stripe.prices.update(plan.stripePriceIdYearly, { active: false });
+    // Use try-catch for Stripe operations in case product doesn't exist
+    try {
+      await stripe.products.update(plan.stripeProductId, { active: false });
+      if (plan.stripePriceId) {
+        await stripe.prices.update(plan.stripePriceId, { active: false });
+      }
+      if (plan.stripePriceIdYearly) {
+        await stripe.prices.update(plan.stripePriceIdYearly, { active: false });
+      }
+    } catch (stripeError) {
+      console.error("Error archiving in Stripe (product may not exist):", stripeError.message);
+      // Continue with database deletion even if Stripe fails
     }
 
     // Delete from database
