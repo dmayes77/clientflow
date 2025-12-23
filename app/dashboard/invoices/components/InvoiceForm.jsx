@@ -12,9 +12,27 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Trash2, Send } from "lucide-react";
 import { AddIcon, LoadingIcon, CloseIcon } from "@/lib/icons";
+import {
+  useInvoice,
+  useCreateInvoice,
+  useUpdateInvoice,
+  useDeleteInvoice,
+  useSendInvoice,
+  useContacts,
+  useCreateContact,
+  useBookings,
+  useServices,
+  usePackages,
+  useTenant,
+} from "@/lib/hooks";
+import {
+  useTanstackForm,
+  TextField,
+  SelectField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 
 // Safe lineItems parser - handles JSON string or array
 const getSafeLineItems = (lineItems) => {
@@ -57,130 +75,152 @@ const initialFormState = {
 
 export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactId = null }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [formData, setFormData] = useState(initialFormState);
-  const [contacts, setContacts] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [services, setServices] = useState([]);
-  const [packages, setPackages] = useState([]);
   const [servicePopoverOpen, setServicePopoverOpen] = useState({});
   const [contactPopoverOpen, setContactPopoverOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [invoice, setInvoice] = useState(null);
 
   // New contact dialog state
   const [newContactDialogOpen, setNewContactDialogOpen] = useState(false);
-  const [creatingContact, setCreatingContact] = useState(false);
   const [newContactData, setNewContactData] = useState({
     name: "",
     email: "",
     phone: "",
   });
 
+  // Fetch data using TanStack Query hooks
+  const { data: contacts = [], isLoading: contactsLoading } = useContacts();
+  const { data: bookings = [], isLoading: bookingsLoading } = useBookings();
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const { data: packages = [], isLoading: packagesLoading } = usePackages();
+  const { data: tenant, isLoading: tenantLoading } = useTenant();
+  const { data: invoice, isLoading: invoiceLoading } = useInvoice(mode === "edit" ? invoiceId : null);
+
+  // Mutations
+  const createInvoiceMutation = useCreateInvoice();
+  const updateInvoiceMutation = useUpdateInvoice();
+  const deleteInvoiceMutation = useDeleteInvoice();
+  const sendInvoiceMutation = useSendInvoice();
+  const createContactMutation = useCreateContact();
+
+  // Calculate loading state
+  const loading = contactsLoading || bookingsLoading || servicesLoading || packagesLoading || tenantLoading || (mode === "edit" && invoiceLoading);
+
+  // TanStack Form
+  const form = useTanstackForm({
+    defaultValues: initialFormState,
+    onSubmit: async (values) => {
+      if (!values.contactId) {
+        toast.error("Please select a contact for this invoice");
+        return;
+      }
+
+      const { subtotal, taxAmount, total } = calculateTotals(values);
+
+      const payload = {
+        contactId: values.contactId,
+        bookingId: values.bookingId || null,
+        contactName: values.contactName,
+        contactEmail: values.contactEmail,
+        contactAddress: values.contactAddress || null,
+        dueDate: new Date(values.dueDate).toISOString(),
+        status: values.status,
+        lineItems: values.lineItems.map((item) => ({
+          description: item.description,
+          quantity: parseInt(item.quantity) || 1,
+          unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
+          amount: Math.round(parseFloat(item.amount) * 100) || 0,
+          serviceId: item.serviceId || null,
+          packageId: item.packageId || null,
+          isDiscount: item.isDiscount || false,
+        })),
+        subtotal: Math.round(subtotal * 100),
+        discountCode: values.discountCode || null,
+        discountAmount: Math.round((values.discountAmount || 0) * 100),
+        taxRate: parseFloat(values.taxRate) || 0,
+        taxAmount: Math.round(taxAmount * 100),
+        total: Math.round(total * 100),
+        depositPercent:
+          values.depositPercent !== null && values.depositPercent !== undefined && values.depositPercent > 0 ? values.depositPercent : null,
+        notes: values.notes || null,
+        terms: values.terms || null,
+      };
+
+      const mutation = mode === "edit" ? updateInvoiceMutation : createInvoiceMutation;
+      const mutationPayload = mode === "edit" ? { id: invoiceId, ...payload } : payload;
+
+      mutation.mutate(mutationPayload, {
+        onSuccess: () => {
+          toast.success(mode === "edit" ? "Invoice updated" : "Invoice created");
+          router.push("/dashboard/invoices");
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to save invoice");
+        },
+      });
+    },
+  });
+
+  // Initialize form data when invoice or tenant data loads
   useEffect(() => {
-    fetchData();
-  }, [invoiceId]);
+    if (mode === "edit" && invoice) {
+      const convertedLineItems = getSafeLineItems(invoice.lineItems).map((item) => {
+        const quantity = parseInt(item.quantity) || 1;
+        const unitPrice = (parseFloat(item.unitPrice) || 0) / 100;
+        const isDiscount = item.isDiscount || false;
+        // Recalculate amount from qty * price to ensure it's correct
+        const amount = isDiscount ? -Math.abs(quantity * unitPrice) : quantity * unitPrice;
+        return {
+          description: item.description || "",
+          quantity,
+          unitPrice,
+          amount,
+          serviceId: item.serviceId || null,
+          packageId: item.packageId || null,
+          isDiscount,
+        };
+      });
 
-  const fetchData = async () => {
-    try {
-      const promises = [fetch("/api/contacts"), fetch("/api/bookings"), fetch("/api/services"), fetch("/api/packages"), fetch("/api/tenant")];
-
-      if (mode === "edit" && invoiceId) {
-        promises.push(fetch(`/api/invoices/${invoiceId}`));
-      }
-
-      const responses = await Promise.all(promises);
-      const [contactsRes, bookingsRes, servicesRes, packagesRes, tenantRes, invoiceRes] = responses;
-
-      let contactsData = [];
-      if (contactsRes.ok) {
-        contactsData = await contactsRes.json();
-        setContacts(contactsData);
-      }
-      if (bookingsRes.ok) setBookings(await bookingsRes.json());
-      if (servicesRes.ok) setServices(await servicesRes.json());
-      if (packagesRes.ok) setPackages(await packagesRes.json());
-
-      let taxRate = 0;
-      if (tenantRes.ok) {
-        const tenantData = await tenantRes.json();
-        taxRate = tenantData.defaultTaxRate || 0;
-      }
-
-      if (mode === "edit" && invoiceRes?.ok) {
-        const invoiceData = await invoiceRes.json();
-        setInvoice(invoiceData);
-
-        const convertedLineItems = getSafeLineItems(invoiceData.lineItems).map((item) => {
-          const quantity = parseInt(item.quantity) || 1;
-          const unitPrice = (parseFloat(item.unitPrice) || 0) / 100;
-          const isDiscount = item.isDiscount || false;
-          // Recalculate amount from qty * price to ensure it's correct
-          const amount = isDiscount ? -Math.abs(quantity * unitPrice) : quantity * unitPrice;
-          return {
-            description: item.description || "",
-            quantity,
-            unitPrice,
-            amount,
-            serviceId: item.serviceId || null,
-            packageId: item.packageId || null,
-            isDiscount,
-          };
-        });
-
-        let safeDepositPercent = null;
-        if (invoiceData.depositPercent !== null && invoiceData.depositPercent !== undefined) {
-          const parsed = parseInt(invoiceData.depositPercent, 10);
-          if (!isNaN(parsed) && parsed > 0) {
-            safeDepositPercent = parsed;
-          }
+      let safeDepositPercent = null;
+      if (invoice.depositPercent !== null && invoice.depositPercent !== undefined) {
+        const parsed = parseInt(invoice.depositPercent, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          safeDepositPercent = parsed;
         }
+      }
 
-        setFormData({
-          contactId: invoiceData.contactId || "",
-          bookingId: invoiceData.bookingId || null,
-          contactName: invoiceData.contactName || "",
-          contactEmail: invoiceData.contactEmail || "",
-          contactAddress: invoiceData.contactAddress || "",
-          dueDate: format(new Date(invoiceData.dueDate), "yyyy-MM-dd"),
-          status: invoiceData.status,
-          lineItems: convertedLineItems.length > 0 ? convertedLineItems : initialFormState.lineItems,
-          discountCode: invoiceData.discountCode || "",
-          discountAmount: (parseFloat(invoiceData.discountAmount) || 0) / 100,
-          taxRate: parseFloat(invoiceData.taxRate) || 0,
-          depositPercent: safeDepositPercent,
-          notes: invoiceData.notes || "",
-          terms: invoiceData.terms || "",
-        });
-      } else if (mode === "create") {
-        // Handle default contact prefill
-        if (defaultContactId) {
-          const defaultContact = contactsData.find((c) => c.id === defaultContactId);
-          if (defaultContact) {
-            setFormData((prev) => ({
-              ...prev,
-              taxRate,
-              contactId: defaultContact.id,
-              contactName: defaultContact.name,
-              contactEmail: defaultContact.email || "",
-            }));
-          } else {
-            setFormData((prev) => ({ ...prev, taxRate }));
-          }
+      form.setFieldValue("contactId", invoice.contactId || "");
+      form.setFieldValue("bookingId", invoice.bookingId || null);
+      form.setFieldValue("contactName", invoice.contactName || "");
+      form.setFieldValue("contactEmail", invoice.contactEmail || "");
+      form.setFieldValue("contactAddress", invoice.contactAddress || "");
+      form.setFieldValue("dueDate", format(new Date(invoice.dueDate), "yyyy-MM-dd"));
+      form.setFieldValue("status", invoice.status);
+      form.setFieldValue("lineItems", convertedLineItems.length > 0 ? convertedLineItems : initialFormState.lineItems);
+      form.setFieldValue("discountCode", invoice.discountCode || "");
+      form.setFieldValue("discountAmount", (parseFloat(invoice.discountAmount) || 0) / 100);
+      form.setFieldValue("taxRate", parseFloat(invoice.taxRate) || 0);
+      form.setFieldValue("depositPercent", safeDepositPercent);
+      form.setFieldValue("notes", invoice.notes || "");
+      form.setFieldValue("terms", invoice.terms || "");
+    } else if (mode === "create" && tenant && contacts) {
+      const taxRate = tenant.defaultTaxRate || 0;
+
+      // Handle default contact prefill
+      if (defaultContactId) {
+        const defaultContact = contacts.find((c) => c.id === defaultContactId);
+        if (defaultContact) {
+          form.setFieldValue("taxRate", taxRate);
+          form.setFieldValue("contactId", defaultContact.id);
+          form.setFieldValue("contactName", defaultContact.name);
+          form.setFieldValue("contactEmail", defaultContact.email || "");
         } else {
-          setFormData((prev) => ({ ...prev, taxRate }));
+          form.setFieldValue("taxRate", taxRate);
         }
+      } else {
+        form.setFieldValue("taxRate", taxRate);
       }
-    } catch (error) {
-      console.error("Failed to load data:", error);
-      toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [mode, invoice, tenant, contacts, defaultContactId]);
 
   // Combined services/packages for selection
   const serviceOptions = useMemo(() => {
@@ -207,34 +247,34 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   }, [services, packages]);
 
   const selectedContact = useMemo(() => {
-    if (!formData.contactId) return null;
-    return contacts.find((c) => c.id === formData.contactId);
-  }, [formData.contactId, contacts]);
+    const contactId = form.getFieldValue("contactId");
+    if (!contactId) return null;
+    return contacts.find((c) => c.id === contactId);
+  }, [form.getFieldValue("contactId"), contacts]);
 
   const availableBookings = useMemo(() => {
-    if (!formData.contactId) return [];
-    return bookings.filter((b) => b.contactId === formData.contactId && !b.invoice && b.id !== formData.bookingId);
-  }, [formData.contactId, formData.bookingId, bookings]);
+    const contactId = form.getFieldValue("contactId");
+    const bookingId = form.getFieldValue("bookingId");
+    if (!contactId) return [];
+    return bookings.filter((b) => b.contactId === contactId && !b.invoice && b.id !== bookingId);
+  }, [form.getFieldValue("contactId"), form.getFieldValue("bookingId"), bookings]);
 
   const handleContactSelect = (contactId) => {
     const selected = contacts.find((c) => c.id === contactId);
     if (selected) {
-      setFormData({
-        ...formData,
-        contactId,
-        bookingId: null,
-        contactName: selected.name,
-        contactEmail: selected.email || "",
-      });
+      form.setFieldValue("contactId", contactId);
+      form.setFieldValue("bookingId", null);
+      form.setFieldValue("contactName", selected.name);
+      form.setFieldValue("contactEmail", selected.email || "");
     }
     setContactPopoverOpen(false);
   };
 
   const handleBookingSelect = (bookingId) => {
     if (bookingId === "none") {
-      setFormData({ ...formData, bookingId: null });
+      form.setFieldValue("bookingId", null);
     } else {
-      setFormData({ ...formData, bookingId });
+      form.setFieldValue("bookingId", bookingId);
     }
   };
 
@@ -244,43 +284,31 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       return;
     }
 
-    try {
-      setCreatingContact(true);
-      const response = await fetch("/api/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newContactData.name.trim(),
-          email: newContactData.email.trim(),
-          phone: newContactData.phone.trim() || null,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create contact");
+    createContactMutation.mutate(
+      {
+        name: newContactData.name.trim(),
+        email: newContactData.email.trim(),
+        phone: newContactData.phone.trim() || null,
+      },
+      {
+        onSuccess: (newContact) => {
+          form.setFieldValue("contactId", newContact.id);
+          form.setFieldValue("contactName", newContact.name);
+          form.setFieldValue("contactEmail", newContact.email || "");
+          setNewContactData({ name: "", email: "", phone: "" });
+          setNewContactDialogOpen(false);
+          toast.success(`Contact "${newContact.name}" created`);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to create contact");
+        },
       }
-
-      const newContact = await response.json();
-      setContacts((prev) => [newContact, ...prev]);
-      setFormData((prev) => ({
-        ...prev,
-        contactId: newContact.id,
-        contactName: newContact.name,
-        contactEmail: newContact.email || "",
-      }));
-      setNewContactData({ name: "", email: "", phone: "" });
-      setNewContactDialogOpen(false);
-      toast.success(`Contact "${newContact.name}" created`);
-    } catch (error) {
-      toast.error(error.message || "Failed to create contact");
-    } finally {
-      setCreatingContact(false);
-    }
+    );
   };
 
   const handleLineItemChange = (index, field, value) => {
-    const newLineItems = [...formData.lineItems];
+    const lineItems = form.getFieldValue("lineItems");
+    const newLineItems = [...lineItems];
     newLineItems[index] = { ...newLineItems[index], [field]: value };
 
     if (field === "quantity" || field === "unitPrice") {
@@ -290,22 +318,23 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       newLineItems[index].amount = isDiscount ? -Math.abs(qty * price) : qty * price;
     }
 
-    setFormData({ ...formData, lineItems: newLineItems });
+    form.setFieldValue("lineItems", newLineItems);
   };
 
   const handleServiceSelect = (index, option) => {
+    const lineItems = form.getFieldValue("lineItems");
+    const newLineItems = [...lineItems];
+
     if (!option) {
-      const newLineItems = [...formData.lineItems];
       newLineItems[index] = {
         ...newLineItems[index],
         serviceId: null,
         packageId: null,
       };
-      setFormData({ ...formData, lineItems: newLineItems });
+      form.setFieldValue("lineItems", newLineItems);
       return;
     }
 
-    const newLineItems = [...formData.lineItems];
     newLineItems[index] = {
       ...newLineItems[index],
       description: option.name,
@@ -315,35 +344,35 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       serviceId: option.type === "service" ? option.id : null,
       packageId: option.type === "package" ? option.id : null,
     };
-    setFormData({ ...formData, lineItems: newLineItems });
+    form.setFieldValue("lineItems", newLineItems);
     setServicePopoverOpen({ ...servicePopoverOpen, [index]: false });
   };
 
   const addLineItem = () => {
-    setFormData({
-      ...formData,
-      lineItems: [...formData.lineItems, { description: "", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: false }],
-    });
+    const lineItems = form.getFieldValue("lineItems");
+    form.setFieldValue("lineItems", [...lineItems, { description: "", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: false }]);
   };
 
   const addDiscountLine = () => {
-    setFormData({
-      ...formData,
-      lineItems: [...formData.lineItems, { description: "Discount", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: true }],
-    });
+    const lineItems = form.getFieldValue("lineItems");
+    form.setFieldValue("lineItems", [...lineItems, { description: "Discount", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: true }]);
   };
 
   const removeLineItem = (index) => {
-    if (formData.lineItems.length > 1) {
-      setFormData({
-        ...formData,
-        lineItems: formData.lineItems.filter((_, i) => i !== index),
-      });
+    const lineItems = form.getFieldValue("lineItems");
+    if (lineItems.length > 1) {
+      form.setFieldValue("lineItems", lineItems.filter((_, i) => i !== index));
     }
   };
 
-  const calculateTotals = () => {
-    const items = Array.isArray(formData.lineItems) ? formData.lineItems : [];
+  const calculateTotals = (values = null) => {
+    const formValues = values || {
+      lineItems: form.getFieldValue("lineItems"),
+      discountAmount: form.getFieldValue("discountAmount"),
+      taxRate: form.getFieldValue("taxRate"),
+    };
+
+    const items = Array.isArray(formValues.lineItems) ? formValues.lineItems : [];
     const regularItems = items.filter((item) => !item.isDiscount);
     const discountItems = items.filter((item) => item.isDiscount);
 
@@ -355,9 +384,9 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       const amount = parseFloat(item.amount) || 0;
       return sum + Math.abs(isNaN(amount) ? 0 : amount);
     }, 0);
-    const discountAmount = parseFloat(formData.discountAmount) || 0;
+    const discountAmount = parseFloat(formValues.discountAmount) || 0;
     const discountedSubtotal = subtotal - lineDiscounts - (isNaN(discountAmount) ? 0 : discountAmount);
-    const taxRate = parseFloat(formData.taxRate) || 0;
+    const taxRate = parseFloat(formValues.taxRate) || 0;
     const taxAmount = discountedSubtotal * ((isNaN(taxRate) ? 0 : taxRate) / 100);
     const total = discountedSubtotal + (isNaN(taxAmount) ? 0 : taxAmount);
 
@@ -370,90 +399,19 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     };
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!formData.contactId) {
-      toast.error("Please select a contact for this invoice");
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const { subtotal, taxAmount, total } = calculateTotals();
-
-      const payload = {
-        contactId: formData.contactId,
-        bookingId: formData.bookingId || null,
-        contactName: formData.contactName,
-        contactEmail: formData.contactEmail,
-        contactAddress: formData.contactAddress || null,
-        dueDate: new Date(formData.dueDate).toISOString(),
-        status: formData.status,
-        lineItems: formData.lineItems.map((item) => ({
-          description: item.description,
-          quantity: parseInt(item.quantity) || 1,
-          unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
-          amount: Math.round(parseFloat(item.amount) * 100) || 0,
-          serviceId: item.serviceId || null,
-          packageId: item.packageId || null,
-          isDiscount: item.isDiscount || false,
-        })),
-        subtotal: Math.round(subtotal * 100),
-        discountCode: formData.discountCode || null,
-        discountAmount: Math.round((formData.discountAmount || 0) * 100),
-        taxRate: parseFloat(formData.taxRate) || 0,
-        taxAmount: Math.round(taxAmount * 100),
-        total: Math.round(total * 100),
-        depositPercent:
-          formData.depositPercent !== null && formData.depositPercent !== undefined && formData.depositPercent > 0 ? formData.depositPercent : null,
-        notes: formData.notes || null,
-        terms: formData.terms || null,
-      };
-
-      const url = mode === "edit" ? `/api/invoices/${invoiceId}` : "/api/invoices";
-      const method = mode === "edit" ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        toast.success(mode === "edit" ? "Invoice updated" : "Invoice created");
-        router.push("/dashboard/invoices");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save invoice");
-      }
-    } catch (error) {
-      toast.error("Failed to save invoice");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleDelete = async () => {
-    try {
-      setDeleting(true);
-      const res = await fetch(`/api/invoices/${invoiceId}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
+    deleteInvoiceMutation.mutate(invoiceId, {
+      onSuccess: () => {
         toast.success("Invoice deleted");
         router.push("/dashboard/invoices");
-      } else {
+      },
+      onError: () => {
         toast.error("Failed to delete invoice");
-      }
-    } catch (error) {
-      toast.error("Failed to delete invoice");
-    } finally {
-      setDeleting(false);
-      setDeleteDialogOpen(false);
-    }
+      },
+      onSettled: () => {
+        setDeleteDialogOpen(false);
+      },
+    });
   };
 
   const handleSend = async () => {
@@ -462,31 +420,24 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       return;
     }
 
-    try {
-      setSending(true);
-      const res = await fetch(`/api/invoices/${invoiceId}/send`, {
-        method: "POST",
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to send invoice");
-      }
-
-      toast.success("Invoice sent to " + formData.contactEmail);
-      setFormData((prev) => ({ ...prev, status: "sent" }));
-    } catch (error) {
-      toast.error(error.message || "Failed to send invoice");
-    } finally {
-      setSending(false);
-    }
+    sendInvoiceMutation.mutate(invoiceId, {
+      onSuccess: () => {
+        const contactEmail = form.getFieldValue("contactEmail");
+        toast.success("Invoice sent to " + contactEmail);
+        form.setFieldValue("status", "sent");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to send invoice");
+      },
+    });
   };
 
   const { subtotal, lineDiscounts, taxAmount, total } = calculateTotals();
 
   const getSafeDepositPercent = () => {
-    if (formData.depositPercent === null || formData.depositPercent === undefined) return 0;
-    const parsed = typeof formData.depositPercent === "number" ? formData.depositPercent : parseInt(formData.depositPercent, 10);
+    const depositPercent = form.getFieldValue("depositPercent");
+    if (depositPercent === null || depositPercent === undefined) return 0;
+    const parsed = typeof depositPercent === "number" ? depositPercent : parseInt(depositPercent, 10);
     return !isNaN(parsed) && parsed > 0 ? parsed : 0;
   };
 
@@ -505,6 +456,18 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     );
   }
 
+  const lineItems = form.getFieldValue("lineItems") || [];
+  const contactId = form.getFieldValue("contactId");
+  const contactName = form.getFieldValue("contactName");
+  const contactEmail = form.getFieldValue("contactEmail");
+  const dueDate = form.getFieldValue("dueDate");
+  const status = form.getFieldValue("status");
+  const discountCode = form.getFieldValue("discountCode");
+  const discountAmount = form.getFieldValue("discountAmount");
+  const taxRate = form.getFieldValue("taxRate");
+  const depositPercent = form.getFieldValue("depositPercent");
+  const bookingId = form.getFieldValue("bookingId");
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -518,7 +481,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Invoice Details */}
           <Card>
@@ -574,7 +537,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                                 <span className="font-medium">{c.name}</span>
                                 {c.email && <span className="text-muted-foreground ml-2">{c.email}</span>}
                               </div>
-                              {formData.contactId === c.id && <Check className="h-4 w-4 text-primary" />}
+                              {contactId === c.id && <Check className="h-4 w-4 text-primary" />}
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -598,13 +561,13 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               </div>
 
               {/* Booking Selection (optional) */}
-              {formData.contactId && availableBookings.length > 0 && (
+              {contactId && availableBookings.length > 0 && (
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     Link to Booking
                   </Label>
-                  <Select value={formData.bookingId || "none"} onValueChange={(value) => handleBookingSelect(value)}>
+                  <Select value={bookingId || "none"} onValueChange={(value) => handleBookingSelect(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="No booking linked" />
                     </SelectTrigger>
@@ -620,49 +583,50 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 </div>
               )}
 
-              {/* Contact Info (editable) */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Name</Label>
-                  <Input
-                    value={formData.contactName}
-                    onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                    placeholder="Contact name"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={formData.contactEmail}
-                    onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                    placeholder="contact@example.com"
-                    required
-                  />
-                </div>
-              </div>
+              {/* Contact Info */}
+              <TextField
+                form={form}
+                name="contactName"
+                label="Name"
+                placeholder="Contact name"
+                required
+              />
+
+              <TextField
+                form={form}
+                name="contactEmail"
+                label="Email"
+                type="email"
+                placeholder="contact@example.com"
+                required
+              />
 
               {/* Due Date */}
               <div className="space-y-2">
                 <Label>Due Date</Label>
-                <Input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} required />
+                <form.Field name="dueDate">
+                  {(field) => (
+                    <Input
+                      type="date"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      required
+                    />
+                  )}
+                </form.Field>
               </div>
 
               {/* Status */}
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="sent">Sent</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <SelectField
+                form={form}
+                name="status"
+                label="Status"
+                options={[
+                  { value: "draft", label: "Draft" },
+                  { value: "sent", label: "Sent" },
+                  { value: "paid", label: "Paid" },
+                ]}
+              />
             </CardContent>
           </Card>
 
@@ -673,7 +637,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               <div className="space-y-2">
                 <Label>Line Items</Label>
                 <div className="space-y-3">
-                  {formData.lineItems.map((item, index) => (
+                  {lineItems.map((item, index) => (
                     <div key={index} className={`rounded-lg border p-3 space-y-3 ${item.isDiscount ? "bg-red-50/50 border-red-200" : ""}`}>
                       {/* Row 1: Service selector + Description */}
                       <div className="flex gap-2">
@@ -748,7 +712,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                           className="flex-1"
                           required
                         />
-                        {formData.lineItems.length > 1 && (
+                        {lineItems.length > 1 && (
                           <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeLineItem(index)}>
                             <CloseIcon className="h-4 w-4" />
                           </Button>
@@ -816,39 +780,51 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 )}
                 <div className="flex items-center gap-2 pt-2 border-t">
                   <Percent className="h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    placeholder="Coupon"
-                    className="h-8 flex-1"
-                    value={formData.discountCode}
-                    onChange={(e) => setFormData({ ...formData, discountCode: e.target.value })}
-                  />
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="$0"
-                    className="w-16 h-8"
-                    value={formData.discountAmount || ""}
-                    onChange={(e) => setFormData({ ...formData, discountAmount: parseFloat(e.target.value) || 0 })}
-                  />
+                  <form.Field name="discountCode">
+                    {(field) => (
+                      <Input
+                        placeholder="Coupon"
+                        className="h-8 flex-1"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                      />
+                    )}
+                  </form.Field>
+                  <form.Field name="discountAmount">
+                    {(field) => (
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="$0"
+                        className="w-16 h-8"
+                        value={field.state.value || ""}
+                        onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                      />
+                    )}
+                  </form.Field>
                 </div>
-                {formData.discountAmount > 0 && (
+                {discountAmount > 0 && (
                   <div className="flex justify-between text-red-600">
                     <span>Coupon</span>
-                    <span>-${formData.discountAmount.toFixed(2)}</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between pt-2 border-t">
                   <span className="text-muted-foreground">Tax (%)</span>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    className="w-16 h-8"
-                    value={formData.taxRate}
-                    onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) || 0 })}
-                  />
+                  <form.Field name="taxRate">
+                    {(field) => (
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        className="w-16 h-8"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                      />
+                    )}
+                  </form.Field>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>
@@ -877,27 +853,26 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                   <>
                     <div className="flex items-center justify-between pt-2 border-t">
                       <span className="text-muted-foreground">Deposit</span>
-                      <Select
-                        value={formData.depositPercent?.toString() || "none"}
-                        onValueChange={(value) =>
-                          setFormData({
-                            ...formData,
-                            depositPercent: value === "none" ? null : parseInt(value),
-                          })
-                        }
-                      >
-                        <SelectTrigger className="w-20 h-8">
-                          <SelectValue placeholder="None" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          {DEPOSIT_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value.toString()}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <form.Field name="depositPercent">
+                        {(field) => (
+                          <Select
+                            value={field.state.value?.toString() || "none"}
+                            onValueChange={(value) => field.handleChange(value === "none" ? null : parseInt(value))}
+                          >
+                            <SelectTrigger className="w-20 h-8">
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {DEPOSIT_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value.toString()}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </form.Field>
                     </div>
                     {getSafeDepositPercent() > 0 && (
                       <div className="flex justify-between text-blue-600">
@@ -932,15 +907,15 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")}>
             Cancel
           </Button>
-          {mode === "edit" && formData.contactEmail && (
+          {mode === "edit" && contactEmail && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleSend}
-              disabled={sending || saving}
+              disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
             >
-              {sending ? (
+              {sendInvoiceMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />
@@ -948,10 +923,9 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               Send
             </Button>
           )}
-          <Button type="submit" variant="success" size="sm" disabled={saving || sending}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          <SubmitButton form={form} variant="success" className="size-sm">
             {mode === "edit" ? "Save" : "Create"}
-          </Button>
+          </SubmitButton>
         </div>
       </form>
 
@@ -999,10 +973,10 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
             </Button>
             <Button
               onClick={handleCreateContact}
-              disabled={creatingContact || !newContactData.name.trim() || !newContactData.email.trim()}
+              disabled={createContactMutation.isPending || !newContactData.name.trim() || !newContactData.email.trim()}
               className="flex-1 sm:flex-none"
             >
-              {creatingContact && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {createContactMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Contact
             </Button>
           </DialogFooter>
@@ -1020,8 +994,8 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteInvoiceMutation.isPending}>
+              {deleteInvoiceMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>

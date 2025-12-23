@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useEffect, useState, Suspense } from "react";
+import { use, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useVerifyPayment, useBookingInfo } from "@/lib/hooks/use-public-booking";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,60 +49,34 @@ function SuccessPageContent({ params }) {
   const sessionId = searchParams.get("session_id");
   const bookingId = searchParams.get("booking_id");
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [paymentData, setPaymentData] = useState(null);
-  const [bookingData, setBookingData] = useState(null);
-  const [business, setBusiness] = useState(null);
+  // Use TanStack Query hooks based on which params are present
+  const {
+    data: paymentVerification,
+    isLoading: isLoadingPayment,
+    error: paymentError,
+  } = useVerifyPayment({
+    slug,
+    sessionId,
+  });
 
-  useEffect(() => {
-    if (sessionId) {
-      verifyPayment();
-    } else if (bookingId) {
-      // No payment required flow - just get booking info
-      fetchBookingInfo();
-    } else {
-      setError("Missing payment or booking information");
-      setLoading(false);
-    }
-  }, [sessionId, bookingId, slug]);
+  const {
+    data: bookingInfo,
+    isLoading: isLoadingBooking,
+    error: bookingError,
+  } = useBookingInfo({
+    slug,
+    bookingId,
+  });
 
-  const verifyPayment = async () => {
-    try {
-      const res = await fetch(`/api/public/${slug}/verify-payment?session_id=${sessionId}`);
-      const data = await res.json();
+  // Derive state from query results
+  const loading = sessionId ? isLoadingPayment : bookingId ? isLoadingBooking : false;
+  const error = !sessionId && !bookingId
+    ? "Missing payment or booking information"
+    : paymentError?.message || bookingError?.message || null;
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to verify payment");
-      }
-
-      setPaymentData(data.payment);
-      setBookingData(data.booking);
-      setBusiness(data.business);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBookingInfo = async () => {
-    try {
-      const res = await fetch(`/api/public/${slug}/booking/${bookingId}`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to fetch booking");
-      }
-
-      setBookingData(data.booking);
-      setBusiness(data.business);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const paymentData = paymentVerification?.payment;
+  const bookingData = sessionId ? paymentVerification?.booking : bookingInfo?.booking;
+  const business = sessionId ? paymentVerification?.business : bookingInfo?.business;
 
   if (loading) {
     return (

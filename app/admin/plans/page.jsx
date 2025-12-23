@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -28,15 +25,21 @@ import {
   CheckCircle,
   Loader2,
   AlertTriangle,
-  Users,
   DollarSign,
-  TrendingUp,
   RefreshCw,
   Download,
   Check,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
+import {
+  useAdminPlans,
+  useStripeProducts,
+  useDeletePlan,
+  useTogglePlanActive,
+  useReorderPlans,
+  useSyncStripeProducts,
+} from "@/lib/hooks/use-admin-plans";
 
 function formatPrice(cents) {
   return new Intl.NumberFormat("en-US", {
@@ -72,9 +75,9 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
 
 function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
   return (
-    <Card className={!plan.active ? "opacity-60 bg-muted/50" : ""}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
+    <Card className={`${!plan.active ? "opacity-60 bg-muted/50" : ""} flex flex-col`}>
+      <CardContent className="p-4 flex-1 flex flex-col">
+        <div className="flex items-start justify-between gap-3 flex-1">
           {/* Reorder buttons */}
           <div className="flex flex-col gap-0.5 -ml-1">
             <Button
@@ -186,10 +189,12 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
         </div>
 
         {plan.stripeProductId && (
-          <div className="mt-3 pt-3 border-t">
-            <p className="hig-caption2 text-muted-foreground">
-              Stripe Product: {plan.stripeProductId}
-            </p>
+          <div className="mt-auto">
+            <div className="mt-3 pt-3 border-t">
+              <p className="hig-caption2 text-muted-foreground truncate">
+                Stripe: {plan.stripeProductId}
+              </p>
+            </div>
           </div>
         )}
       </CardContent>
@@ -197,50 +202,42 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
   );
 }
 
-function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
-  const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [stripeProducts, setStripeProducts] = useState([]);
+function SyncFromStripeDialog({ open, onOpenChange }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [updateExisting, setUpdateExisting] = useState(false);
-  const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
 
-  const fetchStripeProducts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/admin/plans/sync");
-      if (!res.ok) throw new Error("Failed to fetch Stripe products");
-      const data = await res.json();
-      setStripeProducts(data.products);
-      // Auto-select new products
-      setSelectedIds(data.products.filter(p => !p.existsInDb).map(p => p.id));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  const { data, isLoading, error, refetch } = useStripeProducts(open);
+  const syncMutation = useSyncStripeProducts();
+
+  const stripeProducts = data?.products || [];
+  const newProducts = stripeProducts.filter(p => !p.existsInDb);
+  const existingProducts = stripeProducts.filter(p => p.existsInDb);
+
+  // Auto-select new products when data loads
+  useEffect(() => {
+    if (stripeProducts.length > 0 && selectedIds.length === 0) {
+      setSelectedIds(newProducts.map(p => p.id));
     }
-  };
+  }, [stripeProducts, newProducts, selectedIds.length]);
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setResult(null);
+      setSelectedIds([]);
+      setUpdateExisting(false);
+      refetch();
+    }
+  }, [open, refetch]);
 
   const handleSync = async () => {
     if (selectedIds.length === 0) return;
-    setSyncing(true);
-    setError(null);
     try {
-      const res = await fetch("/api/admin/plans/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productIds: selectedIds, updateExisting }),
-      });
-      if (!res.ok) throw new Error("Failed to sync products");
-      const data = await res.json();
+      const data = await syncMutation.mutateAsync({ productIds: selectedIds, updateExisting });
       setResult(data);
-      onSynced();
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setSyncing(false);
+      // Error handled by mutation
     }
   };
 
@@ -250,24 +247,8 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
     );
   };
 
-  const selectAll = () => {
-    setSelectedIds(stripeProducts.map(p => p.id));
-  };
-
-  const selectNone = () => {
-    setSelectedIds([]);
-  };
-
-  // Fetch products when dialog opens
-  useEffect(() => {
-    if (open) {
-      setResult(null);
-      fetchStripeProducts();
-    }
-  }, [open]);
-
-  const newProducts = stripeProducts.filter(p => !p.existsInDb);
-  const existingProducts = stripeProducts.filter(p => p.existsInDb);
+  const selectAll = () => setSelectedIds(stripeProducts.map(p => p.id));
+  const selectNone = () => setSelectedIds([]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -282,7 +263,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
+        {isLoading ? (
           <div className="py-6 text-center">
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-muted-foreground" />
             <p className="hig-caption2 text-muted-foreground">Fetching Stripe products...</p>
@@ -301,7 +282,7 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
                 <span>Errors: {result.summary.errors}</span>
               </div>
             </div>
-            {result.results.skipped.length > 0 && (
+            {result.results?.skipped?.length > 0 && (
               <div className="hig-caption2 text-muted-foreground">
                 <p className="font-medium mb-1">Skipped:</p>
                 <ul className="space-y-0.5">
@@ -317,10 +298,10 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
           </div>
         ) : (
           <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
-            {error && (
+            {(error || syncMutation.error) && (
               <div className="flex items-center gap-2 hig-caption2 text-red-500 bg-red-50 p-2.5 rounded-lg">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                {error}
+                {error?.message || syncMutation.error?.message}
               </div>
             )}
 
@@ -440,9 +421,9 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
                   <Button
                     className="w-full sm:w-auto"
                     onClick={handleSync}
-                    disabled={syncing || selectedIds.length === 0}
+                    disabled={syncMutation.isPending || selectedIds.length === 0}
                   >
-                    {syncing ? (
+                    {syncMutation.isPending ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                         Syncing...
@@ -465,204 +446,51 @@ function SyncFromStripeDialog({ open, onOpenChange, onSynced }) {
 }
 
 export default function PlansPage() {
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null);
   const [deletingPlan, setDeletingPlan] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    features: "",
-    priceMonthly: "",
-    priceYearly: "",
-    maxContacts: "",
-    maxBookings: "",
-    maxServices: "",
-    isDefault: false,
-  });
   const [error, setError] = useState(null);
 
-  const fetchPlans = async () => {
-    try {
-      const res = await fetch("/api/admin/plans");
-      if (!res.ok) throw new Error("Failed to fetch plans");
-      const data = await res.json();
-      setPlans(data.plans);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading } = useAdminPlans();
+  const deletePlanMutation = useDeletePlan();
+  const toggleActiveMutation = useTogglePlanActive();
+  const reorderMutation = useReorderPlans();
 
-  useEffect(() => {
-    fetchPlans();
-  }, []);
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      features: "",
-      priceMonthly: "",
-      priceYearly: "",
-      maxContacts: "",
-      maxBookings: "",
-      maxServices: "",
-      isDefault: false,
-    });
-    setEditingPlan(null);
-    setError(null);
-  };
-
-  const openCreateDialog = () => {
-    resetForm();
-    setDialogOpen(true);
-  };
-
-  const openEditDialog = (plan) => {
-    setEditingPlan(plan);
-    setFormData({
-      name: plan.name,
-      description: plan.description || "",
-      features: plan.features.join("\n"),
-      priceMonthly: (plan.priceMonthly / 100).toString(),
-      priceYearly: plan.priceYearly ? (plan.priceYearly / 100).toString() : "",
-      maxContacts: plan.maxContacts?.toString() || "",
-      maxBookings: plan.maxBookings?.toString() || "",
-      maxServices: plan.maxServices?.toString() || "",
-      isDefault: plan.isDefault,
-    });
-    setError(null);
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-
-    try {
-      const payload = {
-        name: formData.name,
-        description: formData.description || null,
-        features: formData.features.split("\n").filter((f) => f.trim()),
-        priceMonthly: Math.round(parseFloat(formData.priceMonthly) * 100),
-        priceYearly: formData.priceYearly
-          ? Math.round(parseFloat(formData.priceYearly) * 100)
-          : null,
-        maxContacts: formData.maxContacts ? parseInt(formData.maxContacts) : null,
-        maxBookings: formData.maxBookings ? parseInt(formData.maxBookings) : null,
-        maxServices: formData.maxServices ? parseInt(formData.maxServices) : null,
-        isDefault: formData.isDefault,
-      };
-
-      if (editingPlan) {
-        payload.id = editingPlan.id;
-      }
-
-      const res = await fetch("/api/admin/plans", {
-        method: editingPlan ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save plan");
-      }
-
-      await fetchPlans();
-      setDialogOpen(false);
-      resetForm();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const plans = data?.plans || [];
 
   const handleDelete = async () => {
     if (!deletingPlan) return;
-    setSaving(true);
-    setError(null);
-
     try {
-      const res = await fetch(`/api/admin/plans?id=${deletingPlan.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to delete plan");
-      }
-
-      await fetchPlans();
+      await deletePlanMutation.mutateAsync(deletingPlan.id);
       setDeleteDialogOpen(false);
       setDeletingPlan(null);
     } catch (err) {
       setError(err.message);
-    } finally {
-      setSaving(false);
     }
   };
 
-  const togglePlanActive = async (plan) => {
-    try {
-      const res = await fetch("/api/admin/plans", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: plan.id, active: !plan.active }),
-      });
-
-      if (!res.ok) throw new Error("Failed to update plan");
-      await fetchPlans();
-    } catch (err) {
-      setError(err.message);
-    }
+  const togglePlanActive = (plan) => {
+    toggleActiveMutation.mutate({ id: plan.id, active: !plan.active });
   };
 
-  const reorderPlans = async (planId, direction) => {
-    // Find current index of the plan
+  const reorderPlans = (planId, direction) => {
     const currentIndex = plans.findIndex((p) => p.id === planId);
     if (currentIndex === -1) return;
 
     const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
     if (newIndex < 0 || newIndex >= plans.length) return;
 
-    // Create new order
     const newPlans = [...plans];
     const [movedPlan] = newPlans.splice(currentIndex, 1);
     newPlans.splice(newIndex, 0, movedPlan);
 
-    // Optimistically update UI
-    setPlans(newPlans);
-
-    try {
-      const res = await fetch("/api/admin/plans/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planIds: newPlans.map((p) => p.id) }),
-      });
-
-      if (!res.ok) throw new Error("Failed to reorder plans");
-      // Optionally refresh to ensure sync
-      // await fetchPlans();
-    } catch (err) {
-      setError(err.message);
-      // Revert on error
-      await fetchPlans();
-    }
+    reorderMutation.mutate(newPlans.map((p) => p.id));
   };
 
   const activePlans = plans.filter((p) => p.active);
   const archivedPlans = plans.filter((p) => !p.active);
 
-  // Calculate stats
   const avgPrice = activePlans.length > 0
     ? activePlans.reduce((sum, p) => sum + p.priceMonthly, 0) / activePlans.length
     : 0;
@@ -703,7 +531,7 @@ export default function PlansPage() {
             <RefreshCw className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">Sync from Stripe</span>
           </Button>
-          <Button onClick={openCreateDialog}>
+          <Button onClick={() => router.push("/admin/plans/new")}>
             <Plus className="h-4 w-4 sm:mr-1" />
             <span className="hidden sm:inline">New Plan</span>
           </Button>
@@ -749,7 +577,7 @@ export default function PlansPage() {
             <p className="text-muted-foreground mb-4">
               Create your first subscription plan to get started
             </p>
-            <Button onClick={openCreateDialog}>
+            <Button onClick={() => router.push("/admin/plans/new")}>
               <Plus className="h-4 w-4 mr-1" />
               Create Plan
             </Button>
@@ -767,7 +595,7 @@ export default function PlansPage() {
                   <PlanCard
                     key={plan.id}
                     plan={plan}
-                    onEdit={openEditDialog}
+                    onEdit={(p) => router.push(`/admin/plans/${p.id}`)}
                     onToggleActive={togglePlanActive}
                     onDelete={(p) => {
                       setDeletingPlan(p);
@@ -793,7 +621,7 @@ export default function PlansPage() {
                   <PlanCard
                     key={plan.id}
                     plan={plan}
-                    onEdit={openEditDialog}
+                    onEdit={(p) => router.push(`/admin/plans/${p.id}`)}
                     onToggleActive={togglePlanActive}
                     onDelete={(p) => {
                       setDeletingPlan(p);
@@ -810,203 +638,6 @@ export default function PlansPage() {
           )}
         </>
       )}
-
-      {/* Create/Edit Plan Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingPlan ? "Edit Plan" : "Create Plan"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingPlan
-                ? "Update plan details. Price changes will create new Stripe prices."
-                : "Create a new subscription plan. This will automatically create a Stripe Product and Price."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <Label className="hig-caption2">Plan Name *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, name: e.target.value }))
-                }
-                placeholder="e.g., Professional"
-                required
-                className="h-9"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="hig-caption2">Description</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, description: e.target.value }))
-                }
-                placeholder="Short description of the plan"
-                rows={2}
-                className="resize-y min-h-[60px]"
-              />
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="hig-caption2">Monthly Price * (USD)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.priceMonthly}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, priceMonthly: e.target.value }))
-                  }
-                  placeholder="29.00"
-                  required
-                  className="h-9"
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <Label className="hig-caption2">Yearly Price (USD)</Label>
-                  {formData.priceMonthly && !formData.priceYearly && (
-                    <button
-                      type="button"
-                      className="hig-caption2 text-primary hover:underline"
-                      onClick={() => {
-                        const monthly = parseFloat(formData.priceMonthly);
-                        if (!isNaN(monthly)) {
-                          setFormData((p) => ({
-                            ...p,
-                            priceYearly: (monthly * 10).toFixed(2),
-                          }));
-                        }
-                      }}
-                    >
-                      Use ${(parseFloat(formData.priceMonthly) * 10).toFixed(0)} (2mo free)
-                    </button>
-                  )}
-                </div>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.priceYearly}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, priceYearly: e.target.value }))
-                  }
-                  placeholder={(parseFloat(formData.priceMonthly || 0) * 10).toFixed(2) || "290.00"}
-                  className="h-9"
-                />
-                {formData.priceMonthly && formData.priceYearly && (
-                  <p className="hig-caption2 text-muted-foreground">
-                    {(() => {
-                      const monthly = parseFloat(formData.priceMonthly);
-                      const yearly = parseFloat(formData.priceYearly);
-                      const fullYearly = monthly * 12;
-                      const savings = fullYearly - yearly;
-                      const monthsFree = Math.round(savings / monthly);
-                      if (savings > 0) {
-                        return `Saves $${savings.toFixed(0)}/yr (${monthsFree}mo free)`;
-                      }
-                      return null;
-                    })()}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="hig-caption2">Features (one per line)</Label>
-              <Textarea
-                value={formData.features}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, features: e.target.value }))
-                }
-                placeholder={"Unlimited contacts\nAdvanced analytics\nPriority support"}
-                rows={4}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label className="hig-caption2">Max Contacts</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.maxContacts}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, maxContacts: e.target.value }))
-                  }
-                  placeholder="∞"
-                  className="h-9"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="hig-caption2">Max Bookings</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.maxBookings}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, maxBookings: e.target.value }))
-                  }
-                  placeholder="∞"
-                  className="h-9"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="hig-caption2">Max Services</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.maxServices}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, maxServices: e.target.value }))
-                  }
-                  placeholder="∞"
-                  className="h-9"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <Switch
-                id="isDefault"
-                checked={formData.isDefault}
-                onCheckedChange={(v) =>
-                  setFormData((p) => ({ ...p, isDefault: v }))
-                }
-              />
-              <Label htmlFor="isDefault" className="cursor-pointer">
-                Default plan for new signups
-              </Label>
-            </div>
-
-            {error && (
-              <div className="hig-caption2 text-red-500 bg-red-50 p-2 rounded">
-                {error}
-              </div>
-            )}
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-                {editingPlan ? "Save Changes" : "Create Plan"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -1029,9 +660,9 @@ export default function PlansPage() {
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={saving}
+              disabled={deletePlanMutation.isPending}
             >
-              {saving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              {deletePlanMutation.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>
@@ -1042,7 +673,6 @@ export default function PlansPage() {
       <SyncFromStripeDialog
         open={syncDialogOpen}
         onOpenChange={setSyncDialogOpen}
-        onSynced={fetchPlans}
       />
     </div>
   );

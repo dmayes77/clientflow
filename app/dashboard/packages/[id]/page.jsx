@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { usePackage, useUpdatePackage, useDeletePackage } from "@/lib/hooks";
+import { useServices } from "@/lib/hooks/use-services";
+import { useServiceCategories } from "@/lib/hooks/use-service-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useBusinessHours } from "@/hooks/use-business-hours";
+import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 import {
   ArrowLeft,
   Package,
@@ -59,73 +62,58 @@ export default function PackageEditPage({ params }) {
   const router = useRouter();
   const { formatDuration } = useBusinessHours();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [services, setServices] = useState([]);
-  const [categories, setCategories] = useState([]);
+  // TanStack Query hooks
+  const { data: pkg, isLoading: pkgLoading, error } = usePackage(id);
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
+  const updatePackageMutation = useUpdatePackage();
+  const deletePackageMutation = useDeletePackage();
+
   const [formData, setFormData] = useState(initialFormState);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
+  const loading = pkgLoading || servicesLoading || categoriesLoading;
+
+  // Handle query error
   useEffect(() => {
-    fetchData();
-  }, [id]);
-
-  const fetchData = async () => {
-    try {
-      const [packageRes, servicesRes, categoriesRes] = await Promise.all([
-        fetch(`/api/packages/${id}`),
-        fetch("/api/services"),
-        fetch("/api/service-categories"),
-      ]);
-
-      if (packageRes.ok) {
-        const pkg = await packageRes.json();
-        // Detect price ending from existing package price
-        const dollars = Math.round(pkg.price / 100);
-        const lastDigit = dollars % 10;
-        let priceEnding = "custom";
-        let customPrice = "";
-
-        if (lastDigit === 9) priceEnding = "9";
-        else if (lastDigit === 5) priceEnding = "5";
-        else if (lastDigit === 0) priceEnding = "0";
-        else {
-          customPrice = String(dollars);
-        }
-
-        setFormData({
-          name: pkg.name,
-          description: pkg.description || "",
-          discountPercent: pkg.discountPercent,
-          active: pkg.active,
-          serviceIds: pkg.services.map((s) => s.id),
-          categoryId: pkg.categoryId || null,
-          newCategoryName: "",
-          priceEnding,
-          customPrice,
-        });
-      } else {
-        toast.error("Package not found");
-        router.push("/dashboard/services");
-        return;
-      }
-
-      if (servicesRes.ok) {
-        setServices(await servicesRes.json());
-      }
-      if (categoriesRes.ok) {
-        setCategories(await categoriesRes.json());
-      }
-    } catch (error) {
-      toast.error("Failed to load package");
+    if (error) {
+      toast.error("Package not found");
       router.push("/dashboard/services");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error, router]);
+
+  // Initialize form data when package loads
+  useEffect(() => {
+    if (pkg) {
+      // Detect price ending from existing package price
+      const dollars = Math.round(pkg.price / 100);
+      const lastDigit = dollars % 10;
+      let priceEnding = "custom";
+      let customPrice = "";
+
+      if (lastDigit === 9) priceEnding = "9";
+      else if (lastDigit === 5) priceEnding = "5";
+      else if (lastDigit === 0) priceEnding = "0";
+      else {
+        customPrice = String(dollars);
+      }
+
+      setFormData({
+        name: pkg.name,
+        description: pkg.description || "",
+        discountPercent: pkg.discountPercent,
+        active: pkg.active,
+        serviceIds: pkg.services.map((s) => s.id),
+        categoryId: pkg.categoryId || null,
+        newCategoryName: "",
+        priceEnding,
+        customPrice,
+      });
+    }
+  }, [pkg]);
 
   // Helper function to round price to desired dollar ending
   const roundToEnding = (cents, ending) => {
@@ -233,8 +221,6 @@ export default function PackageEditPage({ params }) {
       return;
     }
 
-    setSaving(true);
-
     try {
       const payload = {
         name: formData.name,
@@ -248,41 +234,25 @@ export default function PackageEditPage({ params }) {
         overridePrice: pricePreview.finalPrice,
       };
 
-      const res = await fetch(`/api/packages/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await updatePackageMutation.mutateAsync({
+        id,
+        ...payload,
       });
 
-      if (res.ok) {
-        toast.success("Package updated");
-        router.push("/dashboard/services");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save package");
-      }
+      toast.success("Package updated");
+      router.push("/dashboard/services");
     } catch (error) {
-      toast.error("Failed to save package");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Failed to save package");
     }
   };
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/packages/${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        toast.success("Package deleted");
-        router.push("/dashboard/services");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to delete package");
-      }
+      await deletePackageMutation.mutateAsync(id);
+      toast.success("Package deleted");
+      router.push("/dashboard/services");
     } catch (error) {
-      toast.error("Failed to delete package");
+      toast.error(error.message || "Failed to delete package");
     } finally {
       setDeleteDialogOpen(false);
     }
@@ -626,8 +596,8 @@ export default function PackageEditPage({ params }) {
           <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving || formData.serviceIds.length === 0}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          <Button type="submit" disabled={updatePackageMutation.isPending || formData.serviceIds.length === 0}>
+            {updatePackageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
         </div>

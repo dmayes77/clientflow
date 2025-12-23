@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
+import { z } from "zod";
 import { useServices, useCreateService, useUpdateService, useDeleteService } from "@/lib/hooks";
+import { useServiceCategories } from "@/lib/hooks/use-service-categories";
+import { useImages, useUploadImage } from "@/lib/hooks/use-media";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,10 +46,11 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DurationSelect } from "@/components/ui/duration-select";
-import { useBusinessHours } from "@/hooks/use-business-hours";
+import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useTanstackForm, TextField, TextareaField, NumberField, SwitchField } from "@/components/ui/tanstack-form";
 
 // Sortable Include Item Component
 function SortableIncludeItem({ id, item, index, onRemove }) {
@@ -83,6 +87,43 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
   );
 }
 
+// Custom Duration Select Field for TanStack Form
+function DurationSelectField({ form, name, label, required, className, validators }) {
+  return (
+    <form.Field name={name} validators={validators}>
+      {(field) => (
+        <div className={className}>
+          <Label htmlFor={field.name}>
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+          <DurationSelect
+            id={field.name}
+            value={field.state.value ?? 60}
+            onValueChange={field.handleChange}
+          />
+          {field.state.meta.isTouched && field.state.meta.errors[0] && (
+            <p className="hig-caption2 text-destructive mt-1">{field.state.meta.errors[0]}</p>
+          )}
+        </div>
+      )}
+    </form.Field>
+  );
+}
+
+// Validation schema
+const serviceFormSchema = z.object({
+  name: z.string().min(1, "Service name is required"),
+  description: z.string().optional(),
+  duration: z.number().min(1, "Duration must be at least 1 minute"),
+  price: z.number().min(0, "Price must be 0 or greater"),
+  active: z.boolean(),
+  categoryId: z.string().optional(),
+  newCategoryName: z.string().optional(),
+  includes: z.array(z.string()).optional(),
+  imageId: z.string().nullable().optional(),
+});
+
 const initialFormState = {
   name: "",
   description: "",
@@ -104,20 +145,57 @@ export function ServicesList() {
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
+  const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
+  const { data: images = [], isLoading: imagesLoading } = useImages();
+  const uploadImageMutation = useUploadImage();
 
-  const [categories, setCategories] = useState([]);
-  const [images, setImages] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [serviceToDelete, setServiceToDelete] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newIncludeItem, setNewIncludeItem] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
+
+  // TanStack Form
+  const form = useTanstackForm({
+    defaultValues: initialFormState,
+    onSubmit: async (values) => {
+      const payload = {
+        name: values.name,
+        description: values.description,
+        duration: values.duration,
+        price: Math.round(values.price * 100),
+        active: values.active,
+        includes: values.includes || [],
+        imageId: values.imageId,
+        ...(values.categoryId && values.categoryId !== "none" && { categoryId: values.categoryId }),
+        ...(values.newCategoryName && { newCategoryName: values.newCategoryName }),
+      };
+
+      if (values.newCategoryName) {
+        delete payload.categoryId;
+      }
+
+      const mutation = editingService ? updateService : createService;
+      const mutationData = editingService ? { id: editingService.id, ...payload } : payload;
+
+      mutation.mutate(mutationData, {
+        onSuccess: () => {
+          toast.success(editingService ? "Service updated" : "Service created");
+          handleCloseDialog();
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to save service");
+        },
+      });
+    },
+    validators: {
+      onChange: serviceFormSchema,
+    },
+  });
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -135,21 +213,19 @@ export function ServicesList() {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
-      const oldIndex = formData.includes.findIndex((_, i) => `include-${i}` === active.id);
-      const newIndex = formData.includes.findIndex((_, i) => `include-${i}` === over.id);
+      const currentIncludes = form.getFieldValue("includes") || [];
+      const oldIndex = currentIncludes.findIndex((_, i) => `include-${i}` === active.id);
+      const newIndex = currentIncludes.findIndex((_, i) => `include-${i}` === over.id);
 
-      setFormData({
-        ...formData,
-        includes: arrayMove(formData.includes, oldIndex, newIndex),
-      });
+      form.setFieldValue("includes", arrayMove(currentIncludes, oldIndex, newIndex));
     }
   };
 
   const generateAiPrompt = () => {
-    const serviceName = formData.name || "[Your Service Name]";
-    const hasIncludes = formData.includes.length > 0;
-    const includesList = hasIncludes ? formData.includes.map((item, i) => `${i + 1}. ${item}`).join("\n") : null;
-    const currentDescription = formData.description || null;
+    const serviceName = form.getFieldValue("name") || "[Your Service Name]";
+    const hasIncludes = (form.getFieldValue("includes") || []).length > 0;
+    const includesList = hasIncludes ? (form.getFieldValue("includes") || []).map((item, i) => `${i + 1}. ${item}`).join("\n") : null;
+    const currentDescription = form.getFieldValue("description") || null;
 
     // If we have includes, generate description only
     if (hasIncludes) {
@@ -261,52 +337,22 @@ Format the includes list so I can easily copy each item individually.`;
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-    fetchImages();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch("/api/service-categories");
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data);
-      }
-    } catch (error) {
-      console.error("Failed to load categories");
-    }
-  };
-
-  const fetchImages = async () => {
-    try {
-      const res = await fetch("/api/images");
-      if (res.ok) {
-        const data = await res.json();
-        setImages(data);
-      }
-    } catch (error) {
-      console.error("Failed to load images");
-    }
-  };
 
   const handleOpenDialog = (service = null) => {
     if (service) {
       setEditingService(service);
-      setFormData({
-        name: service.name,
-        description: service.description || "",
-        duration: service.duration,
-        price: service.price / 100,
-        active: service.active,
-        categoryId: service.categoryId || "",
-        newCategoryName: "",
-        includes: service.includes || [],
-        imageId: service.images?.[0]?.id || null,
-      });
+      form.setFieldValue("name", service.name);
+      form.setFieldValue("description", service.description || "");
+      form.setFieldValue("duration", service.duration);
+      form.setFieldValue("price", service.price / 100);
+      form.setFieldValue("active", service.active);
+      form.setFieldValue("categoryId", service.categoryId || "");
+      form.setFieldValue("newCategoryName", "");
+      form.setFieldValue("includes", service.includes || []);
+      form.setFieldValue("imageId", service.images?.[0]?.id || null);
     } else {
       setEditingService(null);
-      setFormData(initialFormState);
+      form.reset();
     }
     setIsCreatingCategory(false);
     setNewIncludeItem("");
@@ -316,36 +362,30 @@ Format the includes list so I can easily copy each item individually.`;
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingService(null);
-    setFormData(initialFormState);
+    form.reset();
     setIsCreatingCategory(false);
     setNewIncludeItem("");
   };
 
   const handleDuplicate = () => {
     // Copy current form data with "(Copy)" appended to name
-    setFormData({
-      ...formData,
-      name: `${formData.name} (Copy)`,
-    });
+    const currentName = form.getFieldValue("name");
+    form.setFieldValue("name", `${currentName} (Copy)`);
     // Clear editing state so it creates a new service
     setEditingService(null);
   };
 
   const handleAddInclude = () => {
-    if (newIncludeItem.trim() && formData.includes.length < 20) {
-      setFormData({
-        ...formData,
-        includes: [...formData.includes, newIncludeItem.trim()],
-      });
+    const currentIncludes = form.getFieldValue("includes") || [];
+    if (newIncludeItem.trim() && currentIncludes.length < 20) {
+      form.setFieldValue("includes", [...currentIncludes, newIncludeItem.trim()]);
       setNewIncludeItem("");
     }
   };
 
   const handleRemoveInclude = (index) => {
-    setFormData({
-      ...formData,
-      includes: formData.includes.filter((_, i) => i !== index),
-    });
+    const currentIncludes = form.getFieldValue("includes") || [];
+    form.setFieldValue("includes", currentIncludes.filter((_, i) => i !== index));
   };
 
   const handleKeyDown = (e) => {
@@ -359,65 +399,16 @@ Format the includes list so I can easily copy each item individually.`;
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
     const formDataUpload = new FormData();
     formDataUpload.append("file", file);
 
     try {
-      const res = await fetch("/api/images", {
-        method: "POST",
-        body: formDataUpload,
-      });
-
-      if (res.ok) {
-        const newImage = await res.json();
-        setImages([newImage, ...images]);
-        setFormData({ ...formData, imageId: newImage.id });
-        toast.success("Image uploaded");
-      } else {
-        toast.error("Failed to upload image");
-      }
+      const newImage = await uploadImageMutation.mutateAsync(formDataUpload);
+      form.setFieldValue("imageId", newImage.id);
+      toast.success("Image uploaded");
     } catch (error) {
-      toast.error("Failed to upload image");
-    } finally {
-      setUploading(false);
+      toast.error(error.message || "Failed to upload image");
     }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      name: formData.name,
-      description: formData.description,
-      duration: formData.duration,
-      price: Math.round(formData.price * 100),
-      active: formData.active,
-      includes: formData.includes,
-      imageId: formData.imageId,
-      ...(formData.categoryId && formData.categoryId !== "none" && { categoryId: formData.categoryId }),
-      ...(formData.newCategoryName && { newCategoryName: formData.newCategoryName }),
-    };
-
-    if (formData.newCategoryName) {
-      delete payload.categoryId;
-    }
-
-    const mutation = editingService ? updateService : createService;
-    const mutationData = editingService ? { id: editingService.id, ...payload } : payload;
-
-    mutation.mutate(mutationData, {
-      onSuccess: () => {
-        toast.success(editingService ? "Service updated" : "Service created");
-        if (formData.newCategoryName) {
-          fetchCategories();
-        }
-        handleCloseDialog();
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to save service");
-      },
-    });
   };
 
   const handleDelete = async () => {
@@ -447,7 +438,7 @@ Format the includes list so I can easily copy each item individually.`;
   // Use business hours hook for duration formatting
   const formatDuration = formatBusinessDuration;
 
-  const selectedImage = images.find((img) => img.id === formData.imageId);
+  const selectedImage = images.find((img) => img.id === form.getFieldValue("imageId"));
 
   // Define columns for DataTable
   const columns = [
@@ -561,17 +552,15 @@ Format the includes list so I can easily copy each item individually.`;
               <DropdownMenuItem
                 onClick={() => {
                   setEditingService(null);
-                  setFormData({
-                    name: `${service.name} (Copy)`,
-                    description: service.description || "",
-                    duration: service.duration,
-                    price: service.price / 100,
-                    active: service.active,
-                    categoryId: service.categoryId || "",
-                    newCategoryName: "",
-                    includes: service.includes || [],
-                    imageId: service.images?.[0]?.id || null,
-                  });
+                  form.setFieldValue("name", `${service.name} (Copy)`);
+                  form.setFieldValue("description", service.description || "");
+                  form.setFieldValue("duration", service.duration);
+                  form.setFieldValue("price", service.price / 100);
+                  form.setFieldValue("active", service.active);
+                  form.setFieldValue("categoryId", service.categoryId || "");
+                  form.setFieldValue("newCategoryName", "");
+                  form.setFieldValue("includes", service.includes || []);
+                  form.setFieldValue("imageId", service.images?.[0]?.id || null);
                   setDialogOpen(true);
                 }}
               >
@@ -659,31 +648,42 @@ Format the includes list so I can easily copy each item individually.`;
                 <DialogDescription className="flex-1">
                   {editingService ? "Update your service details" : "Add a new service offering for your clients"}
                 </DialogDescription>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Label htmlFor="active" className={`font-medium leading-none mb-0! ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
-                    {formData.active ? "Active" : "Inactive"}
-                  </Label>
-                  <Switch id="active" checked={formData.active} onCheckedChange={(checked) => setFormData({ ...formData, active: checked })} />
-                </div>
+                <form.Field name="active">
+                  {(field) => (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Label htmlFor="active" className={`font-medium leading-none mb-0! ${field.state.value ? "text-[#16a34a]" : "text-muted-foreground"}`}>
+                        {field.state.value ? "Active" : "Inactive"}
+                      </Label>
+                      <Switch id="active" checked={field.state.value} onCheckedChange={field.handleChange} />
+                    </div>
+                  )}
+                </form.Field>
               </div>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+              className="flex flex-col flex-1 min-h-0 overflow-hidden"
+            >
               <ScrollArea className="flex-1 min-h-0 overflow-y-auto">
                 <div className="p-6 space-y-6">
                 {/* Two column layout on larger screens */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Left Column - Service Info */}
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Service Name</Label>
-                      <Input
-                        id="name"
-                        placeholder="e.g., Haircut, Consultation, Photo Session"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                      />
-                    </div>
+                    <TextField
+                      form={form}
+                      name="name"
+                      label="Service Name"
+                      placeholder="e.g., Haircut, Consultation, Photo Session"
+                      required
+                      validators={{
+                        onChange: z.string().min(1, "Service name is required"),
+                      }}
+                    />
 
                     <div className="space-y-2">
                       <div>
@@ -704,188 +704,213 @@ Format the includes list so I can easily copy each item individually.`;
                           Marketing copy describing the end result your client will achieve
                         </p>
                       </div>
-                      <Textarea
-                        id="description"
-                        placeholder="e.g., Walk away with a fresh, confident look that turns heads and lasts for weeks"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        rows={3}
-                      />
+                      <form.Field name="description">
+                        {(field) => (
+                          <Textarea
+                            id="description"
+                            placeholder="e.g., Walk away with a fresh, confident look that turns heads and lasts for weeks"
+                            value={field.state.value || ""}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            rows={3}
+                          />
+                        )}
+                      </form.Field>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Category (optional)</Label>
-                      {isCreatingCategory ? (
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="New category name"
-                            value={formData.newCategoryName}
-                            onChange={(e) => setFormData({ ...formData, newCategoryName: e.target.value })}
-                            autoFocus
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setIsCreatingCategory(false);
-                              setFormData({ ...formData, newCategoryName: "" });
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Select
-                            value={formData.categoryId || "none"}
-                            onValueChange={(value) => setFormData({ ...formData, categoryId: value === "none" ? "" : value })}
-                          >
-                            <SelectTrigger className="flex-1">
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">No category</SelectItem>
-                              {categories.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.id}>
-                                  {cat.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button type="button" variant="outline" size="icon" onClick={() => setIsCreatingCategory(true)} title="Create new category">
-                            <Plus className="h-4 w-4" />
-                          </Button>
+                    <form.Field name="categoryId">
+                      {(field) => (
+                        <div className="space-y-2">
+                          <Label>Category (optional)</Label>
+                          {isCreatingCategory ? (
+                            <form.Field name="newCategoryName">
+                              {(newCatField) => (
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="New category name"
+                                    value={newCatField.state.value || ""}
+                                    onChange={(e) => newCatField.handleChange(e.target.value)}
+                                    autoFocus
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setIsCreatingCategory(false);
+                                      newCatField.handleChange("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              )}
+                            </form.Field>
+                          ) : (
+                            <div className="flex gap-2">
+                              <Select
+                                value={field.state.value || "none"}
+                                onValueChange={(value) => field.handleChange(value === "none" ? "" : value)}
+                              >
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">No category</SelectItem>
+                                  {categories.map((cat) => (
+                                    <SelectItem key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button type="button" variant="outline" size="icon" onClick={() => setIsCreatingCategory(true)} title="Create new category">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
+                    </form.Field>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="duration">Duration</Label>
-                        <DurationSelect
-                          id="duration"
-                          value={formData.duration}
-                          onValueChange={(value) => setFormData({ ...formData, duration: value })}
-                        />
-                      </div>
+                      <DurationSelectField
+                        form={form}
+                        name="duration"
+                        label="Duration"
+                        required
+                        className="space-y-2"
+                        validators={{
+                          onChange: z.number().min(1, "Duration must be at least 1 minute"),
+                        }}
+                      />
 
-                      <div className="space-y-2">
-                        <Label htmlFor="price">Price ($)</Label>
-                        <Input
-                          id="price"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={formData.price}
-                          onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                          required
-                        />
-                      </div>
+                      <NumberField
+                        form={form}
+                        name="price"
+                        label="Price ($)"
+                        min={0}
+                        step={0.01}
+                        required
+                        className="space-y-2"
+                        validators={{
+                          onChange: z.number().min(0, "Price must be 0 or greater"),
+                        }}
+                      />
                     </div>
 
                     {/* Service Image */}
-                    <div className="space-y-2">
-                      <Label>Service Image (optional)</Label>
-                      <div className="flex gap-3">
-                        <div className="relative group h-24 w-24">
-                          <Image
-                            src={selectedImage?.url || "/default_img.webp"}
-                            alt="Service"
-                            fill
-                            sizes="96px"
-                            className="rounded-lg object-cover border"
-                          />
-                          {selectedImage && (
-                            <button
-                              type="button"
-                              onClick={() => setFormData({ ...formData, imageId: null })}
-                              className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          )}
+                    <form.Field name="imageId">
+                      {(field) => (
+                        <div className="space-y-2">
+                          <Label>Service Image (optional)</Label>
+                          <div className="flex gap-3">
+                            <div className="relative group h-24 w-24">
+                              <Image
+                                src={selectedImage?.url || "/default_img.webp"}
+                                alt="Service"
+                                fill
+                                sizes="96px"
+                                className="rounded-lg object-cover border"
+                              />
+                              {selectedImage && (
+                                <button
+                                  type="button"
+                                  onClick={() => field.handleChange(null)}
+                                  className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)}>
+                                <ImageIcon className="h-4 w-4 mr-2" />
+                                Choose from Library
+                              </Button>
+                              <label>
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadImageMutation.isPending} />
+                                <Button type="button" variant="outline" size="sm" className="w-full" disabled={uploadImageMutation.isPending} asChild>
+                                  <span>
+                                    {uploadImageMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                                    Upload New
+                                  </span>
+                                </Button>
+                              </label>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)}>
-                            <ImageIcon className="h-4 w-4 mr-2" />
-                            Choose from Library
-                          </Button>
-                          <label>
-                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-                            <Button type="button" variant="outline" size="sm" className="w-full" disabled={uploading} asChild>
-                              <span>
-                                {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                                Upload New
-                              </span>
-                            </Button>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
+                      )}
+                    </form.Field>
                   </div>
 
                   {/* Right Column - Includes */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between mb-1!">
-                      <Label className="mb-0!">What's Included</Label>
-                      <span className="hig-caption2 text-muted-foreground">{formData.includes.length}/20</span>
-                    </div>
+                  <form.Field name="includes">
+                    {(field) => {
+                      const includes = field.state.value || [];
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between mb-1!">
+                            <Label className="mb-0!">What's Included</Label>
+                            <span className="hig-caption2 text-muted-foreground">{includes.length}/20</span>
+                          </div>
 
-                    <Alert className="bg-amber-50 border-amber-200">
-                      <Lightbulb className="h-4 w-4 text-amber-600" />
-                      <AlertDescription className="hig-caption2 text-amber-800">
-                        We recommend adding 6-8 items that describe what clients receive with this service.
-                      </AlertDescription>
-                    </Alert>
+                          <Alert className="bg-amber-50 border-amber-200">
+                            <Lightbulb className="h-4 w-4 text-amber-600" />
+                            <AlertDescription className="hig-caption2 text-amber-800">
+                              We recommend adding 6-8 items that describe what clients receive with this service.
+                            </AlertDescription>
+                          </Alert>
 
-                    {/* Add Include Input */}
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="e.g., 30-minute consultation call"
-                        value={newIncludeItem}
-                        onChange={(e) => setNewIncludeItem(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        maxLength={200}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handleAddInclude}
-                        disabled={!newIncludeItem.trim() || formData.includes.length >= 20}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                          {/* Add Include Input */}
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="e.g., 30-minute consultation call"
+                              value={newIncludeItem}
+                              onChange={(e) => setNewIncludeItem(e.target.value)}
+                              onKeyDown={handleKeyDown}
+                              maxLength={200}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={handleAddInclude}
+                              disabled={!newIncludeItem.trim() || includes.length >= 20}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
 
-                    {/* Includes List */}
-                    <div className="border rounded-lg max-h-64 lg:max-h-80 overflow-y-auto">
-                      {formData.includes.length === 0 ? (
-                        <div className="p-6 text-center text-muted-foreground">
-                          <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                          <p>No items added yet</p>
-                          <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
+                          {/* Includes List */}
+                          <div className="border rounded-lg max-h-64 lg:max-h-80 overflow-y-auto">
+                            {includes.length === 0 ? (
+                              <div className="p-6 text-center text-muted-foreground">
+                                <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                                <p>No items added yet</p>
+                                <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
+                              </div>
+                            ) : (
+                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext items={includes.map((_, i) => `include-${i}`)} strategy={verticalListSortingStrategy}>
+                                  <ul className="divide-y">
+                                    {includes.map((item, index) => (
+                                      <SortableIncludeItem
+                                        key={`include-${index}`}
+                                        id={`include-${index}`}
+                                        item={item}
+                                        index={index}
+                                        onRemove={handleRemoveInclude}
+                                      />
+                                    ))}
+                                  </ul>
+                                </SortableContext>
+                              </DndContext>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                          <SortableContext items={formData.includes.map((_, i) => `include-${i}`)} strategy={verticalListSortingStrategy}>
-                            <ul className="divide-y">
-                              {formData.includes.map((item, index) => (
-                                <SortableIncludeItem
-                                  key={`include-${index}`}
-                                  id={`include-${index}`}
-                                  item={item}
-                                  index={index}
-                                  onRemove={handleRemoveInclude}
-                                />
-                              ))}
-                            </ul>
-                          </SortableContext>
-                        </DndContext>
-                      )}
-                    </div>
-                  </div>
+                      );
+                    }}
+                  </form.Field>
                 </div>
               </div>
             </ScrollArea>

@@ -4,6 +4,9 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useService, useUpdateService, useDeleteService } from "@/lib/hooks";
+import { useServiceCategories } from "@/lib/hooks/use-service-categories";
+import { useImages, useUploadImage } from "@/lib/hooks/use-media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DurationSelect } from "@/components/ui/duration-select";
-import { useBusinessHours } from "@/hooks/use-business-hours";
+import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 import {
   ArrowLeft,
   Wrench,
@@ -88,14 +91,17 @@ export default function ServiceEditPage({ params }) {
   const router = useRouter();
   const { formatDuration: formatBusinessDuration } = useBusinessHours();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [images, setImages] = useState([]);
+  // TanStack Query hooks
+  const { data: service, isLoading: serviceLoading, error } = useService(id);
+  const updateServiceMutation = useUpdateService();
+  const deleteServiceMutation = useDeleteService();
+  const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
+  const { data: images = [], isLoading: imagesLoading } = useImages();
+  const uploadImageMutation = useUploadImage();
+
   const [formData, setFormData] = useState(initialFormState);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newIncludeItem, setNewIncludeItem] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
@@ -241,50 +247,31 @@ Format the includes list so I can easily copy each item individually.`;
     }
   };
 
+  // Handle query error
   useEffect(() => {
-    fetchData();
-  }, [id]);
-
-  const fetchData = async () => {
-    try {
-      const [serviceRes, categoriesRes, imagesRes] = await Promise.all([
-        fetch(`/api/services/${id}`),
-        fetch("/api/service-categories"),
-        fetch("/api/images"),
-      ]);
-
-      if (serviceRes.ok) {
-        const service = await serviceRes.json();
-        setFormData({
-          name: service.name,
-          description: service.description || "",
-          duration: service.duration,
-          price: service.price / 100,
-          active: service.active,
-          categoryId: service.categoryId || "",
-          newCategoryName: "",
-          includes: service.includes || [],
-          imageId: service.images?.[0]?.id || null,
-        });
-      } else {
-        toast.error("Service not found");
-        router.push("/dashboard/services");
-        return;
-      }
-
-      if (categoriesRes.ok) {
-        setCategories(await categoriesRes.json());
-      }
-      if (imagesRes.ok) {
-        setImages(await imagesRes.json());
-      }
-    } catch (error) {
-      toast.error("Failed to load service");
+    if (error) {
+      toast.error("Service not found");
       router.push("/dashboard/services");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error, router]);
+
+  // Initialize form data when service loads
+  useEffect(() => {
+    if (service) {
+      setFormData({
+        name: service.name,
+        description: service.description || "",
+        duration: service.duration,
+        price: service.price / 100,
+        active: service.active,
+        categoryId: service.categoryId || "",
+        newCategoryName: "",
+        includes: service.includes || [],
+        imageId: service.images?.[0]?.id || null,
+      });
+    }
+  }, [service]);
+
 
   const handleAddInclude = () => {
     if (newIncludeItem.trim() && formData.includes.length < 20) {
@@ -314,34 +301,20 @@ Format the includes list so I can easily copy each item individually.`;
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
     const formDataUpload = new FormData();
     formDataUpload.append("file", file);
 
     try {
-      const res = await fetch("/api/images", {
-        method: "POST",
-        body: formDataUpload,
-      });
-
-      if (res.ok) {
-        const newImage = await res.json();
-        setImages([newImage, ...images]);
-        setFormData({ ...formData, imageId: newImage.id });
-        toast.success("Image uploaded");
-      } else {
-        toast.error("Failed to upload image");
-      }
+      const newImage = await uploadImageMutation.mutateAsync(formDataUpload);
+      setFormData({ ...formData, imageId: newImage.id });
+      toast.success("Image uploaded");
     } catch (error) {
-      toast.error("Failed to upload image");
-    } finally {
-      setUploading(false);
+      toast.error(error.message || "Failed to upload image");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
 
     try {
       const payload = {
@@ -360,46 +333,33 @@ Format the includes list so I can easily copy each item individually.`;
         delete payload.categoryId;
       }
 
-      const res = await fetch(`/api/services/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await updateServiceMutation.mutateAsync({
+        id,
+        ...payload,
       });
 
-      if (res.ok) {
-        toast.success("Service updated");
-        router.push("/dashboard/services");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save service");
-      }
+      toast.success("Service updated");
+      router.push("/dashboard/services");
     } catch (error) {
-      toast.error("Failed to save service");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Failed to save service");
     }
   };
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/services/${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        toast.success("Service deleted");
-        router.push("/dashboard/services");
-      } else {
-        toast.error("Failed to delete service");
-      }
+      await deleteServiceMutation.mutateAsync(id);
+      toast.success("Service deleted");
+      router.push("/dashboard/services");
     } catch (error) {
-      toast.error("Failed to delete service");
+      toast.error(error.message || "Failed to delete service");
     } finally {
       setDeleteDialogOpen(false);
     }
   };
 
   const selectedImage = images.find((img) => img.id === formData.imageId);
+
+  const loading = serviceLoading || categoriesLoading || imagesLoading;
 
   if (loading) {
     return (
@@ -579,10 +539,10 @@ Format the includes list so I can easily copy each item individually.`;
                       Choose from Library
                     </Button>
                     <label>
-                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-                      <Button type="button" variant="outline" size="sm" className="w-full" disabled={uploading} asChild>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadImageMutation.isPending} />
+                      <Button type="button" variant="outline" size="sm" className="w-full" disabled={uploadImageMutation.isPending} asChild>
                         <span>
-                          {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                          {uploadImageMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
                           Upload New
                         </span>
                       </Button>
@@ -676,8 +636,8 @@ Format the includes list so I can easily copy each item individually.`;
           <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")}>
             Cancel
           </Button>
-          <Button type="submit" variant="success" disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          <Button type="submit" variant="success" disabled={updateServiceMutation.isPending}>
+            {updateServiceMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
         </div>

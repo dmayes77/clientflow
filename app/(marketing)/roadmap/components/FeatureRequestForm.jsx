@@ -1,50 +1,63 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { CheckCircle, Lightbulb, Send, Sparkles } from "lucide-react";
+import { z } from "zod";
+import {
+  useTanstackForm,
+  TextField,
+  TextareaField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
+
+const featureSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  feature: z.string().min(10, "Please describe your idea in more detail"),
+});
 
 export function FeatureRequestForm() {
-  const [featureForm, setFeatureForm] = useState({
-    email: "",
-    feature: "",
-  });
-  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  const handleFeatureSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    if (!featureForm.email || !featureForm.feature) {
-      setError("Please fill in both email and feature description");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
+  const mutation = useMutation({
+    mutationFn: async (data) => {
       const response = await fetch("/api/feature-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(featureForm),
+        body: JSON.stringify(data),
       });
 
-      if (response.ok) {
-        setSubmitted(true);
-        setFeatureForm({ email: "", feature: "" });
-      } else {
+      if (!response.ok) {
         throw new Error("Failed to submit");
       }
-    } catch {
+
+      return response.json();
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      form.reset();
+      setError("");
+    },
+    onError: () => {
       setError("Failed to submit feature request. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    },
+  });
+
+  const form = useTanstackForm({
+    defaultValues: {
+      email: "",
+      feature: "",
+    },
+    onSubmit: async ({ value }) => {
+      setError("");
+      mutation.mutate(value);
+    },
+    validators: {
+      onChange: featureSchema,
+    },
+  });
 
   return (
     <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-violet-500/10 via-primary/5 to-blue-500/10 p-6 sm:p-8">
@@ -87,44 +100,43 @@ export function FeatureRequestForm() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleFeatureSubmit} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                form.handleSubmit();
+              }}
+              className="space-y-4"
+            >
               {error && (
-                <p className="text-sm text-destructive text-center bg-destructive/10 py-2 px-3 rounded-md">{error}</p>
+                <p className="text-sm text-destructive text-center bg-destructive/10 py-2 px-3 rounded-md">
+                  {error}
+                </p>
               )}
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                  className="bg-background/80"
-                  value={featureForm.email}
-                  onChange={(e) => setFeatureForm({ ...featureForm, email: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="feature" className="text-sm font-medium">Your idea</Label>
-                <Textarea
-                  id="feature"
-                  placeholder="What feature would help your business the most?"
-                  rows={3}
-                  required
-                  className="bg-background/80 resize-none"
-                  value={featureForm.feature}
-                  onChange={(e) => setFeatureForm({ ...featureForm, feature: e.target.value })}
-                />
-              </div>
-              <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? (
-                  "Submitting..."
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Submit Idea
-                  </>
-                )}
-              </Button>
+
+              <TextField
+                form={form}
+                name="email"
+                type="email"
+                label="Email"
+                placeholder="you@example.com"
+                required
+                inputClassName="bg-background/80"
+              />
+
+              <TextareaField
+                form={form}
+                name="feature"
+                label="Your idea"
+                placeholder="What feature would help your business the most?"
+                rows={3}
+                required
+                textareaClassName="bg-background/80 resize-none"
+              />
+
+              <SubmitButton form={form} className="w-full" loadingText="Submitting...">
+                <Send className="h-4 w-4 mr-2" />
+                Submit Idea
+              </SubmitButton>
             </form>
           </>
         )}

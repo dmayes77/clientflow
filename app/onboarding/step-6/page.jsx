@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, ArrowRight, ArrowLeft, Briefcase, DollarSign, Clock } from "lucide-react";
+import { useCreateService, useUpdateOnboardingProgress } from "@/lib/hooks";
 
 const DURATION_OPTIONS = [
   { value: 15, label: "15 minutes" },
@@ -23,8 +24,9 @@ const DURATION_OPTIONS = [
 
 export default function Step6Page() {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
-  const [skipping, setSkipping] = useState(false);
+
+  const createService = useCreateService();
+  const updateOnboardingProgress = useUpdateOnboardingProgress();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -45,57 +47,32 @@ export default function Step6Page() {
       return;
     }
 
-    setSaving(true);
-
     try {
       // Create the service
-      const res = await fetch("/api/services", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          duration: formData.duration,
-          price: formData.price ? Math.round(parseFloat(formData.price) * 100) : 0,
-          active: true,
-        }),
+      await createService.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        duration: formData.duration,
+        price: formData.price ? Math.round(parseFloat(formData.price) * 100) : 0,
+        active: true,
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create service");
-      }
 
       // Update onboarding progress
-      await fetch("/api/onboarding/progress", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step: 7 }),
-      });
+      await updateOnboardingProgress.mutateAsync({ step: 7 });
 
       router.push("/onboarding/step-7");
     } catch (error) {
       toast.error(error.message);
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleSkip = async () => {
-    setSkipping(true);
-
     try {
       // Update onboarding progress
-      await fetch("/api/onboarding/progress", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step: 7 }),
-      });
-
+      await updateOnboardingProgress.mutateAsync({ step: 7 });
       router.push("/onboarding/step-7");
     } catch (error) {
       toast.error("Failed to skip");
-      setSkipping(false);
     }
   };
 
@@ -205,17 +182,17 @@ export default function Step6Page() {
             <button
               type="button"
               onClick={handleSkip}
-              disabled={skipping || saving}
+              disabled={updateOnboardingProgress.isPending || createService.isPending}
               className="h-11 px-4 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 border border-gray-300 rounded-xl transition-colors disabled:opacity-50"
             >
-              {skipping ? "Skipping..." : "Skip"}
+              {updateOnboardingProgress.isPending && !createService.isPending ? "Skipping..." : "Skip"}
             </button>
             <button
               type="submit"
-              disabled={saving || skipping}
+              disabled={createService.isPending || updateOnboardingProgress.isPending}
               className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {saving ? (
+              {createService.isPending || updateOnboardingProgress.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Creating...

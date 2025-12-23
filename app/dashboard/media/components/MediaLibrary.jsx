@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -39,6 +39,16 @@ import {
   Grid,
   List,
 } from "lucide-react";
+import {
+  useImages,
+  useUploadImage,
+  useUpdateImage,
+  useDeleteImage,
+  useVideos,
+  useUploadVideo,
+  useUpdateVideo,
+  useDeleteVideo,
+} from "@/lib/hooks";
 
 const IMAGE_TYPES = [
   { value: "logo", label: "Logo" },
@@ -61,10 +71,6 @@ const VIDEO_TYPES = [
 
 export function MediaLibrary() {
   const [activeTab, setActiveTab] = useState("images");
-  const [images, setImages] = useState([]);
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [filterType, setFilterType] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -99,38 +105,23 @@ export function MediaLibrary() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchImages = useCallback(async () => {
-    try {
-      const params = filterType !== "all" ? `?type=${filterType}` : "";
-      const res = await fetch(`/api/images${params}`);
-      if (!res.ok) throw new Error("Failed to fetch images");
-      const data = await res.json();
-      setImages(data);
-    } catch (error) {
-      toast.error("Failed to load images");
-    }
-  }, [filterType]);
+  // TanStack Query hooks for images
+  const { data: images = [], isLoading: imagesLoading } = useImages({
+    type: filterType !== "all" ? filterType : undefined,
+  });
+  const uploadImageMutation = useUploadImage();
+  const updateImageMutation = useUpdateImage();
+  const deleteImageMutation = useDeleteImage();
 
-  const fetchVideos = useCallback(async () => {
-    try {
-      const params = filterType !== "all" ? `?type=${filterType}` : "";
-      const res = await fetch(`/api/videos${params}`);
-      if (!res.ok) throw new Error("Failed to fetch videos");
-      const data = await res.json();
-      setVideos(data);
-    } catch (error) {
-      toast.error("Failed to load videos");
-    }
-  }, [filterType]);
+  // TanStack Query hooks for videos
+  const { data: videos = [], isLoading: videosLoading } = useVideos({
+    type: filterType !== "all" ? filterType : undefined,
+  });
+  const uploadVideoMutation = useUploadVideo();
+  const updateVideoMutation = useUpdateVideo();
+  const deleteVideoMutation = useDeleteVideo();
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([fetchImages(), fetchVideos()]);
-      setLoading(false);
-    };
-    loadData();
-  }, [fetchImages, fetchVideos]);
+  const loading = imagesLoading || videosLoading;
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -188,7 +179,6 @@ export function MediaLibrary() {
       return;
     }
 
-    setUploading(true);
     setUploadProgress(10);
 
     try {
@@ -199,28 +189,13 @@ export function MediaLibrary() {
       formData.append("type", uploadForm.type);
 
       const isImage = uploadForm.file.type.startsWith("image/");
-      const endpoint = isImage ? "/api/images" : "/api/videos";
 
       setUploadProgress(30);
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        body: formData,
-      });
-
-      setUploadProgress(90);
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Upload failed");
-      }
-
-      const newItem = await res.json();
-
       if (isImage) {
-        setImages((prev) => [newItem, ...prev]);
+        await uploadImageMutation.mutateAsync(formData);
       } else {
-        setVideos((prev) => [newItem, ...prev]);
+        await uploadVideoMutation.mutateAsync(formData);
       }
 
       setUploadProgress(100);
@@ -230,7 +205,6 @@ export function MediaLibrary() {
     } catch (error) {
       toast.error(error.message || "Failed to upload file");
     } finally {
-      setUploading(false);
       setUploadProgress(0);
     }
   };
@@ -240,22 +214,17 @@ export function MediaLibrary() {
 
     try {
       const isImage = activeTab === "images";
-      const endpoint = isImage ? `/api/images/${selectedItem.id}` : `/api/videos/${selectedItem.id}`;
-
-      const res = await fetch(endpoint, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
-      });
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      const updatedItem = await res.json();
 
       if (isImage) {
-        setImages((prev) => prev.map((img) => (img.id === updatedItem.id ? updatedItem : img)));
+        await updateImageMutation.mutateAsync({
+          id: selectedItem.id,
+          data: editForm,
+        });
       } else {
-        setVideos((prev) => prev.map((vid) => (vid.id === updatedItem.id ? updatedItem : vid)));
+        await updateVideoMutation.mutateAsync({
+          id: selectedItem.id,
+          data: editForm,
+        });
       }
 
       toast.success(`${isImage ? "Image" : "Video"} updated successfully`);
@@ -271,16 +240,11 @@ export function MediaLibrary() {
 
     try {
       const isImage = activeTab === "images";
-      const endpoint = isImage ? `/api/images/${itemToDelete.id}` : `/api/videos/${itemToDelete.id}`;
-
-      const res = await fetch(endpoint, { method: "DELETE" });
-
-      if (!res.ok) throw new Error("Failed to delete");
 
       if (isImage) {
-        setImages((prev) => prev.filter((img) => img.id !== itemToDelete.id));
+        await deleteImageMutation.mutateAsync(itemToDelete.id);
       } else {
-        setVideos((prev) => prev.filter((vid) => vid.id !== itemToDelete.id));
+        await deleteVideoMutation.mutateAsync(itemToDelete.id);
       }
 
       toast.success(`${isImage ? "Image" : "Video"} deleted successfully`);
@@ -657,7 +621,7 @@ export function MediaLibrary() {
               </Select>
             </div>
 
-            {uploading && (
+            {(uploadImageMutation.isPending || uploadVideoMutation.isPending) && (
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Uploading...</span>
@@ -671,11 +635,11 @@ export function MediaLibrary() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadDialogOpen(false)} disabled={uploading}>
+            <Button variant="outline" onClick={() => setUploadDialogOpen(false)} disabled={uploadImageMutation.isPending || uploadVideoMutation.isPending}>
               Cancel
             </Button>
-            <Button variant="success" onClick={handleUpload} disabled={uploading || !uploadForm.name}>
-              {uploading ? (
+            <Button variant="success" onClick={handleUpload} disabled={uploadImageMutation.isPending || uploadVideoMutation.isPending || !uploadForm.name}>
+              {(uploadImageMutation.isPending || uploadVideoMutation.isPending) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Uploading...

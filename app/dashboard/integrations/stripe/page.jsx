@@ -44,6 +44,13 @@ import {
   Smartphone,
 } from "lucide-react";
 import { TerminalReaders } from "@/app/dashboard/account/components/TerminalReaders";
+import {
+  useStripeAccount,
+  useConnectStripe,
+  useDisconnectStripe,
+  useUpdatePaymentSettings,
+  usePaymentSettings
+} from "@/lib/hooks";
 
 const STRIPE_FEATURES = [
   { icon: CreditCard, label: "Accept credit & debit cards" },
@@ -56,12 +63,13 @@ const STRIPE_FEATURES = [
 
 function StripeIntegrationPageContent() {
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [connecting, setConnecting] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { data: account, isLoading: accountLoading, refetch } = useStripeAccount();
+  const connectStripe = useConnectStripe();
+  const disconnectStripe = useDisconnectStripe();
+  const updatePaymentSettings = useUpdatePaymentSettings();
+
+  const { data: paymentSettings, isLoading: settingsLoading } = usePaymentSettings();
   const [saved, setSaved] = useState(false);
-  const [account, setAccount] = useState(null);
   const [settings, setSettings] = useState({
     requirePayment: false,
     paymentType: "full",
@@ -72,7 +80,16 @@ function StripeIntegrationPageContent() {
   });
 
   useEffect(() => {
-    fetchData();
+    if (paymentSettings) {
+      setSettings({
+        requirePayment: paymentSettings.requirePayment || false,
+        paymentType: paymentSettings.paymentType || "full",
+        depositType: paymentSettings.depositType || "percentage",
+        depositValue: paymentSettings.depositValue || 50,
+        payInFullDiscount: paymentSettings.payInFullDiscount || 0,
+        balanceDueAt: paymentSettings.balanceDueAt || "completion",
+      });
+    }
 
     // Show success message if returning from Stripe OAuth
     if (searchParams.get("success") === "true") {
@@ -87,55 +104,14 @@ function StripeIntegrationPageContent() {
       toast.error(decodeURIComponent(error));
       window.history.replaceState({}, "", "/dashboard/integrations/stripe");
     }
-  }, [searchParams]);
-
-  const fetchData = async () => {
-    try {
-      const [accountRes, settingsRes] = await Promise.all([
-        fetch("/api/stripe/account"),
-        fetch("/api/tenant/payment-settings"),
-      ]);
-
-      if (accountRes.ok) {
-        setAccount(await accountRes.json());
-      }
-
-      if (settingsRes.ok) {
-        const data = await settingsRes.json();
-        setSettings({
-          requirePayment: data.requirePayment || false,
-          paymentType: data.paymentType || "full",
-          depositType: data.depositType || "percentage",
-          depositValue: data.depositValue || 50,
-          payInFullDiscount: data.payInFullDiscount || 0,
-          balanceDueAt: data.balanceDueAt || "completion",
-        });
-      }
-    } catch (error) {
-      toast.error("Failed to load account settings");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [paymentSettings, searchParams]);
 
   const handleConnectStripe = async () => {
-    setConnecting(true);
     try {
-      const res = await fetch("/api/stripe/connect/onboard", {
-        method: "POST",
-      });
-
-      if (res.ok) {
-        const { url } = await res.json();
-        window.location.href = url;
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to start Stripe onboarding");
-        setConnecting(false);
-      }
+      const { url } = await connectStripe.mutateAsync();
+      window.location.href = url;
     } catch (error) {
-      toast.error("Failed to connect Stripe");
-      setConnecting(false);
+      toast.error(error.message || "Failed to connect Stripe");
     }
   };
 
@@ -144,24 +120,12 @@ function StripeIntegrationPageContent() {
       return;
     }
 
-    setDisconnecting(true);
     try {
-      const res = await fetch("/api/stripe/connect/disconnect", {
-        method: "POST",
-      });
-
-      if (res.ok) {
-        toast.success("Stripe account disconnected");
-        setAccount(null);
-        setSettings((prev) => ({ ...prev, requirePayment: false }));
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to disconnect Stripe");
-      }
+      await disconnectStripe.mutateAsync();
+      toast.success("Stripe account disconnected");
+      setSettings((prev) => ({ ...prev, requirePayment: false }));
     } catch (error) {
-      toast.error("Failed to disconnect Stripe");
-    } finally {
-      setDisconnecting(false);
+      toast.error(error.message || "Failed to disconnect Stripe");
     }
   };
 
@@ -174,34 +138,23 @@ function StripeIntegrationPageContent() {
       return;
     }
 
-    setSaving(true);
     setSaved(false);
     try {
-      const res = await fetch("/api/tenant/payment-settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
-
-      if (res.ok) {
-        toast.success("Payment settings saved successfully");
-        setSaved(true);
-        // Reset saved state after 10 seconds
-        setTimeout(() => setSaved(false), 10000);
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save settings");
-      }
+      await updatePaymentSettings.mutateAsync(settings);
+      toast.success("Payment settings saved successfully");
+      setSaved(true);
+      // Reset saved state after 10 seconds
+      setTimeout(() => setSaved(false), 10000);
     } catch (error) {
-      toast.error("Failed to save settings");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Failed to save settings");
     }
   };
 
   const handleSettingChange = (field, value) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
+
+  const loading = accountLoading || settingsLoading;
 
   if (loading) {
     return (
@@ -261,7 +214,7 @@ function StripeIntegrationPageContent() {
               </div>
               <div className="flex items-center gap-2 pl-11 tablet:pl-0">
                 {isConnected && (
-                  <Button variant="outline" size="sm" onClick={fetchData}>
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
                     <RefreshCw className="h-4 w-4 mr-1" />
                     <span className="hidden fold:inline">Refresh</span>
                   </Button>
@@ -352,8 +305,8 @@ function StripeIntegrationPageContent() {
                 {/* Actions */}
                 <div className="flex flex-wrap gap-3">
                   {!isFullySetup && (
-                    <Button onClick={handleConnectStripe} disabled={connecting}>
-                      {connecting ? (
+                    <Button onClick={handleConnectStripe} disabled={connectStripe.isPending}>
+                      {connectStripe.isPending ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Plug className="h-4 w-4 mr-2" />
@@ -374,10 +327,10 @@ function StripeIntegrationPageContent() {
                   <Button
                     variant="outline"
                     onClick={handleDisconnect}
-                    disabled={disconnecting}
+                    disabled={disconnectStripe.isPending}
                     className="text-destructive hover:text-destructive"
                   >
-                    {disconnecting ? (
+                    {disconnectStripe.isPending ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
                       <Unlink className="h-4 w-4 mr-2" />
@@ -407,8 +360,8 @@ function StripeIntegrationPageContent() {
                   </AlertDescription>
                 </Alert>
 
-                <Button onClick={handleConnectStripe} disabled={connecting} size="lg">
-                  {connecting ? (
+                <Button onClick={handleConnectStripe} disabled={connectStripe.isPending} size="lg">
+                  {connectStripe.isPending ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <Zap className="h-4 w-4 mr-2" />
@@ -680,10 +633,10 @@ function StripeIntegrationPageContent() {
             <div className="flex justify-end">
               <Button
                 onClick={handleSaveSettings}
-                disabled={saving}
+                disabled={updatePaymentSettings.isPending}
                 className={saved ? "bg-green-600 hover:bg-green-700" : ""}
               >
-                {saving ? (
+                {updatePaymentSettings.isPending ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : saved ? (
                   <CheckCircle className="h-4 w-4 mr-2" />

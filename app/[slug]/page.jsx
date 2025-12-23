@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useEffect, useState, useMemo } from "react";
+import { use, useState, useMemo } from "react";
 import Link from "next/link";
+import { usePublicBusiness } from "@/lib/hooks/use-public-booking";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -360,9 +361,15 @@ function PackageCard({ pkg, onClick }) {
 
 export default function TenantLandingPage({ params }) {
   const { slug } = use(params);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  // Fetch business data with TanStack Query
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+  } = usePublicBusiness(slug);
+
+  const error = queryError?.message || null;
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -380,30 +387,6 @@ export default function TenantLandingPage({ params }) {
     if (selectedCategory === "uncategorized") return data.packages.filter((p) => !p.categoryId);
     return data.packages.filter((p) => p.categoryId === selectedCategory);
   }, [data?.packages, selectedCategory]);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await fetch(`/api/public/${slug}`);
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError("Business not found");
-          } else {
-            setError("Failed to load business information");
-          }
-          return;
-        }
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError("Failed to load business information");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [slug]);
 
   if (loading) {
     return (

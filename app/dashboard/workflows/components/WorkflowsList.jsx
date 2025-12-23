@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useWorkflows,
+  useCreateWorkflow,
+  useUpdateWorkflow,
+  useDeleteWorkflow,
+  useTags,
+  useEmailTemplates,
+} from "@/lib/hooks";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   Plus,
   Pencil,
@@ -45,7 +52,15 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import {
+  useTanstackForm,
+  TextField,
+  TextareaField,
+  NumberField,
+  SwitchField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 
 const TRIGGER_TYPES = [
   { value: "tag_added", label: "When tag is added", icon: Tag },
@@ -101,50 +116,24 @@ function getDefaultConfig(type) {
 
 export function WorkflowsList() {
   const [activeTab, setActiveTab] = useState("workflows");
-  const [workflows, setWorkflows] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [emailTemplates, setEmailTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState(null);
   const [workflowToDelete, setWorkflowToDelete] = useState(null);
   const [actions, setActions] = useState([]);
-  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const isMobile = useMediaQuery("(max-width: 639px)");
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // TanStack Query hooks
+  const { data: workflows = [], isLoading: workflowsLoading } = useWorkflows();
+  const { data: tags = [], isLoading: tagsLoading } = useTags();
+  const { data: emailTemplates = [], isLoading: templatesLoading } = useEmailTemplates();
+  const createWorkflow = useCreateWorkflow();
+  const updateWorkflow = useUpdateWorkflow();
+  const deleteWorkflow = useDeleteWorkflow();
 
-  const fetchData = async () => {
-    try {
-      const [workflowsRes, tagsRes, templatesRes] = await Promise.all([
-        fetch("/api/workflows"),
-        fetch("/api/tags"),
-        fetch("/api/email-templates"),
-      ]);
-
-      if (workflowsRes.ok) {
-        const workflowsData = await workflowsRes.json();
-        setWorkflows(workflowsData);
-      }
-      if (tagsRes.ok) {
-        const tagsData = await tagsRes.json();
-        setTags(tagsData);
-      }
-      if (templatesRes.ok) {
-        const templatesData = await templatesRes.json();
-        setEmailTemplates(templatesData);
-      }
-    } catch (error) {
-      toast.error("Failed to fetch data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = workflowsLoading || tagsLoading || templatesLoading;
 
   const validateForm = () => {
     const newErrors = {};
@@ -196,57 +185,35 @@ export function WorkflowsList() {
       return;
     }
 
-    setSaving(true);
+    const workflowData = {
+      ...formData,
+      delayMinutes: parseInt(formData.delayMinutes) || 0,
+      actions,
+    };
+
     try {
-      const url = editingWorkflow ? `/api/workflows/${editingWorkflow.id}` : "/api/workflows";
-      const method = editingWorkflow ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          delayMinutes: parseInt(formData.delayMinutes) || 0,
-          actions,
-        }),
-      });
-
-      if (response.ok) {
-        const savedWorkflow = await response.json();
-        if (editingWorkflow) {
-          setWorkflows(workflows.map((w) => (w.id === savedWorkflow.id ? savedWorkflow : w)));
-          toast.success("Workflow updated");
-        } else {
-          setWorkflows([savedWorkflow, ...workflows]);
-          toast.success("Workflow created");
-        }
-        handleCloseDialog();
+      if (editingWorkflow) {
+        await updateWorkflow.mutateAsync({
+          id: editingWorkflow.id,
+          ...workflowData,
+        });
+        toast.success("Workflow updated");
       } else {
-        const data = await response.json();
-        toast.error(data.error || "Failed to save workflow");
+        await createWorkflow.mutateAsync(workflowData);
+        toast.success("Workflow created");
       }
+      handleCloseDialog();
     } catch (error) {
-      toast.error("Failed to save workflow");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Failed to save workflow");
     }
   };
 
   const handleToggleActive = async (workflow) => {
     try {
-      const response = await fetch(`/api/workflows/${workflow.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !workflow.active }),
+      await updateWorkflow.mutateAsync({
+        id: workflow.id,
+        active: !workflow.active,
       });
-
-      if (response.ok) {
-        setWorkflows(workflows.map((w) =>
-          w.id === workflow.id ? { ...w, active: !w.active } : w
-        ));
-      } else {
-        toast.error("Failed to update workflow");
-      }
     } catch (error) {
       toast.error("Failed to update workflow");
     }
@@ -256,21 +223,12 @@ export function WorkflowsList() {
     if (!workflowToDelete) return;
 
     try {
-      const response = await fetch(`/api/workflows/${workflowToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setWorkflows(workflows.filter((w) => w.id !== workflowToDelete.id));
-        toast.success("Workflow deleted");
-      } else {
-        toast.error("Failed to delete workflow");
-      }
-    } catch (error) {
-      toast.error("Failed to delete workflow");
-    } finally {
+      await deleteWorkflow.mutateAsync(workflowToDelete.id);
+      toast.success("Workflow deleted");
       setDeleteDialogOpen(false);
       setWorkflowToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete workflow");
     }
   };
 
@@ -797,8 +755,13 @@ export function WorkflowsList() {
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button
+                type="submit"
+                disabled={createWorkflow.isPending || updateWorkflow.isPending}
+              >
+                {(createWorkflow.isPending || updateWorkflow.isPending) && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
                 {editingWorkflow ? "Update" : "Create"}
               </Button>
             </DialogFooter>

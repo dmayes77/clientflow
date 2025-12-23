@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,13 @@ import {
   MapPin,
   AlertTriangle,
 } from "lucide-react";
+import {
+  useTerminalLocation,
+  useCreateTerminalLocation,
+  useTerminalReaders,
+  useCreateTerminalReader,
+  useDeleteTerminalReader,
+} from "@/lib/hooks";
 
 function formatDeviceType(type) {
   const deviceNames = {
@@ -41,74 +48,42 @@ function formatDeviceType(type) {
 }
 
 export function TerminalReaders({ isStripeConnected = false }) {
-  const [loading, setLoading] = useState(true);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [readers, setReaders] = useState([]);
-  const [location, setLocation] = useState(null);
+  // TanStack Query hooks
+  const { data: locationData, isLoading: locationLoading, refetch: refetchLocation } = useTerminalLocation();
+  const { data: readersData, isLoading: readersLoading, refetch: refetchReaders } = useTerminalReaders();
+  const createLocation = useCreateTerminalLocation();
+  const createReader = useCreateTerminalReader();
+  const deleteReader = useDeleteTerminalReader();
+
   const [addReaderOpen, setAddReaderOpen] = useState(false);
-  const [registering, setRegistering] = useState(false);
-  const [deleting, setDeleting] = useState(null);
   const [newReader, setNewReader] = useState({
     registrationCode: "",
     label: "",
   });
 
-  useEffect(() => {
-    if (isStripeConnected) {
-      fetchData();
-    } else {
-      setLoading(false);
-    }
-  }, [isStripeConnected]);
+  // Extract data from queries
+  const location = locationData?.hasLocation ? locationData.location : null;
+  const readers = readersData?.readers || [];
+  const loading = locationLoading || readersLoading;
 
-  const fetchData = async () => {
-    try {
-      const [locationRes, readersRes] = await Promise.all([
-        fetch("/api/stripe/terminal/location"),
-        fetch("/api/stripe/terminal/readers"),
-      ]);
-
-      if (locationRes.ok) {
-        const data = await locationRes.json();
-        setLocation(data.hasLocation ? data.location : null);
-      }
-
-      if (readersRes.ok) {
-        const data = await readersRes.json();
-        setReaders(data.readers || []);
-      }
-    } catch (error) {
-      console.error("Error fetching terminal data:", error);
-    } finally {
-      setLoading(false);
-    }
+  // Refetch both location and readers
+  const fetchData = () => {
+    refetchLocation();
+    refetchReaders();
   };
 
-  const handleCreateLocation = async () => {
-    setLocationLoading(true);
-    try {
-      const res = await fetch("/api/stripe/terminal/location", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setLocation(data.location);
+  const handleCreateLocation = () => {
+    createLocation.mutate({}, {
+      onSuccess: () => {
         toast.success("Terminal location created");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to create location");
-      }
-    } catch (error) {
-      toast.error("Failed to create location");
-    } finally {
-      setLocationLoading(false);
-    }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to create location");
+      },
+    });
   };
 
-  const handleAddReader = async () => {
+  const handleAddReader = () => {
     if (!newReader.registrationCode.trim()) {
       toast.error("Please enter the registration code");
       return;
@@ -118,50 +93,27 @@ export function TerminalReaders({ isStripeConnected = false }) {
       return;
     }
 
-    setRegistering(true);
-    try {
-      const res = await fetch("/api/stripe/terminal/readers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newReader),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setReaders((prev) => [data.reader, ...prev]);
+    createReader.mutate(newReader, {
+      onSuccess: () => {
         setAddReaderOpen(false);
         setNewReader({ registrationCode: "", label: "" });
         toast.success("Reader registered successfully");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to register reader");
-      }
-    } catch (error) {
-      toast.error("Failed to register reader");
-    } finally {
-      setRegistering(false);
-    }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to register reader");
+      },
+    });
   };
 
-  const handleDeleteReader = async (readerId) => {
-    setDeleting(readerId);
-    try {
-      const res = await fetch(`/api/stripe/terminal/readers/${readerId}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setReaders((prev) => prev.filter((r) => r.id !== readerId));
+  const handleDeleteReader = (readerId) => {
+    deleteReader.mutate(readerId, {
+      onSuccess: () => {
         toast.success("Reader removed");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to remove reader");
-      }
-    } catch (error) {
-      toast.error("Failed to remove reader");
-    } finally {
-      setDeleting(null);
-    }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to remove reader");
+      },
+    });
   };
 
   if (loading) {
@@ -249,8 +201,8 @@ export function TerminalReaders({ isStripeConnected = false }) {
                   Set up a Terminal location to start registering card readers. This represents your business location.
                 </AlertDescription>
               </Alert>
-              <Button onClick={handleCreateLocation} disabled={locationLoading}>
-                {locationLoading ? (
+              <Button onClick={handleCreateLocation} disabled={createLocation.isPending}>
+                {createLocation.isPending ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <MapPin className="h-4 w-4 mr-2" />
@@ -314,9 +266,9 @@ export function TerminalReaders({ isStripeConnected = false }) {
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           onClick={() => handleDeleteReader(reader.id)}
-                          disabled={deleting === reader.id}
+                          disabled={deleteReader.isPending}
                         >
-                          {deleting === reader.id ? (
+                          {deleteReader.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />
@@ -371,8 +323,8 @@ export function TerminalReaders({ isStripeConnected = false }) {
             <Button variant="outline" onClick={() => setAddReaderOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddReader} disabled={registering}>
-              {registering && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button onClick={handleAddReader} disabled={createReader.isPending}>
+              {createReader.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Register Reader
             </Button>
           </DialogFooter>

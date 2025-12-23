@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Check, Loader2, Sparkles, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTenantStatus, useCreateCheckoutSession, useActivateFounderCode } from "@/lib/hooks";
 
 const PLANS = [
   {
@@ -53,11 +54,12 @@ const PLANS = [
 export default function PaymentPage() {
   const router = useRouter();
   const { isLoaded, orgId } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState(null);
   const [isFounder, setIsFounder] = useState(false);
   const [founderCode, setFounderCode] = useState(null);
-  const [activating, setActivating] = useState(false);
+
+  const { data: tenantStatus, isLoading: statusLoading } = useTenantStatus();
+  const createCheckoutSession = useCreateCheckoutSession();
+  const activateFounderCode = useActivateFounderCode();
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -70,83 +72,40 @@ export default function PaymentPage() {
     }
 
     // Check if tenant already has subscription
-    const checkStatus = async () => {
-      try {
-        const res = await fetch("/api/tenant/status");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.subscriptionStatus === "active" || data.subscriptionStatus === "trialing") {
-            router.push("/onboarding/setup");
-            return;
-          }
-        }
-      } catch (error) {
-        console.error("Error checking status:", error);
+    if (tenantStatus) {
+      if (tenantStatus.subscriptionStatus === "active" || tenantStatus.subscriptionStatus === "trialing") {
+        router.push("/onboarding/setup");
       }
-      setLoading(false);
-    };
-
-    if (orgId) {
-      checkStatus();
-    } else {
-      setLoading(false);
     }
-  }, [isLoaded, orgId, router]);
+  }, [isLoaded, orgId, router, tenantStatus]);
 
   const handleFounderActivation = async () => {
     if (!founderCode) return;
 
-    setActivating(true);
     try {
-      const res = await fetch("/api/founders/activate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: founderCode }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Activation failed");
-      }
-
+      await activateFounderCode.mutateAsync(founderCode);
       sessionStorage.removeItem("founderCode");
       toast.success("Founders access activated!");
       router.push("/onboarding/setup?activated=true");
     } catch (error) {
       toast.error(error.message);
-    } finally {
-      setActivating(false);
     }
   };
 
   const handleSelectPlan = async (plan) => {
-    setSelectedPlan(plan.id);
-
     try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: plan.priceId,
-          successUrl: `${window.location.origin}/onboarding/setup?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/onboarding/payment`,
-        }),
+      const { url } = await createCheckoutSession.mutateAsync({
+        priceId: plan.priceId,
+        successUrl: `${window.location.origin}/onboarding/setup?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${window.location.origin}/onboarding/payment`,
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create checkout");
-      }
-
-      const { url } = await res.json();
       window.location.href = url;
     } catch (error) {
       toast.error(error.message);
-      setSelectedPlan(null);
     }
   };
 
-  if (loading) {
+  if (!isLoaded || statusLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -189,9 +148,9 @@ export default function PaymentPage() {
               className="w-full bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
               size="lg"
               onClick={handleFounderActivation}
-              disabled={activating}
+              disabled={activateFounderCode.isPending}
             >
-              {activating ? (
+              {activateFounderCode.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Activating...
@@ -271,9 +230,9 @@ export default function PaymentPage() {
                 variant={plan.popular ? "default" : "outline"}
                 size="lg"
                 onClick={() => handleSelectPlan(plan)}
-                disabled={selectedPlan === plan.id}
+                disabled={createCheckoutSession.isPending}
               >
-                {selectedPlan === plan.id ? (
+                {createCheckoutSession.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Redirecting...

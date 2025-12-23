@@ -4,13 +4,15 @@ import { useState, useEffect, useCallback } from "react";
 import { Check, X, Loader2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { generateSlug } from "@/lib/signup-state";
+import { useCheckSlug } from "@/lib/hooks";
 
 export function SlugInput({ businessName, value, onChange, onValidChange }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [checking, setChecking] = useState(false);
   const [available, setAvailable] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [error, setError] = useState("");
+
+  const checkSlugMutation = useCheckSlug();
 
   // Auto-generate slug from business name
   useEffect(() => {
@@ -33,36 +35,19 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       return;
     }
 
-    setChecking(true);
     setError("");
 
     try {
-      const res = await fetch("/api/signup/check-slug", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Failed to check availability");
-        setAvailable(false);
-        onValidChange?.(false);
-        return;
-      }
-
+      const data = await checkSlugMutation.mutateAsync(slug);
       setAvailable(data.available);
       setSuggestions(data.suggestions || []);
       onValidChange?.(data.available);
     } catch (err) {
-      setError("Failed to check availability");
+      setError(err.message || "Failed to check availability");
       setAvailable(false);
       onValidChange?.(false);
-    } finally {
-      setChecking(false);
     }
-  }, [onValidChange]);
+  }, [onValidChange, checkSlugMutation]);
 
   // Debounce slug check
   useEffect(() => {
@@ -104,11 +89,11 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
             disabled={!isEditing && !value}
           />
           <div className="px-3 flex items-center gap-2">
-            {checking && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
-            {!checking && available === true && (
+            {checkSlugMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+            {!checkSlugMutation.isPending && available === true && (
               <Check className="w-4 h-4 text-green-500" />
             )}
-            {!checking && available === false && (
+            {!checkSlugMutation.isPending && available === false && (
               <X className="w-4 h-4 text-red-500" />
             )}
             {!isEditing && value && (
@@ -129,7 +114,7 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       {!error && available === true && (
         <p className="hig-caption2 text-green-600">This URL is available!</p>
       )}
-      {!error && available === false && !checking && (
+      {!error && available === false && !checkSlugMutation.isPending && (
         <p className="hig-caption2 text-red-500">This URL is already taken</p>
       )}
 

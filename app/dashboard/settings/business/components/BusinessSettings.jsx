@@ -9,26 +9,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import {
+  useTanstackForm,
+  TextField,
+  TextareaField,
+  NumberField,
+  SelectField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 import {
   Building2,
   MapPin,
   Globe,
-  Phone,
-  Mail,
   User,
   Link as LinkIcon,
   Loader2,
-  Save,
   Copy,
   Check,
   ExternalLink,
@@ -57,24 +53,34 @@ export function BusinessSettings() {
   const { data: tenantData, isLoading: loading } = useTenant();
   const updateTenant = useUpdateTenant();
 
-  const [formData, setFormData] = useState({
-    businessName: "",
-    businessDescription: "",
-    businessAddress: "",
-    businessCity: "",
-    businessState: "",
-    businessZip: "",
-    businessCountry: "",
-    businessPhone: "",
-    businessWebsite: "",
-    contactPerson: "",
-    slug: "",
-    defaultTaxRate: 0,
-    facebookUrl: "",
-    twitterUrl: "",
-    instagramUrl: "",
-    linkedinUrl: "",
-    youtubeUrl: "",
+  // Initialize form with TanStack Form
+  const form = useTanstackForm({
+    defaultValues: {
+      businessName: "",
+      businessDescription: "",
+      businessAddress: "",
+      businessCity: "",
+      businessState: "",
+      businessZip: "",
+      businessCountry: "",
+      businessPhone: "",
+      businessWebsite: "",
+      contactPerson: "",
+      slug: "",
+      defaultTaxRate: 0,
+      facebookUrl: "",
+      twitterUrl: "",
+      instagramUrl: "",
+      linkedinUrl: "",
+      youtubeUrl: "",
+    },
+    onSubmit: async ({ value }) => {
+      // Exclude slug from updates - it's auto-generated and shouldn't be changed by users
+      const { slug, ...dataToSave } = value;
+
+      await updateTenant.mutateAsync(dataToSave);
+      toast.success("Business settings saved successfully");
+    },
   });
 
   useEffect(() => {
@@ -84,45 +90,25 @@ export function BusinessSettings() {
   // Sync form data when tenant data loads
   useEffect(() => {
     if (tenantData) {
-      setFormData({
-        businessName: tenantData.businessName || organization?.name || "",
-        businessDescription: tenantData.businessDescription || "",
-        businessAddress: tenantData.businessAddress || "",
-        businessCity: tenantData.businessCity || "",
-        businessState: tenantData.businessState || "",
-        businessZip: tenantData.businessZip || "",
-        businessCountry: tenantData.businessCountry || "",
-        businessPhone: tenantData.businessPhone || "",
-        businessWebsite: tenantData.businessWebsite || "",
-        contactPerson: tenantData.contactPerson || "",
-        slug: tenantData.slug || "",
-        defaultTaxRate: tenantData.defaultTaxRate || 0,
-        facebookUrl: tenantData.facebookUrl || "",
-        twitterUrl: tenantData.twitterUrl || "",
-        instagramUrl: tenantData.instagramUrl || "",
-        linkedinUrl: tenantData.linkedinUrl || "",
-        youtubeUrl: tenantData.youtubeUrl || "",
-      });
+      form.setFieldValue("businessName", tenantData.businessName || organization?.name || "");
+      form.setFieldValue("businessDescription", tenantData.businessDescription || "");
+      form.setFieldValue("businessAddress", tenantData.businessAddress || "");
+      form.setFieldValue("businessCity", tenantData.businessCity || "");
+      form.setFieldValue("businessState", tenantData.businessState || "");
+      form.setFieldValue("businessZip", tenantData.businessZip || "");
+      form.setFieldValue("businessCountry", tenantData.businessCountry || "");
+      form.setFieldValue("businessPhone", tenantData.businessPhone || "");
+      form.setFieldValue("businessWebsite", tenantData.businessWebsite || "");
+      form.setFieldValue("contactPerson", tenantData.contactPerson || "");
+      form.setFieldValue("slug", tenantData.slug || "");
+      form.setFieldValue("defaultTaxRate", tenantData.defaultTaxRate || 0);
+      form.setFieldValue("facebookUrl", tenantData.facebookUrl || "");
+      form.setFieldValue("twitterUrl", tenantData.twitterUrl || "");
+      form.setFieldValue("instagramUrl", tenantData.instagramUrl || "");
+      form.setFieldValue("linkedinUrl", tenantData.linkedinUrl || "");
+      form.setFieldValue("youtubeUrl", tenantData.youtubeUrl || "");
     }
-  }, [tenantData, organization]);
-
-  const handleSave = () => {
-    // Exclude slug from updates - it's auto-generated and shouldn't be changed by users
-    const { slug, ...dataToSave } = formData;
-
-    updateTenant.mutate(dataToSave, {
-      onSuccess: () => {
-        toast.success("Business settings saved successfully");
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to save settings");
-      },
-    });
-  };
-
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  }, [tenantData, organization, form]);
 
   // Generate slug from business name
   const generateSlug = (name) => {
@@ -134,13 +120,7 @@ export function BusinessSettings() {
       .substring(0, 50);
   };
 
-  // Use existing slug or generate preview from business name
-  const displaySlug = formData.slug || (formData.businessName ? generateSlug(formData.businessName) : "");
-  const bookingUrl = displaySlug
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/book/${displaySlug}`
-    : null;
-
-  const copyBookingUrl = async () => {
+  const copyBookingUrl = async (bookingUrl) => {
     if (bookingUrl) {
       try {
         await navigator.clipboard.writeText(bookingUrl);
@@ -164,14 +144,13 @@ export function BusinessSettings() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Save Button Header */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={updateTenant.isPending}>
-          {updateTenant.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Save Changes
-        </Button>
-      </div>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+      className="space-y-6"
+    >
 
       {/* Appearance */}
       <Card>
@@ -222,54 +201,65 @@ export function BusinessSettings() {
       </Card>
 
       {/* Public Booking Link */}
-      {bookingUrl && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LinkIcon className="h-5 w-5 text-blue-500" />
-              Public Booking Link
-              {!formData.slug && (
-                <Badge variant="secondary" className="ml-2">Preview</Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              {formData.slug
-                ? "Share this link with clients to let them book appointments"
-                : "This URL will be active after you save your business settings"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Input value={bookingUrl} readOnly className="font-mono" />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={copyBookingUrl}
-                disabled={!formData.slug}
-                title={!formData.slug ? "Save settings first" : "Copy URL"}
-              >
-                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                asChild
-                disabled={!formData.slug}
-              >
-                <a
-                  href={formData.slug ? bookingUrl : "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => !formData.slug && e.preventDefault()}
-                  title={!formData.slug ? "Save settings first" : "Open booking page"}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <form.Subscribe selector={(state) => ({ businessName: state.values.businessName, slug: state.values.slug })}>
+        {({ businessName, slug }) => {
+          const displaySlug = slug || (businessName ? generateSlug(businessName) : "");
+          const bookingUrl = displaySlug
+            ? `${typeof window !== "undefined" ? window.location.origin : ""}/book/${displaySlug}`
+            : null;
+
+          return bookingUrl ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5 text-blue-500" />
+                  Public Booking Link
+                  {!slug && (
+                    <Badge variant="secondary" className="ml-2">Preview</Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {slug
+                    ? "Share this link with clients to let them book appointments"
+                    : "This URL will be active after you save your business settings"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Input value={bookingUrl} readOnly className="font-mono" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyBookingUrl(bookingUrl)}
+                    disabled={!slug}
+                    title={!slug ? "Save settings first" : "Copy URL"}
+                  >
+                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    asChild
+                    disabled={!slug}
+                  >
+                    <a
+                      href={slug ? bookingUrl : "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => !slug && e.preventDefault()}
+                      title={!slug ? "Save settings first" : "Open booking page"}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null;
+        }}
+      </form.Subscribe>
 
       {/* Business Information */}
       <Card>
@@ -281,27 +271,19 @@ export function BusinessSettings() {
           <CardDescription>Basic information about your business</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name</Label>
-              <Input
-                id="businessName"
-                placeholder="Your Business Name"
-                value={formData.businessName}
-                onChange={(e) => handleChange("businessName", e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="businessDescription">Business Description</Label>
-            <Textarea
-              id="businessDescription"
-              placeholder="Tell clients about your business..."
-              value={formData.businessDescription}
-              onChange={(e) => handleChange("businessDescription", e.target.value)}
-              rows={4}
-            />
-          </div>
+          <TextField
+            form={form}
+            name="businessName"
+            label="Business Name"
+            placeholder="Your Business Name"
+          />
+          <TextareaField
+            form={form}
+            name="businessDescription"
+            label="Business Description"
+            placeholder="Tell clients about your business..."
+            rows={4}
+          />
         </CardContent>
       </Card>
 
@@ -316,36 +298,27 @@ export function BusinessSettings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="contactPerson">Contact Person</Label>
-              <Input
-                id="contactPerson"
-                placeholder="Your Name"
-                value={formData.contactPerson}
-                onChange={(e) => handleChange("contactPerson", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessPhone">Phone Number</Label>
-              <Input
-                id="businessPhone"
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={formData.businessPhone}
-                onChange={(e) => handleChange("businessPhone", e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="businessWebsite">Website</Label>
-            <Input
-              id="businessWebsite"
-              type="url"
-              placeholder="https://yourbusiness.com"
-              value={formData.businessWebsite}
-              onChange={(e) => handleChange("businessWebsite", e.target.value)}
+            <TextField
+              form={form}
+              name="contactPerson"
+              label="Contact Person"
+              placeholder="Your Name"
+            />
+            <TextField
+              form={form}
+              name="businessPhone"
+              label="Phone Number"
+              type="tel"
+              placeholder="(555) 123-4567"
             />
           </div>
+          <TextField
+            form={form}
+            name="businessWebsite"
+            label="Website"
+            type="url"
+            placeholder="https://yourbusiness.com"
+          />
         </CardContent>
       </Card>
 
@@ -359,61 +332,38 @@ export function BusinessSettings() {
           <CardDescription>Your business location</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="businessAddress">Street Address</Label>
-            <Input
-              id="businessAddress"
-              placeholder="123 Main Street"
-              value={formData.businessAddress}
-              onChange={(e) => handleChange("businessAddress", e.target.value)}
-            />
-          </div>
+          <TextField
+            form={form}
+            name="businessAddress"
+            label="Street Address"
+            placeholder="123 Main Street"
+          />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessCity">City</Label>
-              <Input
-                id="businessCity"
-                placeholder="City"
-                value={formData.businessCity}
-                onChange={(e) => handleChange("businessCity", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessState">State/Province</Label>
-              <Input
-                id="businessState"
-                placeholder="State"
-                value={formData.businessState}
-                onChange={(e) => handleChange("businessState", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessZip">ZIP/Postal Code</Label>
-              <Input
-                id="businessZip"
-                placeholder="12345"
-                value={formData.businessZip}
-                onChange={(e) => handleChange("businessZip", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessCountry">Country</Label>
-              <Select
-                value={formData.businessCountry}
-                onValueChange={(value) => handleChange("businessCountry", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map((country) => (
-                    <SelectItem key={country.value} value={country.value}>
-                      {country.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <TextField
+              form={form}
+              name="businessCity"
+              label="City"
+              placeholder="City"
+            />
+            <TextField
+              form={form}
+              name="businessState"
+              label="State/Province"
+              placeholder="State"
+            />
+            <TextField
+              form={form}
+              name="businessZip"
+              label="ZIP/Postal Code"
+              placeholder="12345"
+            />
+            <SelectField
+              form={form}
+              name="businessCountry"
+              label="Country"
+              placeholder="Select country"
+              options={COUNTRIES}
+            />
           </div>
         </CardContent>
       </Card>
@@ -428,29 +378,35 @@ export function BusinessSettings() {
           <CardDescription>Default settings for new invoices</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="defaultTaxRate" className="flex items-center gap-2">
-              Default Tax Rate
-              <Percent className="h-3.5 w-3.5 text-muted-foreground" />
-            </Label>
-            <div className="flex items-center gap-2 max-w-xs">
-              <Input
-                id="defaultTaxRate"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                placeholder="0"
-                value={formData.defaultTaxRate || ""}
-                onChange={(e) => handleChange("defaultTaxRate", parseFloat(e.target.value) || 0)}
-                className="w-24"
-              />
-              <span className="text-muted-foreground">%</span>
-            </div>
-            <p className="hig-caption2 text-muted-foreground">
-              This rate will be automatically applied to new invoices. You can change it per invoice as needed.
-            </p>
-          </div>
+          <form.Field name="defaultTaxRate">
+            {(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name} className="flex items-center gap-2">
+                  Default Tax Rate
+                  <Percent className="h-3.5 w-3.5 text-muted-foreground" />
+                </Label>
+                <div className="flex items-center gap-2 max-w-xs">
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="0"
+                    value={field.state.value || ""}
+                    onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                    onBlur={field.handleBlur}
+                    className="w-24"
+                  />
+                  <span className="text-muted-foreground">%</span>
+                </div>
+                <p className="hig-caption2 text-muted-foreground">
+                  This rate will be automatically applied to new invoices. You can change it per invoice as needed.
+                </p>
+              </div>
+            )}
+          </form.Field>
         </CardContent>
       </Card>
 
@@ -465,59 +421,53 @@ export function BusinessSettings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="facebookUrl">Facebook</Label>
-              <Input
-                id="facebookUrl"
-                type="url"
-                placeholder="https://facebook.com/yourbusiness"
-                value={formData.facebookUrl}
-                onChange={(e) => handleChange("facebookUrl", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="instagramUrl">Instagram</Label>
-              <Input
-                id="instagramUrl"
-                type="url"
-                placeholder="https://instagram.com/yourbusiness"
-                value={formData.instagramUrl}
-                onChange={(e) => handleChange("instagramUrl", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="twitterUrl">Twitter/X</Label>
-              <Input
-                id="twitterUrl"
-                type="url"
-                placeholder="https://twitter.com/yourbusiness"
-                value={formData.twitterUrl}
-                onChange={(e) => handleChange("twitterUrl", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="linkedinUrl">LinkedIn</Label>
-              <Input
-                id="linkedinUrl"
-                type="url"
-                placeholder="https://linkedin.com/company/yourbusiness"
-                value={formData.linkedinUrl}
-                onChange={(e) => handleChange("linkedinUrl", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="youtubeUrl">YouTube</Label>
-              <Input
-                id="youtubeUrl"
+            <TextField
+              form={form}
+              name="facebookUrl"
+              label="Facebook"
+              type="url"
+              placeholder="https://facebook.com/yourbusiness"
+            />
+            <TextField
+              form={form}
+              name="instagramUrl"
+              label="Instagram"
+              type="url"
+              placeholder="https://instagram.com/yourbusiness"
+            />
+            <TextField
+              form={form}
+              name="twitterUrl"
+              label="Twitter/X"
+              type="url"
+              placeholder="https://twitter.com/yourbusiness"
+            />
+            <TextField
+              form={form}
+              name="linkedinUrl"
+              label="LinkedIn"
+              type="url"
+              placeholder="https://linkedin.com/company/yourbusiness"
+            />
+            <div className="md:col-span-2">
+              <TextField
+                form={form}
+                name="youtubeUrl"
+                label="YouTube"
                 type="url"
                 placeholder="https://youtube.com/@yourbusiness"
-                value={formData.youtubeUrl}
-                onChange={(e) => handleChange("youtubeUrl", e.target.value)}
               />
             </div>
           </div>
         </CardContent>
       </Card>
-    </div>
+
+      {/* Save Button Footer */}
+      <div className="flex justify-end">
+        <SubmitButton form={form} loadingText="Saving...">
+          Save Changes
+        </SubmitButton>
+      </div>
+    </form>
   );
 }

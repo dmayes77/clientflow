@@ -2,17 +2,15 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Send, CheckCircle, Sparkles, FileText } from "lucide-react";
+import { z } from "zod";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Send, CheckCircle, Sparkles, Rocket, FileText } from "lucide-react";
+  useTanstackForm,
+  TextField,
+  TextareaField,
+  SelectField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 
 const budgetOptions = [
   { value: "under-1k", label: "Under $1,000" },
@@ -30,28 +28,21 @@ const timelineOptions = [
   { value: "flexible", label: "Flexible" },
 ];
 
+const projectSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  company: z.string().optional(),
+  website: z.string().url("Invalid URL").optional().or(z.literal("")),
+  budget: z.string().optional(),
+  timeline: z.string().optional(),
+  description: z.string().min(20, "Please provide more details about your project"),
+});
+
 export function ProjectInquiryForm() {
-  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    company: "",
-    website: "",
-    budget: "",
-    timeline: "",
-    description: "",
-  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    // Simulate form submission - replace with actual API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    setSubmitted(true);
-    setFormData({
+  const form = useTanstackForm({
+    defaultValues: {
       name: "",
       email: "",
       company: "",
@@ -59,9 +50,17 @@ export function ProjectInquiryForm() {
       budget: "",
       timeline: "",
       description: "",
-    });
-    setLoading(false);
-  };
+    },
+    onSubmit: async () => {
+      // Simulate form submission - replace with actual API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setSubmitted(true);
+      form.reset();
+    },
+    validators: {
+      onChange: projectSchema,
+    },
+  });
 
   if (submitted) {
     return (
@@ -110,124 +109,86 @@ export function ProjectInquiryForm() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+          className="space-y-5"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Your Name</Label>
-              <Input
-                id="name"
-                placeholder="John Doe"
-                required
-                className="bg-background/80"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                required
-                className="bg-background/80"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="company">Company / Business Name</Label>
-              <Input
-                id="company"
-                placeholder="Acme Inc."
-                className="bg-background/80"
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="website">Current Website (if any)</Label>
-              <Input
-                id="website"
-                placeholder="https://example.com"
-                className="bg-background/80"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="budget">Estimated Budget</Label>
-              <Select
-                value={formData.budget}
-                onValueChange={(value) => setFormData({ ...formData, budget: value })}
-              >
-                <SelectTrigger className="bg-background/80">
-                  <SelectValue placeholder="Select a range" />
-                </SelectTrigger>
-                <SelectContent>
-                  {budgetOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="timeline">Ideal Timeline</Label>
-              <Select
-                value={formData.timeline}
-                onValueChange={(value) => setFormData({ ...formData, timeline: value })}
-              >
-                <SelectTrigger className="bg-background/80">
-                  <SelectValue placeholder="When do you need this?" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timelineOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Project Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Tell us about your business, goals, and what you're looking for in a website..."
-              rows={5}
+            <TextField
+              form={form}
+              name="name"
+              label="Your Name"
+              placeholder="John Doe"
               required
-              className="resize-none bg-background/80"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              inputClassName="bg-background/80"
+            />
+            <TextField
+              form={form}
+              name="email"
+              type="email"
+              label="Email Address"
+              placeholder="john@example.com"
+              required
+              inputClassName="bg-background/80"
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <TextField
+              form={form}
+              name="company"
+              label="Company / Business Name"
+              placeholder="Acme Inc."
+              inputClassName="bg-background/80"
+            />
+            <TextField
+              form={form}
+              name="website"
+              label="Current Website (if any)"
+              placeholder="https://example.com"
+              inputClassName="bg-background/80"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <SelectField
+              form={form}
+              name="budget"
+              label="Estimated Budget"
+              placeholder="Select a range"
+              options={budgetOptions}
+            />
+            <SelectField
+              form={form}
+              name="timeline"
+              label="Ideal Timeline"
+              placeholder="When do you need this?"
+              options={timelineOptions}
+            />
+          </div>
+
+          <TextareaField
+            form={form}
+            name="description"
+            label="Project Description"
+            placeholder="Tell us about your business, goals, and what you're looking for in a website..."
+            rows={5}
+            required
+            textareaClassName="resize-none bg-background/80"
+          />
+
           <div className="pt-4">
-            <Button
-              type="submit"
-              size="lg"
-              disabled={loading}
+            <SubmitButton
+              form={form}
               className="w-full bg-linear-to-r from-primary to-violet-600 hover:from-primary/90 hover:to-violet-600/90"
+              loadingText="Submitting..."
             >
-              {loading ? (
-                "Submitting..."
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Project Inquiry
-                </>
-              )}
-            </Button>
+              <Send className="h-4 w-4 mr-2" />
+              Submit Project Inquiry
+            </SubmitButton>
 
             <p className="text-xs text-muted-foreground text-center mt-4">
               We respect your privacy. Your information will never be shared with third parties.

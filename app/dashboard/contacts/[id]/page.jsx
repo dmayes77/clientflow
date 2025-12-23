@@ -3,6 +3,11 @@
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useContact, useUpdateContact, useAddContactTag, useRemoveContactTag } from "@/lib/hooks/use-contacts";
+import { useServices } from "@/lib/hooks/use-services";
+import { usePackages } from "@/lib/hooks/use-packages";
+import { useTags, useCreateTag } from "@/lib/hooks/use-tags";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -122,24 +127,27 @@ function InvoiceStatusBadge({ status }) {
 export default function ClientDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+
+  // TanStack Query hooks
+  const { data: contactData, isLoading: loading, error } = useContact(id);
+  const updateContactMutation = useUpdateContact();
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const { data: packages = [], isLoading: packagesLoading } = usePackages();
+  const { data: allTags = [], isLoading: tagsLoading } = useTags();
+  const createTagMutation = useCreateTag();
+  const addContactTagMutation = useAddContactTag();
+  const removeContactTagMutation = useRemoveContactTag();
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [client, setClient] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [allTags, setAllTags] = useState([]);
-  const [clientTags, setClientTags] = useState([]);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
-  const [addingTag, setAddingTag] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
   const [deletingBooking, setDeletingBooking] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [services, setServices] = useState([]);
-  const [packages, setPackages] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -151,6 +159,14 @@ export default function ClientDetailPage({ params }) {
   });
   const [isMobile, setIsMobile] = useState(false);
 
+  // Derived state from query data
+  const client = contactData?.contact;
+  const stats = contactData?.stats;
+  const clientTags = client?.tags || [];
+
+  // Mutation states
+  const addingTag = addContactTagMutation.isPending || createTagMutation.isPending;
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
@@ -158,53 +174,29 @@ export default function ClientDetailPage({ params }) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Handle query error
   useEffect(() => {
-    fetchClient();
-  }, [id]);
+    if (error) {
+      toast.error("Failed to load client details");
+      router.push("/dashboard/contacts");
+    }
+  }, [error, router]);
 
-  const fetchClient = async () => {
-    try {
-      setLoading(true);
-      const [response, servicesRes, packagesRes] = await Promise.all([
-        fetch(`/api/contacts/${id}`),
-        fetch("/api/services"),
-        fetch("/api/packages"),
-      ]);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          toast.error("Client not found");
-          router.push("/dashboard/contacts");
-          return;
-        }
-        throw new Error("Failed to fetch client");
-      }
-
-      const data = await response.json();
-      setClient(data.contact);
-      setStats(data.stats);
-      setAllTags(data.allTags || []);
-      setClientTags(data.contact.tags || []);
+  // Initialize form data when contact loads
+  useEffect(() => {
+    if (client) {
       setFormData({
-        name: data.contact.name || "",
-        email: data.contact.email || "",
-        phone: data.contact.phone || "",
-        company: data.contact.company || "",
-        source: data.contact.source || "",
-        website: data.contact.website || "",
-        notes: data.contact.notes || "",
+        name: client.name || "",
+        email: client.email || "",
+        phone: client.phone || "",
+        company: client.company || "",
+        source: client.source || "",
+        website: client.website || "",
+        notes: client.notes || "",
       });
       setHasChanges(false);
-
-      if (servicesRes.ok) setServices(await servicesRes.json());
-      if (packagesRes.ok) setPackages(await packagesRes.json());
-    } catch (error) {
-      console.error("Error fetching client:", error);
-      toast.error("Failed to load client details");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [client]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -213,70 +205,37 @@ export default function ClientDetailPage({ params }) {
 
   const handleSave = async () => {
     try {
-      setSaving(true);
-      const response = await fetch(`/api/contacts/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      await updateContactMutation.mutateAsync({
+        id,
+        ...formData,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to update client");
-      }
-
-      const updatedClient = await response.json();
-      setClient((prev) => ({ ...prev, ...updatedClient }));
       setHasChanges(false);
       toast.success("Client saved successfully");
     } catch (error) {
       console.error("Error updating client:", error);
-      toast.error("Failed to save client");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Failed to save client");
     }
   };
 
   const handleAddTag = async (tagId) => {
     try {
-      setAddingTag(true);
-      const response = await fetch(`/api/contacts/${id}/tags`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tagId }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to add tag");
-      }
-
-      const tag = await response.json();
-      setClientTags((prev) => [...prev, tag]);
+      const tag = allTags.find(t => t.id === tagId);
+      await addContactTagMutation.mutateAsync({ contactId: id, tagId });
       setTagPopoverOpen(false);
-      toast.success(`Tag "${tag.name}" added`);
+      toast.success(`Tag "${tag?.name || 'Tag'}" added`);
     } catch (error) {
       console.error("Error adding tag:", error);
-      toast.error(error.message);
-    } finally {
-      setAddingTag(false);
+      toast.error(error.message || "Failed to add tag");
     }
   };
 
   const handleRemoveTag = async (tagId) => {
     try {
-      const response = await fetch(`/api/contacts/${id}/tags?tagId=${tagId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to remove tag");
-      }
-
-      setClientTags((prev) => prev.filter((t) => t.id !== tagId));
+      await removeContactTagMutation.mutateAsync({ contactId: id, tagId });
       toast.success("Tag removed");
     } catch (error) {
       console.error("Error removing tag:", error);
-      toast.error("Failed to remove tag");
+      toast.error(error.message || "Failed to remove tag");
     }
   };
 
@@ -284,45 +243,24 @@ export default function ClientDetailPage({ params }) {
     if (!newTagName.trim()) return;
 
     try {
-      setAddingTag(true);
-
       // First create the tag
-      const createResponse = await fetch("/api/tags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newTagName.trim(), color: "blue" }),
+      const newTag = await createTagMutation.mutateAsync({
+        name: newTagName.trim(),
+        color: "blue"
       });
 
-      if (!createResponse.ok) {
-        const error = await createResponse.json();
-        throw new Error(error.error || "Failed to create tag");
-      }
-
-      const newTag = await createResponse.json();
-
-      // Add to allTags list
-      setAllTags((prev) => [...prev, newTag].sort((a, b) => a.name.localeCompare(b.name)));
-
-      // Then add the tag to the client
-      const addResponse = await fetch(`/api/contacts/${id}/tags`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tagId: newTag.id }),
+      // Then add the tag to the contact
+      await addContactTagMutation.mutateAsync({
+        contactId: id,
+        tagId: newTag.id
       });
 
-      if (!addResponse.ok) {
-        throw new Error("Failed to add tag to contact");
-      }
-
-      setClientTags((prev) => [...prev, newTag]);
       setNewTagName("");
       setTagPopoverOpen(false);
       toast.success(`Tag "${newTag.name}" created and added`);
     } catch (error) {
       console.error("Error creating tag:", error);
-      toast.error(error.message);
-    } finally {
-      setAddingTag(false);
+      toast.error(error.message || "Failed to create tag");
     }
   };
 
@@ -337,10 +275,8 @@ export default function ClientDetailPage({ params }) {
         throw new Error("Failed to delete booking");
       }
 
-      setClient((prev) => ({
-        ...prev,
-        bookings: prev.bookings.filter((b) => b.id !== bookingToDelete.id),
-      }));
+      // Invalidate contact query to refetch with updated bookings
+      queryClient.invalidateQueries({ queryKey: ["contacts", id] });
       setDeleteBookingDialogOpen(false);
       setBookingToDelete(null);
       toast.success("Booking deleted");
@@ -359,12 +295,8 @@ export default function ClientDetailPage({ params }) {
   };
 
   const handleInvoiceSave = (savedInvoice) => {
-    setClient((prev) => ({
-      ...prev,
-      invoices: prev.invoices.map((inv) =>
-        inv.id === savedInvoice.id ? savedInvoice : inv
-      ),
-    }));
+    // Invalidate contact query to refetch with updated invoices
+    queryClient.invalidateQueries({ queryKey: ["contacts", id] });
     setInvoiceDialogOpen(false);
     setSelectedInvoice(null);
   };
@@ -427,8 +359,8 @@ export default function ClientDetailPage({ params }) {
 
         {/* Action buttons row */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant={hasChanges ? "default" : "outline"} onClick={handleSave} disabled={saving || !hasChanges} className="flex-1 fold:flex-none">
-            {saving ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
+          <Button size="sm" variant={hasChanges ? "default" : "outline"} onClick={handleSave} disabled={updateContactMutation.isPending || !hasChanges} className="flex-1 fold:flex-none">
+            {updateContactMutation.isPending ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
             Save
           </Button>
           <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white flex-1 fold:flex-none" onClick={() => router.push(`/dashboard/bookings/new?clientId=${id}`)}>

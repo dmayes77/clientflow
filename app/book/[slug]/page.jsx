@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useEffect, useState, useMemo, Suspense } from "react";
+import { use, useState, useMemo, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { usePublicBusiness, usePublicAvailability, useCreatePublicBooking, useCreateCheckout } from "@/lib/hooks/use-public-booking";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -609,15 +610,22 @@ function TenantBookingPageContent({ params }) {
   const preselectedServiceId = searchParams.get("serviceId");
   const preselectedPackageId = searchParams.get("packageId");
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [business, setBusiness] = useState(null);
-  const [services, setServices] = useState([]);
-  const [packages, setPackages] = useState([]);
-  const [categories, setCategories] = useState([]);
+  // Fetch business data with TanStack Query
+  const {
+    data: businessData,
+    isLoading: loading,
+    error: queryError,
+  } = usePublicBusiness(slug);
+
+  const business = businessData?.business;
+  const services = businessData?.services || [];
+  const packages = businessData?.packages || [];
+  const categories = businessData?.categories || [];
+  const weeklyAvailability = businessData?.availability || [];
+  const paymentSettings = businessData?.payment || null;
+  const error = queryError?.message || null;
+
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [weeklyAvailability, setWeeklyAvailability] = useState([]);
-  const [paymentSettings, setPaymentSettings] = useState(null);
 
   const [step, setStep] = useState("select");
   const [selectedItems, setSelectedItems] = useState([]);
@@ -627,10 +635,17 @@ function TenantBookingPageContent({ params }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
-  const [availabilityData, setAvailabilityData] = useState(null);
-  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const [submitting, setSubmitting] = useState(false);
+  // Fetch availability with TanStack Query
+  const {
+    data: availabilityData,
+    isLoading: loadingSlots,
+  } = usePublicAvailability({
+    slug,
+    date: selectedDate,
+    enabled: !!selectedDate && !!business,
+  });
+
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingResult, setBookingResult] = useState(null);
   const [formData, setFormData] = useState({
@@ -639,6 +654,11 @@ function TenantBookingPageContent({ params }) {
     phone: "",
     notes: "",
   });
+
+  // Mutations
+  const createBookingMutation = useCreatePublicBooking();
+  const createCheckoutMutation = useCreateCheckout();
+  const submitting = createBookingMutation.isPending;
 
   // Calculate totals from selected items
   const selectedTotal = selectedItems.reduce((sum, item) => sum + item.price, 0);
@@ -693,69 +713,24 @@ function TenantBookingPageContent({ params }) {
     return packages.filter((p) => p.categoryId === selectedCategory);
   }, [packages, selectedCategory]);
 
-  // Fetch business data
+  // Auto-select preselected service/package when data loads
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await fetch(`/api/public/${slug}`);
-        if (!response.ok) {
-          setError(response.status === 404 ? "Business not found" : "Failed to load");
-          return;
-        }
-        const result = await response.json();
-        setBusiness(result.business);
-        setServices(result.services || []);
-        setPackages(result.packages || []);
-        setCategories(result.categories || []);
-        setWeeklyAvailability(result.availability || []);
-        setPaymentSettings(result.payment || null);
+    if (!businessData || selectedItems.length > 0) return;
 
-        // Auto-select if preselected
-        if (preselectedServiceId) {
-          const service = result.services?.find((s) => s.id === preselectedServiceId);
-          if (service) {
-            setSelectedItems([{ ...service, type: "service" }]);
-            setStep("date");
-          }
-        } else if (preselectedPackageId) {
-          const pkg = result.packages?.find((p) => p.id === preselectedPackageId);
-          if (pkg) {
-            setSelectedItems([{ ...pkg, type: "package" }]);
-            setStep("date");
-          }
-        }
-      } catch (err) {
-        setError("Failed to load business information");
-      } finally {
-        setLoading(false);
+    if (preselectedServiceId) {
+      const service = services.find((s) => s.id === preselectedServiceId);
+      if (service) {
+        setSelectedItems([{ ...service, type: "service" }]);
+        setStep("date");
+      }
+    } else if (preselectedPackageId) {
+      const pkg = packages.find((p) => p.id === preselectedPackageId);
+      if (pkg) {
+        setSelectedItems([{ ...pkg, type: "package" }]);
+        setStep("date");
       }
     }
-
-    fetchData();
-  }, [slug, preselectedServiceId, preselectedPackageId]);
-
-  // Fetch availability when date changes
-  useEffect(() => {
-    if (!selectedDate || !business) return;
-
-    const fetchAvailability = async () => {
-      setLoadingSlots(true);
-      setAvailabilityData(null);
-      try {
-        const response = await fetch(
-          `/api/public/${slug}/availability?date=${selectedDate.toISOString()}`
-        );
-        const data = await response.json();
-        setAvailabilityData(data);
-      } catch (error) {
-        console.error("Failed to fetch availability:", error);
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
-
-    fetchAvailability();
-  }, [selectedDate, slug, business]);
+  }, [businessData, preselectedServiceId, preselectedPackageId, services, packages, selectedItems.length]);
 
   const timeSlots = useMemo(() => {
     if (!availabilityData || availabilityData.isClosed) return [];
@@ -860,115 +835,102 @@ function TenantBookingPageContent({ params }) {
       return;
     }
 
-    setSubmitting(true);
+    const [hours, minutes] = selectedTime.split(":").map(Number);
+    const scheduledAt = new Date(selectedDate);
+    scheduledAt.setHours(hours, minutes, 0, 0);
 
-    try {
-      const [hours, minutes] = selectedTime.split(":").map(Number);
-      const scheduledAt = new Date(selectedDate);
-      scheduledAt.setHours(hours, minutes, 0, 0);
+    const serviceIds = selectedItems.filter((i) => i.type === "service").map((i) => i.id);
+    const packageIds = selectedItems.filter((i) => i.type === "package").map((i) => i.id);
 
-      const serviceIds = selectedItems.filter((i) => i.type === "service").map((i) => i.id);
-      const packageIds = selectedItems.filter((i) => i.type === "package").map((i) => i.id);
-
-      const response = await fetch(`/api/public/${slug}/book`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId: serviceIds.length === 1 ? serviceIds[0] : null,
-          packageId: packageIds.length === 1 && serviceIds.length === 0 ? packageIds[0] : null,
-          serviceIds: serviceIds.length > 0 ? serviceIds : undefined,
-          packageIds: packageIds.length > 0 ? packageIds : undefined,
-          scheduledAt: scheduledAt.toISOString(),
-          totalDuration: selectedDuration,
-          totalPrice: selectedTotal,
-          contactName: formData.name,
-          contactEmail: formData.email,
-          contactPhone: formData.phone || null,
-          notes: formData.notes || null,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to create booking");
+    createBookingMutation.mutate(
+      {
+        slug,
+        serviceId: serviceIds.length === 1 ? serviceIds[0] : null,
+        packageId: packageIds.length === 1 && serviceIds.length === 0 ? packageIds[0] : null,
+        serviceIds: serviceIds.length > 0 ? serviceIds : undefined,
+        packageIds: packageIds.length > 0 ? packageIds : undefined,
+        scheduledAt: scheduledAt.toISOString(),
+        totalDuration: selectedDuration,
+        totalPrice: selectedTotal,
+        contactName: formData.name,
+        contactEmail: formData.email,
+        contactPhone: formData.phone || null,
+        notes: formData.notes || null,
+      },
+      {
+        onSuccess: (result) => {
+          setBookingResult(result);
+          setBookingComplete(true);
+        },
+        onError: (error) => {
+          console.error("Booking error:", error);
+          alert(error.message || "Failed to create booking. Please try again.");
+        },
       }
-
-      setBookingResult(result);
-      setBookingComplete(true);
-    } catch (error) {
-      console.error("Booking error:", error);
-      alert(error.message || "Failed to create booking. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    );
   };
 
   // Handle payment checkout
   const handlePayment = async () => {
     setProcessingPayment(true);
 
-    try {
-      const [hours, minutes] = selectedTime.split(":").map(Number);
-      const scheduledAt = new Date(selectedDate);
-      scheduledAt.setHours(hours, minutes, 0, 0);
+    const [hours, minutes] = selectedTime.split(":").map(Number);
+    const scheduledAt = new Date(selectedDate);
+    scheduledAt.setHours(hours, minutes, 0, 0);
 
-      const serviceIds = selectedItems.filter((i) => i.type === "service").map((i) => i.id);
-      const packageIds = selectedItems.filter((i) => i.type === "package").map((i) => i.id);
+    const serviceIds = selectedItems.filter((i) => i.type === "service").map((i) => i.id);
+    const packageIds = selectedItems.filter((i) => i.type === "package").map((i) => i.id);
 
-      // First create the booking
-      const bookingResponse = await fetch(`/api/public/${slug}/book`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serviceId: serviceIds.length === 1 ? serviceIds[0] : null,
-          packageId: packageIds.length === 1 && serviceIds.length === 0 ? packageIds[0] : null,
-          serviceIds: serviceIds.length > 0 ? serviceIds : undefined,
-          packageIds: packageIds.length > 0 ? packageIds : undefined,
-          scheduledAt: scheduledAt.toISOString(),
-          totalDuration: selectedDuration,
-          totalPrice: selectedTotal,
-          contactName: formData.name,
-          contactEmail: formData.email,
-          contactPhone: formData.phone || null,
-          notes: formData.notes || null,
-          paymentStatus: "pending", // Mark as pending payment
-        }),
-      });
-
-      const bookingResult = await bookingResponse.json();
-
-      if (!bookingResponse.ok) {
-        throw new Error(bookingResult.error || "Failed to create booking");
+    // First create the booking
+    createBookingMutation.mutate(
+      {
+        slug,
+        serviceId: serviceIds.length === 1 ? serviceIds[0] : null,
+        packageId: packageIds.length === 1 && serviceIds.length === 0 ? packageIds[0] : null,
+        serviceIds: serviceIds.length > 0 ? serviceIds : undefined,
+        packageIds: packageIds.length > 0 ? packageIds : undefined,
+        scheduledAt: scheduledAt.toISOString(),
+        totalDuration: selectedDuration,
+        totalPrice: selectedTotal,
+        contactName: formData.name,
+        contactEmail: formData.email,
+        contactPhone: formData.phone || null,
+        notes: formData.notes || null,
+        paymentStatus: "pending", // Mark as pending payment
+      },
+      {
+        onSuccess: (bookingResult) => {
+          // Now create checkout session
+          createCheckoutMutation.mutate(
+            {
+              slug,
+              bookingId: bookingResult.booking.id,
+              contactId: bookingResult.contact?.id,
+              contactEmail: formData.email,
+              contactName: formData.name,
+              paymentOption, // "full" or "deposit"
+              serviceTotal: selectedTotal,
+            },
+            {
+              onSuccess: (checkoutResult) => {
+                // Redirect to Stripe Checkout
+                window.location.href = checkoutResult.checkoutUrl;
+              },
+              onError: (error) => {
+                console.error("Payment error:", error);
+                alert(error.message || "Failed to process payment. Please try again.");
+                setProcessingPayment(false);
+              },
+            }
+          );
+        },
+        onError: (error) => {
+          console.error("Booking error:", error);
+          alert(error.message || "Failed to create booking. Please try again.");
+          setProcessingPayment(false);
+        },
       }
-
-      // Now create checkout session
-      const checkoutResponse = await fetch(`/api/public/${slug}/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: bookingResult.booking.id,
-          contactId: bookingResult.contact?.id,
-          contactEmail: formData.email,
-          contactName: formData.name,
-          paymentOption, // "full" or "deposit"
-          serviceTotal: selectedTotal,
-        }),
-      });
-
-      const checkoutResult = await checkoutResponse.json();
-
-      if (!checkoutResponse.ok) {
-        throw new Error(checkoutResult.error || "Failed to create checkout session");
-      }
-
-      // Redirect to Stripe Checkout
-      window.location.href = checkoutResult.checkoutUrl;
-    } catch (error) {
-      console.error("Payment error:", error);
-      alert(error.message || "Failed to process payment. Please try again.");
-      setProcessingPayment(false);
-    }
+    );
   };
 
   const handleReset = () => {

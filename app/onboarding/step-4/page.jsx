@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { useAuth, useOrganization } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Building2, Upload, X } from "lucide-react";
+import { useBusinessSettings, useUpdateBusinessSettings, useUpdateOnboardingProgress } from "@/lib/hooks";
 
 export default function Step4Page() {
   const router = useRouter();
   const { isLoaded, orgId } = useAuth();
   const { organization } = useOrganization();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  const { data: businessSettings, isLoading } = useBusinessSettings();
+  const updateBusinessSettings = useUpdateBusinessSettings();
+  const updateOnboardingProgress = useUpdateOnboardingProgress();
 
   const [formData, setFormData] = useState({
     businessName: "",
@@ -22,46 +25,26 @@ export default function Step4Page() {
     logoUrl: "",
   });
 
+  // Update form data when business settings are loaded
   useEffect(() => {
-    if (!isLoaded) return;
-
-    // Pre-populate business name from org
-    if (organization?.name) {
+    if (businessSettings) {
+      // Normalize null values to empty strings to avoid uncontrolled input warnings
+      setFormData((prev) => ({
+        ...prev,
+        businessName: businessSettings.businessName || organization?.name || "",
+        businessDescription: businessSettings.businessDescription || "",
+        businessWebsite: businessSettings.businessWebsite || "",
+        businessPhone: businessSettings.businessPhone || "",
+        contactPerson: businessSettings.contactPerson || "",
+        logoUrl: businessSettings.logoUrl || "",
+      }));
+    } else if (organization?.name) {
       setFormData((prev) => ({
         ...prev,
         businessName: organization.name,
       }));
     }
-
-    // Fetch existing tenant data
-    const fetchTenantData = async () => {
-      try {
-        const res = await fetch("/api/tenant/business");
-        if (res.ok) {
-          const data = await res.json();
-          // Normalize null values to empty strings to avoid uncontrolled input warnings
-          setFormData((prev) => ({
-            ...prev,
-            businessName: data.businessName || organization?.name || "",
-            businessDescription: data.businessDescription || "",
-            businessWebsite: data.businessWebsite || "",
-            businessPhone: data.businessPhone || "",
-            contactPerson: data.contactPerson || "",
-            logoUrl: data.logoUrl || "",
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching tenant:", error);
-      }
-      setLoading(false);
-    };
-
-    if (orgId) {
-      fetchTenantData();
-    } else {
-      setLoading(false);
-    }
-  }, [isLoaded, orgId, organization]);
+  }, [businessSettings, organization]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -69,36 +52,17 @@ export default function Step4Page() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
 
     try {
-      const res = await fetch("/api/tenant/business", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save");
-      }
-
-      // Update onboarding progress
-      await fetch("/api/onboarding/progress", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step: 5 }),
-      });
-
+      await updateBusinessSettings.mutateAsync(formData);
+      await updateOnboardingProgress.mutateAsync({ step: 5 });
       router.push("/onboarding/step-5");
     } catch (error) {
       toast.error(error.message);
-    } finally {
-      setSaving(false);
     }
   };
 
-  if (loading) {
+  if (!isLoaded || isLoading) {
     return (
       <div className="flex min-h-[200px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -225,10 +189,10 @@ export default function Step4Page() {
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            disabled={saving}
+            disabled={updateBusinessSettings.isPending || updateOnboardingProgress.isPending}
             className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {saving ? (
+            {updateBusinessSettings.isPending || updateOnboardingProgress.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Saving...

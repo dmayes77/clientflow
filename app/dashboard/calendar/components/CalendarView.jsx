@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useBookings, useUpdateBooking, useDeleteBooking } from "@/lib/hooks";
+import { useTenant } from "@/lib/hooks";
 import {
   format,
   startOfWeek,
@@ -81,8 +83,6 @@ const SLOT_HEIGHT = 48;
 
 export function CalendarView() {
   const router = useRouter();
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState("week");
@@ -120,38 +120,24 @@ export function CalendarView() {
     return { start: currentDate, end: currentDate };
   }, [currentDate, view, isMobile]);
 
+  // Fetch tenant settings
+  const { data: tenant } = useTenant();
+
+  // Update view and timezone when tenant data loads
   useEffect(() => {
-    fetchTenantSettings();
-  }, []);
+    if (tenant?.defaultCalendarView) setView(tenant.defaultCalendarView);
+    if (tenant?.timezone) setTimezone(tenant.timezone);
+  }, [tenant]);
 
-  useEffect(() => {
-    fetchBookings();
-  }, [dateRange]);
+  // Fetch bookings with date range params
+  const { data: bookings = [], isLoading: loading } = useBookings({
+    from: dateRange.start.toISOString(),
+    to: dateRange.end.toISOString(),
+  });
 
-  const fetchTenantSettings = async () => {
-    try {
-      const res = await fetch("/api/tenant");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.defaultCalendarView) setView(data.defaultCalendarView);
-        if (data.timezone) setTimezone(data.timezone);
-      }
-    } catch (error) {}
-  };
-
-  const fetchBookings = async () => {
-    setLoading(true);
-    try {
-      const from = dateRange.start.toISOString();
-      const to = dateRange.end.toISOString();
-      const res = await fetch(`/api/bookings?from=${from}&to=${to}`);
-      if (res.ok) setBookings(await res.json());
-    } catch (error) {
-      toast.error("Failed to load bookings");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Mutations
+  const updateBooking = useUpdateBooking();
+  const deleteBooking = useDeleteBooking();
 
   const navigate = (direction) => {
     if (view === "month" || isMobile) {
@@ -185,40 +171,33 @@ export function CalendarView() {
   };
 
   const handleStatusChange = async (booking, newStatus) => {
-    try {
-      const res = await fetch(`/api/bookings/${booking.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        const updatedBooking = await res.json();
-        setBookings(bookings.map((b) => (b.id === updatedBooking.id ? updatedBooking : b)));
-        toast.success(`Booking marked as ${newStatus}`);
-      } else {
-        toast.error("Failed to update booking status");
+    updateBooking.mutate(
+      { id: booking.id, status: newStatus },
+      {
+        onSuccess: () => {
+          toast.success(`Booking marked as ${newStatus}`);
+        },
+        onError: () => {
+          toast.error("Failed to update booking status");
+        },
       }
-    } catch (error) {
-      toast.error("Failed to update booking status");
-    }
+    );
   };
 
   const handleDelete = async () => {
     if (!bookingToDelete) return;
-    try {
-      const res = await fetch(`/api/bookings/${bookingToDelete.id}`, { method: "DELETE" });
-      if (res.ok) {
-        setBookings(bookings.filter((b) => b.id !== bookingToDelete.id));
+    deleteBooking.mutate(bookingToDelete.id, {
+      onSuccess: () => {
         toast.success("Booking deleted");
-      } else {
+        setDeleteDialogOpen(false);
+        setBookingToDelete(null);
+      },
+      onError: () => {
         toast.error("Failed to delete booking");
-      }
-    } catch (error) {
-      toast.error("Failed to delete booking");
-    } finally {
-      setDeleteDialogOpen(false);
-      setBookingToDelete(null);
-    }
+        setDeleteDialogOpen(false);
+        setBookingToDelete(null);
+      },
+    });
   };
 
   const getBookingsForDay = (date) => {

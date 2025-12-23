@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAdminContent } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -338,59 +340,28 @@ function ChangelogEditor({ entry, onSave, onCancel }) {
 
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState("roadmap");
+  const queryClient = useQueryClient();
 
-  // Roadmap state
-  const [roadmapItems, setRoadmapItems] = useState([]);
-  const [roadmapCounts, setRoadmapCounts] = useState({});
-  const [roadmapLoading, setRoadmapLoading] = useState(true);
+  // Dialog state
   const [editingRoadmap, setEditingRoadmap] = useState(null);
   const [showRoadmapDialog, setShowRoadmapDialog] = useState(false);
-
-  // Changelog state
-  const [changelogEntries, setChangelogEntries] = useState([]);
-  const [changelogCounts, setChangelogCounts] = useState({});
-  const [changelogLoading, setChangelogLoading] = useState(true);
   const [editingChangelog, setEditingChangelog] = useState(null);
   const [showChangelogDialog, setShowChangelogDialog] = useState(false);
 
   // Fetch roadmap items
-  const fetchRoadmap = async () => {
-    try {
-      const res = await fetch("/api/admin/content/roadmap");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setRoadmapItems(data.items);
-      setRoadmapCounts(data.statusCounts);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setRoadmapLoading(false);
-    }
-  };
+  const { data: roadmapData, isLoading: roadmapLoading } = useAdminContent("roadmap");
 
   // Fetch changelog entries
-  const fetchChangelog = async () => {
-    try {
-      const res = await fetch("/api/admin/content/changelog");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setChangelogEntries(data.entries);
-      setChangelogCounts(data.counts);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setChangelogLoading(false);
-    }
-  };
+  const { data: changelogData, isLoading: changelogLoading } = useAdminContent("changelog");
 
-  useEffect(() => {
-    fetchRoadmap();
-    fetchChangelog();
-  }, []);
+  const roadmapItems = roadmapData?.items || [];
+  const roadmapCounts = roadmapData?.statusCounts || {};
+  const changelogEntries = changelogData?.entries || [];
+  const changelogCounts = changelogData?.counts || {};
 
-  // Roadmap handlers
-  const handleSaveRoadmap = async (item) => {
-    try {
+  // Roadmap mutations
+  const saveRoadmapMutation = useMutation({
+    mutationFn: async (item) => {
       const method = item.id ? "PATCH" : "POST";
       const res = await fetch("/api/admin/content/roadmap", {
         method,
@@ -398,27 +369,27 @@ export default function ContentManagementPage() {
         body: JSON.stringify(item),
       });
       if (!res.ok) throw new Error("Failed to save");
+      return res.json();
+    },
+    onSuccess: () => {
       setShowRoadmapDialog(false);
       setEditingRoadmap(null);
-      fetchRoadmap();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      queryClient.invalidateQueries(["admin-roadmap"]);
+    },
+  });
 
-  const handleDeleteRoadmap = async (id) => {
-    if (!confirm("Delete this roadmap item?")) return;
-    try {
+  const deleteRoadmapMutation = useMutation({
+    mutationFn: async (id) => {
       await fetch(`/api/admin/content/roadmap?id=${id}`, { method: "DELETE" });
-      fetchRoadmap();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin-roadmap"]);
+    },
+  });
 
-  // Changelog handlers
-  const handleSaveChangelog = async (entry) => {
-    try {
+  // Changelog mutations
+  const saveChangelogMutation = useMutation({
+    mutationFn: async (entry) => {
       const method = entry.id ? "PATCH" : "POST";
       const res = await fetch("/api/admin/content/changelog", {
         method,
@@ -426,36 +397,51 @@ export default function ContentManagementPage() {
         body: JSON.stringify(entry),
       });
       if (!res.ok) throw new Error("Failed to save");
+      return res.json();
+    },
+    onSuccess: () => {
       setShowChangelogDialog(false);
       setEditingChangelog(null);
-      fetchChangelog();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      queryClient.invalidateQueries(["admin-changelog"]);
+    },
+  });
 
-  const handleDeleteChangelog = async (id) => {
-    if (!confirm("Delete this changelog entry?")) return;
-    try {
+  const deleteChangelogMutation = useMutation({
+    mutationFn: async (id) => {
       await fetch(`/api/admin/content/changelog?id=${id}`, { method: "DELETE" });
-      fetchChangelog();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin-changelog"]);
+    },
+  });
 
-  const handlePublishChangelog = async (id) => {
-    try {
+  const publishChangelogMutation = useMutation({
+    mutationFn: async (id) => {
       await fetch("/api/admin/content/changelog", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, published: true }),
       });
-      fetchChangelog();
-    } catch (err) {
-      console.error(err);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin-changelog"]);
+    },
+  });
+
+  // Handlers
+  const handleSaveRoadmap = (item) => saveRoadmapMutation.mutate(item);
+  const handleDeleteRoadmap = (id) => {
+    if (confirm("Delete this roadmap item?")) {
+      deleteRoadmapMutation.mutate(id);
     }
   };
+  const handleSaveChangelog = (entry) => saveChangelogMutation.mutate(entry);
+  const handleDeleteChangelog = (id) => {
+    if (confirm("Delete this changelog entry?")) {
+      deleteChangelogMutation.mutate(id);
+    }
+  };
+  const handlePublishChangelog = (id) => publishChangelogMutation.mutate(id);
 
   return (
     <div className="space-y-4">

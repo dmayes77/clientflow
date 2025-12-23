@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { CheckCircle2, Loader2, ArrowRight, Sparkles } from "lucide-react";
 import { clearSignupState } from "@/lib/signup-state";
+import { useVerifyCheckoutSession, useUpdateOnboardingProgress } from "@/lib/hooks";
 
 function SuccessContent() {
   const router = useRouter();
@@ -14,6 +15,8 @@ function SuccessContent() {
   const [error, setError] = useState("");
 
   const sessionId = searchParams.get("session_id");
+  const verifyCheckoutSession = useVerifyCheckoutSession();
+  const updateOnboardingProgress = useUpdateOnboardingProgress();
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -26,27 +29,18 @@ function SuccessContent() {
 
       try {
         // Verify the checkout session
-        const res = await fetch(`/api/stripe/verify-session?session_id=${sessionId}`);
+        await verifyCheckoutSession.mutateAsync(sessionId);
 
-        if (res.ok) {
-          // Clear signup state
-          clearSignupState();
+        // Clear signup state
+        clearSignupState();
 
-          // Update onboarding progress
-          await fetch("/api/onboarding/progress", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ step: 4 }),
-          });
+        // Update onboarding progress
+        await updateOnboardingProgress.mutateAsync({ step: 4 });
 
-          setStatus("success");
-        } else {
-          const data = await res.json();
-          setError(data.error || "Payment verification failed");
-          setStatus("error");
-        }
+        setStatus("success");
       } catch (err) {
         console.error("Error verifying payment:", err);
+        setError(err.message);
         // Still consider it success if session exists
         clearSignupState();
         setStatus("success");
@@ -56,7 +50,7 @@ function SuccessContent() {
     // Give Stripe webhook time to process
     const timeout = setTimeout(verifyPayment, 1500);
     return () => clearTimeout(timeout);
-  }, [isLoaded, sessionId]);
+  }, [isLoaded, sessionId, verifyCheckoutSession, updateOnboardingProgress]);
 
   const handleContinue = () => {
     router.push("/onboarding");

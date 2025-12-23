@@ -1,6 +1,6 @@
 import { Inter, Poppins } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-import { QueryProvider } from "@/lib/query-provider";
+import { Providers } from "./providers";
 import { InstallPrompt, NetworkStatus } from "@/components/pwa";
 import "./globals.css";
 
@@ -106,11 +106,11 @@ export default function RootLayout({ children }) {
           signInFallbackRedirectUrl="/dashboard"
           signUpFallbackRedirectUrl="/dashboard"
         >
-          <QueryProvider>
+          <Providers>
             <NetworkStatus />
             {children}
             <InstallPrompt />
-          </QueryProvider>
+          </Providers>
         </ClerkProvider>
       </body>
     </html>

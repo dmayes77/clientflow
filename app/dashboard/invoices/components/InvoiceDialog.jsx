@@ -6,17 +6,15 @@ import { format, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { useIsMobile } from "@/hooks/use-media-query";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import {
   Select,
   SelectContent,
@@ -46,12 +44,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Send } from "lucide-react";
+import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Calendar, Send } from "lucide-react";
 import {
   AddIcon,
   LoadingIcon,
   CloseIcon,
 } from "@/lib/icons";
+import {
+  useCreateContact,
+  useCreateInvoice,
+  useUpdateInvoice,
+  useSendInvoice,
+} from "@/lib/hooks";
+import {
+  useTanstackForm,
+  TextField,
+  SelectField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 
 // Safe lineItems parser - handles JSON string or array
 const getSafeLineItems = (lineItems) => {
@@ -107,23 +117,24 @@ export function InvoiceDialog({
   onContactCreated, // Callback when a new contact is created
 }) {
   const isMobile = useIsMobile();
-  const [saving, setSaving] = useState(false);
-  const [sending, setSending] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [formData, setFormData] = useState(initialFormState);
   const [servicePopoverOpen, setServicePopoverOpen] = useState({});
   const [contactPopoverOpen, setContactPopoverOpen] = useState(false);
-  const [bookingPopoverOpen, setBookingPopoverOpen] = useState(false);
   const [localContacts, setLocalContacts] = useState([]);
 
   // New contact dialog state
   const [newContactDialogOpen, setNewContactDialogOpen] = useState(false);
-  const [creatingContact, setCreatingContact] = useState(false);
   const [newContactData, setNewContactData] = useState({
     name: "",
     email: "",
     phone: "",
   });
+
+  // TanStack Query mutations
+  const createContactMutation = useCreateContact();
+  const createInvoiceMutation = useCreateInvoice();
+  const updateInvoiceMutation = useUpdateInvoice();
+  const sendInvoiceMutation = useSendInvoice();
 
   // Merge passed contacts with locally created ones
   const allContacts = useMemo(() => {
@@ -132,6 +143,67 @@ export function InvoiceDialog({
     localContacts.forEach(c => contactMap.set(c.id, c));
     return Array.from(contactMap.values());
   }, [contacts, localContacts]);
+
+  // TanStack Form
+  const form = useTanstackForm({
+    defaultValues: initialFormState,
+    onSubmit: async (values) => {
+      if (!values.contactId) {
+        toast.error("Please select a contact for this invoice");
+        return;
+      }
+
+      const { subtotal, taxAmount, total } = calculateTotals(values);
+
+      const payload = {
+        contactId: values.contactId,
+        bookingId: values.bookingId || null,
+        contactName: values.contactName,
+        contactEmail: values.contactEmail,
+        contactAddress: values.contactAddress || null,
+        dueDate: new Date(values.dueDate).toISOString(),
+        status: values.status,
+        lineItems: values.lineItems.map((item) => ({
+          description: item.description,
+          quantity: parseInt(item.quantity) || 1,
+          unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
+          amount: Math.round(parseFloat(item.amount) * 100) || 0,
+          serviceId: item.serviceId || null,
+          packageId: item.packageId || null,
+          isDiscount: item.isDiscount || false,
+        })),
+        subtotal: Math.round(subtotal * 100),
+        discountCode: values.discountCode || null,
+        discountAmount: Math.round((values.discountAmount || 0) * 100),
+        taxRate: parseFloat(values.taxRate) || 0,
+        taxAmount: Math.round(taxAmount * 100),
+        total: Math.round(total * 100),
+        depositPercent: (values.depositPercent !== null && values.depositPercent !== undefined && values.depositPercent > 0) ? values.depositPercent : null,
+        notes: values.notes || null,
+        terms: values.terms || null,
+      };
+
+      const mutation = invoice ? updateInvoiceMutation : createInvoiceMutation;
+      const mutationData = invoice ? { id: invoice.id, ...payload } : payload;
+
+      mutation.mutate(mutationData, {
+        onSuccess: (savedInvoice) => {
+          toast.success(invoice ? "Invoice updated" : "Invoice created");
+          setSaveSuccess(true);
+
+          // Close dialog after 3 seconds
+          setTimeout(() => {
+            onSave?.(savedInvoice, !!invoice);
+            onOpenChange(false);
+            setSaveSuccess(false);
+          }, 3000);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to save invoice");
+        },
+      });
+    },
+  });
 
   // Initialize form when dialog opens or invoice/contact/booking changes
   useEffect(() => {
@@ -157,22 +229,20 @@ export function InvoiceDialog({
           }
         }
 
-        setFormData({
-          contactId: invoice.contactId || "",
-          bookingId: invoice.bookingId || null,
-          contactName: invoice.contactName || "",
-          contactEmail: invoice.contactEmail || "",
-          contactAddress: invoice.contactAddress || "",
-          dueDate: format(new Date(invoice.dueDate), "yyyy-MM-dd"),
-          status: invoice.status,
-          lineItems: convertedLineItems.length > 0 ? convertedLineItems : initialFormState.lineItems,
-          discountCode: invoice.discountCode || "",
-          discountAmount: (parseFloat(invoice.discountAmount) || 0) / 100,
-          taxRate: parseFloat(invoice.taxRate) || 0,
-          depositPercent: safeDepositPercent,
-          notes: invoice.notes || "",
-          terms: invoice.terms || "",
-        });
+        form.setFieldValue("contactId", invoice.contactId || "");
+        form.setFieldValue("bookingId", invoice.bookingId || null);
+        form.setFieldValue("contactName", invoice.contactName || "");
+        form.setFieldValue("contactEmail", invoice.contactEmail || "");
+        form.setFieldValue("contactAddress", invoice.contactAddress || "");
+        form.setFieldValue("dueDate", format(new Date(invoice.dueDate), "yyyy-MM-dd"));
+        form.setFieldValue("status", invoice.status);
+        form.setFieldValue("lineItems", convertedLineItems.length > 0 ? convertedLineItems : initialFormState.lineItems);
+        form.setFieldValue("discountCode", invoice.discountCode || "");
+        form.setFieldValue("discountAmount", (parseFloat(invoice.discountAmount) || 0) / 100);
+        form.setFieldValue("taxRate", parseFloat(invoice.taxRate) || 0);
+        form.setFieldValue("depositPercent", safeDepositPercent);
+        form.setFieldValue("notes", invoice.notes || "");
+        form.setFieldValue("terms", invoice.terms || "");
       } else if (booking) {
         // Creating invoice from a booking - pre-fill contact and line items
         const bookingContact = booking.contact || booking.client;
@@ -222,28 +292,25 @@ export function InvoiceDialog({
         // Format booking date for notes
         const bookingDate = booking.scheduledAt ? format(new Date(booking.scheduledAt), "MMMM d, yyyy") : "";
 
-        setFormData({
-          ...initialFormState,
-          taxRate: defaultTaxRate,
-          contactId: bookingContact?.id || "",
-          bookingId: booking.id || null,
-          contactName: bookingContact?.name || "",
-          contactEmail: bookingContact?.email || "",
-          lineItems: lineItems.length > 0 ? lineItems : initialFormState.lineItems,
-          notes: bookingDate ? `Invoice for booking on ${bookingDate}` : "",
-        });
+        form.setFieldValue("taxRate", defaultTaxRate);
+        form.setFieldValue("contactId", bookingContact?.id || "");
+        form.setFieldValue("bookingId", booking.id || null);
+        form.setFieldValue("contactName", bookingContact?.name || "");
+        form.setFieldValue("contactEmail", bookingContact?.email || "");
+        form.setFieldValue("lineItems", lineItems.length > 0 ? lineItems : initialFormState.lineItems);
+        form.setFieldValue("notes", bookingDate ? `Invoice for booking on ${bookingDate}` : "");
       } else if (contact) {
         // Creating invoice for a specific contact
-        setFormData({
-          ...initialFormState,
-          taxRate: defaultTaxRate,
-          contactId: contact.id,
-          contactName: contact.name,
-          contactEmail: contact.email || "",
-        });
+        form.setFieldValue("taxRate", defaultTaxRate);
+        form.setFieldValue("contactId", contact.id);
+        form.setFieldValue("contactName", contact.name);
+        form.setFieldValue("contactEmail", contact.email || "");
       } else {
-        // Creating new invoice
-        setFormData({ ...initialFormState, taxRate: defaultTaxRate });
+        // Creating new invoice - reset to initial state
+        Object.keys(initialFormState).forEach(key => {
+          form.setFieldValue(key, initialFormState[key]);
+        });
+        form.setFieldValue("taxRate", defaultTaxRate);
       }
       setServicePopoverOpen({});
     }
@@ -271,47 +338,47 @@ export function InvoiceDialog({
 
   // Get the selected contact
   const selectedContact = useMemo(() => {
-    if (!formData.contactId) return null;
-    return allContacts.find(c => c.id === formData.contactId);
-  }, [formData.contactId, allContacts]);
+    const contactId = form.getFieldValue("contactId");
+    if (!contactId) return null;
+    return allContacts.find(c => c.id === contactId);
+  }, [form.getFieldValue("contactId"), allContacts]);
 
   // Get available bookings for selected contact (without an invoice already)
   const availableBookings = useMemo(() => {
-    if (!formData.contactId) return [];
+    const contactId = form.getFieldValue("contactId");
+    const bookingId = form.getFieldValue("bookingId");
+    if (!contactId) return [];
     return bookings.filter(b =>
-      b.contactId === formData.contactId &&
+      b.contactId === contactId &&
       !b.invoice && // No invoice linked
-      b.id !== formData.bookingId // Don't exclude the currently selected booking
+      b.id !== bookingId // Don't exclude the currently selected booking
     );
-  }, [formData.contactId, formData.bookingId, bookings]);
+  }, [form.getFieldValue("contactId"), form.getFieldValue("bookingId"), bookings]);
 
   // Get the selected booking
   const selectedBooking = useMemo(() => {
-    if (!formData.bookingId) return null;
-    return bookings.find(b => b.id === formData.bookingId);
-  }, [formData.bookingId, bookings]);
+    const bookingId = form.getFieldValue("bookingId");
+    if (!bookingId) return null;
+    return bookings.find(b => b.id === bookingId);
+  }, [form.getFieldValue("bookingId"), bookings]);
 
   const handleContactSelect = (contactId) => {
     const selected = allContacts.find((c) => c.id === contactId);
     if (selected) {
-      setFormData({
-        ...formData,
-        contactId,
-        bookingId: null, // Clear booking when contact changes
-        contactName: selected.name,
-        contactEmail: selected.email || "",
-      });
+      form.setFieldValue("contactId", contactId);
+      form.setFieldValue("bookingId", null);
+      form.setFieldValue("contactName", selected.name);
+      form.setFieldValue("contactEmail", selected.email || "");
     }
     setContactPopoverOpen(false);
   };
 
   const handleBookingSelect = (bookingId) => {
     if (bookingId === "none") {
-      setFormData({ ...formData, bookingId: null });
+      form.setFieldValue("bookingId", null);
     } else {
-      setFormData({ ...formData, bookingId });
+      form.setFieldValue("bookingId", bookingId);
     }
-    setBookingPopoverOpen(false);
   };
 
   const handleCreateContact = async () => {
@@ -324,50 +391,38 @@ export function InvoiceDialog({
       return;
     }
 
-    try {
-      setCreatingContact(true);
-      const response = await fetch("/api/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newContactData.name.trim(),
-          email: newContactData.email.trim(),
-          phone: newContactData.phone.trim() || null,
-        }),
-      });
+    createContactMutation.mutate(
+      {
+        name: newContactData.name.trim(),
+        email: newContactData.email.trim(),
+        phone: newContactData.phone.trim() || null,
+      },
+      {
+        onSuccess: (newContact) => {
+          // Add to local contacts list and select it
+          setLocalContacts((prev) => [newContact, ...prev]);
+          form.setFieldValue("contactId", newContact.id);
+          form.setFieldValue("contactName", newContact.name);
+          form.setFieldValue("contactEmail", newContact.email || "");
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create contact");
+          // Notify parent if callback provided
+          onContactCreated?.(newContact);
+
+          // Reset and close dialog
+          setNewContactData({ name: "", email: "", phone: "" });
+          setNewContactDialogOpen(false);
+          toast.success(`Contact "${newContact.name}" created`);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to create contact");
+        },
       }
-
-      const newContact = await response.json();
-
-      // Add to local contacts list and select it
-      setLocalContacts((prev) => [newContact, ...prev]);
-      setFormData((prev) => ({
-        ...prev,
-        contactId: newContact.id,
-        contactName: newContact.name,
-        contactEmail: newContact.email || "",
-      }));
-
-      // Notify parent if callback provided
-      onContactCreated?.(newContact);
-
-      // Reset and close dialog
-      setNewContactData({ name: "", email: "", phone: "" });
-      setNewContactDialogOpen(false);
-      toast.success(`Contact "${newContact.name}" created`);
-    } catch (error) {
-      toast.error(error.message || "Failed to create contact");
-    } finally {
-      setCreatingContact(false);
-    }
+    );
   };
 
   const handleLineItemChange = (index, field, value) => {
-    const newLineItems = [...formData.lineItems];
+    const lineItems = form.getFieldValue("lineItems");
+    const newLineItems = [...lineItems];
     newLineItems[index] = { ...newLineItems[index], [field]: value };
 
     if (field === "quantity" || field === "unitPrice") {
@@ -377,22 +432,23 @@ export function InvoiceDialog({
       newLineItems[index].amount = isDiscount ? -(Math.abs(qty * price)) : qty * price;
     }
 
-    setFormData({ ...formData, lineItems: newLineItems });
+    form.setFieldValue("lineItems", newLineItems);
   };
 
   const handleServiceSelect = (index, option) => {
+    const lineItems = form.getFieldValue("lineItems");
+    const newLineItems = [...lineItems];
+
     if (!option) {
-      const newLineItems = [...formData.lineItems];
       newLineItems[index] = {
         ...newLineItems[index],
         serviceId: null,
         packageId: null,
       };
-      setFormData({ ...formData, lineItems: newLineItems });
+      form.setFieldValue("lineItems", newLineItems);
       return;
     }
 
-    const newLineItems = [...formData.lineItems];
     newLineItems[index] = {
       ...newLineItems[index],
       description: option.name,
@@ -402,36 +458,36 @@ export function InvoiceDialog({
       serviceId: option.type === "service" ? option.id : null,
       packageId: option.type === "package" ? option.id : null,
     };
-    setFormData({ ...formData, lineItems: newLineItems });
+    form.setFieldValue("lineItems", newLineItems);
     setServicePopoverOpen({ ...servicePopoverOpen, [index]: false });
   };
 
   const addLineItem = () => {
-    setFormData({
-      ...formData,
-      lineItems: [...formData.lineItems, { description: "", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: false }],
-    });
+    const lineItems = form.getFieldValue("lineItems");
+    form.setFieldValue("lineItems", [...lineItems, { description: "", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: false }]);
   };
 
   const addDiscountLine = () => {
-    setFormData({
-      ...formData,
-      lineItems: [...formData.lineItems, { description: "Discount", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: true }],
-    });
+    const lineItems = form.getFieldValue("lineItems");
+    form.setFieldValue("lineItems", [...lineItems, { description: "Discount", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: true }]);
   };
 
   const removeLineItem = (index) => {
-    if (formData.lineItems.length > 1) {
-      setFormData({
-        ...formData,
-        lineItems: formData.lineItems.filter((_, i) => i !== index),
-      });
+    const lineItems = form.getFieldValue("lineItems");
+    if (lineItems.length > 1) {
+      form.setFieldValue("lineItems", lineItems.filter((_, i) => i !== index));
     }
   };
 
-  const calculateTotals = () => {
+  const calculateTotals = (values = null) => {
+    const formValues = values || {
+      lineItems: form.getFieldValue("lineItems"),
+      discountAmount: form.getFieldValue("discountAmount"),
+      taxRate: form.getFieldValue("taxRate"),
+    };
+
     // Ensure lineItems is always an array
-    const items = Array.isArray(formData.lineItems) ? formData.lineItems : [];
+    const items = Array.isArray(formValues.lineItems) ? formValues.lineItems : [];
     const regularItems = items.filter(item => !item.isDiscount);
     const discountItems = items.filter(item => item.isDiscount);
 
@@ -443,9 +499,9 @@ export function InvoiceDialog({
       const amount = parseFloat(item.amount) || 0;
       return sum + Math.abs(isNaN(amount) ? 0 : amount);
     }, 0);
-    const discountAmount = parseFloat(formData.discountAmount) || 0;
+    const discountAmount = parseFloat(formValues.discountAmount) || 0;
     const discountedSubtotal = subtotal - lineDiscounts - (isNaN(discountAmount) ? 0 : discountAmount);
-    const taxRate = parseFloat(formData.taxRate) || 0;
+    const taxRate = parseFloat(formValues.taxRate) || 0;
     const taxAmount = discountedSubtotal * ((isNaN(taxRate) ? 0 : taxRate) / 100);
     const total = discountedSubtotal + (isNaN(taxAmount) ? 0 : taxAmount);
 
@@ -459,117 +515,34 @@ export function InvoiceDialog({
     };
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validate contact is selected
-    if (!formData.contactId) {
-      toast.error("Please select a contact for this invoice");
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const { subtotal, taxAmount, total } = calculateTotals();
-
-      const payload = {
-        contactId: formData.contactId,
-        bookingId: formData.bookingId || null, // Link invoice to booking (optional)
-        contactName: formData.contactName,
-        contactEmail: formData.contactEmail,
-        contactAddress: formData.contactAddress || null,
-        dueDate: new Date(formData.dueDate).toISOString(),
-        status: formData.status,
-        lineItems: formData.lineItems.map((item) => ({
-          description: item.description,
-          quantity: parseInt(item.quantity) || 1,
-          unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
-          amount: Math.round(parseFloat(item.amount) * 100) || 0,
-          serviceId: item.serviceId || null,
-          packageId: item.packageId || null,
-          isDiscount: item.isDiscount || false,
-        })),
-        subtotal: Math.round(subtotal * 100),
-        discountCode: formData.discountCode || null,
-        discountAmount: Math.round((formData.discountAmount || 0) * 100),
-        taxRate: parseFloat(formData.taxRate) || 0,
-        taxAmount: Math.round(taxAmount * 100),
-        total: Math.round(total * 100),
-        depositPercent: (formData.depositPercent !== null && formData.depositPercent !== undefined && formData.depositPercent > 0) ? formData.depositPercent : null,
-        notes: formData.notes || null,
-        terms: formData.terms || null,
-      };
-
-      const url = invoice
-        ? `/api/invoices/${invoice.id}`
-        : "/api/invoices";
-      const method = invoice ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const savedInvoice = await res.json();
-        toast.success(invoice ? "Invoice updated" : "Invoice created");
-        setSaving(false);
-        setSaveSuccess(true);
-
-        // Close dialog after 3 seconds
-        setTimeout(() => {
-          onSave?.(savedInvoice, !!invoice);
-          onOpenChange(false);
-          setSaveSuccess(false);
-        }, 3000);
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save invoice");
-        setSaving(false);
-      }
-    } catch (error) {
-      toast.error("Failed to save invoice");
-      setSaving(false);
-    }
-  };
-
   const handleSend = async () => {
     if (!invoice?.id) {
       toast.error("Please save the invoice first before sending");
       return;
     }
 
-    try {
-      setSending(true);
-      const res = await fetch(`/api/invoices/${invoice.id}/send`, {
-        method: "POST",
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || "Failed to send invoice");
-      }
-
-      toast.success("Invoice sent to " + formData.contactEmail);
-      setFormData((prev) => ({ ...prev, status: "sent" }));
-      onSave?.({ ...invoice, status: "sent" }, true);
-    } catch (error) {
-      toast.error(error.message || "Failed to send invoice");
-    } finally {
-      setSending(false);
-    }
+    sendInvoiceMutation.mutate(invoice.id, {
+      onSuccess: () => {
+        const contactEmail = form.getFieldValue("contactEmail");
+        toast.success("Invoice sent to " + contactEmail);
+        form.setFieldValue("status", "sent");
+        onSave?.({ ...invoice, status: "sent" }, true);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to send invoice");
+      },
+    });
   };
 
   const { subtotal, lineDiscounts, taxAmount, total } = calculateTotals();
 
   // Safe deposit percent getter - handles strings, numbers, null, undefined, NaN
   const getSafeDepositPercent = () => {
-    if (formData.depositPercent === null || formData.depositPercent === undefined) return 0;
-    const parsed = typeof formData.depositPercent === 'number'
-      ? formData.depositPercent
-      : parseInt(formData.depositPercent, 10);
+    const depositPercent = form.getFieldValue("depositPercent");
+    if (depositPercent === null || depositPercent === undefined) return 0;
+    const parsed = typeof depositPercent === 'number'
+      ? depositPercent
+      : parseInt(depositPercent, 10);
     return (!isNaN(parsed) && parsed > 0) ? parsed : 0;
   };
 
@@ -584,8 +557,16 @@ export function InvoiceDialog({
   const title = invoice ? `Edit ${invoice.invoiceNumber}` : "Create Invoice";
   const description = invoice ? "Update invoice details" : "Create a new invoice";
 
+  const lineItems = form.getFieldValue("lineItems") || [];
+  const contactId = form.getFieldValue("contactId");
+  const contactEmail = form.getFieldValue("contactEmail");
+  const discountCode = form.getFieldValue("discountCode");
+  const discountAmount = form.getFieldValue("discountAmount");
+  const status = form.getFieldValue("status");
+  const bookingId = form.getFieldValue("bookingId");
+
   const formContent = (
-    <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+    <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
       <div className={isMobile ? "p-4 space-y-4" : "space-y-4 py-4"}>
         {/* Contact Selection */}
         <div className="space-y-2">
@@ -647,7 +628,7 @@ export function InvoiceDialog({
                             <span className="text-muted-foreground ml-2">{c.email}</span>
                           )}
                         </div>
-                        {formData.contactId === c.id && <span className="text-primary">✓</span>}
+                        {contactId === c.id && <span className="text-primary">✓</span>}
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -671,14 +652,14 @@ export function InvoiceDialog({
         </div>
 
         {/* Booking Selection (optional) */}
-        {formData.contactId && (availableBookings.length > 0 || selectedBooking) && (
+        {contactId && (availableBookings.length > 0 || selectedBooking) && (
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Link to Booking
             </Label>
             <Select
-              value={formData.bookingId || "none"}
+              value={bookingId || "none"}
               onValueChange={(value) => handleBookingSelect(value)}
             >
               <SelectTrigger>
@@ -701,45 +682,44 @@ export function InvoiceDialog({
           </div>
         )}
 
-        {/* Contact Info (editable) */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label>Name</Label>
-            <Input
-              value={formData.contactName}
-              onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-              placeholder="Contact name"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input
-              type="email"
-              value={formData.contactEmail}
-              onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-              placeholder="contact@example.com"
-              required
-            />
-          </div>
-        </div>
+        {/* Contact Info */}
+        <TextField
+          form={form}
+          name="contactName"
+          label="Name"
+          placeholder="Contact name"
+          required
+        />
+
+        <TextField
+          form={form}
+          name="contactEmail"
+          label="Email"
+          type="email"
+          placeholder="contact@example.com"
+          required
+        />
 
         {/* Due Date */}
         <div className="space-y-2">
           <Label>Due Date</Label>
-          <Input
-            type="date"
-            value={formData.dueDate}
-            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-            required
-          />
+          <form.Field name="dueDate">
+            {(field) => (
+              <Input
+                type="date"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                required
+              />
+            )}
+          </form.Field>
         </div>
 
         {/* Line Items */}
         {isMobile ? (
           <div className="space-y-3">
             <Label>Line Items</Label>
-            {formData.lineItems.map((item, index) => (
+            {lineItems.map((item, index) => (
               <div key={index} className={`rounded-lg border p-3 space-y-2 ${item.isDiscount ? "bg-red-50/50 border-red-200" : ""}`}>
                 <div className="flex gap-2">
                   {!item.isDiscount ? (
@@ -800,7 +780,7 @@ export function InvoiceDialog({
                     onChange={(e) => handleLineItemChange(index, "description", e.target.value)}
                     className="flex-1"
                   />
-                  {formData.lineItems.length > 1 && (
+                  {lineItems.length > 1 && (
                     <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeLineItem(index)}>
                       <CloseIcon className="h-4 w-4" />
                     </Button>
@@ -865,7 +845,7 @@ export function InvoiceDialog({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {formData.lineItems.map((item, index) => (
+                  {lineItems.map((item, index) => (
                     <TableRow key={index} className={item.isDiscount ? "bg-red-50/50" : ""}>
                       <TableCell>
                         <div className="flex gap-2">
@@ -956,7 +936,7 @@ export function InvoiceDialog({
                         </span>
                       </TableCell>
                       <TableCell>
-                        {formData.lineItems.length > 1 && (
+                        {lineItems.length > 1 && (
                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeLineItem(index)}>
                             <CloseIcon className="h-4 w-4" />
                           </Button>
@@ -994,39 +974,51 @@ export function InvoiceDialog({
           )}
           <div className="flex items-center gap-2 pt-2 border-t">
             <Percent className="h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Coupon"
-              className="h-8 flex-1"
-              value={formData.discountCode}
-              onChange={(e) => setFormData({ ...formData, discountCode: e.target.value })}
-            />
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="$0"
-              className="w-16 h-8"
-              value={formData.discountAmount || ""}
-              onChange={(e) => setFormData({ ...formData, discountAmount: parseFloat(e.target.value) || 0 })}
-            />
+            <form.Field name="discountCode">
+              {(field) => (
+                <Input
+                  placeholder="Coupon"
+                  className="h-8 flex-1"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              )}
+            </form.Field>
+            <form.Field name="discountAmount">
+              {(field) => (
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="$0"
+                  className="w-16 h-8"
+                  value={field.state.value || ""}
+                  onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                />
+              )}
+            </form.Field>
           </div>
-          {formData.discountAmount > 0 && (
+          {discountAmount > 0 && (
             <div className="flex justify-between text-red-600">
               <span>Coupon</span>
-              <span>-${formData.discountAmount.toFixed(2)}</span>
+              <span>-${discountAmount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex items-center justify-between pt-2 border-t">
             <span className="text-muted-foreground">Tax (%)</span>
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              className="w-16 h-8"
-              value={formData.taxRate}
-              onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) || 0 })}
-            />
+            <form.Field name="taxRate">
+              {(field) => (
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className="w-16 h-8"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                />
+              )}
+            </form.Field>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Tax</span>
@@ -1052,25 +1044,26 @@ export function InvoiceDialog({
             <>
               <div className="flex items-center justify-between pt-2 border-t">
                 <span className="text-muted-foreground">Deposit</span>
-                <Select
-                  value={formData.depositPercent?.toString() || "none"}
-                  onValueChange={(value) => setFormData({
-                    ...formData,
-                    depositPercent: value === "none" ? null : parseInt(value),
-                  })}
-                >
-                  <SelectTrigger className="w-20 h-8">
-                    <SelectValue placeholder="None" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {DEPOSIT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value.toString()}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <form.Field name="depositPercent">
+                  {(field) => (
+                    <Select
+                      value={field.state.value?.toString() || "none"}
+                      onValueChange={(value) => field.handleChange(value === "none" ? null : parseInt(value))}
+                    >
+                      <SelectTrigger className="w-20 h-8">
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {DEPOSIT_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value.toString()}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </form.Field>
               </div>
               {getSafeDepositPercent() > 0 && (
                 <div className="flex justify-between text-blue-600">
@@ -1083,34 +1076,31 @@ export function InvoiceDialog({
         </div>
 
         {/* Status */}
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <SelectField
+          form={form}
+          name="status"
+          label="Status"
+          options={[
+            { value: "draft", label: "Draft" },
+            { value: "sent", label: "Sent" },
+            { value: "paid", label: "Paid" },
+          ]}
+        />
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1" disabled={saveSuccess || sending}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1" disabled={saveSuccess || sendInvoiceMutation.isPending}>
             Cancel
           </Button>
-          {invoice && formData.contactEmail && (
+          {invoice && contactEmail && (
             <Button
               type="button"
               variant="outline"
               onClick={handleSend}
-              disabled={sending || saving || saveSuccess}
+              disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending || saveSuccess}
               className="flex-1"
             >
-              {sending ? (
+              {sendInvoiceMutation.isPending ? (
                 <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />
@@ -1118,11 +1108,9 @@ export function InvoiceDialog({
               Send
             </Button>
           )}
-          <Button type="submit" disabled={saving || sending || saveSuccess} className={`flex-1 ${saveSuccess ? "bg-green-600 hover:bg-green-600" : ""}`}>
-            {saving && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
-            {saveSuccess && <Check className="h-4 w-4 mr-2" />}
+          <SubmitButton form={form} className={`flex-1 ${saveSuccess ? "bg-green-600 hover:bg-green-600" : ""}`}>
             {saveSuccess ? "Saved!" : invoice ? "Save" : "Create"}
-          </Button>
+          </SubmitButton>
         </div>
       </div>
     </form>
@@ -1178,19 +1166,19 @@ export function InvoiceDialog({
                 />
               </div>
             </div>
-            <DialogFooter className="flex flex-row gap-2 sm:gap-2">
+            <div className="flex flex-row gap-2 sm:gap-2">
               <Button variant="outline" onClick={() => setNewContactDialogOpen(false)} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
               <Button
                 onClick={handleCreateContact}
-                disabled={creatingContact || !newContactData.name.trim() || !newContactData.email.trim()}
+                disabled={createContactMutation.isPending || !newContactData.name.trim() || !newContactData.email.trim()}
                 className="flex-1 sm:flex-none"
               >
-                {creatingContact && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {createContactMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Create Contact
               </Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
       </>
@@ -1247,19 +1235,19 @@ export function InvoiceDialog({
               />
             </div>
           </div>
-          <DialogFooter className="flex flex-row gap-2 sm:gap-2">
+          <div className="flex flex-row gap-2 sm:gap-2">
             <Button variant="outline" onClick={() => setNewContactDialogOpen(false)} className="flex-1 sm:flex-none">
               Cancel
             </Button>
             <Button
               onClick={handleCreateContact}
-              disabled={creatingContact || !newContactData.name.trim() || !newContactData.email.trim()}
+              disabled={createContactMutation.isPending || !newContactData.name.trim() || !newContactData.email.trim()}
               className="flex-1 sm:flex-none"
             >
-              {creatingContact && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {createContactMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Create Contact
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </>

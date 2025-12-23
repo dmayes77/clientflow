@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -13,6 +13,8 @@ import {
   Check,
   Shield,
 } from "lucide-react";
+import { useTenantStatus } from "@/lib/hooks/use-tenant";
+import { useCreateCheckout } from "@/lib/hooks/use-stripe";
 
 const PLAN = {
   id: "professional",
@@ -33,65 +35,34 @@ const PLAN = {
 export default function RetryPaymentPage() {
   const router = useRouter();
   const { isLoaded, orgId } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [redirecting, setRedirecting] = useState(false);
+
+  const { data: statusData, isLoading } = useTenantStatus();
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    const fetchStatus = async () => {
-      try {
-        const res = await fetch("/api/tenant/status");
-        if (res.ok) {
-          const data = await res.json();
-
-          // If subscription is active, redirect to dashboard
-          if (data.subscriptionStatus === "active" || data.subscriptionStatus === "trialing") {
-            router.push("/dashboard");
-            return;
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching status:", error);
+    if (statusData) {
+      // If subscription is active, redirect to dashboard
+      if (statusData.subscriptionStatus === "active" || statusData.subscriptionStatus === "trialing") {
+        router.push("/dashboard");
       }
-      setLoading(false);
-    };
-
-    if (orgId) {
-      fetchStatus();
-    } else {
-      setLoading(false);
     }
-  }, [isLoaded, orgId, router]);
+  }, [statusData, router]);
+
+  const reactivateMutation = useCreateCheckout();
 
   const handleReactivate = async () => {
-    setRedirecting(true);
-
     try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: PLAN.priceId,
-          successUrl: `${window.location.origin}/dashboard?reactivated=true`,
-          cancelUrl: `${window.location.origin}/billing/retry`,
-        }),
+      const data = await reactivateMutation.mutateAsync({
+        priceId: PLAN.priceId,
+        successUrl: `${window.location.origin}/dashboard?reactivated=true`,
+        cancelUrl: `${window.location.origin}/billing/retry`,
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create checkout");
-      }
-
-      const { url } = await res.json();
-      window.location.href = url;
+      window.location.href = data.url;
     } catch (error) {
       toast.error(error.message);
-      setRedirecting(false);
     }
   };
 
-  if (loading) {
+  if (isLoading || !isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -151,12 +122,12 @@ export default function RetryPaymentPage() {
 
               <button
                 onClick={handleReactivate}
-                disabled={redirecting}
+                disabled={reactivateMutation.isPending}
                 className={`w-full h-11 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white hig-body font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 ${
-                  redirecting ? "opacity-50 cursor-not-allowed" : ""
+                  reactivateMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
-                {redirecting ? (
+                {reactivateMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Redirecting to checkout...</span>
@@ -184,7 +155,7 @@ export default function RetryPaymentPage() {
               <button
                 type="button"
                 onClick={() => router.push("/billing/payment-required")}
-                disabled={redirecting}
+                disabled={reactivateMutation.isPending}
                 className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors disabled:opacity-50"
               >
                 <ArrowLeft className="w-4 h-4" />

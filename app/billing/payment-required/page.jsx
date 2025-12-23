@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
@@ -13,70 +13,42 @@ import {
   ArrowRight,
   HelpCircle,
 } from "lucide-react";
+import { useTenantStatus } from "@/lib/hooks/use-tenant";
+import { useCreateBillingPortal } from "@/lib/hooks/use-stripe";
 
 export default function PaymentRequiredPage() {
   const router = useRouter();
   const { isLoaded, orgId, signOut } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [subscriptionInfo, setSubscriptionInfo] = useState(null);
+
+  const { data: subscriptionInfo, isLoading } = useTenantStatus();
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    const fetchStatus = async () => {
-      try {
-        const res = await fetch("/api/tenant/status");
-        if (res.ok) {
-          const data = await res.json();
-          setSubscriptionInfo(data);
-
-          // If subscription is active, redirect to dashboard
-          if (data.subscriptionStatus === "active" || data.subscriptionStatus === "trialing") {
-            router.push("/dashboard");
-            return;
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching status:", error);
+    if (subscriptionInfo) {
+      // If subscription is active, redirect to dashboard
+      if (subscriptionInfo.subscriptionStatus === "active" || subscriptionInfo.subscriptionStatus === "trialing") {
+        router.push("/dashboard");
       }
-      setLoading(false);
-    };
-
-    if (orgId) {
-      fetchStatus();
-    } else {
-      setLoading(false);
     }
-  }, [isLoaded, orgId, router]);
+  }, [subscriptionInfo, router]);
+
+  const updatePaymentMutation = useCreateBillingPortal();
 
   const handleUpdatePayment = async () => {
-    setUpdating(true);
-
     try {
-      const res = await fetch("/api/stripe/billing-portal", {
-        method: "POST",
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
+      const data = await updatePaymentMutation.mutateAsync();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        // Fallback to retry page
+        router.push("/billing/retry");
       }
-
-      // Fallback to retry page
-      router.push("/billing/retry");
     } catch (error) {
       console.error("Error:", error);
       router.push("/billing/retry");
-    } finally {
-      setUpdating(false);
     }
   };
 
-  if (loading) {
+  if (isLoading || !isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -124,11 +96,11 @@ export default function PaymentRequiredPage() {
 
             <Button
               onClick={handleUpdatePayment}
-              disabled={updating}
+              disabled={updatePaymentMutation.isPending}
               className="w-full h-11 hig-body font-semibold rounded-xl"
               size="lg"
             >
-              {updating ? (
+              {updatePaymentMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Redirecting...

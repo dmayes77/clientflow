@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { UserButton, SignOutButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useTenant } from "@/lib/hooks/use-tenant";
 import {
   Sidebar,
   SidebarContent,
@@ -194,18 +195,11 @@ function SidebarNav({ businessName }) {
 
 export function DashboardShell({ children }) {
   const [mounted, setMounted] = useState(false);
-  const [businessName, setBusinessName] = useState("");
+  const { data: tenant } = useTenant();
+  const businessName = tenant?.businessName || "";
 
   useEffect(() => {
     setMounted(true);
-    fetch("/api/tenant")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.businessName) {
-          setBusinessName(data.businessName);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   return (

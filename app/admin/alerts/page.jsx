@@ -1,7 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import {
+  useAdminAlerts,
+  useCreateAdminAlert,
+  useDismissAdminAlert,
+  useAlertRules,
+  useAlertOptions,
+  useSaveAlertRule,
+  useToggleAlertRule,
+  useDeleteAlertRule,
+  useSeedDefaultRules,
+  useRunAlertCron,
+} from "@/lib/hooks/use-alerts";
+import { useAdminTenants } from "@/lib/hooks/use-admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,12 +201,10 @@ function TypeFilter({ value, onChange, counts }) {
   );
 }
 
-function CreateAlertDialog({ onCreated }) {
+function CreateAlertDialog() {
   const [open, setOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [targetType, setTargetType] = useState("broadcast");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
   const [selectedTenants, setSelectedTenants] = useState([]);
   const [form, setForm] = useState({
     title: "",
@@ -204,28 +215,19 @@ function CreateAlertDialog({ onCreated }) {
     actionLabel: "",
   });
 
-  const searchTenants = async (query) => {
-    if (!query || query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/admin/tenants?search=${encodeURIComponent(query)}&limit=10`);
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data.tenants || []);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const createAlertMutation = useCreateAdminAlert();
+  const { data: tenantsData } = useAdminTenants({
+    search: searchQuery,
+    limit: 10,
+  });
+
+  const searchResults = tenantsData?.tenants || [];
 
   const addTenant = (tenant) => {
     if (!selectedTenants.find((t) => t.id === tenant.id)) {
       setSelectedTenants([...selectedTenants, tenant]);
     }
     setSearchQuery("");
-    setSearchResults([]);
   };
 
   const removeTenant = (tenantId) => {
@@ -244,30 +246,20 @@ function CreateAlertDialog({ onCreated }) {
     setSelectedTenants([]);
     setTargetType("broadcast");
     setSearchQuery("");
-    setSearchResults([]);
   };
 
   const handleCreate = async () => {
-    setCreating(true);
     try {
       const payload = {
         ...form,
         broadcast: targetType === "broadcast",
         tenantIds: targetType === "specific" ? selectedTenants.map((t) => t.id) : [],
       };
-      const res = await fetch("/api/admin/alerts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Failed to create alert");
+      await createAlertMutation.mutateAsync(payload);
       setOpen(false);
       resetForm();
-      onCreated();
     } catch (err) {
       console.error(err);
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -318,10 +310,7 @@ function CreateAlertDialog({ onCreated }) {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <Input
                   value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    searchTenants(e.target.value);
-                  }}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name or email..."
                   className="h-9 pl-8"
                 />
@@ -424,9 +413,9 @@ function CreateAlertDialog({ onCreated }) {
           <Button
             size="sm"
             onClick={handleCreate}
-            disabled={creating || !form.title || !form.message || (targetType === "specific" && selectedTenants.length === 0)}
+            disabled={createAlertMutation.isPending || !form.title || !form.message || (targetType === "specific" && selectedTenants.length === 0)}
           >
-            {creating ? "Creating..." : targetType === "broadcast" ? "Broadcast" : `Send to ${selectedTenants.length}`}
+            {createAlertMutation.isPending ? "Creating..." : targetType === "broadcast" ? "Broadcast" : `Send to ${selectedTenants.length}`}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -547,28 +536,12 @@ function RuleCard({ rule, onEdit, onToggle, onDelete, scheduleTypes, eventTypes,
 export default function AlertsPage() {
   const [activeTab, setActiveTab] = useState("alerts");
 
-  // Alerts state
-  const [alerts, setAlerts] = useState([]);
-  const [typeCounts, setTypeCounts] = useState({});
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [criticalCount, setCriticalCount] = useState(0);
-  const [alertsLoading, setAlertsLoading] = useState(true);
+  // Filter and dialog state
   const [typeFilter, setTypeFilter] = useState("all");
-
-  // Rules state
-  const [rules, setRules] = useState([]);
-  const [rulesLoading, setRulesLoading] = useState(true);
-  const [scheduleTypes, setScheduleTypes] = useState([]);
-  const [eventTypes, setEventTypes] = useState([]);
-  const [filterOptions, setFilterOptions] = useState({});
-  const [plans, setPlans] = useState([]);
-  const [seeding, setSeeding] = useState(false);
-  const [runningCron, setRunningCron] = useState(false);
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [deletingRule, setDeletingRule] = useState(null);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: "", description: "", triggerType: "schedule", scheduleType: "", eventType: "",
@@ -589,75 +562,34 @@ export default function AlertsPage() {
   });
 
   // Fetch alerts
-  const fetchAlerts = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (typeFilter !== "all") params.set("type", typeFilter);
-      const res = await fetch(`/api/admin/alerts?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setAlerts(data.alerts);
-      setTypeCounts(data.typeCounts || {});
-      setUnreadCount(data.unreadCount || 0);
-      setCriticalCount(data.criticalCount || 0);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setAlertsLoading(false);
-    }
-  };
+  const { data: alertsData, isLoading: alertsLoading } = useAdminAlerts({
+    type: typeFilter,
+  });
 
   // Fetch rules
-  const fetchRules = async () => {
-    try {
-      const res = await fetch("/api/admin/alert-rules");
-      if (!res.ok) throw new Error("Failed to fetch rules");
-      const data = await res.json();
-      setRules(data.rules);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setRulesLoading(false);
-    }
-  };
+  const { data: rulesData, isLoading: rulesLoading } = useAlertRules({
+    enabled: activeTab === "automation",
+  });
 
-  const fetchOptions = async () => {
-    try {
-      const res = await fetch("/api/admin/alert-rules?action=options");
-      if (!res.ok) throw new Error("Failed to fetch options");
-      const data = await res.json();
-      setScheduleTypes(data.scheduleTypes);
-      setEventTypes(data.eventTypes);
-      setFilterOptions(data.filterOptions || {});
-      setPlans(data.plans || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // Fetch options
+  const { data: optionsData } = useAlertOptions({
+    enabled: activeTab === "automation",
+  });
 
-  useEffect(() => {
-    fetchAlerts();
-  }, [typeFilter]);
+  const alerts = alertsData?.alerts || [];
+  const typeCounts = alertsData?.typeCounts || {};
+  const unreadCount = alertsData?.unreadCount || 0;
+  const criticalCount = alertsData?.criticalCount || 0;
 
-  useEffect(() => {
-    if (activeTab === "automation") {
-      fetchRules();
-      fetchOptions();
-    }
-  }, [activeTab]);
+  const rules = rulesData?.rules || [];
+  const scheduleTypes = optionsData?.scheduleTypes || [];
+  const eventTypes = optionsData?.eventTypes || [];
+  const filterOptions = optionsData?.filterOptions || {};
+  const plans = optionsData?.plans || [];
 
-  const handleDismiss = async (alertId) => {
-    try {
-      await fetch("/api/admin/alerts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ alertId, dismissed: true }),
-      });
-      setAlerts((prev) => prev.map((a) => (a.id === alertId ? { ...a, dismissed: true } : a)));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const dismissMutation = useDismissAdminAlert();
+
+  const handleDismiss = (alertId) => dismissMutation.mutate(alertId);
 
   // Rule handlers
   const resetRuleForm = () => {
@@ -707,101 +639,86 @@ export default function AlertsPage() {
     setRuleDialogOpen(true);
   };
 
-  const handleRuleSubmit = async (e) => {
+  const saveRuleMutation = useSaveAlertRule();
+  const toggleRuleMutation = useToggleAlertRule();
+  const deleteRuleMutation = useDeleteAlertRule();
+  const seedDefaultsMutation = useSeedDefaultRules();
+  const runCronMutation = useRunAlertCron();
+
+  const handleRuleSubmit = (e) => {
     e.preventDefault();
-    setSaving(true);
     setError(null);
-    try {
-      // Clean up filters - only include non-empty values
-      const cleanFilters = {};
-      const f = formData.filters;
-      if (f.planIds?.length > 0) cleanFilters.planIds = f.planIds;
-      if (f.subscriptionStatuses?.length > 0) cleanFilters.subscriptionStatuses = f.subscriptionStatuses;
-      if (f.minBookings !== "" && f.minBookings !== undefined) cleanFilters.minBookings = parseInt(f.minBookings);
-      if (f.maxBookings !== "" && f.maxBookings !== undefined) cleanFilters.maxBookings = parseInt(f.maxBookings);
-      if (f.minContacts !== "" && f.minContacts !== undefined) cleanFilters.minContacts = parseInt(f.minContacts);
-      if (f.maxContacts !== "" && f.maxContacts !== undefined) cleanFilters.maxContacts = parseInt(f.maxContacts);
-      if (f.minTenantAgeDays !== "" && f.minTenantAgeDays !== undefined) cleanFilters.minTenantAgeDays = parseInt(f.minTenantAgeDays);
-      if (f.hasPaymentMethod !== null) cleanFilters.hasPaymentMethod = f.hasPaymentMethod;
-      if (f.stripeConnectStatus) cleanFilters.stripeConnectStatus = f.stripeConnectStatus;
-      if (f.setupComplete !== null) cleanFilters.setupComplete = f.setupComplete;
 
-      const payload = {
-        ...formData,
-        filters: Object.keys(cleanFilters).length > 0 ? cleanFilters : null,
-      };
-      if (editingRule) payload.id = editingRule.id;
-      const res = await fetch("/api/admin/alert-rules", {
-        method: editingRule ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+    // Clean up filters - only include non-empty values
+    const cleanFilters = {};
+    const f = formData.filters;
+    if (f.planIds?.length > 0) cleanFilters.planIds = f.planIds;
+    if (f.subscriptionStatuses?.length > 0) cleanFilters.subscriptionStatuses = f.subscriptionStatuses;
+    if (f.minBookings !== "" && f.minBookings !== undefined) cleanFilters.minBookings = parseInt(f.minBookings);
+    if (f.maxBookings !== "" && f.maxBookings !== undefined) cleanFilters.maxBookings = parseInt(f.maxBookings);
+    if (f.minContacts !== "" && f.minContacts !== undefined) cleanFilters.minContacts = parseInt(f.minContacts);
+    if (f.maxContacts !== "" && f.maxContacts !== undefined) cleanFilters.maxContacts = parseInt(f.maxContacts);
+    if (f.minTenantAgeDays !== "" && f.minTenantAgeDays !== undefined) cleanFilters.minTenantAgeDays = parseInt(f.minTenantAgeDays);
+    if (f.hasPaymentMethod !== null) cleanFilters.hasPaymentMethod = f.hasPaymentMethod;
+    if (f.stripeConnectStatus) cleanFilters.stripeConnectStatus = f.stripeConnectStatus;
+    if (f.setupComplete !== null) cleanFilters.setupComplete = f.setupComplete;
+
+    const payload = {
+      ...formData,
+      filters: Object.keys(cleanFilters).length > 0 ? cleanFilters : null,
+    };
+    if (editingRule) payload.id = editingRule.id;
+
+    saveRuleMutation.mutate(payload, {
+      onSuccess: () => {
+        setRuleDialogOpen(false);
+        resetRuleForm();
+      },
+      onError: (err) => {
+        setError(err.message);
+      },
+    });
+  };
+
+  const handleToggle = (rule) => {
+    toggleRuleMutation.mutate({ id: rule.id, active: !rule.active }, {
+      onError: (err) => {
+        setError(err.message);
+      },
+    });
+  };
+
+  const handleDelete = () => {
+    if (deletingRule) {
+      deleteRuleMutation.mutate(deletingRule.id, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setDeletingRule(null);
+        },
+        onError: (err) => {
+          setError(err.message);
+        },
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save rule");
-      }
-      await fetchRules();
-      setRuleDialogOpen(false);
-      resetRuleForm();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleToggle = async (rule) => {
-    try {
-      await fetch("/api/admin/alert-rules", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: rule.id, active: !rule.active }),
-      });
-      await fetchRules();
-    } catch (err) {
-      setError(err.message);
-    }
+  const handleSeedDefaults = () => {
+    seedDefaultsMutation.mutate(undefined, {
+      onError: (err) => {
+        setError(err.message);
+      },
+    });
   };
 
-  const handleDelete = async () => {
-    if (!deletingRule) return;
-    setSaving(true);
-    try {
-      await fetch(`/api/admin/alert-rules?id=${deletingRule.id}`, { method: "DELETE" });
-      await fetchRules();
-      setDeleteDialogOpen(false);
-      setDeletingRule(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSeedDefaults = async () => {
-    setSeeding(true);
-    try {
-      await fetch("/api/admin/alert-rules?action=seed");
-      await fetchRules();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSeeding(false);
-    }
-  };
-
-  const handleRunCron = async () => {
-    setRunningCron(true);
-    try {
-      const res = await fetch("/api/cron/alerts");
-      const data = await res.json();
-      alert(`Cron completed: ${data.alertsSent} alerts sent, ${data.alertsSkipped} skipped`);
-      await fetchRules();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setRunningCron(false);
-    }
+  const handleRunCron = () => {
+    runCronMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        alert(`Cron completed: ${data.alertsSent} alerts sent, ${data.alertsSkipped} skipped`);
+      },
+      onError: (err) => {
+        setError(err.message);
+      },
+    });
   };
 
   const scheduledRules = rules.filter((r) => r.triggerType === "schedule");
@@ -835,7 +752,7 @@ export default function AlertsPage() {
         {/* ALERTS TAB */}
         <TabsContent value="alerts" className="space-y-4 mt-4">
           <div className="flex justify-end">
-            <CreateAlertDialog onCreated={fetchAlerts} />
+            <CreateAlertDialog />
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -885,13 +802,13 @@ export default function AlertsPage() {
         <TabsContent value="automation" className="space-y-4 mt-4">
           <div className="flex justify-end gap-2">
             {rules.length === 0 && (
-              <Button variant="outline" size="sm" onClick={handleSeedDefaults} disabled={seeding}>
-                {seeding ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+              <Button variant="outline" size="sm" onClick={handleSeedDefaults} disabled={seedDefaultsMutation.isPending}>
+                {seedDefaultsMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
                 Add Defaults
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={handleRunCron} disabled={runningCron}>
-              {runningCron ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <RotateCw className="h-3.5 w-3.5 mr-1" />}
+            <Button variant="outline" size="sm" onClick={handleRunCron} disabled={runCronMutation.isPending}>
+              {runCronMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <RotateCw className="h-3.5 w-3.5 mr-1" />}
               <span className="hidden sm:inline">Run Now</span>
             </Button>
             <Button size="sm" onClick={() => { resetRuleForm(); setRuleDialogOpen(true); }}>
@@ -941,8 +858,8 @@ export default function AlertsPage() {
                   Create rules for trial expirations, payment failures, and more.
                 </p>
                 <div className="flex gap-2 justify-center">
-                  <Button variant="outline" onClick={handleSeedDefaults} disabled={seeding}>
-                    {seeding && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                  <Button variant="outline" onClick={handleSeedDefaults} disabled={seedDefaultsMutation.isPending}>
+                    {seedDefaultsMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
                     Add Default Rules
                   </Button>
                   <Button onClick={() => { resetRuleForm(); setRuleDialogOpen(true); }}>
@@ -1242,8 +1159,8 @@ export default function AlertsPage() {
             {error && <div className="text-red-500 bg-red-50 p-2 rounded hig-caption2">{error}</div>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setRuleDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+              <Button type="submit" disabled={saveRuleMutation.isPending}>
+                {saveRuleMutation.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
                 {editingRule ? "Save" : "Create"}
               </Button>
             </DialogFooter>
@@ -1262,8 +1179,8 @@ export default function AlertsPage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteRuleMutation.isPending}>
+              {deleteRuleMutation.isPending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>

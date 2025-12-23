@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
   RefreshCw,
   Receipt,
 } from "lucide-react";
+import { usePayments } from "@/lib/hooks";
 
 function formatPrice(cents) {
   return new Intl.NumberFormat("en-US", {
@@ -79,39 +80,21 @@ function StatusBadge({ status, disputeStatus }) {
 }
 
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalRevenue: 0, paymentCount: 0 });
   const [search, setSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => {
-    fetchPayments();
-  }, [statusFilter]);
+  const { data, isLoading: loading, refetch } = usePayments({
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    search: searchQuery || undefined,
+  });
 
-  const fetchPayments = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      if (search) params.set("search", search);
-
-      const res = await fetch(`/api/payments?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setPayments(data.payments || []);
-        setStats(data.stats || { totalRevenue: 0, paymentCount: 0 });
-      }
-    } catch (error) {
-      console.error("Failed to fetch payments:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const payments = data?.payments || [];
+  const stats = data?.stats || { totalRevenue: 0, paymentCount: 0 };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchPayments();
+    setSearchQuery(search);
   };
 
   return (
@@ -168,7 +151,7 @@ export default function PaymentsPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="icon" className="size-11 shrink-0" onClick={fetchPayments}>
+          <Button variant="outline" size="icon" className="size-11 shrink-0" onClick={() => refetch()}>
             <RefreshCw className="size-4" />
           </Button>
         </div>

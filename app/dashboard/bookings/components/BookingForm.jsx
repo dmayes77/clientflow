@@ -4,21 +4,27 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DurationSelect } from "@/components/ui/duration-select";
-import { useBusinessHours } from "@/hooks/use-business-hours";
+import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Calendar, DollarSign, Loader2, Save, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle } from "lucide-react";
 import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
+import { useBooking, useCreateBooking, useUpdateBooking, useAddBookingTag, useRemoveBookingTag, useAddBookingService, useRemoveBookingService, useAddBookingPackage, useRemoveBookingPackage } from "@/lib/hooks";
+import { useContacts, useCreateContact } from "@/lib/hooks";
+import { useServices } from "@/lib/hooks";
+import { usePackages } from "@/lib/hooks";
+import { useTags, useCreateTag } from "@/lib/hooks";
+import { useTenant } from "@/lib/hooks";
+import { useTanstackForm, TextField, TextareaField, NumberField, SelectField } from "@/components/ui/tanstack-form";
 
 const TAG_COLORS = {
   blue: { bg: "bg-blue-100", text: "text-blue-700" },
@@ -109,22 +115,34 @@ export function BookingForm({
   const { formatDuration } = useBusinessHours();
   const isEditMode = mode === "edit";
 
-  const [loading, setLoading] = useState(isEditMode);
-  const [saving, setSaving] = useState(false);
-  const [contacts, setContacts] = useState([]);
-  const [allServices, setAllServices] = useState([]);
-  const [allPackages, setAllPackages] = useState([]);
-  const [allTags, setAllTags] = useState([]);
+  // TanStack Query hooks
+  const { data: tenant } = useTenant();
+  const { data: contacts = [] } = useContacts();
+  const { data: allServices = [] } = useServices();
+  const { data: allPackages = [] } = usePackages();
+  const { data: allTags = [] } = useTags();
+  const { data: bookingData, isLoading: isLoadingBooking } = useBooking(bookingId);
+  const createBookingMutation = useCreateBooking();
+  const updateBookingMutation = useUpdateBooking();
+  const createContactMutation = useCreateContact();
+  const createTagMutation = useCreateTag();
+
+  // Booking mutation hooks
+  const addBookingTagMutation = useAddBookingTag();
+  const removeBookingTagMutation = useRemoveBookingTag();
+  const addBookingServiceMutation = useAddBookingService();
+  const removeBookingServiceMutation = useRemoveBookingService();
+  const addBookingPackageMutation = useAddBookingPackage();
+  const removeBookingPackageMutation = useRemoveBookingPackage();
+
   const [contactPopoverOpen, setContactPopoverOpen] = useState(false);
   const [servicePopoverOpen, setServicePopoverOpen] = useState(false);
   const [packagePopoverOpen, setPackagePopoverOpen] = useState(false);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
 
   // New contact dialog state
   const [newContactDialogOpen, setNewContactDialogOpen] = useState(false);
-  const [creatingContact, setCreatingContact] = useState(false);
   const [newContactData, setNewContactData] = useState({
     name: "",
     email: "",
@@ -133,7 +151,6 @@ export function BookingForm({
 
   // New tag dialog state
   const [newTagDialogOpen, setNewTagDialogOpen] = useState(false);
-  const [creatingTag, setCreatingTag] = useState(false);
   const [newTagData, setNewTagData] = useState({
     name: "",
     color: "blue",
@@ -142,34 +159,140 @@ export function BookingForm({
   // Booking state
   const [booking, setBooking] = useState(initialBooking);
 
-  // Form data
-  const [formData, setFormData] = useState({
-    contactId: defaultContactId,
-    scheduledAt: defaultDate,
-    scheduledTime: defaultTime,
-    status: "inquiry",
-    duration: 60,
-    notes: "",
-    totalPrice: 0,
-  });
-
   // Local state for new bookings (items not yet saved)
   const [selectedServices, setSelectedServices] = useState([]);
   const [selectedPackages, setSelectedPackages] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
 
   // Tenant timezone
-  const [timezone, setTimezone] = useState("America/New_York");
+  const timezone = tenant?.timezone || "America/New_York";
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // TanStack Form with Zod validation
+  const form = useTanstackForm({
+    defaultValues: {
+      contactId: defaultContactId,
+      scheduledAt: defaultDate,
+      scheduledTime: defaultTime,
+      status: "inquiry",
+      duration: 60,
+      notes: "",
+      totalPrice: 0,
+    },
+    validators: {
+      onSubmit: z.object({
+        contactId: z.string().min(1, "Contact is required"),
+        scheduledAt: z.string().min(1, "Date is required"),
+        scheduledTime: z.string().optional(),
+        status: z.string(),
+        duration: z.number().min(1, "Duration must be at least 1 minute"),
+        notes: z.string().optional(),
+        totalPrice: z.number().min(0, "Price must be positive"),
+      }),
+    },
+    onSubmit: async ({ value }) => {
+      try {
+        if (isEditMode) {
+          // Update existing booking
+          const { totalPrice, totalDuration } = calculateTotals();
+          const finalPrice = value.totalPrice > 0 ? value.totalPrice : totalPrice / 100;
+          const finalDuration = value.duration > 0 ? value.duration : totalDuration;
 
+          // Convert tenant timezone datetime back to UTC
+          const scheduledAt = fromZonedTime(value.scheduledAt, timezone);
+
+          await updateBookingMutation.mutateAsync({
+            id: bookingId,
+            scheduledAt: scheduledAt.toISOString(),
+            status: value.status,
+            duration: finalDuration || 60,
+            notes: value.notes || null,
+            totalPrice: Math.round(finalPrice * 100),
+          });
+
+          toast.success("Booking saved successfully");
+          onSave?.();
+          router.push("/dashboard/calendar");
+        } else {
+          // Create new booking - use tenant's timezone for proper conversion
+          const dateTimeString = `${value.scheduledAt}T${value.scheduledTime}:00`;
+          const scheduledAt = fromZonedTime(dateTimeString, timezone);
+          const payload = {
+            contactId: value.contactId,
+            scheduledAt: scheduledAt.toISOString(),
+            status: value.status,
+            duration: parseInt(value.duration),
+            totalPrice: Math.round(value.totalPrice * 100),
+            notes: value.notes || null,
+          };
+
+          const savedBooking = await createBookingMutation.mutateAsync(payload);
+          const newBookingId = savedBooking.id;
+
+          // Add services
+          for (const service of selectedServices) {
+            await fetch(`/api/bookings/${newBookingId}/services`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ serviceId: service.id }),
+            });
+          }
+
+          // Add packages
+          for (const pkg of selectedPackages) {
+            await fetch(`/api/bookings/${newBookingId}/packages`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ packageId: pkg.id }),
+            });
+          }
+
+          // Add tags
+          for (const tag of selectedTags) {
+            await fetch(`/api/bookings/${newBookingId}/tags`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ tagId: tag.id }),
+            });
+          }
+
+          toast.success("Booking created successfully");
+          onSave?.(newBookingId);
+          router.push("/dashboard/calendar");
+        }
+      } catch (error) {
+        console.error("Error saving booking:", error);
+        toast.error(error.message || "Failed to save booking");
+      }
+    },
+  });
+
+  // Initialize booking data in edit mode
   useEffect(() => {
-    if (isEditMode && bookingId) {
-      fetchBooking();
+    if (isEditMode && bookingData) {
+      setBooking(bookingData.booking);
+
+      // Convert UTC to tenant's timezone for display in datetime-local input
+      const utcDate = new Date(bookingData.booking.scheduledAt);
+      const zonedDate = toZonedTime(utcDate, timezone);
+      const localDateTimeString = format(zonedDate, "yyyy-MM-dd'T'HH:mm", { timeZone: timezone });
+
+      form.setFieldValue("contactId", bookingData.booking.contactId);
+      form.setFieldValue("scheduledAt", localDateTimeString);
+      form.setFieldValue("scheduledTime", "");
+      form.setFieldValue("status", bookingData.booking.status);
+      form.setFieldValue("duration", bookingData.booking.duration || 60);
+      form.setFieldValue("notes", bookingData.booking.notes || "");
+      form.setFieldValue("totalPrice", bookingData.booking.totalPrice / 100);
     }
-  }, [bookingId]);
+  }, [bookingData, isEditMode, timezone, form]);
+
+  // Set default date to today if not provided (create mode)
+  useEffect(() => {
+    if (!isEditMode && !defaultDate) {
+      const today = new Date();
+      form.setFieldValue("scheduledAt", today.toISOString().split("T")[0]);
+    }
+  }, [isEditMode, defaultDate, form]);
 
   // Auto-recalculate total when services/packages change
   useEffect(() => {
@@ -180,101 +303,9 @@ export function BookingForm({
       services.reduce((sum, s) => sum + (s.price || 0), 0) +
       packages.reduce((sum, p) => sum + (p.price || 0), 0);
 
-    setFormData((prev) => ({
-      ...prev,
-      totalPrice: totalCents / 100,
-    }));
-  }, [isEditMode, booking?.selectedServices, booking?.selectedPackages, selectedServices, selectedPackages]);
+    form.setFieldValue("totalPrice", totalCents / 100);
+  }, [isEditMode, booking?.selectedServices, booking?.selectedPackages, selectedServices, selectedPackages, form]);
 
-  const fetchData = async () => {
-    try {
-      // Always fetch tenant for timezone
-      const tenantRes = await fetch("/api/tenant");
-      if (tenantRes.ok) {
-        const tenantData = await tenantRes.json();
-        if (tenantData.timezone) setTimezone(tenantData.timezone);
-      }
-
-      if (!isEditMode) {
-        const [contactsRes, servicesRes, packagesRes, tagsRes] = await Promise.all([
-          fetch("/api/contacts"),
-          fetch("/api/services"),
-          fetch("/api/packages"),
-          fetch("/api/tags"),
-        ]);
-        if (contactsRes.ok) setContacts(await contactsRes.json());
-        if (servicesRes.ok) setAllServices(await servicesRes.json());
-        if (packagesRes.ok) setAllPackages(await packagesRes.json());
-        if (tagsRes.ok) setAllTags(await tagsRes.json());
-
-        // Set default date to today if not provided
-        if (!defaultDate) {
-          const today = new Date();
-          setFormData((prev) => ({
-            ...prev,
-            scheduledAt: today.toISOString().split("T")[0],
-          }));
-        }
-      }
-    } catch (error) {
-      toast.error("Failed to load data");
-    }
-  };
-
-  const fetchBooking = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch tenant timezone first
-      let tz = timezone;
-      const tenantRes = await fetch("/api/tenant");
-      if (tenantRes.ok) {
-        const tenantData = await tenantRes.json();
-        if (tenantData.timezone) {
-          tz = tenantData.timezone;
-          setTimezone(tz);
-        }
-      }
-
-      const response = await fetch(`/api/bookings/${bookingId}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          toast.error("Booking not found");
-          router.push("/dashboard/calendar");
-          return;
-        }
-        throw new Error("Failed to fetch booking");
-      }
-
-      const data = await response.json();
-      setBooking(data.booking);
-      setAllTags(data.allTags || []);
-      setAllServices(data.allServices || []);
-      setAllPackages(data.allPackages || []);
-
-      // Convert UTC to tenant's timezone for display in datetime-local input
-      const utcDate = new Date(data.booking.scheduledAt);
-      const zonedDate = toZonedTime(utcDate, tz);
-      const localDateTimeString = format(zonedDate, "yyyy-MM-dd'T'HH:mm", { timeZone: tz });
-
-      setFormData({
-        contactId: data.booking.contactId,
-        scheduledAt: localDateTimeString,
-        scheduledTime: "",
-        status: data.booking.status,
-        duration: data.booking.duration || 60,
-        notes: data.booking.notes || "",
-        totalPrice: data.booking.totalPrice / 100,
-      });
-      setHasChanges(false);
-    } catch (error) {
-      console.error("Error fetching booking:", error);
-      toast.error("Failed to load booking");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Calculate totals from selected items
   const calculateTotals = () => {
@@ -296,11 +327,6 @@ export function BookingForm({
     return { totalPrice, totalDuration };
   };
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setHasChanges(true);
-  };
-
   // Create new contact inline
   const handleCreateContact = async () => {
     if (!newContactData.name.trim()) {
@@ -313,28 +339,14 @@ export function BookingForm({
     }
 
     try {
-      setCreatingContact(true);
-      const response = await fetch("/api/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newContactData.name.trim(),
-          email: newContactData.email.trim(),
-          phone: newContactData.phone.trim() || null,
-        }),
+      const newContact = await createContactMutation.mutateAsync({
+        name: newContactData.name.trim(),
+        email: newContactData.email.trim(),
+        phone: newContactData.phone.trim() || null,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create contact");
-      }
-
-      const newContact = await response.json();
-
-      // Add to contacts list and select it
-      setContacts((prev) => [newContact, ...prev]);
-      setFormData((prev) => ({ ...prev, contactId: newContact.id }));
-      setHasChanges(true);
+      // Select the newly created contact
+      form.setFieldValue("contactId", newContact.id);
 
       // Reset and close dialog
       setNewContactData({ name: "", email: "", phone: "" });
@@ -342,8 +354,6 @@ export function BookingForm({
       toast.success(`Contact "${newContact.name}" created`);
     } catch (error) {
       toast.error(error.message || "Failed to create contact");
-    } finally {
-      setCreatingContact(false);
     }
   };
 
@@ -355,40 +365,22 @@ export function BookingForm({
     }
 
     try {
-      setCreatingTag(true);
-      const response = await fetch("/api/tags", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newTagData.name.trim(),
-          color: newTagData.color,
-        }),
+      const newTag = await createTagMutation.mutateAsync({
+        name: newTagData.name.trim(),
+        color: newTagData.color,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create tag");
-      }
-
-      const newTag = await response.json();
-
-      // Add to tags list and select it
-      setAllTags((prev) => [newTag, ...prev]);
 
       // Also add to current tags (same as handleAddTag)
       if (isEditMode) {
-        // Add to booking via API
-        const addResponse = await fetch(`/api/bookings/${bookingId}/tags`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tagId: newTag.id }),
+        // Add to booking via mutation hook
+        await addBookingTagMutation.mutateAsync({
+          bookingId,
+          tagId: newTag.id
         });
-        if (addResponse.ok) {
-          setBooking((prev) => ({
-            ...prev,
-            tags: [...(prev.tags || []), newTag],
-          }));
-        }
+        setBooking((prev) => ({
+          ...prev,
+          tags: [...(prev.tags || []), newTag],
+        }));
       } else {
         setSelectedTags((prev) => [...prev, newTag]);
       }
@@ -399,8 +391,6 @@ export function BookingForm({
       toast.success(`Tag "${newTag.name}" created`);
     } catch (error) {
       toast.error(error.message || "Failed to create tag");
-    } finally {
-      setCreatingTag(false);
     }
   };
 
@@ -412,18 +402,11 @@ export function BookingForm({
     if (isEditMode) {
       // Immediately save to API for edit mode
       try {
-        const response = await fetch(`/api/bookings/${bookingId}/services`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ serviceId }),
+        const addedService = await addBookingServiceMutation.mutateAsync({
+          bookingId,
+          serviceId
         });
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to add service");
-        }
-
-        const addedService = await response.json();
         const currentServices = booking.selectedServices || [];
         const currentPackages = booking.selectedPackages || [];
         const newTotalCents =
@@ -433,12 +416,8 @@ export function BookingForm({
           ...prev,
           selectedServices: [...(prev.selectedServices || []), addedService],
         }));
-        setFormData((prev) => ({
-          ...prev,
-          totalPrice: newTotalCents / 100,
-        }));
+        form.setFieldValue("totalPrice", newTotalCents / 100);
         toast.success(`Service "${addedService.name}" added`);
-        setHasChanges(true);
       } catch (error) {
         toast.error(error.message);
       }
@@ -447,11 +426,8 @@ export function BookingForm({
       const newServices = [...selectedServices, service];
       const { totalPrice, totalDuration } = calculateTotalsFromArrays(newServices, selectedPackages);
       setSelectedServices(newServices);
-      setFormData((prev) => ({
-        ...prev,
-        totalPrice: totalPrice / 100,
-        duration: totalDuration || prev.duration,
-      }));
+      form.setFieldValue("totalPrice", totalPrice / 100);
+      form.setFieldValue("duration", totalDuration || form.state.values.duration);
     }
     setServicePopoverOpen(false);
   };
@@ -459,11 +435,10 @@ export function BookingForm({
   const handleRemoveService = async (serviceId, serviceName) => {
     if (isEditMode) {
       try {
-        const response = await fetch(`/api/bookings/${bookingId}/services?serviceId=${serviceId}`, {
-          method: "DELETE",
+        await removeBookingServiceMutation.mutateAsync({
+          bookingId,
+          serviceId
         });
-
-        if (!response.ok) throw new Error("Failed to remove service");
 
         const currentServices = booking.selectedServices || [];
         const currentPackages = booking.selectedPackages || [];
@@ -474,12 +449,8 @@ export function BookingForm({
           ...prev,
           selectedServices: prev.selectedServices.filter((s) => s.id !== serviceId),
         }));
-        setFormData((prev) => ({
-          ...prev,
-          totalPrice: newTotalCents / 100,
-        }));
+        form.setFieldValue("totalPrice", newTotalCents / 100);
         toast.success(`Service "${serviceName}" removed`);
-        setHasChanges(true);
       } catch (error) {
         toast.error("Failed to remove service");
       }
@@ -487,11 +458,8 @@ export function BookingForm({
       const newServices = selectedServices.filter((s) => s.id !== serviceId);
       const { totalPrice, totalDuration } = calculateTotalsFromArrays(newServices, selectedPackages);
       setSelectedServices(newServices);
-      setFormData((prev) => ({
-        ...prev,
-        totalPrice: totalPrice / 100,
-        duration: totalDuration || 60,
-      }));
+      form.setFieldValue("totalPrice", totalPrice / 100);
+      form.setFieldValue("duration", totalDuration || 60);
     }
   };
 
@@ -502,18 +470,11 @@ export function BookingForm({
 
     if (isEditMode) {
       try {
-        const response = await fetch(`/api/bookings/${bookingId}/packages`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ packageId }),
+        const addedPkg = await addBookingPackageMutation.mutateAsync({
+          bookingId,
+          packageId
         });
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to add package");
-        }
-
-        const addedPkg = await response.json();
         const currentServices = booking.selectedServices || [];
         const currentPackages = booking.selectedPackages || [];
         const newTotalCents =
@@ -523,12 +484,8 @@ export function BookingForm({
           ...prev,
           selectedPackages: [...(prev.selectedPackages || []), addedPkg],
         }));
-        setFormData((prev) => ({
-          ...prev,
-          totalPrice: newTotalCents / 100,
-        }));
+        form.setFieldValue("totalPrice", newTotalCents / 100);
         toast.success(`Package "${addedPkg.name}" added`);
-        setHasChanges(true);
       } catch (error) {
         toast.error(error.message);
       }
@@ -536,10 +493,7 @@ export function BookingForm({
       const newPackages = [...selectedPackages, pkg];
       const { totalPrice } = calculateTotalsFromArrays(selectedServices, newPackages);
       setSelectedPackages(newPackages);
-      setFormData((prev) => ({
-        ...prev,
-        totalPrice: totalPrice / 100,
-      }));
+      form.setFieldValue("totalPrice", totalPrice / 100);
     }
     setPackagePopoverOpen(false);
   };
@@ -547,11 +501,10 @@ export function BookingForm({
   const handleRemovePackage = async (packageId, packageName) => {
     if (isEditMode) {
       try {
-        const response = await fetch(`/api/bookings/${bookingId}/packages?packageId=${packageId}`, {
-          method: "DELETE",
+        await removeBookingPackageMutation.mutateAsync({
+          bookingId,
+          packageId
         });
-
-        if (!response.ok) throw new Error("Failed to remove package");
 
         const currentServices = booking.selectedServices || [];
         const currentPackages = booking.selectedPackages || [];
@@ -562,12 +515,8 @@ export function BookingForm({
           ...prev,
           selectedPackages: prev.selectedPackages.filter((p) => p.id !== packageId),
         }));
-        setFormData((prev) => ({
-          ...prev,
-          totalPrice: newTotalCents / 100,
-        }));
+        form.setFieldValue("totalPrice", newTotalCents / 100);
         toast.success(`Package "${packageName}" removed`);
-        setHasChanges(true);
       } catch (error) {
         toast.error("Failed to remove package");
       }
@@ -575,10 +524,7 @@ export function BookingForm({
       const newPackages = selectedPackages.filter((p) => p.id !== packageId);
       const { totalPrice } = calculateTotalsFromArrays(selectedServices, newPackages);
       setSelectedPackages(newPackages);
-      setFormData((prev) => ({
-        ...prev,
-        totalPrice: totalPrice / 100,
-      }));
+      form.setFieldValue("totalPrice", totalPrice / 100);
     }
   };
 
@@ -589,18 +535,11 @@ export function BookingForm({
 
     if (isEditMode) {
       try {
-        const response = await fetch(`/api/bookings/${bookingId}/tags`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tagId }),
+        const addedTag = await addBookingTagMutation.mutateAsync({
+          bookingId,
+          tagId
         });
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to add tag");
-        }
-
-        const addedTag = await response.json();
         setBooking((prev) => ({
           ...prev,
           tags: [...(prev.tags || []), addedTag],
@@ -618,11 +557,10 @@ export function BookingForm({
   const handleRemoveTag = async (tagId, tagName) => {
     if (isEditMode) {
       try {
-        const response = await fetch(`/api/bookings/${bookingId}/tags?tagId=${tagId}`, {
-          method: "DELETE",
+        await removeBookingTagMutation.mutateAsync({
+          bookingId,
+          tagId
         });
-
-        if (!response.ok) throw new Error("Failed to remove tag");
 
         setBooking((prev) => ({
           ...prev,
@@ -651,117 +589,6 @@ export function BookingForm({
     return { totalPrice, totalDuration };
   };
 
-  // Save handler
-  const handleSave = async () => {
-    if (!isEditMode && !formData.contactId) {
-      toast.error("Please select a contact");
-      return;
-    }
-
-    if (!formData.scheduledAt) {
-      toast.error("Please select a date");
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      if (isEditMode) {
-        // Update existing booking
-        const { totalPrice, totalDuration } = calculateTotals();
-        const finalPrice = formData.totalPrice > 0 ? formData.totalPrice : totalPrice / 100;
-        const finalDuration = formData.duration > 0 ? formData.duration : totalDuration;
-
-        // Convert tenant timezone datetime back to UTC
-        const scheduledAt = fromZonedTime(formData.scheduledAt, timezone);
-
-        const response = await fetch(`/api/bookings/${bookingId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            scheduledAt: scheduledAt.toISOString(),
-            status: formData.status,
-            duration: finalDuration || 60,
-            notes: formData.notes || null,
-            totalPrice: Math.round(finalPrice * 100),
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to update booking");
-        }
-
-        setHasChanges(false);
-        toast.success("Booking saved successfully");
-        onSave?.();
-        router.push("/dashboard/calendar");
-      } else {
-        // Create new booking - use tenant's timezone for proper conversion
-        const dateTimeString = `${formData.scheduledAt}T${formData.scheduledTime}:00`;
-        const scheduledAt = fromZonedTime(dateTimeString, timezone);
-        const payload = {
-          contactId: formData.contactId,
-          scheduledAt: scheduledAt.toISOString(),
-          status: formData.status,
-          duration: parseInt(formData.duration),
-          totalPrice: Math.round(formData.totalPrice * 100),
-          notes: formData.notes || null,
-        };
-
-        const response = await fetch("/api/bookings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to create booking");
-        }
-
-        const savedBooking = await response.json();
-        const newBookingId = savedBooking.id;
-
-        // Add services
-        for (const service of selectedServices) {
-          await fetch(`/api/bookings/${newBookingId}/services`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ serviceId: service.id }),
-          });
-        }
-
-        // Add packages
-        for (const pkg of selectedPackages) {
-          await fetch(`/api/bookings/${newBookingId}/packages`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ packageId: pkg.id }),
-          });
-        }
-
-        // Add tags
-        for (const tag of selectedTags) {
-          await fetch(`/api/bookings/${newBookingId}/tags`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tagId: tag.id }),
-          });
-        }
-
-        toast.success("Booking created successfully");
-        onSave?.(newBookingId);
-        router.push("/dashboard/calendar");
-      }
-    } catch (error) {
-      console.error("Error saving booking:", error);
-      toast.error(error.message || "Failed to save booking");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // Invoice creation (edit mode only) - open the dialog
   const handleCreateInvoice = () => {
     if (!isEditMode || !booking) return;
@@ -778,9 +605,13 @@ export function BookingForm({
   const currentServices = isEditMode ? booking?.selectedServices || [] : selectedServices;
   const currentPackages = isEditMode ? booking?.selectedPackages || [] : selectedPackages;
   const currentTags = isEditMode ? booking?.tags || [] : selectedTags;
-  const selectedContact = isEditMode ? booking?.contact : contacts.find((c) => c.id === formData.contactId);
+  const selectedContact = isEditMode ? booking?.contact : contacts.find((c) => c.id === form.state.values.contactId);
 
-  if (loading) {
+  // Loading state
+  const isLoading = isEditMode && isLoadingBooking;
+  const isSaving = form.state.isSubmitting;
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -792,40 +623,46 @@ export function BookingForm({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-3 pb-4 border-b">
-        {/* Top row: Back button and actions */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="size-11 shrink-0">
-            <ArrowLeft className="size-6" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="success" size="sm" onClick={handleSave} disabled={saving || (isEditMode && !hasChanges) || (!isEditMode && !formData.contactId)}>
-              {saving ? <Loader2 className="size-4 mr-1 animate-spin" /> : isEditMode ? <Save className="size-4 mr-1" /> : <Plus className="size-4 mr-1" />}
-              {isEditMode ? "Save" : "Create"}
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="space-y-3 pb-4 border-b">
+          {/* Top row: Back button and actions */}
+          <div className="flex items-center justify-between">
+            <Button type="button" variant="ghost" size="icon" onClick={() => router.back()} className="size-11 shrink-0">
+              <ArrowLeft className="size-6" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            {isEditMode && onDelete && (
-              <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={onDelete}>
-                <Trash2 className="size-5" />
+            <div className="flex items-center gap-2">
+              <Button type="submit" variant="success" size="sm" disabled={isSaving || (!isEditMode && !form.state.values.contactId)}>
+                {isSaving ? <Loader2 className="size-4 mr-1 animate-spin" /> : isEditMode ? <Save className="size-4 mr-1" /> : <Plus className="size-4 mr-1" />}
+                {isEditMode ? "Save" : "Create"}
               </Button>
-            )}
+              <Button type="button" variant="outline" size="sm" onClick={() => router.back()}>
+                Cancel
+              </Button>
+              {isEditMode && onDelete && (
+                <Button type="button" variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={onDelete}>
+                  <Trash2 className="size-5" />
+                </Button>
+              )}
+            </div>
+          </div>
+          {/* Title row */}
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="mb-0!">{isEditMode ? booking?.contact?.name || "Booking Details" : "New Booking"}</h1>
+              {isEditMode && <BookingStatusBadge status={form.state.values.status} />}
+            </div>
+            <p className="hig-caption2 text-muted-foreground">
+              {isEditMode ? `Booking #${booking?.id.slice(-6).toUpperCase()} · Created ${formatDate(booking?.createdAt)}` : "Create a new booking for a contact"}
+            </p>
           </div>
         </div>
-        {/* Title row */}
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="mb-0!">{isEditMode ? booking?.contact?.name || "Booking Details" : "New Booking"}</h1>
-            {isEditMode && <BookingStatusBadge status={formData.status} />}
-          </div>
-          <p className="hig-caption2 text-muted-foreground">
-            {isEditMode ? `Booking #${booking?.id.slice(-6).toUpperCase()} · Created ${formatDate(booking?.createdAt)}` : "Create a new booking for a contact"}
-          </p>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Booking Details */}
@@ -880,7 +717,7 @@ export function BookingForm({
                                 key={contact.id}
                                 value={contact.name + " " + (contact.email || "")}
                                 onSelect={() => {
-                                  handleInputChange("contactId", contact.id);
+                                  form.setFieldValue("contactId", contact.id);
                                   setContactPopoverOpen(false);
                                 }}
                                 className="flex justify-between"
@@ -889,7 +726,7 @@ export function BookingForm({
                                   <span className="font-medium">{contact.name}</span>
                                   {contact.email && <span className="text-muted-foreground ml-2">{contact.email}</span>}
                                 </div>
-                                {formData.contactId === contact.id && <span className="text-primary">✓</span>}
+                                {form.state.values.contactId === contact.id && <span className="text-primary">✓</span>}
                               </CommandItem>
                             ))}
                           </CommandGroup>
@@ -926,52 +763,53 @@ export function BookingForm({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {isEditMode ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="scheduledAt">Date & Time</Label>
-                    <Input
-                      id="scheduledAt"
-                      type="datetime-local"
-                      value={formData.scheduledAt}
-                      onChange={(e) => handleInputChange("scheduledAt", e.target.value)}
-                    />
-                  </div>
+                  <TextField
+                    form={form}
+                    name="scheduledAt"
+                    label="Date & Time"
+                    type="datetime-local"
+                  />
                 ) : (
                   <>
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduledAt">Date</Label>
-                      <Input id="scheduledAt" type="date" value={formData.scheduledAt} onChange={(e) => handleInputChange("scheduledAt", e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="scheduledTime">Time</Label>
-                      <Input
-                        id="scheduledTime"
-                        type="time"
-                        value={formData.scheduledTime}
-                        onChange={(e) => handleInputChange("scheduledTime", e.target.value)}
-                      />
-                    </div>
+                    <TextField
+                      form={form}
+                      name="scheduledAt"
+                      label="Date"
+                      type="date"
+                    />
+                    <TextField
+                      form={form}
+                      name="scheduledTime"
+                      label="Time"
+                      type="time"
+                    />
                   </>
                 )}
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration</Label>
-                  <DurationSelect id="duration" value={formData.duration} onValueChange={(value) => handleInputChange("duration", value)} />
-                </div>
+                <form.Field name="duration">
+                  {(field) => (
+                    <div className="space-y-2">
+                      <Label htmlFor="duration">Duration</Label>
+                      <DurationSelect
+                        id="duration"
+                        value={field.state.value}
+                        onValueChange={field.handleChange}
+                      />
+                    </div>
+                  )}
+                </form.Field>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inquiry">Inquiry</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <SelectField
+                form={form}
+                name="status"
+                label="Status"
+                options={[
+                  { value: "inquiry", label: "Inquiry" },
+                  { value: "scheduled", label: "Scheduled" },
+                  { value: "confirmed", label: "Confirmed" },
+                  { value: "completed", label: "Completed" },
+                  { value: "cancelled", label: "Cancelled" },
+                ]}
+              />
             </CardContent>
           </Card>
 
@@ -1112,18 +950,14 @@ export function BookingForm({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="totalPrice">Total Price ($)</Label>
-                <Input
-                  id="totalPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.totalPrice}
-                  onChange={(e) => handleInputChange("totalPrice", parseFloat(e.target.value) || 0)}
-                />
-                <p className="hig-caption2 text-muted-foreground">Price auto-updates when selecting a service or package. You can override it manually.</p>
-              </div>
+              <NumberField
+                form={form}
+                name="totalPrice"
+                label="Total Price ($)"
+                min={0}
+                step={0.01}
+                description="Price auto-updates when selecting a service or package. You can override it manually."
+              />
             </CardContent>
           </Card>
 
@@ -1133,9 +967,9 @@ export function BookingForm({
               <CardTitle>Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => handleInputChange("notes", e.target.value)}
+              <TextareaField
+                form={form}
+                name="notes"
                 placeholder="Add notes about this booking..."
                 rows={4}
               />
@@ -1331,16 +1165,16 @@ export function BookingForm({
 
               <div className="flex justify-between pt-2">
                 <span className="text-muted-foreground">Duration</span>
-                <span className="font-medium text-foreground">{formatDuration(formData.duration)}</span>
+                <span className="font-medium text-foreground">{formatDuration(form.state.values.duration)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Date</span>
-                <span className="font-medium text-foreground">{formData.scheduledAt ? formatDate(formData.scheduledAt) : "—"}</span>
+                <span className="font-medium text-foreground">{form.state.values.scheduledAt ? formatDate(form.state.values.scheduledAt) : "—"}</span>
               </div>
               <div className="border-t border-border pt-2 mt-2">
                 <div className="flex justify-between">
                   <span className="font-medium text-foreground">Total</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(formData.totalPrice > 0 ? formData.totalPrice * 100 : calculateTotals().totalPrice)}</span>
+                  <span className="font-semibold text-foreground">{formatCurrency(form.state.values.totalPrice > 0 ? form.state.values.totalPrice * 100 : calculateTotals().totalPrice)}</span>
                 </div>
               </div>
             </CardContent>
@@ -1391,8 +1225,8 @@ export function BookingForm({
             <Button variant="outline" onClick={() => setNewContactDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateContact} disabled={creatingContact || !newContactData.name.trim() || !newContactData.email.trim()}>
-              {creatingContact && <Loader2 className="size-4 mr-2 animate-spin" />}
+            <Button onClick={handleCreateContact} disabled={createContactMutation.isPending || !newContactData.name.trim() || !newContactData.email.trim()}>
+              {createContactMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
               Create Contact
             </Button>
           </DialogFooter>
@@ -1447,8 +1281,8 @@ export function BookingForm({
             <Button variant="outline" onClick={() => setNewTagDialogOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button onClick={handleCreateTag} disabled={creatingTag || !newTagData.name.trim()} className="flex-1">
-              {creatingTag && <Loader2 className="size-4 mr-2 animate-spin" />}
+            <Button onClick={handleCreateTag} disabled={createTagMutation.isPending || !newTagData.name.trim()} className="flex-1">
+              {createTagMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
               Create Tag
             </Button>
           </DialogFooter>
@@ -1468,6 +1302,7 @@ export function BookingForm({
           onSave={handleInvoiceSave}
         />
       )}
-    </div>
+      </div>
+    </form>
   );
 }

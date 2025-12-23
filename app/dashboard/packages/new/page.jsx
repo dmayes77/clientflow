@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useCreatePackage } from "@/lib/hooks";
+import { useServices } from "@/lib/hooks/use-services";
+import { useServiceCategories } from "@/lib/hooks/use-service-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useBusinessHours } from "@/hooks/use-business-hours";
+import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 import {
   ArrowLeft,
   Plus,
@@ -54,38 +57,17 @@ export default function PackageNewPage() {
   const router = useRouter();
   const { formatDuration } = useBusinessHours();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [services, setServices] = useState([]);
-  const [categories, setCategories] = useState([]);
+  // TanStack Query hooks
+  const createPackageMutation = useCreatePackage();
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
+
   const [formData, setFormData] = useState(initialFormState);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [servicesRes, categoriesRes] = await Promise.all([
-        fetch("/api/services"),
-        fetch("/api/service-categories"),
-      ]);
-
-      if (servicesRes.ok) {
-        setServices(await servicesRes.json());
-      }
-      if (categoriesRes.ok) {
-        setCategories(await categoriesRes.json());
-      }
-    } catch (error) {
-      toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = servicesLoading || categoriesLoading;
 
   // Helper function to round price to desired dollar ending
   const roundToEnding = (cents, ending) => {
@@ -193,8 +175,6 @@ export default function PackageNewPage() {
       return;
     }
 
-    setSaving(true);
-
     try {
       const payload = {
         name: formData.name,
@@ -208,23 +188,11 @@ export default function PackageNewPage() {
         overridePrice: pricePreview.finalPrice,
       };
 
-      const res = await fetch("/api/packages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        toast.success("Package created");
-        router.push("/dashboard/packages");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to create package");
-      }
+      await createPackageMutation.mutateAsync(payload);
+      toast.success("Package created");
+      router.push("/dashboard/packages");
     } catch (error) {
-      toast.error("Failed to create package");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Failed to create package");
     }
   };
 
@@ -553,8 +521,8 @@ export default function PackageNewPage() {
           <Button type="button" variant="outline" onClick={() => router.push("/dashboard/packages")}>
             Cancel
           </Button>
-          <Button type="submit" variant="success" disabled={saving || formData.serviceIds.length === 0}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          <Button type="submit" variant="success" disabled={createPackageMutation.isPending || formData.serviceIds.length === 0}>
+            {createPackageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Create Package
           </Button>
         </div>

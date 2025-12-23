@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useState, useMemo, useEffect } from "react";
+import { use, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useCalendarAvailability, useCreateCalendarBooking } from "@/lib/hooks/use-public-calendar";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -98,9 +99,6 @@ export default function BookingTypePage({ params }) {
   const [selectedTime, setSelectedTime] = useState(null);
   const [step, setStep] = useState("date");
   const [direction, setDirection] = useState(1);
-  const [timeSlots, setTimeSlots] = useState([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -108,29 +106,21 @@ export default function BookingTypePage({ params }) {
     notes: "",
   });
 
-  useEffect(() => {
-    if (!selectedDate || !callType) return;
+  // Fetch availability with TanStack Query
+  const {
+    data: availabilityData,
+    isLoading: loadingSlots,
+  } = useCalendarAvailability({
+    date: selectedDate,
+    duration: callType?.duration,
+    enabled: !!selectedDate && !!callType,
+  });
 
-    const fetchSlots = async () => {
-      setLoadingSlots(true);
-      setTimeSlots([]);
-      try {
-        const response = await fetch(
-          `/api/calendar/availability?date=${selectedDate.toISOString()}&duration=${callType.duration}`
-        );
-        const data = await response.json();
-        if (data.slots) {
-          setTimeSlots(data.slots.map((slot) => slot.time));
-        }
-      } catch (error) {
-        console.error("Failed to fetch availability:", error);
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
+  const timeSlots = availabilityData?.slots?.map((slot) => slot.time) || [];
 
-    fetchSlots();
-  }, [selectedDate, callType]);
+  // Create booking mutation
+  const createBookingMutation = useCreateCalendarBooking();
+  const submitting = createBookingMutation.isPending;
 
   if (!callType) {
     return (
@@ -218,42 +208,34 @@ export default function BookingTypePage({ params }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
 
-    try {
-      const response = await fetch("/api/calendar/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: slug,
-          date: selectedDate.toISOString(),
-          time: selectedTime,
-          name: formData.name,
-          email: formData.email,
-          company: formData.company,
-          notes: formData.notes,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create booking");
-      }
-
-      const searchParams = new URLSearchParams({
+    createBookingMutation.mutate(
+      {
         type: slug,
         date: selectedDate.toISOString(),
         time: selectedTime,
         name: formData.name,
-        meetLink: data.meetLink || "",
-      });
-      router.push(`/schedule/confirmation?${searchParams.toString()}`);
-    } catch (error) {
-      console.error("Booking error:", error);
-      alert("Failed to create booking. Please try again.");
-      setSubmitting(false);
-    }
+        email: formData.email,
+        company: formData.company,
+        notes: formData.notes,
+      },
+      {
+        onSuccess: (data) => {
+          const searchParams = new URLSearchParams({
+            type: slug,
+            date: selectedDate.toISOString(),
+            time: selectedTime,
+            name: formData.name,
+            meetLink: data.meetLink || "",
+          });
+          router.push(`/schedule/confirmation?${searchParams.toString()}`);
+        },
+        onError: (error) => {
+          console.error("Booking error:", error);
+          alert("Failed to create booking. Please try again.");
+        },
+      }
+    );
   };
 
   const isDateSelected = (day) => {

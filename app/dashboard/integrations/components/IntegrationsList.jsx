@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +16,7 @@ import {
   Receipt,
   Mail,
 } from "lucide-react";
+import { useStripeAccount } from "@/lib/hooks";
 
 const INTEGRATIONS = [
   {
@@ -73,25 +72,7 @@ const INTEGRATIONS = [
 ];
 
 export function IntegrationsList() {
-  const [loading, setLoading] = useState(true);
-  const [stripeStatus, setStripeStatus] = useState(null);
-
-  useEffect(() => {
-    fetchStripeStatus();
-  }, []);
-
-  const fetchStripeStatus = async () => {
-    try {
-      const res = await fetch("/api/stripe/account");
-      if (res.ok) {
-        setStripeStatus(await res.json());
-      }
-    } catch (error) {
-      // Ignore errors - Stripe might not be connected
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: stripeStatus, isLoading: loading } = useStripeAccount();
 
   const getIntegrationStatus = (integration) => {
     if (!integration.available) {

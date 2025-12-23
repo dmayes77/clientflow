@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, AlertTriangle, AlertCircle, Info, X, Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAlerts, useUpdateAlert } from "@/lib/hooks";
 
 const severityIcons = {
   critical: AlertTriangle,
@@ -42,77 +43,27 @@ function formatTimeAgo(date) {
 
 export function NotificationBell() {
   const router = useRouter();
-  const [alerts, setAlerts] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
-  const fetchAlerts = async () => {
-    try {
-      const res = await fetch("/api/alerts?limit=10");
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data.alerts || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (error) {
-      console.error("Failed to fetch alerts:", error);
-    } finally {
-      setLoading(false);
-    }
+  // TanStack Query hooks (with 30s polling)
+  const { data, isLoading: loading } = useAlerts({ limit: 10 });
+  const updateAlert = useUpdateAlert();
+
+  // Extract alerts and unread count from data
+  const alerts = useMemo(() => data?.alerts || [], [data]);
+  const unreadCount = useMemo(() => data?.unreadCount || 0, [data]);
+
+  const handleMarkAsRead = (alertId) => {
+    updateAlert.mutate({ alertId, action: "read" });
   };
 
-  useEffect(() => {
-    fetchAlerts();
-    // Poll for new alerts every 30 seconds
-    const interval = setInterval(fetchAlerts, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleMarkAsRead = async (alertId) => {
-    try {
-      await fetch("/api/alerts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ alertId, action: "read" }),
-      });
-      setAlerts(alerts.map(a => a.id === alertId ? { ...a, read: true } : a));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error("Failed to mark alert as read:", error);
-    }
-  };
-
-  const handleDismiss = async (alertId, e) => {
+  const handleDismiss = (alertId, e) => {
     e.stopPropagation();
-    try {
-      await fetch("/api/alerts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ alertId, action: "dismiss" }),
-      });
-      setAlerts(alerts.filter(a => a.id !== alertId));
-      const alert = alerts.find(a => a.id === alertId);
-      if (alert && !alert.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      console.error("Failed to dismiss alert:", error);
-    }
+    updateAlert.mutate({ alertId, action: "dismiss" });
   };
 
-  const handleMarkAllRead = async () => {
-    try {
-      await fetch("/api/alerts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "readAll" }),
-      });
-      setAlerts(alerts.map(a => ({ ...a, read: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Failed to mark all as read:", error);
-    }
+  const handleMarkAllRead = () => {
+    updateAlert.mutate({ action: "readAll" });
   };
 
   const handleAlertClick = (alert) => {

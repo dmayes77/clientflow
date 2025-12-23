@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -26,6 +24,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  useTanstackForm,
+  TextField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
+import {
   Key,
   Plus,
   Copy,
@@ -36,80 +39,39 @@ import {
   Code,
   ExternalLink,
 } from "lucide-react";
+import { useApiKeys, useCreateApiKey, useDeleteApiKey } from "@/lib/hooks";
 
 export function APIKeysSettings() {
-  const [apiKeys, setApiKeys] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
+  const { data: apiKeys = [], isLoading: loading } = useApiKeys();
+  const createApiKey = useCreateApiKey();
+  const deleteApiKey = useDeleteApiKey();
+
   const [newKeyDialogOpen, setNewKeyDialogOpen] = useState(false);
   const [showKeyDialogOpen, setShowKeyDialogOpen] = useState(false);
-  const [newKeyName, setNewKeyName] = useState("");
   const [newlyCreatedKey, setNewlyCreatedKey] = useState(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  useEffect(() => {
-    fetchApiKeys();
-  }, []);
-
-  const fetchApiKeys = async () => {
-    try {
-      const res = await fetch("/api/api-keys");
-      if (res.ok) {
-        setApiKeys(await res.json());
-      }
-    } catch (error) {
-      toast.error("Failed to load API keys");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateKey = async () => {
-    setGenerating(true);
-    try {
-      const res = await fetch("/api/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newKeyName || "API Key" }),
-      });
-
-      if (res.ok) {
-        const newKey = await res.json();
-        setNewlyCreatedKey(newKey);
-        setNewKeyDialogOpen(false);
-        setShowKeyDialogOpen(true);
-        setNewKeyName("");
-        fetchApiKeys(); // Refresh the list
-        toast.success("API key generated successfully");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to generate API key");
-      }
-    } catch (error) {
-      toast.error("Failed to generate API key");
-    } finally {
-      setGenerating(false);
-    }
-  };
+  // Form for creating new API key
+  const form = useTanstackForm({
+    defaultValues: {
+      name: "",
+    },
+    onSubmit: async ({ value }) => {
+      const newKey = await createApiKey.mutateAsync({ name: value.name || "API Key" });
+      setNewlyCreatedKey(newKey);
+      setNewKeyDialogOpen(false);
+      setShowKeyDialogOpen(true);
+      form.reset();
+      toast.success("API key generated successfully");
+    },
+  });
 
   const handleDeleteKey = async (id) => {
-    setDeletingId(id);
     try {
-      const res = await fetch(`/api/api-keys?id=${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setApiKeys(apiKeys.filter((key) => key.id !== id));
-        toast.success("API key deleted");
-      } else {
-        toast.error("Failed to delete API key");
-      }
+      await deleteApiKey.mutateAsync(id);
+      toast.success("API key deleted");
     } catch (error) {
-      toast.error("Failed to delete API key");
-    } finally {
-      setDeletingId(null);
+      toast.error(error.message || "Failed to delete API key");
     }
   };
 
@@ -184,9 +146,9 @@ export function APIKeysSettings() {
                           size="icon"
                           className="h-8 w-8 text-red-600 hover:text-red-700"
                           onClick={() => handleDeleteKey(apiKey.id)}
-                          disabled={deletingId === apiKey.id}
+                          disabled={deleteApiKey.isPending}
                         >
-                          {deletingId === apiKey.id ? (
+                          {deleteApiKey.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />
@@ -252,9 +214,9 @@ export function APIKeysSettings() {
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700"
                             onClick={() => handleDeleteKey(apiKey.id)}
-                            disabled={deletingId === apiKey.id}
+                            disabled={deleteApiKey.isPending}
                           >
-                            {deletingId === apiKey.id ? (
+                            {deleteApiKey.isPending ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <Trash2 className="h-4 w-4" />
@@ -307,25 +269,36 @@ export function APIKeysSettings() {
               Give your API key a name to help you identify it later.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="keyName">Key Name</Label>
-            <Input
-              id="keyName"
-              placeholder="e.g., Production Key, Development Key"
-              value={newKeyName}
-              onChange={(e) => setNewKeyName(e.target.value)}
-              className="mt-2"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNewKeyDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleGenerateKey} disabled={generating}>
-              {generating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Generate Key
-            </Button>
-          </DialogFooter>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit();
+            }}
+          >
+            <div className="py-4">
+              <TextField
+                form={form}
+                name="name"
+                label="Key Name"
+                placeholder="e.g., Production Key, Development Key"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setNewKeyDialogOpen(false);
+                  form.reset();
+                }}
+              >
+                Cancel
+              </Button>
+              <SubmitButton form={form} loadingText="Generating...">
+                Generate Key
+              </SubmitButton>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

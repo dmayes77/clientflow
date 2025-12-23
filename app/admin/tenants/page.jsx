@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAdminTenants } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -108,38 +109,21 @@ function TenantsTableContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [tenants, setTenants] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
-  const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
 
   const page = parseInt(searchParams.get("page") || "1");
   const search = searchParams.get("search") || "";
   const status = searchParams.get("status") || "";
 
-  const fetchTenants = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set("page", page.toString());
-      if (search) params.set("search", search);
-      if (status) params.set("status", status);
+  const { data, isLoading: loading } = useAdminTenants({
+    search: search || undefined,
+    status: status || undefined,
+    limit: 20,
+    offset: (page - 1) * 20,
+  });
 
-      const res = await fetch(`/api/admin/tenants?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch tenants");
-      const data = await res.json();
-      setTenants(data.tenants);
-      setPagination(data.pagination);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, status]);
-
-  useEffect(() => {
-    fetchTenants();
-  }, [fetchTenants]);
+  const tenants = data?.tenants || [];
+  const pagination = data?.pagination || { page: 1, totalPages: 1, total: 0 };
 
   const updateParams = (updates) => {
     const params = new URLSearchParams(searchParams.toString());

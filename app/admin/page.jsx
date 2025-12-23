@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminStats } from "@/lib/hooks/use-admin";
 import {
   Building2,
   Users,
@@ -113,25 +113,7 @@ function SubscriptionBreakdown({ subscriptions, loading }) {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch("/api/admin/stats");
-        if (!res.ok) throw new Error("Failed to fetch stats");
-        const data = await res.json();
-        setStats(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStats();
-  }, []);
+  const { data: stats, isLoading: loading, error } = useAdminStats();
 
   if (error) {
     return (
@@ -139,7 +121,7 @@ export default function AdminDashboard() {
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="font-semibold">Error loading dashboard</h2>
-          <p className="text-muted-foreground">{error}</p>
+          <p className="text-muted-foreground">{error.message}</p>
         </div>
       </div>
     );

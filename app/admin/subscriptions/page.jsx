@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useAdminSubscriptions } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -323,30 +324,11 @@ function PlanBreakdown({ planCounts, loading }) {
 }
 
 export default function SubscriptionsPage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const fetchData = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter !== "all") {
-        params.set("status", statusFilter);
-      }
-      const res = await fetch(`/api/admin/subscriptions?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const json = await res.json();
-      setData(json);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter]);
+  const { data, isLoading: loading } = useAdminSubscriptions({
+    status: statusFilter !== "all" ? statusFilter : undefined,
+  });
 
   const tenants = data?.tenants || [];
   const stats = data?.stats || {};

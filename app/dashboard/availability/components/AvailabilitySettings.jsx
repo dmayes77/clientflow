@@ -48,6 +48,14 @@ import {
   LayoutGrid,
   Settings,
 } from "lucide-react";
+import {
+  useAvailability,
+  useUpdateAvailability,
+  useBlockedDates,
+  useCreateBlockedDate,
+  useDeleteBlockedDate,
+} from "@/lib/hooks";
+import { useTenant, useUpdateTenant } from "@/lib/hooks";
 
 const DAYS = [
   { value: 0, label: "Sunday", short: "Sun" },
@@ -116,8 +124,17 @@ const DEFAULT_HOURS = {
 };
 
 export function AvailabilitySettings() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // Queries
+  const { data: availabilityData, isLoading: availabilityLoading } = useAvailability();
+  const { data: blockedDatesData, isLoading: blockedDatesLoading } = useBlockedDates();
+  const { data: tenantData, isLoading: tenantLoading } = useTenant();
+
+  // Mutations
+  const updateAvailabilityMutation = useUpdateAvailability();
+  const updateTenantMutation = useUpdateTenant();
+  const createBlockedDateMutation = useCreateBlockedDate();
+  const deleteBlockedDateMutation = useDeleteBlockedDate();
+
   const [schedule, setSchedule] = useState(
     DAYS.map((day) => ({
       dayOfWeek: day.value,
@@ -128,7 +145,6 @@ export function AvailabilitySettings() {
     }))
   );
 
-  const [overrides, setOverrides] = useState([]);
   const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
   const [newOverride, setNewOverride] = useState({
     date: "",
@@ -137,64 +153,45 @@ export function AvailabilitySettings() {
     endTime: "17:00",
     reason: "",
   });
-  const [savingOverride, setSavingOverride] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
 
   const [timezone, setTimezone] = useState("America/New_York");
   const [slotInterval, setSlotInterval] = useState("30");
   const [breakDuration, setBreakDuration] = useState("60");
   const [defaultCalendarView, setDefaultCalendarView] = useState("week");
 
+  // Update schedule when availability data is loaded
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [availabilityRes, overridesRes, tenantRes] = await Promise.all([
-        fetch("/api/availability"),
-        fetch("/api/availability/overrides"),
-        fetch("/api/tenant"),
-      ]);
-
-      if (availabilityRes.ok) {
-        const data = await availabilityRes.json();
-        if (data.length > 0) {
-          setSchedule((prev) =>
-            prev.map((day) => {
-              const existing = data.find((d) => d.dayOfWeek === day.dayOfWeek);
-              if (existing) {
-                return {
-                  ...day,
-                  active: existing.active,
-                  startTime: existing.startTime,
-                  endTime: existing.endTime,
-                  id: existing.id,
-                };
-              }
-              return day;
-            })
-          );
-        }
-      }
-
-      if (overridesRes.ok) {
-        setOverrides(await overridesRes.json());
-      }
-
-      if (tenantRes.ok) {
-        const tenantData = await tenantRes.json();
-        if (tenantData.timezone) setTimezone(tenantData.timezone);
-        if (tenantData.slotInterval) setSlotInterval(String(tenantData.slotInterval));
-        if (tenantData.breakDuration !== undefined) setBreakDuration(String(tenantData.breakDuration));
-        if (tenantData.defaultCalendarView) setDefaultCalendarView(tenantData.defaultCalendarView);
-      }
-    } catch (error) {
-      toast.error("Failed to load availability settings");
-    } finally {
-      setLoading(false);
+    if (availabilityData && availabilityData.length > 0) {
+      setSchedule((prev) =>
+        prev.map((day) => {
+          const existing = availabilityData.find((d) => d.dayOfWeek === day.dayOfWeek);
+          if (existing) {
+            return {
+              ...day,
+              active: existing.active,
+              startTime: existing.startTime,
+              endTime: existing.endTime,
+              id: existing.id,
+            };
+          }
+          return day;
+        })
+      );
     }
-  };
+  }, [availabilityData]);
+
+  // Update tenant settings when tenant data is loaded
+  useEffect(() => {
+    if (tenantData) {
+      if (tenantData.timezone) setTimezone(tenantData.timezone);
+      if (tenantData.slotInterval) setSlotInterval(String(tenantData.slotInterval));
+      if (tenantData.breakDuration !== undefined) setBreakDuration(String(tenantData.breakDuration));
+      if (tenantData.defaultCalendarView) setDefaultCalendarView(tenantData.defaultCalendarView);
+    }
+  }, [tenantData]);
+
+  const loading = availabilityLoading || blockedDatesLoading || tenantLoading;
+  const overrides = blockedDatesData || [];
 
   const handleToggleDay = (dayOfWeek) => {
     setSchedule((prev) =>
@@ -213,44 +210,30 @@ export function AvailabilitySettings() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      const [availabilityRes, tenantRes] = await Promise.all([
-        fetch("/api/availability", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slots: schedule.map((day) => ({
-              dayOfWeek: day.dayOfWeek,
-              startTime: day.startTime,
-              endTime: day.endTime,
-              active: day.active,
-            })),
-          }),
+      await Promise.all([
+        updateAvailabilityMutation.mutateAsync({
+          slots: schedule.map((day) => ({
+            dayOfWeek: day.dayOfWeek,
+            startTime: day.startTime,
+            endTime: day.endTime,
+            active: day.active,
+          })),
         }),
-        fetch("/api/tenant", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            timezone,
-            slotInterval: parseInt(slotInterval),
-            breakDuration: parseInt(breakDuration),
-            defaultCalendarView,
-          }),
+        updateTenantMutation.mutateAsync({
+          timezone,
+          slotInterval: parseInt(slotInterval),
+          breakDuration: parseInt(breakDuration),
+          defaultCalendarView,
         }),
       ]);
-
-      if (availabilityRes.ok && tenantRes.ok) {
-        toast.success("Availability saved successfully");
-      } else {
-        throw new Error("Failed to save");
-      }
+      toast.success("Availability saved successfully");
     } catch (error) {
-      toast.error("Failed to save availability");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Failed to save availability");
     }
   };
+
+  const saving = updateAvailabilityMutation.isPending || updateTenantMutation.isPending;
 
   const applyPreset = (preset) => {
     switch (preset) {
@@ -311,60 +294,34 @@ export function AvailabilitySettings() {
       return;
     }
 
-    setSavingOverride(true);
     try {
-      const response = await fetch("/api/availability/overrides", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: new Date(newOverride.date).toISOString(),
-          type: newOverride.type,
-          startTime: newOverride.type === "custom" ? newOverride.startTime : null,
-          endTime: newOverride.type === "custom" ? newOverride.endTime : null,
-          reason: newOverride.reason || null,
-        }),
+      await createBlockedDateMutation.mutateAsync({
+        date: new Date(newOverride.date).toISOString(),
+        type: newOverride.type,
+        startTime: newOverride.type === "custom" ? newOverride.startTime : null,
+        endTime: newOverride.type === "custom" ? newOverride.endTime : null,
+        reason: newOverride.reason || null,
       });
-
-      if (response.ok) {
-        const savedOverride = await response.json();
-        setOverrides([...overrides, savedOverride]);
-        setOverrideDialogOpen(false);
-        setNewOverride({
-          date: "",
-          type: "blocked",
-          startTime: "09:00",
-          endTime: "17:00",
-          reason: "",
-        });
-        toast.success("Date override added");
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to add override");
-      }
+      setOverrideDialogOpen(false);
+      setNewOverride({
+        date: "",
+        type: "blocked",
+        startTime: "09:00",
+        endTime: "17:00",
+        reason: "",
+      });
+      toast.success("Date override added");
     } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setSavingOverride(false);
+      toast.error(error.message || "Failed to add override");
     }
   };
 
   const handleDeleteOverride = async (id) => {
-    setDeletingId(id);
     try {
-      const response = await fetch(`/api/availability/overrides/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setOverrides(overrides.filter((o) => o.id !== id));
-        toast.success("Date override removed");
-      } else {
-        throw new Error("Failed to delete override");
-      }
+      await deleteBlockedDateMutation.mutateAsync(id);
+      toast.success("Date override removed");
     } catch (error) {
-      toast.error("Failed to delete override");
-    } finally {
-      setDeletingId(null);
+      toast.error(error.message || "Failed to delete override");
     }
   };
 
@@ -581,9 +538,9 @@ export function AvailabilitySettings() {
                           size="icon"
                           className="h-8 w-8 text-red-600 hover:text-red-700 shrink-0"
                           onClick={() => handleDeleteOverride(override.id)}
-                          disabled={deletingId === override.id}
+                          disabled={deleteBlockedDateMutation.isPending}
                         >
-                          {deletingId === override.id ? (
+                          {deleteBlockedDateMutation.isPending ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />
@@ -797,8 +754,8 @@ export function AvailabilitySettings() {
             <Button variant="outline" onClick={() => setOverrideDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="success" onClick={handleAddOverride} disabled={savingOverride}>
-              {savingOverride && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button variant="success" onClick={handleAddOverride} disabled={createBlockedDateMutation.isPending}>
+              {createBlockedDateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Add Override
             </Button>
           </DialogFooter>

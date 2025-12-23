@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,6 +23,7 @@ import {
   Headphones,
   AlertTriangle,
 } from "lucide-react";
+import { useTenant, useCreatePortalSession } from "@/lib/hooks";
 
 const PLAN_FEATURES = [
   { icon: Calendar, label: "Unlimited bookings" },
@@ -70,45 +70,19 @@ const getStatusLabel = (status) => {
 };
 
 export function BillingSettings() {
-  const [loading, setLoading] = useState(true);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [tenant, setTenant] = useState(null);
+  const { data: tenant, isLoading: loading, isError } = useTenant();
+  const createPortalSession = useCreatePortalSession();
 
-  useEffect(() => {
-    fetchTenantData();
-  }, []);
-
-  const fetchTenantData = async () => {
-    try {
-      const res = await fetch("/api/tenant");
-      if (res.ok) {
-        setTenant(await res.json());
-      }
-    } catch (error) {
-      toast.error("Failed to load billing information");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (isError) {
+    toast.error("Failed to load billing information");
+  }
 
   const openCustomerPortal = async () => {
-    setPortalLoading(true);
     try {
-      const res = await fetch("/api/stripe/create-portal-session", {
-        method: "POST",
-      });
-
-      if (res.ok) {
-        const { url } = await res.json();
-        window.location.href = url;
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to open billing portal");
-      }
+      const { url } = await createPortalSession.mutateAsync();
+      window.location.href = url;
     } catch (error) {
-      toast.error("Failed to open billing portal");
-    } finally {
-      setPortalLoading(false);
+      toast.error(error.message || "Failed to open billing portal");
     }
   };
 
@@ -220,8 +194,8 @@ export function BillingSettings() {
               <p className="hig-footnote text-muted-foreground">
                 Access the billing portal to update your payment method, view invoices, and manage your subscription.
               </p>
-              <Button onClick={openCustomerPortal} disabled={portalLoading} className="w-full tablet:w-auto">
-                {portalLoading ? (
+              <Button onClick={openCustomerPortal} disabled={createPortalSession.isPending} className="w-full tablet:w-auto">
+                {createPortalSession.isPending ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <ExternalLink className="h-4 w-4 mr-2" />

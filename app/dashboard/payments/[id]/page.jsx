@@ -29,6 +29,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePayment, useRefundPayment } from "@/lib/hooks";
 
 function formatPrice(cents) {
   return new Intl.NumberFormat("en-US", {
@@ -95,35 +96,20 @@ function StatusBadge({ status, disputeStatus }) {
 export default function PaymentDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
-  const [payment, setPayment] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [refundOpen, setRefundOpen] = useState(false);
   const [refundAmount, setRefundAmount] = useState("");
-  const [refunding, setRefunding] = useState(false);
+
+  const { data, isLoading: loading } = usePayment(id);
+  const refundMutation = useRefundPayment();
+
+  const payment = data?.payment;
 
   useEffect(() => {
-    fetchPayment();
-  }, [id]);
-
-  const fetchPayment = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/payments/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setPayment(data.payment);
-        const refundable = data.payment.amount - (data.payment.refundedAmount || 0);
-        setRefundAmount((refundable / 100).toFixed(2));
-      } else if (res.status === 404) {
-        router.push("/dashboard/payments");
-      }
-    } catch (error) {
-      console.error("Failed to fetch payment:", error);
-      toast.error("Failed to load payment details");
-    } finally {
-      setLoading(false);
+    if (payment) {
+      const refundable = payment.amount - (payment.refundedAmount || 0);
+      setRefundAmount((refundable / 100).toFixed(2));
     }
-  };
+  }, [payment]);
 
   const handleRefund = async () => {
     if (!refundAmount || parseFloat(refundAmount) <= 0) {
@@ -139,32 +125,23 @@ export default function PaymentDetailPage({ params }) {
       return;
     }
 
-    setRefunding(true);
-    try {
-      const res = await fetch(`/api/payments/${id}/refund`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amountInCents }),
-      });
-
-      if (res.ok) {
-        toast.success("Refund processed successfully");
-        setRefundOpen(false);
-        fetchPayment();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to process refund");
+    refundMutation.mutate(
+      { id, amount: amountInCents },
+      {
+        onSuccess: () => {
+          toast.success("Refund processed successfully");
+          setRefundOpen(false);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to process refund");
+        },
       }
-    } catch (error) {
-      toast.error("Failed to process refund");
-    } finally {
-      setRefunding(false);
-    }
+    );
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
+      <div className="flex flex-col items-center justify-center min-h-100">
         <Loader2 className="size-8 animate-spin text-muted-foreground" />
         <p className="hig-footnote text-muted-foreground mt-2">Loading payment details...</p>
       </div>
@@ -467,8 +444,8 @@ export default function PaymentDetailPage({ params }) {
             <Button variant="outline" onClick={() => setRefundOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleRefund} disabled={refunding}>
-              {refunding ? (
+            <Button variant="destructive" onClick={handleRefund} disabled={refundMutation.isPending}>
+              {refundMutation.isPending ? (
                 <>
                   <Loader2 className="size-4 mr-2 animate-spin" />
                   Processing...

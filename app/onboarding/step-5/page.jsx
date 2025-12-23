@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, ArrowRight, ArrowLeft, Clock } from "lucide-react";
+import { useAvailability, useUpdateAvailability, useUpdateOnboardingProgress } from "@/lib/hooks";
 
 const DAYS = [
   { value: 0, label: "Sunday", short: "Sun" },
@@ -47,43 +48,25 @@ const DEFAULT_AVAILABILITY = DAYS.map((day) => ({
 export default function Step5Page() {
   const router = useRouter();
   const { isLoaded, orgId } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [availability, setAvailability] = useState(DEFAULT_AVAILABILITY);
   const [timezone, setTimezone] = useState("America/New_York");
 
+  const { data: availabilityData, isLoading: availabilityLoading } = useAvailability();
+  const updateAvailability = useUpdateAvailability();
+  const updateOnboardingProgress = useUpdateOnboardingProgress();
+
   useEffect(() => {
-    if (!isLoaded || !orgId) {
-      setLoading(false);
-      return;
+    if (availabilityData && Array.isArray(availabilityData) && availabilityData.length > 0) {
+      // Merge fetched data with defaults
+      const merged = DEFAULT_AVAILABILITY.map((day) => {
+        const existing = availabilityData.find(
+          (a) => a.dayOfWeek === day.dayOfWeek
+        );
+        return existing || day;
+      });
+      setAvailability(merged);
     }
-
-    // Fetch existing availability
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/availability");
-        if (res.ok) {
-          const data = await res.json();
-          // API returns array directly
-          if (Array.isArray(data) && data.length > 0) {
-            // Merge fetched data with defaults
-            const merged = DEFAULT_AVAILABILITY.map((day) => {
-              const existing = data.find(
-                (a) => a.dayOfWeek === day.dayOfWeek
-              );
-              return existing || day;
-            });
-            setAvailability(merged);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching availability:", error);
-      }
-      setLoading(false);
-    };
-
-    fetchData();
-  }, [isLoaded, orgId]);
+  }, [availabilityData]);
 
   const handleDayToggle = (dayOfWeek) => {
     setAvailability((prev) =>
@@ -103,36 +86,17 @@ export default function Step5Page() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
 
     try {
-      const res = await fetch("/api/availability", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ availability, timezone }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save");
-      }
-
-      // Update onboarding progress
-      await fetch("/api/onboarding/progress", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step: 6 }),
-      });
-
+      await updateAvailability.mutateAsync({ availability, timezone });
+      await updateOnboardingProgress.mutateAsync({ step: 6 });
       router.push("/onboarding/step-6");
     } catch (error) {
       toast.error(error.message);
-    } finally {
-      setSaving(false);
     }
   };
 
-  if (loading) {
+  if (!isLoaded || availabilityLoading) {
     return (
       <div className="flex min-h-[200px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -257,10 +221,10 @@ export default function Step5Page() {
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={updateAvailability.isPending || updateOnboardingProgress.isPending}
             className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {saving ? (
+            {updateAvailability.isPending || updateOnboardingProgress.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Saving...

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -14,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2 } from "lucide-react";
+import { useDeleteContact, useContact } from "@/lib/hooks";
 
 /**
  * Reusable delete contact dialog with three scenarios:
@@ -28,37 +28,20 @@ import { Loader2 } from "lucide-react";
  */
 export function DeleteContactDialog({ contact, open, onOpenChange, onDeleted }) {
   const router = useRouter();
-  const [deleting, setDeleting] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [contactData, setContactData] = useState(null);
+  const deleteContact = useDeleteContact();
 
-  // Fetch full contact data if needed when dialog opens
-  useEffect(() => {
-    if (open && contact?.id) {
-      // If contact already has bookings/invoices data, use it directly
-      if (contact.bookings !== undefined && contact.invoices !== undefined) {
-        setContactData(contact);
-      } else {
-        // Fetch full contact data
-        setLoading(true);
-        fetch(`/api/contacts/${contact.id}`)
-          .then((res) => res.json())
-          .then((data) => {
-            setContactData(data.client || contact);
-          })
-          .catch(() => {
-            setContactData(contact);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-      }
-    }
-  }, [open, contact]);
+  // Only fetch full contact data if we don't already have bookings/invoices
+  const shouldFetchFullData = contact && open && (contact.bookings === undefined || contact.invoices === undefined);
+  const { data: fetchedContactData, isLoading: loading } = useContact(
+    shouldFetchFullData ? contact.id : null
+  );
+
+  // Use fetched data if available, otherwise use provided contact data
+  const contactData = shouldFetchFullData ? fetchedContactData?.client : contact;
 
   if (!contact) return null;
 
-  // Use fetched data or fall back to prop
+  // Use contact data with fallback
   const data = contactData || contact;
 
   // Analyze contact data to determine scenario
@@ -76,38 +59,28 @@ export function DeleteContactDialog({ contact, open, onOpenChange, onDeleted }) 
     scenario = "clean";
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (scenario === "protected") {
       onOpenChange(false);
       return;
     }
 
-    try {
-      setDeleting(true);
-      const response = await fetch(`/api/contacts/${contact.id}`, {
-        method: "DELETE",
-      });
+    deleteContact.mutate(contact.id, {
+      onSuccess: () => {
+        toast.success("Contact deleted");
+        onOpenChange(false);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete contact");
-      }
-
-      toast.success("Contact deleted");
-      onOpenChange(false);
-      setContactData(null);
-
-      if (onDeleted) {
-        onDeleted(contact.id);
-      } else {
-        router.push("/dashboard/contacts");
-      }
-    } catch (error) {
-      console.error("Error deleting contact:", error);
-      toast.error(error.message || "Failed to delete contact");
-    } finally {
-      setDeleting(false);
-    }
+        if (onDeleted) {
+          onDeleted(contact.id);
+        } else {
+          router.push("/dashboard/contacts");
+        }
+      },
+      onError: (error) => {
+        console.error("Error deleting contact:", error);
+        toast.error(error.message || "Failed to delete contact");
+      },
+    });
   };
 
   return (
@@ -175,8 +148,8 @@ export function DeleteContactDialog({ contact, open, onOpenChange, onDeleted }) 
             <AlertDialogFooter>
               <AlertDialogCancel>{scenario === "protected" ? "Close" : "Cancel"}</AlertDialogCancel>
               {scenario !== "protected" && (
-                <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={deleting}>
-                  {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={deleteContact.isPending}>
+                  {deleteContact.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Delete
                 </AlertDialogAction>
               )}

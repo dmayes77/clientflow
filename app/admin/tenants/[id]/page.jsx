@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useImpersonateTenant } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,96 +121,82 @@ function BookingCard({ booking }) {
 export default function TenantDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
-
-  const [tenant, setTenant] = useState(null);
-  const [usage, setUsage] = useState(null);
-  const [recentBookings, setRecentBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
   const [subscriptionStatus, setSubscriptionStatus] = useState("");
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState("");
   const [planType, setPlanType] = useState("");
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [impersonating, setImpersonating] = useState(false);
 
-  useEffect(() => {
-    async function fetchTenant() {
-      try {
-        const res = await fetch(`/api/admin/tenants/${id}`);
-        if (!res.ok) throw new Error("Failed to fetch tenant");
-        const data = await res.json();
-        setTenant(data.tenant);
-        setUsage(data.usage);
-        setRecentBookings(data.recentBookings || []);
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ["admin-tenant", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/tenants/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch tenant");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setSubscriptionStatus(data.tenant.subscriptionStatus || "");
+      setCurrentPeriodEnd(data.tenant.currentPeriodEnd
+        ? new Date(data.tenant.currentPeriodEnd).toISOString().split("T")[0]
+        : "");
+      setPlanType(data.tenant.planType || "basic");
+    },
+  });
 
-        setSubscriptionStatus(data.tenant.subscriptionStatus || "");
-        setCurrentPeriodEnd(data.tenant.currentPeriodEnd
-          ? new Date(data.tenant.currentPeriodEnd).toISOString().split("T")[0]
-          : "");
-        setPlanType(data.tenant.planType || "basic");
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchTenant();
-  }, [id]);
+  const tenant = data?.tenant;
+  const usage = data?.usage;
+  const recentBookings = data?.recentBookings || [];
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
+  const updateMutation = useMutation({
+    mutationFn: async (updates) => {
       const res = await fetch(`/api/admin/tenants/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscriptionStatus,
-          currentPeriodEnd: currentPeriodEnd || null,
-          planType,
-        }),
+        body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error("Failed to update tenant");
-      const data = await res.json();
-      setTenant(data.tenant);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["admin-tenant", id]);
+    },
+  });
 
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
       const res = await fetch(`/api/admin/tenants/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete tenant");
+    },
+    onSuccess: () => {
       router.push("/admin/tenants");
-    } catch (err) {
-      setError(err.message);
-      setDeleting(false);
-    }
+    },
+  });
+
+  const impersonateMutation = useImpersonateTenant();
+  const handleImpersonateSuccess = () => {
+    router.push("/dashboard");
   };
 
-  const handleImpersonate = async () => {
-    setImpersonating(true);
-    try {
-      const res = await fetch("/api/admin/impersonate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tenantId: id }),
-      });
-      if (!res.ok) throw new Error("Failed to start impersonation");
-      router.push("/dashboard");
-    } catch (err) {
-      setError(err.message);
-      setImpersonating(false);
-    }
+  const handleSave = () => {
+    updateMutation.mutate({
+      subscriptionStatus,
+      currentPeriodEnd: currentPeriodEnd || null,
+      planType,
+    });
+  };
+
+  const handleDelete = () => {
+    deleteMutation.mutate();
+  };
+
+  const handleImpersonate = () => {
+    impersonateMutation.mutate(id, {
+      onSuccess: handleImpersonateSuccess,
+    });
   };
 
   if (loading) {
@@ -227,7 +215,7 @@ export default function TenantDetailPage({ params }) {
         <div className="text-center">
           <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
           <h2 className="text-base font-semibold">Error loading tenant</h2>
-          <p className="hig-body text-muted-foreground mb-4">{error || "Tenant not found"}</p>
+          <p className="hig-body text-muted-foreground mb-4">{error?.message || "Tenant not found"}</p>
           <Button size="sm" asChild>
             <Link href="/admin/tenants">
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -274,10 +262,10 @@ export default function TenantDetailPage({ params }) {
         size="sm"
         className="w-full h-10 bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 hover:text-purple-800"
         onClick={handleImpersonate}
-        disabled={impersonating}
+        disabled={impersonateMutation.isPending}
       >
         <Eye className="mr-2 h-4 w-4" />
-        {impersonating ? "Loading..." : "View as Tenant"}
+        {impersonateMutation.isPending ? "Loading..." : "View as Tenant"}
         <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
       </Button>
 
@@ -329,10 +317,10 @@ export default function TenantDetailPage({ params }) {
               size="sm"
               className="flex-1"
               onClick={handleSave}
-              disabled={saving}
+              disabled={updateMutation.isPending}
             >
               <Save className="mr-1 h-3.5 w-3.5" />
-              {saving ? "Saving..." : "Save"}
+              {updateMutation.isPending ? "Saving..." : "Save"}
             </Button>
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <DialogTrigger asChild>
@@ -355,9 +343,9 @@ export default function TenantDetailPage({ params }) {
                     variant="destructive"
                     size="sm"
                     onClick={handleDelete}
-                    disabled={deleting}
+                    disabled={deleteMutation.isPending}
                   >
-                    {deleting ? "Canceling..." : "Confirm"}
+                    {deleteMutation.isPending ? "Canceling..." : "Confirm"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

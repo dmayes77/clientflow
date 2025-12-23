@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useAdminSettings, useUpdateAdminSettings } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,73 +46,34 @@ function SettingToggle({ checked, onCheckedChange, disabled }) {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchSettings = async () => {
-    try {
-      const res = await fetch("/api/admin/settings");
-      if (!res.ok) throw new Error("Failed to fetch settings");
-      const data = await res.json();
-      setSettings(data.settings);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, isLoading: loading, refetch } = useAdminSettings();
+  const updateMutation = useUpdateAdminSettings();
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  // Initialize settings state when data is loaded
+  if (data?.settings && !settings) {
+    setSettings(data.settings);
+  }
 
-  const updateSetting = async (field, value) => {
+  const updateSetting = (field, value) => {
     setSettings(prev => ({ ...prev, [field]: value }));
-
-    try {
-      setSaving(true);
-      const res = await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value }),
-      });
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      setError(err.message);
-      // Revert on error
-      fetchSettings();
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate({ [field]: value }, {
+      onError: (err) => {
+        setError(err.message);
+        refetch();
+      },
+    });
   };
 
-  const updateMultiple = async (updates) => {
+  const updateMultiple = (updates) => {
     setSettings(prev => ({ ...prev, ...updates }));
-
-    try {
-      setSaving(true);
-      const res = await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      setError(err.message);
-      fetchSettings();
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate(updates, {
+      onError: (err) => {
+        setError(err.message);
+        refetch();
+      },
+    });
   };
 
   if (loading) {
@@ -135,7 +97,7 @@ export default function SettingsPage() {
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="hig-title-2 font-semibold">Error loading settings</h2>
           <p className="text-muted-foreground">{error}</p>
-          <Button onClick={fetchSettings} className="mt-4">
+          <Button onClick={() => refetch()} className="mt-4">
             Retry
           </Button>
         </div>
@@ -153,9 +115,9 @@ export default function SettingsPage() {
             Platform configuration
           </p>
         </div>
-        {(saving || saved) && (
-          <Badge variant={saved ? "default" : "secondary"} className="shrink-0">
-            {saving ? (
+        {(updateMutation.isPending || updateMutation.isSuccess) && (
+          <Badge variant={updateMutation.isSuccess ? "default" : "secondary"} className="shrink-0">
+            {updateMutation.isPending ? (
               <>
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Saving...
@@ -189,7 +151,7 @@ export default function SettingsPage() {
             <SettingToggle
               checked={settings?.maintenanceMode || false}
               onCheckedChange={(v) => updateSetting("maintenanceMode", v)}
-              disabled={saving}
+              disabled={updateMutation.isPending}
             />
           </SettingRow>
 
@@ -242,7 +204,7 @@ export default function SettingsPage() {
             <SettingToggle
               checked={settings?.signupsEnabled ?? true}
               onCheckedChange={(v) => updateSetting("signupsEnabled", v)}
-              disabled={saving}
+              disabled={updateMutation.isPending}
             />
           </SettingRow>
           <SettingRow
@@ -252,7 +214,7 @@ export default function SettingsPage() {
             <SettingToggle
               checked={settings?.newTrialsEnabled ?? true}
               onCheckedChange={(v) => updateSetting("newTrialsEnabled", v)}
-              disabled={saving}
+              disabled={updateMutation.isPending}
             />
           </SettingRow>
           <SettingRow
@@ -262,7 +224,7 @@ export default function SettingsPage() {
             <SettingToggle
               checked={settings?.paymentsEnabled ?? true}
               onCheckedChange={(v) => updateSetting("paymentsEnabled", v)}
-              disabled={saving}
+              disabled={updateMutation.isPending}
             />
           </SettingRow>
           <SettingRow
@@ -272,7 +234,7 @@ export default function SettingsPage() {
             <SettingToggle
               checked={settings?.bookingsEnabled ?? true}
               onCheckedChange={(v) => updateSetting("bookingsEnabled", v)}
-              disabled={saving}
+              disabled={updateMutation.isPending}
             />
           </SettingRow>
         </CardContent>
@@ -314,7 +276,7 @@ export default function SettingsPage() {
             <SettingToggle
               checked={settings?.requirePaymentMethod || false}
               onCheckedChange={(v) => updateSetting("requirePaymentMethod", v)}
-              disabled={saving}
+              disabled={updateMutation.isPending}
             />
           </SettingRow>
         </CardContent>

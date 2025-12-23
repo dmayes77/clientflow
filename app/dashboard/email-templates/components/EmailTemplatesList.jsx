@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -8,6 +8,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   Plus,
   MoreHorizontal,
@@ -28,18 +29,24 @@ import {
   Eye,
   ChevronRight,
 } from "lucide-react";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { useEmailTemplates, useCreateEmailTemplate, useUpdateEmailTemplate, useDeleteEmailTemplate, useSeedEmailTemplates } from "@/lib/hooks";
+import {
+  useTanstackForm,
+  TextField,
+  TextareaField,
+  SelectField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 
 const CATEGORIES = [
   { value: "welcome", label: "Welcome" },
@@ -255,86 +262,68 @@ function RichTextEditor({ content, onChange, placeholder }) {
   );
 }
 
+// Zod validation schema
+const emailTemplateSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  subject: z.string().min(1, "Subject is required"),
+  body: z.string().min(1, "Body is required"),
+  description: z.string(),
+  category: z.string(),
+});
+
 export function EmailTemplatesList() {
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
   const isMobile = useMediaQuery("(max-width: 639px)");
 
-  const [formData, setFormData] = useState({
-    name: "",
-    subject: "",
-    body: "",
-    description: "",
-    category: "",
-  });
+  // TanStack Query hooks
+  const { data: templates = [], isLoading: loading } = useEmailTemplates();
+  const createMutation = useCreateEmailTemplate();
+  const updateMutation = useUpdateEmailTemplate();
+  const deleteMutation = useDeleteEmailTemplate();
+  const seedMutation = useSeedEmailTemplates();
 
-  const fetchTemplates = async (autoSeed = true) => {
-    try {
-      const response = await fetch("/api/email-templates");
-      if (!response.ok) throw new Error("Failed to fetch templates");
-      const data = await response.json();
-
-      // Auto-seed sample templates for new users
-      if (data.length === 0 && autoSeed) {
-        await seedSampleTemplates();
-        return;
-      }
-
-      setTemplates(data);
-    } catch (error) {
-      toast.error("Failed to load email templates");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const seedSampleTemplates = async () => {
-    try {
-      const response = await fetch("/api/email-templates/seed", {
-        method: "POST",
-      });
-
-      if (response.ok) {
-        // Fetch again without auto-seeding to get the new templates
-        await fetchTemplates(false);
-      } else {
-        setLoading(false);
-      }
-    } catch (error) {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const handleOpenCreate = () => {
-    setSelectedTemplate(null);
-    setFormData({
+  // TanStack Form
+  const form = useTanstackForm({
+    defaultValues: {
       name: "",
       subject: "",
       body: "",
       description: "",
       category: "",
-    });
+    },
+    onSubmit: async (values) => {
+      try {
+        if (selectedTemplate) {
+          await updateMutation.mutateAsync({ id: selectedTemplate.id, ...values });
+          toast.success("Template updated");
+        } else {
+          await createMutation.mutateAsync(values);
+          toast.success("Template created");
+        }
+        setIsDialogOpen(false);
+      } catch (error) {
+        toast.error(error.message || "Failed to save template");
+      }
+    },
+  });
+
+  const handleOpenCreate = () => {
+    setSelectedTemplate(null);
+    form.reset();
     setIsDialogOpen(true);
   };
 
   const handleOpenEdit = (template) => {
     setSelectedTemplate(template);
-    setFormData({
-      name: template.name,
-      subject: template.subject,
-      body: template.body,
-      description: template.description || "",
-      category: template.category || "",
-    });
+    form.reset();
+    form.setFieldValue("name", template.name);
+    form.setFieldValue("subject", template.subject);
+    form.setFieldValue("body", template.body);
+    form.setFieldValue("description", template.description || "");
+    form.setFieldValue("category", template.category || "");
     setIsDialogOpen(true);
   };
 
@@ -344,58 +333,23 @@ export function EmailTemplatesList() {
   };
 
   const handleDuplicate = async (template) => {
-    try {
-      const response = await fetch("/api/email-templates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${template.name} (Copy)`,
-          subject: template.subject,
-          body: template.body,
-          description: template.description,
-          category: template.category,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to duplicate template");
+    createMutation.mutate(
+      {
+        name: `${template.name} (Copy)`,
+        subject: template.subject,
+        body: template.body,
+        description: template.description,
+        category: template.category,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Template duplicated");
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to duplicate template");
+        },
       }
-
-      toast.success("Template duplicated");
-      fetchTemplates();
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const url = selectedTemplate ? `/api/email-templates/${selectedTemplate.id}` : "/api/email-templates";
-      const method = selectedTemplate ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to save template");
-      }
-
-      toast.success(selectedTemplate ? "Template updated" : "Template created");
-      setIsDialogOpen(false);
-      fetchTemplates();
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
   };
 
   const handleDelete = async (template) => {
@@ -403,21 +357,14 @@ export function EmailTemplatesList() {
       return;
     }
 
-    try {
-      const response = await fetch(`/api/email-templates/${template.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete template");
-      }
-
-      toast.success("Template deleted");
-      fetchTemplates();
-    } catch (error) {
-      toast.error(error.message);
-    }
+    deleteMutation.mutate(template.id, {
+      onSuccess: () => {
+        toast.success("Template deleted");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to delete template");
+      },
+    });
   };
 
   const filteredTemplates = filterCategory === "all" ? templates : templates.filter((t) => t.category === filterCategory);
@@ -593,74 +540,96 @@ export function EmailTemplatesList() {
             <DialogTitle>{selectedTemplate ? "Edit Template" : "Create Email Template"}</DialogTitle>
             <DialogDescription>{selectedTemplate ? "Update your email template" : "Create a reusable email template with dynamic variables"}</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+            className="space-y-4"
+          >
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Template Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Welcome Email"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="subject">Email Subject</Label>
-              <Input
-                id="subject"
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                placeholder="e.g., Welcome to {{business.name}}, {{contact.firstName}}!"
+              <TextField
+                form={form}
+                name="name"
+                label="Template Name"
+                placeholder="e.g., Welcome Email"
                 required
+                validators={{
+                  onChange: ({ value }) =>
+                    !value || value.trim().length < 2
+                      ? "Name must be at least 2 characters"
+                      : undefined,
+                }}
               />
-              <p className="hig-caption2 text-muted-foreground">You can use variables like {"{{contact.name}}"} in the subject line</p>
+
+              <form.Field name="category">
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Category</Label>
+                    <Select value={field.state.value} onValueChange={field.handleChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((category) => (
+                          <SelectItem key={category.value} value={category.value}>
+                            {category.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </form.Field>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description of when to use this template"
-                rows={2}
-              />
-            </div>
+            <TextField
+              form={form}
+              name="subject"
+              label="Email Subject"
+              placeholder="e.g., Welcome to {{business.name}}, {{contact.firstName}}!"
+              description="You can use variables like {{contact.name}} in the subject line"
+              required
+              validators={{
+                onChange: ({ value }) =>
+                  !value || value.trim().length === 0
+                    ? "Subject is required"
+                    : undefined,
+              }}
+            />
 
-            <div className="space-y-2">
-              <Label>Email Body</Label>
-              <RichTextEditor
-                content={formData.body}
-                onChange={(content) => setFormData({ ...formData, body: content })}
-                placeholder="Write your email content here..."
-              />
-            </div>
+            <TextareaField
+              form={form}
+              name="description"
+              label="Description (Optional)"
+              placeholder="Brief description of when to use this template"
+              rows={2}
+            />
+
+            <form.Field name="body">
+              {(field) => (
+                <div className="space-y-2">
+                  <Label>Email Body</Label>
+                  <RichTextEditor
+                    content={field.state.value}
+                    onChange={field.handleChange}
+                    placeholder="Write your email content here..."
+                  />
+                  {field.state.meta.isTouched && field.state.meta.errors[0] && (
+                    <p className="hig-caption2 text-destructive">{field.state.meta.errors[0]}</p>
+                  )}
+                </div>
+              )}
+            </form.Field>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : selectedTemplate ? "Update Template" : "Create Template"}
-              </Button>
+              <SubmitButton form={form} loadingText="Saving...">
+                {selectedTemplate ? "Update Template" : "Create Template"}
+              </SubmitButton>
             </DialogFooter>
           </form>
         </DialogContent>

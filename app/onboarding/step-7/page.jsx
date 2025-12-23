@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -14,92 +13,42 @@ import {
   Clock,
   Briefcase,
 } from "lucide-react";
+import { useBusinessSettings, useAvailability, useUpdateOnboardingProgress, useServices } from "@/lib/hooks";
 
 export default function Step7Page() {
   const router = useRouter();
   const { isLoaded, orgId } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState(false);
-  const [tenant, setTenant] = useState(null);
-  const [setupStatus, setSetupStatus] = useState({
-    profile: false,
-    availability: false,
-    services: false,
-  });
 
-  useEffect(() => {
-    if (!isLoaded || !orgId) {
-      setLoading(false);
-      return;
-    }
+  const { data: businessSettings, isLoading: businessLoading } = useBusinessSettings();
+  const { data: availability = [], isLoading: availabilityLoading } = useAvailability();
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const updateOnboardingProgress = useUpdateOnboardingProgress();
 
-    const fetchData = async () => {
-      try {
-        // Fetch tenant info
-        const tenantRes = await fetch("/api/tenant/business");
-        if (tenantRes.ok) {
-          const data = await tenantRes.json();
-          setTenant(data);
-          setSetupStatus((prev) => ({
-            ...prev,
-            profile: !!data.businessName,
-          }));
-        }
+  const hasAvailability = Array.isArray(availability) && availability.some((a) => a.active);
 
-        // Check availability
-        const availRes = await fetch("/api/availability");
-        if (availRes.ok) {
-          const data = await availRes.json();
-          // API returns array directly
-          setSetupStatus((prev) => ({
-            ...prev,
-            availability: Array.isArray(data) && data.some((a) => a.active),
-          }));
-        }
-
-        // Check services
-        const servicesRes = await fetch("/api/services");
-        if (servicesRes.ok) {
-          const data = await servicesRes.json();
-          setSetupStatus((prev) => ({
-            ...prev,
-            services: Array.isArray(data) && data.length > 0,
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-      setLoading(false);
-    };
-
-    fetchData();
-  }, [isLoaded, orgId]);
+  const setupStatus = {
+    profile: !!businessSettings?.businessName,
+    availability: hasAvailability,
+    services: services.length > 0,
+  };
 
   const handleComplete = async () => {
-    setCompleting(true);
-
     try {
       // Mark onboarding as complete
-      await fetch("/api/onboarding/progress", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ complete: true }),
-      });
-
+      await updateOnboardingProgress.mutateAsync({ complete: true });
       router.push("/dashboard");
     } catch (error) {
       console.error("Error completing onboarding:", error);
-      setCompleting(false);
     }
   };
 
   const handlePreview = () => {
-    if (tenant?.slug) {
-      window.open(`/${tenant.slug}`, "_blank");
+    if (businessSettings?.slug) {
+      window.open(`/${businessSettings.slug}`, "_blank");
     }
   };
 
-  if (loading) {
+  if (!isLoaded || businessLoading || availabilityLoading || servicesLoading) {
     return (
       <div className="flex min-h-[200px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
@@ -186,13 +135,13 @@ export default function Step7Page() {
       </div>
 
       {/* Booking page preview */}
-      {tenant?.slug && (
+      {businessSettings?.slug && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="hig-caption1 font-medium text-gray-900">Your Booking Page</p>
               <p className="hig-caption2 text-gray-500 truncate">
-                clientflow.app/{tenant.slug}
+                clientflow.app/{businessSettings.slug}
               </p>
             </div>
             <button
@@ -232,10 +181,10 @@ export default function Step7Page() {
 
         <button
           onClick={handleComplete}
-          disabled={completing}
+          disabled={updateOnboardingProgress.isPending}
           className="h-11 px-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white hig-body font-semibold rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {completing ? (
+          {updateOnboardingProgress.isPending ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               Launching...

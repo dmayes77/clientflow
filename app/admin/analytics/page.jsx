@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAdminAnalytics } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -302,24 +302,7 @@ function PlanDistribution({ planBreakdown, loading }) {
 }
 
 export default function AnalyticsPage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch("/api/admin/analytics");
-        if (!res.ok) throw new Error("Failed to fetch");
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
+  const { data, isLoading: loading } = useAdminAnalytics();
 
   const overview = data?.overview || {};
   const charts = data?.charts || {};

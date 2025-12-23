@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -12,6 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  usePackages,
+  useServices,
+  useServiceCategories,
+  useCreatePackage,
+  useUpdatePackage,
+  useDeletePackage,
+} from "@/lib/hooks";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +35,7 @@ import {
   PreviewSheetSection,
 } from "@/components/ui/preview-sheet";
 import { BottomSheet, BottomSheetFooter } from "@/components/ui/bottom-sheet";
-import { useIsMobile } from "@/hooks/use-media-query";
+import { useIsMobile } from "@/lib/hooks/use-media-query";
 import {
   Select,
   SelectContent,
@@ -55,7 +63,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useBusinessHours } from "@/hooks/use-business-hours";
+import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 
 const DISCOUNT_OPTIONS = [
   { value: 5, label: "5% off" },
@@ -86,12 +94,16 @@ const initialFormState = {
 export function PackagesList() {
   const router = useRouter();
   const isMobile = useIsMobile();
-  const [packages, setPackages] = useState([]);
-  const [services, setServices] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const { formatDuration } = useBusinessHours();
-  const [saving, setSaving] = useState(false);
+
+  // TanStack Query hooks
+  const { data: packages = [], isLoading: packagesLoading } = usePackages();
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
+  const createPackage = useCreatePackage();
+  const updatePackage = useUpdatePackage();
+  const deletePackage = useDeletePackage();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
@@ -103,33 +115,7 @@ export function PackagesList() {
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewPackage, setPreviewPackage] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [packagesRes, servicesRes, categoriesRes] = await Promise.all([
-        fetch("/api/packages"),
-        fetch("/api/services"),
-        fetch("/api/service-categories"),
-      ]);
-
-      if (packagesRes.ok) {
-        setPackages(await packagesRes.json());
-      }
-      if (servicesRes.ok) {
-        setServices(await servicesRes.json());
-      }
-      if (categoriesRes.ok) {
-        setCategories(await categoriesRes.json());
-      }
-    } catch (error) {
-      toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = packagesLoading || servicesLoading || categoriesLoading;
 
   // Helper function to round price to desired dollar ending (e.g., $199, $195, $200)
   const roundToEnding = (cents, ending) => {
@@ -294,87 +280,61 @@ export function PackagesList() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.serviceIds.length === 0) {
       toast.error("Please select at least one service");
       return;
     }
 
-    setSaving(true);
+    const payload = {
+      name: formData.name,
+      description: formData.description || null,
+      discountPercent: formData.discountPercent,
+      active: formData.active,
+      serviceIds: formData.serviceIds,
+      ...(isCreatingCategory && formData.newCategoryName
+        ? { newCategoryName: formData.newCategoryName }
+        : { categoryId: formData.categoryId }),
+      // Include the final calculated price as override
+      overridePrice: pricePreview.finalPrice,
+    };
 
-    try {
-      const payload = {
-        name: formData.name,
-        description: formData.description || null,
-        discountPercent: formData.discountPercent,
-        active: formData.active,
-        serviceIds: formData.serviceIds,
-        ...(isCreatingCategory && formData.newCategoryName
-          ? { newCategoryName: formData.newCategoryName }
-          : { categoryId: formData.categoryId }),
-        // Include the final calculated price as override
-        overridePrice: pricePreview.finalPrice,
-      };
+    const mutation = editingPackage
+      ? updatePackage.mutate({ id: editingPackage.id, ...payload })
+      : createPackage.mutate(payload);
 
-      const url = editingPackage
-        ? `/api/packages/${editingPackage.id}`
-        : "/api/packages";
-      const method = editingPackage ? "PATCH" : "POST";
+    const mutationInstance = editingPackage ? updatePackage : createPackage;
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const savedPackage = await res.json();
-        if (editingPackage) {
-          setPackages(packages.map((p) => (p.id === savedPackage.id ? savedPackage : p)));
-          toast.success("Package updated");
-        } else {
-          setPackages([savedPackage, ...packages]);
-          toast.success("Package created");
-        }
-        // Refresh categories in case a new one was created
-        const catRes = await fetch("/api/service-categories");
-        if (catRes.ok) {
-          setCategories(await catRes.json());
-        }
-        handleCloseDialog();
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save package");
+    mutationInstance.mutate(
+      editingPackage ? { id: editingPackage.id, ...payload } : payload,
+      {
+        onSuccess: () => {
+          toast.success(editingPackage ? "Package updated" : "Package created");
+          handleCloseDialog();
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to save package");
+        },
       }
-    } catch (error) {
-      toast.error("Failed to save package");
-    } finally {
-      setSaving(false);
-    }
+    );
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!packageToDelete) return;
 
-    try {
-      const res = await fetch(`/api/packages/${packageToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setPackages(packages.filter((p) => p.id !== packageToDelete.id));
+    deletePackage.mutate(packageToDelete.id, {
+      onSuccess: () => {
         toast.success("Package deleted");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to delete package");
-      }
-    } catch (error) {
-      toast.error("Failed to delete package");
-    } finally {
-      setDeleteDialogOpen(false);
-      setPackageToDelete(null);
-    }
+        setDeleteDialogOpen(false);
+        setPackageToDelete(null);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to delete package");
+        setDeleteDialogOpen(false);
+        setPackageToDelete(null);
+      },
+    });
   };
 
   const formatPrice = (cents) => {
@@ -613,8 +573,8 @@ export function PackagesList() {
                 <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving || formData.serviceIds.length === 0} className="flex-1">
-                  {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                <Button type="submit" disabled={createPackage.isPending || updatePackage.isPending || formData.serviceIds.length === 0} className="flex-1">
+                  {(createPackage.isPending || updatePackage.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {editingPackage ? "Save" : "Create"}
                 </Button>
               </div>
@@ -929,8 +889,8 @@ export function PackagesList() {
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving || formData.serviceIds.length === 0}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button type="submit" disabled={createPackage.isPending || updatePackage.isPending || formData.serviceIds.length === 0}>
+                {(createPackage.isPending || updatePackage.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingPackage ? "Save Changes" : "Create Package"}
               </Button>
             </DialogFooter>
@@ -1028,22 +988,19 @@ export function PackagesList() {
                 variant="ghost"
                 size="sm"
                 className={`flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewPackage.active ? "text-amber-600" : "text-green-600"}`}
-                onClick={async () => {
-                  try {
-                    const res = await fetch(`/api/packages/${previewPackage.id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ active: !previewPackage.active }),
-                    });
-                    if (res.ok) {
-                      const updated = await res.json();
-                      setPackages(packages.map((p) => (p.id === updated.id ? updated : p)));
-                      setPreviewPackage(updated);
-                      toast.success(updated.active ? "Package activated" : "Package deactivated");
+                onClick={() => {
+                  updatePackage.mutate(
+                    { id: previewPackage.id, active: !previewPackage.active },
+                    {
+                      onSuccess: (updated) => {
+                        setPreviewPackage(updated);
+                        toast.success(updated.active ? "Package activated" : "Package deactivated");
+                      },
+                      onError: () => {
+                        toast.error("Failed to update package");
+                      },
                     }
-                  } catch (error) {
-                    toast.error("Failed to update package");
-                  }
+                  );
                 }}
               >
                 {previewPackage.active ? (

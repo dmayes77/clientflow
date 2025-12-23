@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, ArrowRight, ArrowLeft, Building2, MapPin, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBusinessSettings, useUpdateBusinessSettings } from "@/lib/hooks";
 
 const COUNTRIES = [
   { value: "US", label: "United States" },
@@ -44,9 +45,10 @@ function SetupForm() {
   const { isLoaded, orgId } = useAuth();
   const { organization } = useOrganization();
   const [step, setStep] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const { data: businessSettings, isLoading } = useBusinessSettings();
+  const updateBusinessSettings = useUpdateBusinessSettings();
 
   const [formData, setFormData] = useState({
     businessName: "",
@@ -77,65 +79,35 @@ function SetupForm() {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     }
+  }, [isLoaded, searchParams]);
 
-    // Pre-populate business name from org
-    if (organization?.name) {
+  // Update form data when business settings are loaded
+  useEffect(() => {
+    if (businessSettings) {
+      setFormData((prev) => ({
+        ...prev,
+        ...businessSettings,
+        businessName: businessSettings.businessName || organization?.name || "",
+      }));
+    } else if (organization?.name) {
       setFormData((prev) => ({
         ...prev,
         businessName: organization.name,
       }));
     }
-
-    // Fetch existing tenant data
-    const fetchTenantData = async () => {
-      try {
-        const res = await fetch("/api/tenant/business");
-        if (res.ok) {
-          const data = await res.json();
-          setFormData((prev) => ({
-            ...prev,
-            ...data,
-            businessName: data.businessName || organization?.name || "",
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching tenant:", error);
-      }
-      setLoading(false);
-    };
-
-    if (orgId) {
-      fetchTenantData();
-    } else {
-      setLoading(false);
-    }
-  }, [isLoaded, orgId, organization, searchParams]);
+  }, [businessSettings, organization]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
-    setSaving(true);
-
     try {
-      const res = await fetch("/api/tenant/business", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save");
-      }
-
+      await updateBusinessSettings.mutateAsync(formData);
       toast.success("Business details saved!");
       router.push("/onboarding/complete");
     } catch (error) {
       toast.error(error.message);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -153,7 +125,7 @@ function SetupForm() {
     }
   };
 
-  if (loading) {
+  if (!isLoaded || isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -399,8 +371,8 @@ function SetupForm() {
           Back
         </Button>
 
-        <Button onClick={nextStep} disabled={saving}>
-          {saving ? (
+        <Button onClick={nextStep} disabled={updateBusinessSettings.isPending}>
+          {updateBusinessSettings.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Saving...

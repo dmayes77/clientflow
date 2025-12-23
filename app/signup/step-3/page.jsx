@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSignupState } from "@/lib/signup-state";
+import { usePlans, useCreateCheckoutSession } from "@/lib/hooks";
 
 function formatPrice(cents) {
   return new Intl.NumberFormat("en-US", {
@@ -28,24 +29,9 @@ export default function Step3Page() {
   const router = useRouter();
   const { isLoaded, orgId, userId } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [plans, setPlans] = useState([]);
-  const [redirecting, setRedirecting] = useState(false);
 
-  // Fetch plans from database
-  useEffect(() => {
-    async function fetchPlans() {
-      try {
-        const res = await fetch("/api/plans");
-        if (res.ok) {
-          const data = await res.json();
-          setPlans(data.plans || []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch plans:", err);
-      }
-    }
-    fetchPlans();
-  }, []);
+  const { data: plans = [], isLoading: plansLoading } = usePlans();
+  const createCheckoutSession = useCreateCheckoutSession();
 
   // Redirect if not authenticated or no org
   useEffect(() => {
@@ -77,24 +63,12 @@ export default function Step3Page() {
       return;
     }
 
-    setRedirecting(true);
-
     try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId,
-          successUrl: `${window.location.origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/signup/step-3`,
-        }),
+      const data = await createCheckoutSession.mutateAsync({
+        priceId,
+        successUrl: `${window.location.origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${window.location.origin}/signup/step-3`,
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to create checkout");
-      }
 
       if (!data.url) {
         throw new Error("No checkout URL returned");
@@ -104,11 +78,10 @@ export default function Step3Page() {
     } catch (error) {
       console.error("Checkout failed:", error);
       toast.error(error.message);
-      setRedirecting(false);
     }
   };
 
-  if (loading || plans.length === 0) {
+  if (loading || plansLoading || plans.length === 0) {
     return (
       <div className="flex items-center justify-center py-12 min-h-[200px]">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -185,16 +158,16 @@ export default function Step3Page() {
 
             <button
               onClick={() => handleSelectPlan(plan)}
-              disabled={redirecting}
+              disabled={createCheckoutSession.isPending}
               className={cn(
                 "w-full h-11 text-white hig-body font-semibold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2",
                 plan.isDefault
                   ? "bg-violet-600 hover:bg-violet-700 active:bg-violet-800"
                   : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800",
-                redirecting && "opacity-50 cursor-not-allowed"
+                createCheckoutSession.isPending && "opacity-50 cursor-not-allowed"
               )}
             >
-              {redirecting ? (
+              {createCheckoutSession.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Redirecting to checkout...</span>
@@ -225,7 +198,7 @@ export default function Step3Page() {
         <button
           type="button"
           onClick={() => router.push("/signup/step-2")}
-          disabled={redirecting}
+          disabled={createCheckoutSession.isPending}
           className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors disabled:opacity-50"
         >
           <ArrowLeft className="w-4 h-4" />

@@ -1,14 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
@@ -60,6 +57,20 @@ import {
   Activity,
   AlertTriangle,
 } from "lucide-react";
+import {
+  useWebhooks,
+  useWebhook,
+  useCreateWebhook,
+  useUpdateWebhook,
+  useDeleteWebhook,
+} from "@/lib/hooks";
+import {
+  useTanstackForm,
+  TextField,
+  TextareaField,
+  SwitchField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 
 const WEBHOOK_EVENTS = [
   { id: "booking.created", label: "Booking Created", category: "Bookings" },
@@ -79,59 +90,75 @@ const WEBHOOK_EVENTS = [
 
 const EVENT_CATEGORIES = [...new Set(WEBHOOK_EVENTS.map((e) => e.category))];
 
-const initialFormState = {
-  url: "",
-  events: [],
-  description: "",
-  active: true,
-};
+// Zod validation schema
+const webhookSchema = z.object({
+  url: z.string().url("Please enter a valid URL"),
+  events: z.array(z.string()).min(1, "Please select at least one event"),
+  description: z.string(),
+  active: z.boolean(),
+});
 
 export function WebhooksList() {
-  const [webhooks, setWebhooks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // TanStack Query hooks
+  const { data: webhooks = [], isLoading: loading } = useWebhooks();
+  const createWebhook = useCreateWebhook();
+  const updateWebhook = useUpdateWebhook();
+  const deleteWebhook = useDeleteWebhook();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState(null);
   const [webhookToDelete, setWebhookToDelete] = useState(null);
-  const [selectedWebhook, setSelectedWebhook] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
+  const [selectedWebhookId, setSelectedWebhookId] = useState(null);
   const [showSecrets, setShowSecrets] = useState({});
   const [expandedCategories, setExpandedCategories] = useState(
     EVENT_CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat]: true }), {})
   );
 
-  useEffect(() => {
-    fetchWebhooks();
-  }, []);
+  // Fetch selected webhook details
+  const { data: selectedWebhook } = useWebhook(selectedWebhookId);
 
-  const fetchWebhooks = async () => {
-    try {
-      const res = await fetch("/api/webhooks");
-      if (res.ok) {
-        const data = await res.json();
-        setWebhooks(data);
+  // TanStack Form
+  const form = useTanstackForm({
+    defaultValues: {
+      url: "",
+      events: [],
+      description: "",
+      active: true,
+    },
+    onSubmit: async (values) => {
+      if (values.events.length === 0) {
+        toast.error("Please select at least one event");
+        return;
       }
-    } catch (error) {
-      toast.error("Failed to load webhooks");
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      try {
+        if (editingWebhook) {
+          await updateWebhook.mutateAsync({ id: editingWebhook.id, ...values });
+          toast.success("Webhook updated");
+        } else {
+          await createWebhook.mutateAsync(values);
+          toast.success("Webhook created");
+        }
+        handleCloseDialog();
+      } catch (error) {
+        toast.error(error.message || "Failed to save webhook");
+      }
+    },
+  });
 
   const handleOpenDialog = (webhook = null) => {
     if (webhook) {
       setEditingWebhook(webhook);
-      setFormData({
-        url: webhook.url,
-        events: webhook.events || [],
-        description: webhook.description || "",
-        active: webhook.active,
-      });
+      form.reset();
+      form.setFieldValue("url", webhook.url);
+      form.setFieldValue("events", webhook.events || []);
+      form.setFieldValue("description", webhook.description || "");
+      form.setFieldValue("active", webhook.active);
     } else {
       setEditingWebhook(null);
-      setFormData(initialFormState);
+      form.reset();
     }
     setDialogOpen(true);
   };
@@ -139,95 +166,18 @@ export function WebhooksList() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingWebhook(null);
-    setFormData(initialFormState);
-  };
-
-  const handleEventToggle = (eventId) => {
-    setFormData((prev) => ({
-      ...prev,
-      events: prev.events.includes(eventId)
-        ? prev.events.filter((e) => e !== eventId)
-        : [...prev.events, eventId],
-    }));
-  };
-
-  const handleCategoryToggle = (category) => {
-    const categoryEvents = WEBHOOK_EVENTS.filter((e) => e.category === category).map((e) => e.id);
-    const allSelected = categoryEvents.every((e) => formData.events.includes(e));
-
-    if (allSelected) {
-      setFormData((prev) => ({
-        ...prev,
-        events: prev.events.filter((e) => !categoryEvents.includes(e)),
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        events: [...new Set([...prev.events, ...categoryEvents])],
-      }));
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (formData.events.length === 0) {
-      toast.error("Please select at least one event");
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const url = editingWebhook
-        ? `/api/webhooks/${editingWebhook.id}`
-        : "/api/webhooks";
-      const method = editingWebhook ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        const savedWebhook = await res.json();
-        if (editingWebhook) {
-          setWebhooks(webhooks.map((w) => (w.id === savedWebhook.id ? savedWebhook : w)));
-          toast.success("Webhook updated");
-        } else {
-          setWebhooks([savedWebhook, ...webhooks]);
-          toast.success("Webhook created");
-        }
-        handleCloseDialog();
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to save webhook");
-      }
-    } catch (error) {
-      toast.error("Failed to save webhook");
-    } finally {
-      setSaving(false);
-    }
+    form.reset();
   };
 
   const handleToggleActive = async (webhook) => {
     try {
-      const res = await fetch(`/api/webhooks/${webhook.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: !webhook.active }),
+      await updateWebhook.mutateAsync({
+        id: webhook.id,
+        active: !webhook.active,
       });
-
-      if (res.ok) {
-        const updatedWebhook = await res.json();
-        setWebhooks(webhooks.map((w) => (w.id === updatedWebhook.id ? updatedWebhook : w)));
-        toast.success(updatedWebhook.active ? "Webhook enabled" : "Webhook disabled");
-      } else {
-        toast.error("Failed to update webhook");
-      }
+      toast.success(webhook.active ? "Webhook disabled" : "Webhook enabled");
     } catch (error) {
-      toast.error("Failed to update webhook");
+      toast.error(error.message || "Failed to update webhook");
     }
   };
 
@@ -235,35 +185,20 @@ export function WebhooksList() {
     if (!webhookToDelete) return;
 
     try {
-      const res = await fetch(`/api/webhooks/${webhookToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        setWebhooks(webhooks.filter((w) => w.id !== webhookToDelete.id));
-        toast.success("Webhook deleted");
-      } else {
-        toast.error("Failed to delete webhook");
-      }
+      await deleteWebhook.mutateAsync(webhookToDelete.id);
+      toast.success("Webhook deleted");
+      setDeleteDialogOpen(false);
+      setWebhookToDelete(null);
     } catch (error) {
-      toast.error("Failed to delete webhook");
-    } finally {
+      toast.error(error.message || "Failed to delete webhook");
       setDeleteDialogOpen(false);
       setWebhookToDelete(null);
     }
   };
 
-  const handleViewDetails = async (webhook) => {
-    try {
-      const res = await fetch(`/api/webhooks/${webhook.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedWebhook(data);
-        setDetailDialogOpen(true);
-      }
-    } catch (error) {
-      toast.error("Failed to load webhook details");
-    }
+  const handleViewDetails = (webhook) => {
+    setSelectedWebhookId(webhook.id);
+    setDetailDialogOpen(true);
   };
 
   const copyToClipboard = async (text, label = "Value") => {
@@ -493,134 +428,155 @@ export function WebhooksList() {
                 : "Configure a URL to receive webhook events"}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="url">Endpoint URL</Label>
-                <Input
-                  id="url"
-                  type="url"
-                  placeholder="https://your-app.com/webhooks/clientflow"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  required
-                />
-                <p className="hig-caption2 text-muted-foreground">
-                  The HTTPS URL that will receive webhook payloads
-                </p>
-              </div>
+              <TextField
+                form={form}
+                name="url"
+                label="Endpoint URL"
+                type="url"
+                placeholder="https://your-app.com/webhooks/clientflow"
+                description="The HTTPS URL that will receive webhook payloads"
+                required
+                validators={{
+                  onChange: ({ value }) =>
+                    value && !value.match(/^https?:\/\/.+/)
+                      ? "Please enter a valid URL"
+                      : undefined,
+                }}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="e.g., Production webhook for CRM integration"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
-                />
-              </div>
+              <TextareaField
+                form={form}
+                name="description"
+                label="Description (optional)"
+                placeholder="e.g., Production webhook for CRM integration"
+                rows={2}
+              />
 
-              <div className="space-y-3">
-                <Label>Events to Subscribe</Label>
-                <ScrollArea className="h-[200px] rounded-md border p-3">
-                  {EVENT_CATEGORIES.map((category) => {
+              <form.Field name="events">
+                {(field) => {
+                  const handleEventToggle = (eventId) => {
+                    const currentEvents = field.state.value;
+                    const newEvents = currentEvents.includes(eventId)
+                      ? currentEvents.filter((e) => e !== eventId)
+                      : [...currentEvents, eventId];
+                    field.handleChange(newEvents);
+                  };
+
+                  const handleCategoryToggle = (category) => {
                     const categoryEvents = WEBHOOK_EVENTS.filter((e) => e.category === category);
-                    const selectedCount = categoryEvents.filter((e) =>
-                      formData.events.includes(e.id)
+                    const categoryEventIds = categoryEvents.map((e) => e.id);
+                    const currentEvents = field.state.value;
+                    const selectedCount = categoryEventIds.filter((id) =>
+                      currentEvents.includes(id)
                     ).length;
-                    const allSelected = selectedCount === categoryEvents.length;
+                    const allSelected = selectedCount === categoryEventIds.length;
 
-                    return (
-                      <div key={category} className="mb-3">
-                        <div
-                          className="flex items-center justify-between py-1 cursor-pointer hover:bg-muted/50 rounded px-1"
-                          onClick={() =>
-                            setExpandedCategories((prev) => ({
-                              ...prev,
-                              [category]: !prev[category],
-                            }))
-                          }
-                        >
-                          <div className="flex items-center gap-2">
-                            {expandedCategories[category] ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                            <span className="font-medium">{category}</span>
-                            {selectedCount > 0 && (
-                              <Badge variant="secondary">
-                                {selectedCount}
-                              </Badge>
-                            )}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 hig-caption2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCategoryToggle(category);
-                            }}
-                          >
-                            {allSelected ? "Deselect all" : "Select all"}
-                          </Button>
-                        </div>
-                        {expandedCategories[category] && (
-                          <div className="ml-6 mt-1 space-y-1">
-                            {categoryEvents.map((event) => (
-                              <div key={event.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={event.id}
-                                  checked={formData.events.includes(event.id)}
-                                  onCheckedChange={() => handleEventToggle(event.id)}
-                                />
-                                <label
-                                  htmlFor={event.id}
-                                  className="cursor-pointer flex-1"
+                    const newEvents = allSelected
+                      ? currentEvents.filter((e) => !categoryEventIds.includes(e))
+                      : [...new Set([...currentEvents, ...categoryEventIds])];
+                    field.handleChange(newEvents);
+                  };
+
+                  return (
+                    <div className="space-y-3">
+                      <Label>Events to Subscribe</Label>
+                      <ScrollArea className="h-[200px] rounded-md border p-3">
+                        {EVENT_CATEGORIES.map((category) => {
+                          const categoryEvents = WEBHOOK_EVENTS.filter(
+                            (e) => e.category === category
+                          );
+                          const selectedCount = categoryEvents.filter((e) =>
+                            field.state.value.includes(e.id)
+                          ).length;
+                          const allSelected = selectedCount === categoryEvents.length;
+
+                          return (
+                            <div key={category} className="mb-3">
+                              <div
+                                className="flex items-center justify-between py-1 cursor-pointer hover:bg-muted/50 rounded px-1"
+                                onClick={() =>
+                                  setExpandedCategories((prev) => ({
+                                    ...prev,
+                                    [category]: !prev[category],
+                                  }))
+                                }
+                              >
+                                <div className="flex items-center gap-2">
+                                  {expandedCategories[category] ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                  <span className="font-medium">{category}</span>
+                                  {selectedCount > 0 && (
+                                    <Badge variant="secondary">{selectedCount}</Badge>
+                                  )}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 hig-caption2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCategoryToggle(category);
+                                  }}
                                 >
-                                  {event.label}
-                                </label>
+                                  {allSelected ? "Deselect all" : "Select all"}
+                                </Button>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </ScrollArea>
-                <p className="hig-caption2 text-muted-foreground">
-                  {formData.events.length} event{formData.events.length !== 1 ? "s" : ""} selected
-                </p>
-              </div>
+                              {expandedCategories[category] && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                  {categoryEvents.map((event) => (
+                                    <div key={event.id} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={event.id}
+                                        checked={field.state.value.includes(event.id)}
+                                        onCheckedChange={() => handleEventToggle(event.id)}
+                                      />
+                                      <label htmlFor={event.id} className="cursor-pointer flex-1">
+                                        {event.label}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </ScrollArea>
+                      <p className="hig-caption2 text-muted-foreground">
+                        {field.state.value.length} event
+                        {field.state.value.length !== 1 ? "s" : ""} selected
+                      </p>
+                    </div>
+                  );
+                }}
+              </form.Field>
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="active" className="font-medium">
-                    Active
-                  </Label>
-                  <p className="text-muted-foreground">
-                    Disabled webhooks won't receive events
-                  </p>
-                </div>
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                />
-              </div>
+              <SwitchField
+                form={form}
+                name="active"
+                label="Active"
+                description="Disabled webhooks won't receive events"
+              />
             </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <SubmitButton form={form} loadingText={editingWebhook ? "Saving..." : "Creating..."}>
                 {editingWebhook ? "Save Changes" : "Create Webhook"}
-              </Button>
+              </SubmitButton>
             </DialogFooter>
           </form>
         </DialogContent>

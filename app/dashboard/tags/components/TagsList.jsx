@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -31,14 +29,21 @@ import {
   Trash2,
   Tag,
   Users,
-  Play,
   Loader2,
   Receipt,
   Calendar,
   Layers,
   ChevronRight,
 } from "lucide-react";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
+import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from "@/lib/hooks";
+import {
+  useTanstackForm,
+  TextField,
+  TextareaField,
+  SelectField,
+  SubmitButton,
+} from "@/components/ui/tanstack-form";
 
 const TAG_TYPES = [
   { value: "all", label: "All", icon: Layers },
@@ -68,45 +73,53 @@ function getColorClasses(colorValue) {
   return COLORS.find((c) => c.value === colorValue) || COLORS[0];
 }
 
-const initialFormState = {
+// Zod validation schema
+const tagSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  color: z.string(),
+  description: z.string(),
+  type: z.string(),
+});
+
+const getInitialFormState = (activeFilter) => ({
   name: "",
   color: "blue",
   description: "",
-  type: "general",
-};
+  type: activeFilter !== "all" ? activeFilter : "general",
+});
 
 export function TagsList() {
-  const [tags, setTags] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState(null);
   const [tagToDelete, setTagToDelete] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState(initialFormState);
-  const [errors, setErrors] = useState({});
   const [activeFilter, setActiveFilter] = useState("all");
   const isMobile = useMediaQuery("(max-width: 639px)");
 
-  useEffect(() => {
-    fetchTags();
-  }, [activeFilter]);
+  // TanStack Query hooks
+  const { data: tags = [], isLoading: loading } = useTags(activeFilter);
+  const createTagMutation = useCreateTag();
+  const updateTagMutation = useUpdateTag();
+  const deleteTagMutation = useDeleteTag();
 
-  const fetchTags = async () => {
-    try {
-      setLoading(true);
-      const url = activeFilter === "all" ? "/api/tags" : `/api/tags?type=${activeFilter}`;
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setTags(data);
+  // TanStack Form
+  const form = useTanstackForm({
+    defaultValues: getInitialFormState(activeFilter),
+    onSubmit: async (values) => {
+      try {
+        if (editingTag) {
+          await updateTagMutation.mutateAsync({ id: editingTag.id, ...values });
+          toast.success("Tag updated");
+        } else {
+          await createTagMutation.mutateAsync(values);
+          toast.success("Tag created");
+        }
+        handleCloseDialog();
+      } catch (error) {
+        toast.error(error.message || "Failed to save tag");
       }
-    } catch (error) {
-      toast.error("Failed to fetch tags");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
   const getTypeLabel = (type) => {
     const found = TAG_TYPES.find((t) => t.value === type);
@@ -117,95 +130,36 @@ export function TagsList() {
     return (tag._count?.contacts || 0) + (tag._count?.invoices || 0) + (tag._count?.bookings || 0);
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name || formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleOpenDialog = (tag = null) => {
     if (tag) {
       setEditingTag(tag);
-      setFormData({
-        name: tag.name,
-        color: tag.color || "blue",
-        description: tag.description || "",
-        type: tag.type || "general",
-      });
+      form.reset();
+      form.setFieldValue("name", tag.name);
+      form.setFieldValue("color", tag.color || "blue");
+      form.setFieldValue("description", tag.description || "");
+      form.setFieldValue("type", tag.type || "general");
     } else {
       setEditingTag(null);
-      // Pre-select the current filter type if not "all"
-      setFormData({
-        ...initialFormState,
-        type: activeFilter !== "all" ? activeFilter : "general",
-      });
+      form.reset();
+      form.setFieldValue("type", activeFilter !== "all" ? activeFilter : "general");
     }
-    setErrors({});
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingTag(null);
-    setFormData(initialFormState);
-    setErrors({});
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setSaving(true);
-    try {
-      const url = editingTag ? `/api/tags/${editingTag.id}` : "/api/tags";
-      const method = editingTag ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const savedTag = await response.json();
-        if (editingTag) {
-          setTags(tags.map((t) => (t.id === savedTag.id ? savedTag : t)));
-          toast.success("Tag updated");
-        } else {
-          setTags([savedTag, ...tags]);
-          toast.success("Tag created");
-        }
-        handleCloseDialog();
-      } else {
-        const data = await response.json();
-        toast.error(data.error || "Failed to save tag");
-      }
-    } catch (error) {
-      toast.error("Failed to save tag");
-    } finally {
-      setSaving(false);
-    }
+    form.reset();
   };
 
   const handleDelete = async () => {
     if (!tagToDelete) return;
 
     try {
-      const response = await fetch(`/api/tags/${tagToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setTags(tags.filter((t) => t.id !== tagToDelete.id));
-        toast.success("Tag deleted");
-      } else {
-        toast.error("Failed to delete tag");
-      }
+      await deleteTagMutation.mutateAsync(tagToDelete.id);
+      toast.success("Tag deleted");
     } catch (error) {
-      toast.error("Failed to delete tag");
+      toast.error(error.message || "Failed to delete tag");
     } finally {
       setDeleteDialogOpen(false);
       setTagToDelete(null);
@@ -418,122 +372,134 @@ export function TagsList() {
               {editingTag ? "Update the tag details" : "Create a new tag to organize your contacts"}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Tag Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., hot-lead, vip, follow-up"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={cn(errors.name && "border-red-500")}
-                />
-                {errors.name && (
-                  <p className="hig-caption2 text-red-500">{errors.name}</p>
-                )}
-              </div>
+              <TextField
+                form={form}
+                name="name"
+                label="Tag Name"
+                placeholder="e.g., hot-lead, vip, follow-up"
+                required
+                validators={{
+                  onChange: ({ value }) =>
+                    !value || value.trim().length < 2
+                      ? "Name must be at least 2 characters"
+                      : undefined,
+                }}
+              />
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) => setFormData({ ...formData, type: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>
-                        <div className="flex items-center gap-2">
-                          {(() => {
-                            const TypeIcon = TAG_TYPES.find((t) => t.value === formData.type)?.icon || Tag;
-                            return <TypeIcon className="h-3.5 w-3.5" />;
-                          })()}
-                          {TAG_TYPES.find((t) => t.value === formData.type)?.label || "General"}
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TAG_TYPES.filter((t) => t.value !== "all").map((type) => {
-                        const Icon = type.icon;
-                        return (
-                          <SelectItem key={type.value} value={type.value}>
+                <form.Field name="type">
+                  {(field) => (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Type</label>
+                      <Select
+                        value={field.state.value}
+                        onValueChange={field.handleChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue>
                             <div className="flex items-center gap-2">
-                              <Icon className="h-3.5 w-3.5" />
-                              {type.label}
+                              {(() => {
+                                const TypeIcon = TAG_TYPES.find((t) => t.value === field.state.value)?.icon || Tag;
+                                return <TypeIcon className="h-3.5 w-3.5" />;
+                              })()}
+                              {TAG_TYPES.find((t) => t.value === field.state.value)?.label || "General"}
                             </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TAG_TYPES.filter((t) => t.value !== "all").map((type) => {
+                            const Icon = type.icon;
+                            return (
+                              <SelectItem key={type.value} value={type.value}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-3.5 w-3.5" />
+                                  {type.label}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </form.Field>
 
-                <div className="space-y-2">
-                  <Label>Color</Label>
-                  <Select
-                    value={formData.color}
-                    onValueChange={(value) => setFormData({ ...formData, color: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>
-                        <div className="flex items-center gap-2">
-                          <div className={cn("h-3 w-3 rounded-full", getColorClasses(formData.color).dot)} />
-                          {COLORS.find((c) => c.value === formData.color)?.label || "Blue"}
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COLORS.map((color) => (
-                        <SelectItem key={color.value} value={color.value}>
-                          <div className="flex items-center gap-2">
-                            <div className={cn("h-3 w-3 rounded-full", color.dot)} />
-                            {color.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <form.Field name="color">
+                  {(field) => (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Color</label>
+                      <Select
+                        value={field.state.value}
+                        onValueChange={field.handleChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("h-3 w-3 rounded-full", getColorClasses(field.state.value).dot)} />
+                              {COLORS.find((c) => c.value === field.state.value)?.label || "Blue"}
+                            </div>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COLORS.map((color) => (
+                            <SelectItem key={color.value} value={color.value}>
+                              <div className="flex items-center gap-2">
+                                <div className={cn("h-3 w-3 rounded-full", color.dot)} />
+                                {color.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </form.Field>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="What is this tag used for?"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
-                />
-              </div>
+              <TextareaField
+                form={form}
+                name="description"
+                label="Description (optional)"
+                placeholder="What is this tag used for?"
+                rows={2}
+              />
 
               {/* Preview */}
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Preview</Label>
-                <div className="p-3 border rounded-lg">
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      getColorClasses(formData.color).bg,
-                      getColorClasses(formData.color).text
-                    )}
-                  >
-                    {formData.name || "tag-name"}
-                  </Badge>
-                </div>
-              </div>
+              <form.Subscribe selector={(state) => [state.values.name, state.values.color]}>
+                {([name, color]) => (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Preview</Label>
+                    <div className="p-3 border rounded-lg">
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          getColorClasses(color).bg,
+                          getColorClasses(color).text
+                        )}
+                      >
+                        {name || "tag-name"}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+              </form.Subscribe>
             </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <SubmitButton form={form} loadingText={editingTag ? "Updating..." : "Creating..."}>
                 {editingTag ? "Update" : "Create"}
-              </Button>
+              </SubmitButton>
             </DialogFooter>
           </form>
         </DialogContent>

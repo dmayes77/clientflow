@@ -3,7 +3,13 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useInvoices, useUpdateInvoice, useDeleteInvoice, useSendInvoice } from "@/lib/hooks";
+import {
+  useInvoices,
+  useUpdateInvoice,
+  useDeleteInvoice,
+  useSendInvoice,
+  useDownloadInvoicePDF,
+} from "@/lib/hooks";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -123,6 +129,7 @@ export function InvoicesList() {
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
   const sendInvoice = useSendInvoice();
+  const downloadInvoicePDF = useDownloadInvoicePDF();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -130,7 +137,6 @@ export function InvoicesList() {
   const [invoiceForPayment, setInvoiceForPayment] = useState(null);
   const [paymentData, setPaymentData] = useState({ amount: 0, isDeposit: false, depositPercent: null });
   const [sendingId, setSendingId] = useState(null);
-  const [downloadingId, setDownloadingId] = useState(null);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewInvoice, setPreviewInvoice] = useState(null);
 
@@ -211,27 +217,15 @@ export function InvoicesList() {
     });
   };
 
-  const handleDownload = async (invoice) => {
-    try {
-      setDownloadingId(invoice.id);
-      const res = await fetch(`/api/invoices/${invoice.id}/pdf`);
-
-      if (!res.ok) throw new Error("Failed to generate PDF");
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `invoice-${invoice.invoiceNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      toast.error("Failed to download invoice PDF");
-    } finally {
-      setDownloadingId(null);
-    }
+  const handleDownload = (invoice) => {
+    downloadInvoicePDF.mutate(
+      { id: invoice.id, invoiceNumber: invoice.invoiceNumber },
+      {
+        onError: () => {
+          toast.error("Failed to download invoice PDF");
+        },
+      }
+    );
   };
 
   const handleSend = (invoice) => {
@@ -348,14 +342,14 @@ export function InvoicesList() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => handleDownload(invoice)}
-                disabled={downloadingId === invoice.id}
+                disabled={downloadInvoicePDF.isPending}
               >
-                {downloadingId === invoice.id ? (
+                {downloadInvoicePDF.isPending ? (
                   <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
                   <DownloadIcon className="h-4 w-4 mr-2" />
                 )}
-                {downloadingId === invoice.id ? "Downloading..." : "Download PDF"}
+                {downloadInvoicePDF.isPending ? "Downloading..." : "Download PDF"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {invoice.status === "draft" && (
@@ -667,7 +661,7 @@ export function InvoicesList() {
                 variant="ghost"
                 size="sm"
                 className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                disabled={downloadingId === previewInvoice.id}
+                disabled={downloadInvoicePDF.isPending}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDownload(previewInvoice);

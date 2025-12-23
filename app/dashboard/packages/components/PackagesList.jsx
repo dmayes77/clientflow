@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useServices } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,14 +30,6 @@ import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar } from "lucide-react";
 
-const initialFormState = {
-  name: "",
-  description: "",
-  price: 0,
-  active: true,
-  serviceIds: [],
-};
-
 const formatPrice = (cents) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -48,9 +41,9 @@ export function PackagesList() {
   // TanStack Query hooks
   const { data: packages = [], isLoading: packagesLoading } = usePackages();
   const { data: services = [], isLoading: servicesLoading } = useServices();
-  const createPackage = useCreatePackage();
-  const updatePackage = useUpdatePackage();
-  const deletePackage = useDeletePackage();
+  const createPackageMutation = useCreatePackage();
+  const updatePackageMutation = useUpdatePackage();
+  const deletePackageMutation = useDeletePackage();
 
   const loading = packagesLoading || servicesLoading;
 
@@ -58,21 +51,49 @@ export function PackagesList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [packageToDelete, setPackageToDelete] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
+
+  // TanStack Form
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      description: "",
+      price: 0,
+      active: true,
+      serviceIds: [],
+    },
+    onSubmit: async ({ value }) => {
+      const payload = {
+        ...value,
+        price: Math.round(value.price * 100),
+      };
+
+      const mutation = editingPackage ? updatePackageMutation : createPackageMutation;
+      const mutationData = editingPackage ? { id: editingPackage.id, ...payload } : payload;
+
+      mutation.mutate(mutationData, {
+        onSuccess: () => {
+          toast.success(editingPackage ? "Package updated" : "Package created");
+          handleCloseDialog();
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to save package");
+        },
+      });
+    },
+  });
 
   const handleOpenDialog = (pkg = null) => {
     if (pkg) {
       setEditingPackage(pkg);
-      setFormData({
-        name: pkg.name,
-        description: pkg.description || "",
-        price: pkg.price / 100,
-        active: pkg.active,
-        serviceIds: pkg.services?.map((s) => s.id) || [],
-      });
+      form.reset();
+      form.setFieldValue("name", pkg.name);
+      form.setFieldValue("description", pkg.description || "");
+      form.setFieldValue("price", pkg.price / 100);
+      form.setFieldValue("active", pkg.active);
+      form.setFieldValue("serviceIds", pkg.services?.map((s) => s.id) || []);
     } else {
       setEditingPackage(null);
-      setFormData(initialFormState);
+      form.reset();
     }
     setDialogOpen(true);
   };
@@ -80,44 +101,13 @@ export function PackagesList() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingPackage(null);
-    setFormData(initialFormState);
-  };
-
-  const handleServiceToggle = (serviceId) => {
-    setFormData((prev) => ({
-      ...prev,
-      serviceIds: prev.serviceIds.includes(serviceId)
-        ? prev.serviceIds.filter((id) => id !== serviceId)
-        : [...prev.serviceIds, serviceId],
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      ...formData,
-      price: Math.round(formData.price * 100),
-    };
-
-    const mutation = editingPackage ? updatePackage : createPackage;
-    const mutationData = editingPackage ? { id: editingPackage.id, ...payload } : payload;
-
-    mutation.mutate(mutationData, {
-      onSuccess: () => {
-        toast.success(editingPackage ? "Package updated" : "Package created");
-        handleCloseDialog();
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to save package");
-      },
-    });
+    form.reset();
   };
 
   const handleDelete = async () => {
     if (!packageToDelete) return;
 
-    deletePackage.mutate(packageToDelete.id, {
+    deletePackageMutation.mutate(packageToDelete.id, {
       onSuccess: () => {
         toast.success("Package deleted");
         setDeleteDialogOpen(false);
@@ -311,95 +301,148 @@ export function PackagesList() {
                 : "Bundle services together for a package deal"}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Package Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Wedding Package, VIP Bundle"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
+              <form.Field
+                name="name"
+                validators={{
+                  onChange: ({ value }) =>
+                    !value?.trim() ? "Package name is required" : undefined,
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Package Name</Label>
+                    <Input
+                      id={field.name}
+                      placeholder="e.g., Wedding Package, VIP Bundle"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                    />
+                    {field.state.meta.isTouched && field.state.meta.errors[0] && (
+                      <p className="hig-caption2 text-destructive">{field.state.meta.errors[0]}</p>
+                    )}
+                  </div>
+                )}
+              </form.Field>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe what's included in this package"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
+              <form.Field name="description">
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Description (optional)</Label>
+                    <Textarea
+                      id={field.name}
+                      placeholder="Describe what's included in this package"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                )}
+              </form.Field>
 
-              <div className="space-y-2">
-                <Label htmlFor="price">Price ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                  required
-                />
-              </div>
+              <form.Field name="price">
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Price ($)</Label>
+                    <Input
+                      id={field.name}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                )}
+              </form.Field>
 
               {services.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Included Services</Label>
-                  <div className="rounded-md border p-3 space-y-2 max-h-[200px] overflow-y-auto">
-                    {services.map((service) => (
-                      <div key={service.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`service-${service.id}`}
-                          checked={formData.serviceIds.includes(service.id)}
-                          onCheckedChange={() => handleServiceToggle(service.id)}
-                        />
-                        <label
-                          htmlFor={`service-${service.id}`}
-                          className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                        >
-                          {service.name}
-                          <span className="text-muted-foreground ml-2">
-                            ({formatPrice(service.price)})
-                          </span>
-                        </label>
+                <form.Field name="serviceIds">
+                  {(field) => {
+                    const selectedIds = field.state.value || [];
+                    const handleToggle = (serviceId) => {
+                      const newValue = selectedIds.includes(serviceId)
+                        ? selectedIds.filter((id) => id !== serviceId)
+                        : [...selectedIds, serviceId];
+                      field.handleChange(newValue);
+                    };
+
+                    return (
+                      <div className="space-y-2">
+                        <Label>Included Services</Label>
+                        <div className="rounded-md border p-3 space-y-2 max-h-[200px] overflow-y-auto">
+                          {services.map((service) => (
+                            <div key={service.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`service-${service.id}`}
+                                checked={selectedIds.includes(service.id)}
+                                onCheckedChange={() => handleToggle(service.id)}
+                              />
+                              <label
+                                htmlFor={`service-${service.id}`}
+                                className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                              >
+                                {service.name}
+                                <span className="text-muted-foreground ml-2">
+                                  ({formatPrice(service.price)})
+                                </span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="hig-caption2 text-muted-foreground">
+                          {selectedIds.length} service{selectedIds.length !== 1 ? "s" : ""} selected
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                  <p className="hig-caption2 text-muted-foreground">
-                    {formData.serviceIds.length} service{formData.serviceIds.length !== 1 ? "s" : ""} selected
-                  </p>
-                </div>
+                    );
+                  }}
+                </form.Field>
               )}
 
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <Label htmlFor="active" className="font-medium">Active</Label>
-                  <p className="text-muted-foreground">
-                    Inactive packages won't appear in booking options
-                  </p>
-                </div>
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                />
-              </div>
+              <form.Field name="active">
+                {(field) => (
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div>
+                      <Label htmlFor={field.name} className="font-medium">Active</Label>
+                      <p className="text-muted-foreground">
+                        Inactive packages won't appear in booking options
+                      </p>
+                    </div>
+                    <Switch
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={field.handleChange}
+                    />
+                  </div>
+                )}
+              </form.Field>
             </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createPackage.isPending || updatePackage.isPending}>
-                {(createPackage.isPending || updatePackage.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {editingPackage ? "Save Changes" : "Create Package"}
-              </Button>
+              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                {([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    disabled={!canSubmit || isSubmitting || createPackageMutation.isPending || updatePackageMutation.isPending}
+                  >
+                    {(isSubmitting || createPackageMutation.isPending || updatePackageMutation.isPending) && (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    )}
+                    {editingPackage ? "Save Changes" : "Create Package"}
+                  </Button>
+                )}
+              </form.Subscribe>
             </DialogFooter>
           </form>
         </DialogContent>
