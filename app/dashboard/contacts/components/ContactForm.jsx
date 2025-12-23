@@ -19,8 +19,10 @@ import {
   useDeleteContact,
   useAddContactTag,
   useRemoveContactTag,
+  useUploadImage,
 } from "@/lib/hooks";
 import { useTags, useCreateTag } from "@/lib/hooks";
+import { CameraCapture } from "@/components/camera";
 import {
   useTanstackForm,
   TextField,
@@ -67,6 +69,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
   const createTagMutation = useCreateTag();
   const addContactTagMutation = useAddContactTag();
   const removeContactTagMutation = useRemoveContactTag();
+  const uploadImageMutation = useUploadImage();
 
   // Extract data from the contact query response
   const contact = contactData?.contact;
@@ -187,6 +190,22 @@ export function ContactForm({ mode = "create", contactId = null }) {
       toast.success(`Tag "${newTag.name}" created and added`);
     } catch (error) {
       toast.error(error.message || "Failed to create and add tag");
+    }
+  };
+
+  // Handle photo capture for contact profile photos
+  const handlePhotoCapture = async (photoFile) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", photoFile);
+      formData.append("name", `${contact?.name || "Contact"} profile photo`);
+      formData.append("alt", `Profile photo for ${contact?.name || "contact"}`);
+      formData.append("type", "team");
+
+      await uploadImageMutation.mutateAsync(formData);
+      toast.success("Profile photo uploaded to media library");
+    } catch (error) {
+      toast.error(error.message || "Failed to upload photo");
     }
   };
 
@@ -412,6 +431,21 @@ export function ContactForm({ mode = "create", contactId = null }) {
                 rows={4}
                 icon={FileText}
               />
+
+              <div className="space-y-2">
+                <Label>Profile Photo</Label>
+                <CameraCapture
+                  onCapture={handlePhotoCapture}
+                  buttonText="Capture Profile Photo"
+                  buttonVariant="outline"
+                  facingMode="user"
+                  showPreview={true}
+                  title="Capture Profile Photo"
+                  description="Take a photo for this contact's profile"
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground">Photos are saved to Media Library</p>
+              </div>
 
               {/* Delete Button (edit mode only) */}
               {mode === "edit" && (

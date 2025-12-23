@@ -32,6 +32,7 @@ import {
   Receipt,
   ClipboardList,
   Zap,
+  Camera,
 } from "lucide-react";
 
 export const metadata = {
@@ -58,6 +59,14 @@ const PHASE_CONFIG = {
     label: "Shipped",
     icon: Check,
     description: "Live and available to all users",
+  },
+  infrastructure: {
+    color: "bg-purple-500",
+    badgeVariant: "default",
+    badgeClass: "bg-purple-100 text-purple-700 hover:bg-purple-100",
+    label: "Infrastructure Ready",
+    icon: Code,
+    description: "Backend ready, UI coming soon",
   },
   "building-now": {
     color: "bg-blue-500",
@@ -190,14 +199,24 @@ const ROADMAP_ITEMS = [
         icon: Users,
       },
       {
+        title: "Camera & Media Capture",
+        description: "Capture photos directly in Media Library, Bookings, Contacts, and Services with preview and upload",
+        icon: Camera,
+      },
+    ],
+  },
+  {
+    phase: "infrastructure",
+    items: [
+      {
         title: "Geolocation API",
-        description: "Location tracking API ready for future features like Smart Routing (infrastructure in place, UI coming soon)",
+        description: "Location tracking API ready for future features like Smart Routing",
         icon: Navigation,
       },
       {
-        title: "Camera & Media Capture",
-        description: "Camera API ready for job photos and receipts (infrastructure in place, UI components coming soon)",
-        icon: Image,
+        title: "Zapier Integration",
+        description: "Connect to 5000+ apps including Google Sheets, Slack, Gmail, Mailchimp, and Airtable via webhooks and REST API",
+        icon: Zap,
       },
     ],
   },
@@ -239,11 +258,6 @@ const ROADMAP_ITEMS = [
         description: "Sell and redeem gift certificates for your services",
         icon: Gift,
       },
-      {
-        title: "Zapier Integration",
-        description: "Connect to 5000+ apps including Google Sheets, Slack, Gmail, Mailchimp, and Airtable",
-        icon: Zap,
-      },
     ],
   },
   {
@@ -253,6 +267,11 @@ const ROADMAP_ITEMS = [
         title: "Native Mobile App",
         description: "iOS and Android app built with React Native for on-the-go business management",
         icon: Smartphone,
+      },
+      {
+        title: "Business Profiles",
+        description: "Industry-specific templates with custom fields (e.g., car detailers get vehicle info, photographers get event types)",
+        icon: LayoutGrid,
       },
       {
         title: "Custom Booking Themes",

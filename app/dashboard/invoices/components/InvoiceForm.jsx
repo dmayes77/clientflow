@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Trash2, Send } from "lucide-react";
+import { ArrowLeft, Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Trash2, Send, Share2 } from "lucide-react";
 import { AddIcon, LoadingIcon, CloseIcon } from "@/lib/icons";
 import {
   useInvoice,
@@ -26,6 +26,7 @@ import {
   useServices,
   usePackages,
   useTenant,
+  useWebShare,
 } from "@/lib/hooks";
 import {
   useTanstackForm,
@@ -101,6 +102,9 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   const deleteInvoiceMutation = useDeleteInvoice();
   const sendInvoiceMutation = useSendInvoice();
   const createContactMutation = useCreateContact();
+
+  // Web Share
+  const { share } = useWebShare();
 
   // Calculate loading state
   const loading = contactsLoading || bookingsLoading || servicesLoading || packagesLoading || tenantLoading || (mode === "edit" && invoiceLoading);
@@ -430,6 +434,32 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         toast.error(error.message || "Failed to send invoice");
       },
     });
+  };
+
+  const handleShare = async () => {
+    if (!invoice) {
+      toast.error("Invoice not loaded");
+      return;
+    }
+
+    const invoiceUrl = `${window.location.origin}/dashboard/invoices/${invoiceId}`;
+    const contactName = form.getFieldValue("contactName") || "Client";
+
+    const result = await share({
+      title: `Invoice ${invoice.invoiceNumber}`,
+      text: `Invoice for ${contactName} - Total: $${(total / 100).toFixed(2)}`,
+      url: invoiceUrl,
+    });
+
+    if (result.success) {
+      if (result.method === "clipboard") {
+        toast.success("Invoice link copied to clipboard");
+      } else {
+        toast.success("Invoice shared successfully");
+      }
+    } else if (!result.cancelled) {
+      toast.error("Failed to share invoice");
+    }
   };
 
   const { subtotal, lineDiscounts, taxAmount, total } = calculateTotals();
@@ -921,6 +951,17 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 <Send className="h-4 w-4 mr-2" />
               )}
               Send
+            </Button>
+          )}
+          {mode === "edit" && invoice && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
             </Button>
           )}
           <SubmitButton form={form} variant="success" className="size-sm">

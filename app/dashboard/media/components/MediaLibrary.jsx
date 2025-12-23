@@ -38,6 +38,7 @@ import {
   Filter,
   Grid,
   List,
+  Camera,
 } from "lucide-react";
 import {
   useImages,
@@ -49,6 +50,7 @@ import {
   useUpdateVideo,
   useDeleteVideo,
 } from "@/lib/hooks";
+import { CameraCapture } from "@/components/camera";
 
 const IMAGE_TYPES = [
   { value: "logo", label: "Logo" },
@@ -171,6 +173,11 @@ export function MediaLibrary() {
       type: "general",
     });
     setUploadDialogOpen(true);
+  };
+
+  const handleCameraCapture = async (photoFile) => {
+    // Handle captured photo just like a regular file upload
+    handleFileSelect(photoFile);
   };
 
   const handleUpload = async () => {
@@ -380,6 +387,19 @@ export function MediaLibrary() {
               </TabsList>
 
               <div className="flex items-center gap-2">
+                {activeTab === "images" && (
+                  <CameraCapture
+                    onCapture={handleCameraCapture}
+                    buttonText=""
+                    buttonVariant="outline"
+                    facingMode="environment"
+                    showPreview={true}
+                    title="Capture Photo"
+                    description="Take a photo to add to your media library"
+                    className="h-8 w-8 p-0"
+                  />
+                )}
+
                 <Select value={filterType} onValueChange={setFilterType}>
                   <SelectTrigger size="sm" className="h-8 px-2 hig-caption2 gap-1">
                     <Filter className="h-3 w-3 shrink-0" />

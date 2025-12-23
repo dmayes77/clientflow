@@ -16,14 +16,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Calendar, DollarSign, Loader2, Save, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, Loader2, Save, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle, Share2 } from "lucide-react";
 import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
+import { CameraCapture } from "@/components/camera";
 import { useBooking, useCreateBooking, useUpdateBooking, useAddBookingTag, useRemoveBookingTag, useAddBookingService, useRemoveBookingService, useAddBookingPackage, useRemoveBookingPackage } from "@/lib/hooks";
 import { useContacts, useCreateContact } from "@/lib/hooks";
 import { useServices } from "@/lib/hooks";
 import { usePackages } from "@/lib/hooks";
 import { useTags, useCreateTag } from "@/lib/hooks";
-import { useTenant } from "@/lib/hooks";
+import { useTenant, useWebShare, useUploadImage } from "@/lib/hooks";
 import { useTanstackForm, TextField, TextareaField, NumberField, SelectField } from "@/components/ui/tanstack-form";
 
 const TAG_COLORS = {
@@ -126,6 +127,10 @@ export function BookingForm({
   const updateBookingMutation = useUpdateBooking();
   const createContactMutation = useCreateContact();
   const createTagMutation = useCreateTag();
+  const uploadImageMutation = useUploadImage();
+
+  // Web Share
+  const { share } = useWebShare();
 
   // Booking mutation hooks
   const addBookingTagMutation = useAddBookingTag();
@@ -601,6 +606,50 @@ export function BookingForm({
     setInvoiceDialogOpen(false);
   };
 
+  // Handle share
+  const handleShare = async () => {
+    if (!isEditMode || !booking) {
+      toast.error("Booking not loaded");
+      return;
+    }
+
+    const bookingUrl = `${window.location.origin}/dashboard/bookings/${bookingId}`;
+    const contactName = booking.contact?.name || form.state.values.contactName || "Client";
+    const serviceName = booking.selectedServices?.[0]?.name || "Service";
+
+    const result = await share({
+      title: `Booking - ${contactName}`,
+      text: `${serviceName} booking for ${contactName}`,
+      url: bookingUrl,
+    });
+
+    if (result.success) {
+      if (result.method === "clipboard") {
+        toast.success("Booking link copied to clipboard");
+      } else {
+        toast.success("Booking shared successfully");
+      }
+    } else if (!result.cancelled) {
+      toast.error("Failed to share booking");
+    }
+  };
+
+  // Handle photo capture for job site photos
+  const handlePhotoCapture = async (photoFile) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", photoFile);
+      formData.append("name", `Booking photo ${new Date().toLocaleDateString()}`);
+      formData.append("alt", `Job site photo for booking ${bookingId || "new"}`);
+      formData.append("type", "general");
+
+      await uploadImageMutation.mutateAsync(formData);
+      toast.success("Photo uploaded to media library");
+    } catch (error) {
+      toast.error(error.message || "Failed to upload photo");
+    }
+  };
+
   // Get the current services/packages/tags based on mode
   const currentServices = isEditMode ? booking?.selectedServices || [] : selectedServices;
   const currentPackages = isEditMode ? booking?.selectedPackages || [] : selectedPackages;
@@ -642,6 +691,12 @@ export function BookingForm({
                 {isSaving ? <Loader2 className="size-4 mr-1 animate-spin" /> : isEditMode ? <Save className="size-4 mr-1" /> : <Plus className="size-4 mr-1" />}
                 {isEditMode ? "Save" : "Create"}
               </Button>
+              {isEditMode && booking && (
+                <Button type="button" variant="outline" size="sm" onClick={handleShare}>
+                  <Share2 className="size-4 mr-1" />
+                  Share
+                </Button>
+              )}
               <Button type="button" variant="outline" size="sm" onClick={() => router.back()}>
                 Cancel
               </Button>
@@ -966,13 +1021,27 @@ export function BookingForm({
             <CardHeader className="pb-3">
               <CardTitle>Notes</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
               <TextareaField
                 form={form}
                 name="notes"
                 placeholder="Add notes about this booking..."
                 rows={4}
               />
+
+              <div className="flex items-center gap-2">
+                <CameraCapture
+                  onCapture={handlePhotoCapture}
+                  buttonText="Capture Job Photo"
+                  buttonVariant="outline"
+                  facingMode="environment"
+                  showPreview={true}
+                  title="Capture Job Site Photo"
+                  description="Take a photo of the job site or work in progress"
+                  className="w-full"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Photos are saved to Media Library</p>
             </CardContent>
           </Card>
         </div>

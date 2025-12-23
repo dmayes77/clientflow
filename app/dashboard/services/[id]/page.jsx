@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useService, useUpdateService, useDeleteService } from "@/lib/hooks";
 import { useServiceCategories } from "@/lib/hooks/use-service-categories";
 import { useImages, useUploadImage } from "@/lib/hooks/use-media";
+import { CameraCapture } from "@/components/camera";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -313,6 +314,22 @@ Format the includes list so I can easily copy each item individually.`;
     }
   };
 
+  const handleCameraCapture = async (photoFile) => {
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", photoFile);
+    formDataUpload.append("name", `${formData.name || "Service"} photo`);
+    formDataUpload.append("alt", `Photo for ${formData.name || "service"}`);
+    formDataUpload.append("type", "product");
+
+    try {
+      const newImage = await uploadImageMutation.mutateAsync(formDataUpload);
+      setFormData({ ...formData, imageId: newImage.id });
+      toast.success("Service photo captured and uploaded");
+    } catch (error) {
+      toast.error(error.message || "Failed to upload photo");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -547,6 +564,16 @@ Format the includes list so I can easily copy each item individually.`;
                         </span>
                       </Button>
                     </label>
+                    <CameraCapture
+                      onCapture={handleCameraCapture}
+                      buttonText="Take Photo"
+                      buttonVariant="outline"
+                      facingMode="environment"
+                      showPreview={true}
+                      title="Capture Service Photo"
+                      description="Take a photo to showcase this service"
+                      className="w-full"
+                    />
                   </div>
                 </div>
               </div>
