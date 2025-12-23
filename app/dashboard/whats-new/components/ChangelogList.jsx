@@ -62,14 +62,14 @@ const CHANGELOG = [
       {
         type: "feature",
         icon: Navigation,
-        title: "Geolocation API",
-        description: "Location tracking for route optimization between appointments. Calculate distances and plan efficient travel routes.",
+        title: "Geolocation API (Ready for Smart Routing)",
+        description: "Location tracking infrastructure ready for route optimization. UI features coming in future updates.",
       },
       {
         type: "feature",
         icon: Camera,
-        title: "Camera & Media Capture",
-        description: "Document scanning, photo capture, and media recording directly in the app. Perfect for job site photos and receipts.",
+        title: "Camera & Media Capture (Ready for Job Photos)",
+        description: "Camera API infrastructure ready for job site photos and receipt scanning. UI components coming in future updates.",
       },
       {
         type: "improvement",

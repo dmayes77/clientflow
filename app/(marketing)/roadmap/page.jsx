@@ -191,12 +191,12 @@ const ROADMAP_ITEMS = [
       },
       {
         title: "Geolocation API",
-        description: "Location tracking for route optimization and location-based features",
+        description: "Location tracking API ready for future features like Smart Routing (infrastructure in place, UI coming soon)",
         icon: Navigation,
       },
       {
         title: "Camera & Media Capture",
-        description: "Document scanning, photo capture, and media recording directly from the app",
+        description: "Camera API ready for job photos and receipts (infrastructure in place, UI components coming soon)",
         icon: Image,
       },
     ],
