@@ -11,6 +11,8 @@ import {
   PricingScenario,
 } from "./components";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: "Pricing | ClientFlow",
   description: "Simple, transparent pricing for ClientFlow. $149/month for unlimited bookings, clients, API access, and all features. Start with a 14-day free trial.",
