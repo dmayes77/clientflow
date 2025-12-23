@@ -44,6 +44,12 @@ function isTenantRoute(pathname) {
 
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
+
+  // Completely skip Clerk for admin routes - they use passcode authentication
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+    return NextResponse.next();
+  }
+
   const { userId } = await auth();
 
   // Redirect authenticated users away from auth pages to dashboard
