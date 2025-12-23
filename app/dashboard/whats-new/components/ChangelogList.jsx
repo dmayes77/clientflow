@@ -31,7 +31,7 @@ import {
 const CHANGELOG = [
   {
     version: "1.4.0",
-    date: "December 2024",
+    date: "December 2025",
     title: "Complete PWA Feature Set",
     isNew: true,
     items: [
@@ -81,7 +81,7 @@ const CHANGELOG = [
   },
   {
     version: "1.2.0",
-    date: "December 2024",
+    date: "December 2025",
     title: "Stripe Connect & Payment Processing",
     isNew: false,
     items: [
