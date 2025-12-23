@@ -15,8 +15,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/stripe/webhook(.*)",
   "/api/signup(.*)",
   "/api/setup", // One-time setup endpoint for initial plans
-  "/api/admin/auth", // Admin passcode authentication
-  "/admin(.*)", // Let layout handle auth - redirects to login if not authenticated
+  "/api/admin(.*)", // Admin API routes - use passcode authentication
+  "/admin(.*)", // Admin pages - let layout handle auth
 ]);
 
 // Only redirect from sign-in/sign-up pages, NOT signup wizard (users need to complete steps 2-3 after auth)
