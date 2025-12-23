@@ -3,6 +3,7 @@
 /**
  * Migration script that handles existing databases
  *
+ * - Clears any stuck advisory locks
  * - Tries to deploy migrations normally
  * - If database has existing schema without migration history, baselines it first
  * - Then deploys migrations
@@ -11,6 +12,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { Client } = require('pg');
 
 // Increase migration lock timeout to prevent P1002 errors (default is 10s)
 process.env.PRISMA_MIGRATE_LOCK_TIMEOUT = '60000'; // 60 seconds
@@ -30,8 +32,39 @@ function exec(command) {
   }
 }
 
+async function clearAdvisoryLocks() {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
+    console.log('⚠️  DATABASE_URL not set, skipping lock cleanup');
+    return;
+  }
+
+  console.log('🔓 Clearing any stuck advisory locks...');
+
+  const client = new Client({
+    connectionString: databaseUrl,
+  });
+
+  try {
+    await client.connect();
+
+    // Release all advisory locks
+    await client.query('SELECT pg_advisory_unlock_all()');
+
+    console.log('✅ Advisory locks cleared\n');
+  } catch (error) {
+    console.log(`⚠️  Could not clear locks (this is usually fine): ${error.message}\n`);
+  } finally {
+    await client.end();
+  }
+}
+
 async function main() {
   console.log('🔄 Running database migrations...\n');
+
+  // Clear any stuck locks before attempting migration
+  await clearAdvisoryLocks();
 
   // Try to deploy migrations
   const deployResult = exec('npx prisma migrate deploy');
