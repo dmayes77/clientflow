@@ -52,6 +52,11 @@ export default function Step2Page() {
       return;
     }
 
+    if (!createOrganization) {
+      setError("Organization service not ready. Please refresh and try again.");
+      return;
+    }
+
     setError("");
     setLoading(true);
 
@@ -62,8 +67,8 @@ export default function Step2Page() {
         slug: slug,
       });
 
-      if (!org) {
-        throw new Error("Failed to create organization");
+      if (!org || !org.id) {
+        throw new Error("Failed to create organization - no organization returned");
       }
 
       // Set as active organization (required for API routes that check orgId)
