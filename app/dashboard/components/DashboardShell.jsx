@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
+import packageJson from "@/package.json";
 
 const businessItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -185,6 +186,9 @@ function SidebarNav({ businessName }) {
             </SignOutButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <div className="px-3 py-2 text-center">
+          <p className="text-xs text-muted-foreground">v{packageJson.version}</p>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
