@@ -67,22 +67,26 @@ export function CameraCapture({
             });
           };
           reader.readAsDataURL(result.file);
+          // Keep dialog open to show preview
         } else {
           // Direct upload without preview
           await onCapture(result.file);
           toast.success("Photo captured and uploaded successfully");
+          setIsOpen(false);
         }
       } else if (result.cancelled) {
-        // User cancelled, do nothing
+        // User cancelled, close dialog
+        setIsOpen(false);
       } else {
         toast.error(result.error || "Failed to capture photo");
+        setIsOpen(false);
       }
     } catch (error) {
       console.error("Camera capture error:", error);
       toast.error(error.message || "Failed to access camera");
+      setIsOpen(false);
     } finally {
       setIsCapturing(false);
-      setIsOpen(false);
     }
   };
 
@@ -94,6 +98,7 @@ export function CameraCapture({
       await onCapture(capturedImage.file);
       toast.success("Photo uploaded successfully");
       setCapturedImage(null);
+      setIsOpen(false);
     } catch (error) {
       toast.error(error.message || "Failed to upload photo");
     } finally {
