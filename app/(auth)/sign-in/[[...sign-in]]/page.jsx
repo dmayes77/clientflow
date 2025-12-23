@@ -16,6 +16,8 @@ function SignInContent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
+  const [secondFactor, setSecondFactor] = useState(false);
+  const [code, setCode] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromMarketing = searchParams.get("from") === "marketing";
@@ -52,6 +54,45 @@ function SignInContent() {
       const errorMessage = err.errors?.[0]?.message || "Google sign in failed";
       setError(errorMessage);
       setGoogleLoading(false);
+    }
+  };
+
+  const handleSecondFactor = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!code) {
+      setError("Please enter your 2FA code");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+    addDebugLog("Submitting 2FA code...");
+
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: "totp",
+        code: code,
+      });
+
+      addDebugLog(`2FA result: ${result.status}`, "success");
+
+      if (result.status === "complete") {
+        addDebugLog("Activating session...");
+        await setActive({ session: result.createdSessionId });
+        addDebugLog("Session activated, redirecting...", "success");
+        window.location.href = "/dashboard";
+      } else {
+        addDebugLog(`2FA incomplete: ${result.status}`, "error");
+        setError("Verification failed. Please try again.");
+        setLoading(false);
+      }
+    } catch (err) {
+      addDebugLog(`2FA error: ${err.message || err}`, "error");
+      const errorMessage = err.errors?.[0]?.message || err.message || "Invalid code";
+      setError(errorMessage);
+      setLoading(false);
     }
   };
 
@@ -111,6 +152,11 @@ function SignInContent() {
 
         // Redirect immediately - session is now active
         window.location.href = "/dashboard";
+      } else if (result.status === "needs_second_factor") {
+        addDebugLog("2FA required", "warn");
+        setSecondFactor(true);
+        setLoading(false);
+        isSubmitting.current = false;
       } else {
         addDebugLog(`Sign in incomplete: ${result.status}`, "error");
         setError("Sign in failed. Please try again.");
@@ -197,14 +243,82 @@ function SignInContent() {
             )}
           </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-5 sm:my-6">
-            <div className="flex-1 h-px bg-gray-300" />
-            <span className="text-gray-400 text-sm">or</span>
-            <div className="flex-1 h-px bg-gray-300" />
-          </div>
+          {!secondFactor && (
+            <>
+              {/* Divider */}
+              <div className="flex items-center gap-4 my-5 sm:my-6">
+                <div className="flex-1 h-px bg-gray-300" />
+                <span className="text-gray-400 text-sm">or</span>
+                <div className="flex-1 h-px bg-gray-300" />
+              </div>
+            </>
+          )}
 
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4" noValidate>
+          {secondFactor ? (
+            // Two-Factor Authentication Form
+            <form onSubmit={handleSecondFactor} className="space-y-3 sm:space-y-4" noValidate>
+              <div className="text-center mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">Two-Factor Authentication</h2>
+                <p className="text-sm text-gray-600 mt-1">Enter the code from your authenticator app</p>
+              </div>
+
+              {/* 2FA Code Input */}
+              <div className="flex h-11 sm:h-14 border border-gray-300 rounded-lg overflow-hidden">
+                <div className="w-11 sm:w-14 shrink-0 flex items-center justify-center bg-gray-100 border-r border-gray-300">
+                  <Lock className="w-5 h-5 text-gray-400" strokeWidth={2} />
+                </div>
+                <input
+                  type="text"
+                  name="code"
+                  id="code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  placeholder="6-digit code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  disabled={loading}
+                  className="flex-1 min-w-0 px-3 sm:px-4 text-base outline-none bg-white text-gray-700 placeholder:text-gray-400 disabled:opacity-50 text-center tracking-widest"
+                  maxLength={6}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              {/* Error */}
+              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+              {/* Submit Button */}
+              <div className="flex flex-col gap-2">
+                <button
+                  type="submit"
+                  disabled={loading || code.length !== 6}
+                  className="w-full h-11 sm:h-14 px-8 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-base font-medium rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation"
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>Verify</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSecondFactor(false);
+                    setCode("");
+                    setError("");
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            </form>
+          ) : (
+            // Email/Password Form
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4" noValidate>
             {/* Email Input */}
             <div className="flex h-11 sm:h-14 border border-gray-300 rounded-lg overflow-hidden">
               <div className="w-11 sm:w-14 shrink-0 flex items-center justify-center bg-gray-100 border-r border-gray-300">
@@ -280,6 +394,7 @@ function SignInContent() {
               </button>
             </div>
           </form>
+          )}
 
           {/* Loading state indicator */}
           {!isLoaded && (
