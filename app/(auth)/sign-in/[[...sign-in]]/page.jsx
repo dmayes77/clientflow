@@ -1,13 +1,14 @@
 "use client";
 
-import { useSignIn } from "@clerk/nextjs";
-import { useState, useRef, Suspense } from "react";
+import { useSignIn, useAuth } from "@clerk/nextjs";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, KeyRound, Eye, EyeOff, Lock, Loader2, ArrowLeft } from "lucide-react";
 
 function SignInContent() {
   const { signIn, setActive, isLoaded } = useSignIn();
+  const { isSignedIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +19,14 @@ function SignInContent() {
   const searchParams = useSearchParams();
   const fromMarketing = searchParams.get("from") === "marketing";
   const isSubmitting = useRef(false);
+
+  // If already signed in, redirect to dashboard
+  useEffect(() => {
+    if (isSignedIn) {
+      console.log("Already signed in, redirecting to dashboard");
+      window.location.href = "/dashboard";
+    }
+  }, [isSignedIn]);
 
   const handleGoogleSignIn = async () => {
     if (!isLoaded) return;
@@ -79,23 +88,17 @@ function SignInContent() {
       console.log("Sign in result:", result.status);
 
       if (result.status === "complete") {
-        console.log("Setting active session...");
+        console.log("Sign in complete, activating session...");
 
-        try {
-          await setActive({ session: result.createdSessionId });
-          console.log("Session activated successfully");
-        } catch (sessionErr) {
-          // Handle "session already exists" error
-          if (sessionErr.message?.includes("already") || sessionErr.errors?.[0]?.message?.includes("already")) {
-            console.log("Session already active, proceeding to dashboard");
-          } else {
-            throw sessionErr;
-          }
-        }
+        // Activate the session
+        await setActive({ session: result.createdSessionId });
 
-        console.log("Redirecting to dashboard...");
-        // Use window.location for more reliable mobile redirect
-        window.location.href = "/dashboard";
+        console.log("Session activated, redirecting to dashboard...");
+
+        // Add small delay to ensure session is fully activated
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 100);
       } else {
         console.error("Sign in incomplete:", result);
         setError("Sign in failed. Please try again.");
@@ -104,6 +107,14 @@ function SignInContent() {
       }
     } catch (err) {
       console.error("Sign in error:", err);
+
+      // If session already exists error, just redirect to dashboard
+      if (err.message?.includes("already") || err.errors?.[0]?.message?.includes("already") || err.errors?.[0]?.code === "session_exists") {
+        console.log("Session already exists, redirecting to dashboard");
+        window.location.href = "/dashboard";
+        return;
+      }
+
       const errorMessage = err.errors?.[0]?.message || err.message || "Invalid email or password";
       setError(errorMessage);
       setLoading(false);
