@@ -32,8 +32,11 @@ const STATUS_CONFIG = {
 };
 
 const PLAN_CONFIG = {
-  platform: { label: "Platform", color: "bg-blue-100 text-blue-700" },
+  basic: { label: "Basic", color: "bg-zinc-100 text-zinc-700" },
+  starter: { label: "Starter", color: "bg-emerald-100 text-emerald-700" },
   professional: { label: "Professional", color: "bg-purple-100 text-purple-700" },
+  platform: { label: "Platform", color: "bg-blue-100 text-blue-700" },
+  default: { label: "Unknown", color: "bg-zinc-100 text-zinc-600" },
 };
 
 function formatCurrency(cents) {
@@ -145,7 +148,7 @@ function StatusFilter({ value, onChange, counts }) {
 
 function TenantSubscriptionCard({ tenant }) {
   const statusConfig = STATUS_CONFIG[tenant.subscriptionStatus] || STATUS_CONFIG.none;
-  const planConfig = PLAN_CONFIG[tenant.planType] || PLAN_CONFIG.basic;
+  const planConfig = PLAN_CONFIG[tenant.planType] || PLAN_CONFIG.default;
   const StatusIcon = statusConfig.icon;
   const days = daysUntil(tenant.currentPeriodEnd);
 
