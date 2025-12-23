@@ -1,39 +1,9 @@
 import Link from "next/link";
 import { SectionContainer } from "../components";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FeatureRequestForm } from "./components";
-import {
-  ArrowRight,
-  Check,
-  Rocket,
-  Calendar,
-  Lightbulb,
-  Users,
-  CreditCard,
-  Code,
-  Image,
-  Webhook,
-  Mail,
-  BarChart3,
-  Palette,
-  LayoutGrid,
-  Smartphone,
-  FileText,
-  Clock,
-  Star,
-  Gift,
-  Route,
-  Timer,
-  Navigation,
-  Megaphone,
-  TrendingUp,
-  Receipt,
-  ClipboardList,
-  Zap,
-  Camera,
-} from "lucide-react";
+import { FeatureRequestForm, RoadmapList } from "./components";
+import { ArrowRight } from "lucide-react";
 
 export const metadata = {
   title: "Product Roadmap | ClientFlow - See What's Coming Next",
@@ -373,70 +343,15 @@ export default function RoadmapPage() {
           </Badge>
           <h1>What We&apos;re Building</h1>
           <p className="mft-lead max-w-xl mx-auto">
-            See what&apos;s been shipped and what&apos;s coming next. We&apos;re constantly improving ClientFlow based on customer feedback.
+            See what&apos;s been shipped and what&apos;s coming next. We&apos;re constantly improving ClientFlow based on customer feedback. Vote for the features you want most!
           </p>
-
-          {/* Legend */}
-          <div className="flex flex-wrap justify-center gap-2 pt-4">
-            {Object.entries(PHASE_CONFIG).map(([key, config]) => (
-              <Badge key={key} className={config.badgeClass}>
-                {config.label}
-              </Badge>
-            ))}
-          </div>
         </div>
       </SectionContainer>
 
-      {/* Roadmap Sections */}
-      <div className="space-y-0">
-        {ROADMAP_ITEMS.map((section, sectionIndex) => {
-          const config = PHASE_CONFIG[section.phase];
-          const PhaseIcon = config.icon;
-          const isEven = sectionIndex % 2 === 0;
-
-          return (
-            <section
-              key={section.phase}
-              className={`py-12 ${isEven ? "bg-muted/30" : ""}`}
-            >
-              <SectionContainer>
-                {/* Phase Header */}
-                <div className="flex items-center gap-4 mb-8">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${config.color} text-white shadow-sm`}>
-                    <PhaseIcon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold mft-text-xl">{config.label}</h2>
-                    <p className="mft-small text-muted-foreground">{config.description}</p>
-                  </div>
-                  <div className="hidden sm:block flex-1 h-px bg-border ml-4" />
-                </div>
-
-                {/* Items Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {section.items.map((item) => (
-                    <Card key={item.title} className="group hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${config.badgeClass}`}>
-                            <item.icon className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0 pt-0.5">
-                            <p className="font-medium mft-small leading-tight">{item.title}</p>
-                            <p className="mft-caption text-muted-foreground mt-1 leading-relaxed">
-                              {item.description}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </SectionContainer>
-            </section>
-          );
-        })}
-      </div>
+      {/* Roadmap List with Voting */}
+      <SectionContainer>
+        <RoadmapList />
+      </SectionContainer>
 
       {/* Feature Request Form */}
       <SectionContainer>

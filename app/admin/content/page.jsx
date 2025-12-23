@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAdminContent } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,7 +44,24 @@ import {
   Zap,
   AlertTriangle,
   ExternalLink,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const STATUS_CONFIG = {
   planned: { label: "Planned", icon: Lightbulb, color: "bg-blue-100 text-blue-700" },
@@ -70,50 +87,76 @@ function formatDate(date) {
 }
 
 // Roadmap Components
-function RoadmapItemCard({ item, onEdit, onDelete }) {
+function SortableRoadmapItem({ item, onEdit, onDelete }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.planned;
   const StatusIcon = statusConfig.icon;
 
   return (
-    <Card>
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="font-medium hig-body">{item.title}</div>
-            {item.description && (
-              <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
-                {item.description}
-              </p>
-            )}
+    <div ref={setNodeRef} style={style}>
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex items-start gap-2">
+            <button
+              className="cursor-grab active:cursor-grabbing mt-0.5 text-muted-foreground hover:text-foreground"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <div className="flex items-start justify-between gap-2 flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
+                <div className="font-medium hig-body">{item.title}</div>
+                {item.description && (
+                  <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+              <Badge className={`shrink-0 hig-caption2 ${statusConfig.color}`}>
+                <StatusIcon className="h-2.5 w-2.5 mr-0.5" />
+                {statusConfig.label}
+              </Badge>
+            </div>
           </div>
-          <Badge className={`shrink-0 hig-caption2 ${statusConfig.color}`}>
-            <StatusIcon className="h-2.5 w-2.5 mr-0.5" />
-            {statusConfig.label}
-          </Badge>
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
-            {item.category && (
-              <Badge variant="outline" className="hig-caption2">{item.category}</Badge>
-            )}
-            {item.targetDate && (
-              <span>Target: {formatDate(item.targetDate)}</span>
-            )}
-            {item.votes > 0 && (
-              <span>{item.votes} votes</span>
-            )}
+          <div className="flex items-center justify-between mt-2 ml-6">
+            <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+              {item.category && (
+                <Badge variant="outline" className="hig-caption2">{item.category}</Badge>
+              )}
+              {item.targetDate && (
+                <span>Target: {formatDate(item.targetDate)}</span>
+              )}
+              {item.votes > 0 && (
+                <span>{item.votes} votes</span>
+              )}
+            </div>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onEdit(item)}>
+                <Edit2 className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => onDelete(item.id)}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onEdit(item)}>
-              <Edit2 className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => onDelete(item.id)}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -285,10 +328,27 @@ export default function ContentManagementPage() {
   // Fetch changelog entries
   const { data: changelogData, isLoading: changelogLoading } = useAdminContent("changelog");
 
-  const roadmapItems = roadmapData?.items || [];
+  // Local state for drag-drop reordering
+  const [localRoadmapItems, setLocalRoadmapItems] = useState([]);
+
+  // Sync local state with query data
+  useEffect(() => {
+    if (roadmapData?.items) {
+      setLocalRoadmapItems(roadmapData.items);
+    }
+  }, [roadmapData]);
+
   const roadmapCounts = roadmapData?.statusCounts || {};
   const changelogEntries = changelogData?.entries || [];
   const changelogCounts = changelogData?.counts || {};
+
+  // Drag-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Roadmap mutations
   const saveRoadmapMutation = useMutation({
@@ -323,6 +383,46 @@ export default function ContentManagementPage() {
   const handleDeleteRoadmap = (id) => {
     if (confirm("Delete this roadmap item?")) {
       deleteRoadmapMutation.mutate(id);
+    }
+  };
+
+  // Handle drag end
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = localRoadmapItems.findIndex((item) => item.id === active.id);
+    const newIndex = localRoadmapItems.findIndex((item) => item.id === over.id);
+
+    // Reorder items in local state
+    const newItems = arrayMove(localRoadmapItems, oldIndex, newIndex);
+    setLocalRoadmapItems(newItems);
+
+    // Update priorities in database
+    // Assign new priorities based on position (higher position = higher priority)
+    const updates = newItems.map((item, index) => ({
+      id: item.id,
+      priority: 1000 - index, // Start from 1000 and decrement
+    }));
+
+    // Batch update priorities
+    try {
+      await Promise.all(
+        updates.map((update) =>
+          fetch("/api/admin/content/roadmap", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(update),
+          })
+        )
+      );
+      // Invalidate query to refresh from server
+      queryClient.invalidateQueries(["admin-roadmap"]);
+    } catch (error) {
+      console.error("Failed to update priorities:", error);
+      // Revert on error
+      setLocalRoadmapItems(roadmapData?.items || []);
     }
   };
 
@@ -407,26 +507,37 @@ export default function ContentManagementPage() {
             <div className="space-y-2">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
             </div>
-          ) : roadmapItems.length === 0 ? (
+          ) : localRoadmapItems.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 No roadmap items yet
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-2">
-              {roadmapItems.map(item => (
-                <RoadmapItemCard
-                  key={item.id}
-                  item={item}
-                  onEdit={(item) => {
-                    setEditingRoadmap(item);
-                    setShowRoadmapDialog(true);
-                  }}
-                  onDelete={handleDeleteRoadmap}
-                />
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={localRoadmapItems.map((item) => item.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {localRoadmapItems.map((item) => (
+                    <SortableRoadmapItem
+                      key={item.id}
+                      item={item}
+                      onEdit={(item) => {
+                        setEditingRoadmap(item);
+                        setShowRoadmapDialog(true);
+                      }}
+                      onDelete={handleDeleteRoadmap}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </TabsContent>
 
