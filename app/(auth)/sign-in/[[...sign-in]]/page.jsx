@@ -51,6 +51,13 @@ function SignInContent() {
     e.preventDefault();
     e.stopPropagation();
 
+    console.log("=== SIGN IN STARTED ===");
+    console.log("isSubmitting.current:", isSubmitting.current);
+    console.log("isLoaded:", isLoaded);
+    console.log("loading:", loading);
+    console.log("email:", email);
+    console.log("password length:", password.length);
+
     // Prevent double submissions
     if (isSubmitting.current) {
       console.log("Already submitting, ignoring duplicate submission");
@@ -76,6 +83,7 @@ function SignInContent() {
     isSubmitting.current = true;
     setError("");
     setLoading(true);
+    console.log("Loading state set to true");
 
     try {
       console.log("Attempting sign in...");
@@ -95,10 +103,8 @@ function SignInContent() {
 
         console.log("Session activated, redirecting to dashboard...");
 
-        // Add small delay to ensure session is fully activated
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 100);
+        // Redirect immediately - session is now active
+        window.location.href = "/dashboard";
       } else {
         console.error("Sign in incomplete:", result);
         setError("Sign in failed. Please try again.");
