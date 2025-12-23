@@ -59,9 +59,9 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
 function MiniBarChart({ data, loading }) {
   if (loading) {
     return (
-      <div className="flex items-end gap-1 h-16">
+      <div className="flex items-end gap-1 h-16 min-w-0">
         {[1, 2, 3, 4, 5, 6].map(i => (
-          <Skeleton key={i} className="flex-1 h-8" />
+          <Skeleton key={i} className="flex-1 h-8 min-w-5" />
         ))}
       </div>
     );
@@ -70,9 +70,9 @@ function MiniBarChart({ data, loading }) {
   const maxValue = Math.max(...data.map(d => d.count), 1);
 
   return (
-    <div className="flex items-end gap-1 h-16">
+    <div className="flex items-end gap-1 h-16 min-w-0 w-full">
       {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center">
+        <div key={i} className="flex-1 flex flex-col items-center min-w-0">
           <div
             className="w-full bg-primary/80 rounded-t transition-all hover:bg-primary"
             style={{
@@ -81,7 +81,7 @@ function MiniBarChart({ data, loading }) {
             }}
             title={`${d.label}: ${d.count}`}
           />
-          <span className="hig-caption2 text-muted-foreground mt-1">{d.label}</span>
+          <span className="hig-caption2 text-muted-foreground mt-1 truncate w-full text-center">{d.label}</span>
         </div>
       ))}
     </div>
@@ -308,7 +308,7 @@ export default function AnalyticsPage() {
   const charts = data?.charts || {};
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="font-bold">Analytics</h1>
@@ -395,27 +395,27 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Growth Charts */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 sm:grid-cols-2 min-w-0">
+        <Card className="min-w-0">
           <CardHeader className="pb-2">
             <CardTitle className="hig-body flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Tenant Growth (12mo)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <MiniBarChart data={charts.tenantGrowth || []} loading={loading} />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader className="pb-2">
             <CardTitle className="hig-body flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Booking Volume (12mo)
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <MiniBarChart data={charts.bookingVolume || []} loading={loading} />
           </CardContent>
         </Card>
