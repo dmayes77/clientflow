@@ -309,11 +309,6 @@ const ROADMAP_ITEMS = [
         icon: Users,
       },
       {
-        title: "Global Payments",
-        description: "Bill international clients in their local currency",
-        icon: CreditCard,
-      },
-      {
         title: "Memberships & Subscriptions",
         description: "Offer recurring service plans with automated billing",
         icon: CreditCard,
