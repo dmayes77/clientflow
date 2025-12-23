@@ -178,6 +178,11 @@ const ROADMAP_ITEMS = [
         description: "High-performance rendering for large data tables with TanStack Virtual",
         icon: Code,
       },
+      {
+        title: "Dashboard Analytics",
+        description: "Platform revenue (MRR/ARR), tenant growth, conversion metrics, and booking insights",
+        icon: BarChart3,
+      },
     ],
   },
   {
@@ -187,11 +192,6 @@ const ROADMAP_ITEMS = [
         title: "Mobile App (Tap to Pay)",
         description: "Accept contactless payments by tapping cards to your iPhone or Android",
         icon: Smartphone,
-      },
-      {
-        title: "Dashboard Analytics",
-        description: "Revenue, bookings, and client insights with visual reports",
-        icon: BarChart3,
       },
     ],
   },

@@ -61,6 +61,12 @@ const CHANGELOG = [
         title: "Hooks Reorganization",
         description: "Moved all custom hooks to lib/hooks for better organization. Added 15+ new domain-specific hooks with centralized exports.",
       },
+      {
+        type: "feature",
+        icon: BarChart3,
+        title: "Admin Dashboard Analytics",
+        description: "Comprehensive platform analytics with MRR/ARR tracking, tenant growth charts, conversion metrics, booking volume, plan distribution, and GMV reporting.",
+      },
     ],
   },
   {

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sentry Test - ClientFlow v1.3.0</title>
+  <script src="https://browser.sentry-cdn.com/8.0.0/bundle.tracing.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .success {
+      background: #16a34a;
+      padding: 12px;
+      border-radius: 6px;
+      color: white;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Sentry Test - ClientFlow v1.3.0</h1>
+  <p>Click a button below to send a test error to Sentry:</p>
+
+  <button onclick="testError()">Test Error</button>
+  <button onclick="testMessage()">Test Message</button>
+  <button onclick="testWithContext()">Test with Context</button>
+
+  <div id="result"></div>
+
+  <script>
+    Sentry.init({
+      dsn: "https://9b02b1e1a6edbbededfb11af01348eb4@o4510581257011200.ingest.us.sentry.io/4510581258649600",
+      tracesSampleRate: 1.0,
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
+    });
+
+    function showSuccess() {
+      document.getElementById('result').innerHTML = `
+        <div class="success">
+          ✅ Test sent successfully!<br>
+          📊 Check dashboard: <a href="https://code-maze.sentry.io/issues/" target="_blank" style="color: white;">https://code-maze.sentry.io/issues/</a>
+        </div>
+      `;
+    }
+
+    function testError() {
+      try {
+        throw new Error("🧪 Test Error: ClientFlow v1.3.0 - TanStack Suite Integration Verified!");
+      } catch (error) {
+        Sentry.captureException(error);
+        showSuccess();
+      }
+    }
+
+    function testMessage() {
+      Sentry.captureMessage("✅ Test message from ClientFlow v1.3.0 deployment", "info");
+      showSuccess();
+    }
+
+    function testWithContext() {
+      Sentry.captureException(new Error("🧪 Test Error with Full Context - v1.3.0"), {
+        tags: {
+          version: "1.3.0",
+          feature: "sentry-verification"
+        },
+        user: {
+          id: "test-user",
+          email: "test@clientflow.app"
+        },
+        extra: {
+          features: [
+            "TanStack Form migration",
+            "Sentry error tracking",
+            "nuqs URL state",
+            "TanStack Virtual",
+            "Hooks reorganization"
+          ]
+        }
+      });
+      showSuccess();
+    }
+  </script>
+</body>
+</html>
