@@ -180,7 +180,7 @@ const ROADMAP_ITEMS = [
       },
       {
         title: "Dashboard Analytics",
-        description: "Platform revenue (MRR/ARR), tenant growth, conversion metrics, and booking insights",
+        description: "Revenue trends, booking metrics, top services, weekly activity charts, and performance insights",
         icon: BarChart3,
       },
     ],
