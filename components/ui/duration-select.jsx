@@ -1,6 +1,6 @@
 "use client";
 
-import { useBusinessHours } from "@/hooks/use-business-hours";
+import { useBusinessHours } from "@/lib/hooks";
 import {
   Select,
   SelectContent,
