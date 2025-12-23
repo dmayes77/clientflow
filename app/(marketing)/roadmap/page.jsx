@@ -31,6 +31,7 @@ import {
   TrendingUp,
   Receipt,
   ClipboardList,
+  Zap,
 } from "lucide-react";
 
 export const metadata = {
