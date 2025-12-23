@@ -38,7 +38,7 @@ export function useTanstackForm({ defaultValues, onSubmit, validators }) {
   return useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      await onSubmit(value);
+      await onSubmit({ value });
     },
     validatorAdapter: zodValidator(),
     validators,
