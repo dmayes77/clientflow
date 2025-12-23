@@ -45,6 +45,7 @@ import {
   AlertTriangle,
   ExternalLink,
   GripVertical,
+  ChevronUp,
 } from "lucide-react";
 import {
   DndContext,
@@ -475,6 +476,54 @@ export default function ContentManagementPage() {
               );
             })}
           </div>
+
+          {/* Top User Votes */}
+          {(() => {
+            const topVoted = localRoadmapItems
+              .filter((item) => item.status !== "completed" && item.votes > 0)
+              .sort((a, b) => b.votes - a.votes)
+              .slice(0, 5);
+
+            if (topVoted.length > 0) {
+              return (
+                <Card className="border-blue-200 bg-blue-50/30">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ChevronUp className="h-4 w-4 text-blue-600" />
+                      <div className="hig-body font-medium text-blue-900">Top User Requests</div>
+                    </div>
+                    <div className="grid gap-2">
+                      {topVoted.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-2 p-2 rounded bg-white/50 border border-blue-100"
+                        >
+                          <div className="flex flex-col items-center justify-center min-w-10 h-9 rounded bg-blue-100 text-blue-700">
+                            <ChevronUp className="h-3 w-3" />
+                            <span className="text-xs font-bold">{item.votes}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="hig-caption1 font-medium truncate">{item.title}</div>
+                            {item.category && (
+                              <Badge variant="outline" className="hig-caption2 mt-0.5">
+                                {item.category}
+                              </Badge>
+                            )}
+                          </div>
+                          {index === 0 && (
+                            <Badge className="bg-blue-600 hover:bg-blue-600 hig-caption2 shrink-0">
+                              Most Wanted
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+            return null;
+          })()}
 
           {/* Add Button */}
           <Dialog open={showRoadmapDialog} onOpenChange={(v) => {

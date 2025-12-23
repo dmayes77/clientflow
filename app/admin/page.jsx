@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  ChevronUp,
+  Lightbulb,
 } from "lucide-react";
 
 function formatCurrency(cents) {
@@ -105,6 +108,96 @@ function SubscriptionBreakdown({ subscriptions, loading }) {
                 </div>
               );
             })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TopVotedFeatures({ loading }) {
+  const [topFeatures, setTopFeatures] = useState([]);
+  const [featuresLoading, setFeaturesLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/content/roadmap")
+      .then((res) => res.json())
+      .then((data) => {
+        // Get top 5 items by votes, excluding completed items
+        const top = (data.items || [])
+          .filter((item) => item.status !== "completed" && item.votes > 0)
+          .sort((a, b) => b.votes - a.votes)
+          .slice(0, 5);
+        setTopFeatures(top);
+        setFeaturesLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch top features:", err);
+        setFeaturesLoading(false);
+      });
+  }, []);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Top User Requests</CardTitle>
+          <CardDescription>Most voted features from public roadmap</CardDescription>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/admin/content">
+            View All
+            <ArrowRight className="ml-2 h-3 w-3" />
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {featuresLoading || loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        ) : topFeatures.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No user votes yet</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {topFeatures.map((feature, index) => (
+              <div
+                key={feature.id}
+                className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              >
+                <div className="flex flex-col items-center justify-center min-w-10 h-10 rounded bg-blue-50 text-blue-700">
+                  <ChevronUp className="h-4 w-4" />
+                  <span className="text-xs font-bold">{feature.votes}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm truncate">{feature.title}</div>
+                      {feature.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {feature.description}
+                        </p>
+                      )}
+                    </div>
+                    {index === 0 && (
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        Most Wanted
+                      </Badge>
+                    )}
+                  </div>
+                  {feature.category && (
+                    <Badge variant="outline" className="mt-1 text-xs">
+                      {feature.category}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
@@ -236,6 +329,9 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Top User Requests */}
+      <TopVotedFeatures loading={loading} />
     </div>
   );
 }
