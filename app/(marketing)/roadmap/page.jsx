@@ -2,8 +2,9 @@ import Link from "next/link";
 import { SectionContainer } from "../components";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { FeatureRequestForm, RoadmapList } from "./components";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronUp, Lightbulb, Info } from "lucide-react";
 
 export const metadata = {
   title: "Product Roadmap | ClientFlow - See What's Coming Next",
@@ -37,6 +38,51 @@ export default function RoadmapPage() {
         </div>
       </SectionContainer>
 
+      {/* How It Works */}
+      <SectionContainer>
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                <Info className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 space-y-4">
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Help Shape ClientFlow</h3>
+                  <p className="text-muted-foreground">
+                    Your feedback drives our development. Here&apos;s how you can influence what we build next:
+                  </p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                      <ChevronUp className="h-4 w-4 text-blue-700" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Vote on Features</div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Click the upvote button on features you want. Features with more votes get prioritized.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100">
+                      <Lightbulb className="h-4 w-4 text-purple-700" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">Request New Features</div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Don&apos;t see what you need? Submit a feature request below and we&apos;ll consider it.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </SectionContainer>
+
       {/* Roadmap List with Voting */}
       <SectionContainer>
         <RoadmapList />
@@ -44,8 +90,19 @@ export default function RoadmapPage() {
 
       {/* Feature Request Form */}
       <SectionContainer>
-        <div className="max-w-md mx-auto pt-12">
-          <FeatureRequestForm />
+        <div className="max-w-2xl mx-auto pt-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 mb-4">
+              <Lightbulb className="h-6 w-6 text-purple-700" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Request a Feature</h2>
+            <p className="text-muted-foreground">
+              Have an idea that&apos;s not on our roadmap? Let us know what you need and we&apos;ll add it to our backlog.
+            </p>
+          </div>
+          <div className="max-w-md mx-auto">
+            <FeatureRequestForm />
+          </div>
         </div>
       </SectionContainer>
 
