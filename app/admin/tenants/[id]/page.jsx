@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useImpersonateTenant } from "@/lib/hooks/use-admin";
+import { useAdminPlans } from "@/lib/hooks/use-admin-plans";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +139,9 @@ export default function TenantDetailPage({ params }) {
       return res.json();
     },
   });
+
+  const { data: plansData } = useAdminPlans();
+  const plans = plansData?.plans || [];
 
   const tenant = data?.tenant;
   const usage = data?.usage;
@@ -304,8 +308,11 @@ export default function TenantDetailPage({ params }) {
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="platform">Platform</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.slug}>
+                      {plan.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
