@@ -36,7 +36,8 @@ function isTenantRoute(pathname) {
     return false;
   }
   // Match patterns like /some-slug (profile) or /some-slug/book (booking pages)
-  const tenantPattern = /^\/[a-z0-9][a-z0-9-]*[a-z0-9](\/book(\/success)?)?$/;
+  // Allow single char slugs and ignore query params
+  const tenantPattern = /^\/[a-z0-9]([a-z0-9-]*[a-z0-9])?(\/book(\/success)?)?(\?.*)?$/;
   return tenantPattern.test(pathname);
 }
 
