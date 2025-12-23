@@ -229,6 +229,11 @@ const ROADMAP_ITEMS = [
     phase: "exploring",
     items: [
       {
+        title: "Native Mobile App",
+        description: "iOS and Android app built with React Native for on-the-go business management",
+        icon: Smartphone,
+      },
+      {
         title: "Custom Booking Themes",
         description: "Customize colors, fonts, and branding on booking pages",
         icon: Palette,
