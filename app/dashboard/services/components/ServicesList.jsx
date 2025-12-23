@@ -949,15 +949,15 @@ Format the includes list so I can easily copy each item individually.`;
                     key={img.id}
                     type="button"
                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                      formData.imageId === img.id ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-muted-foreground/30"
+                      form.getFieldValue("imageId") === img.id ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-muted-foreground/30"
                     }`}
                     onClick={() => {
-                      setFormData({ ...formData, imageId: img.id });
+                      form.setFieldValue("imageId", img.id);
                       setImageDialogOpen(false);
                     }}
                   >
                     <Image src={img.url} alt={img.filename || "Image"} fill sizes="100px" className="object-cover" />
-                    {formData.imageId === img.id && (
+                    {form.getFieldValue("imageId") === img.id && (
                       <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                         <Check className="h-6 w-6 text-primary" />
                       </div>
@@ -1008,7 +1008,7 @@ Format the includes list so I can easily copy each item individually.`;
             <Alert className="bg-violet-50 border-violet-200">
               <Lightbulb className="h-4 w-4 text-violet-600" />
               <AlertDescription className="text-violet-800">
-                {formData.includes.length > 0 ? (
+                {(form.getFieldValue("includes") || []).length > 0 ? (
                   <>
                     <strong>Mode:</strong> Generating marketing description only (you already have includes added).
                   </>
