@@ -92,11 +92,11 @@ function StatusBadge({ status, size = "default" }) {
 
 function MiniStat({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 min-w-0">
       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-      <div className="min-w-0">
-        <div className="hig-title-2 font-semibold leading-none">{value}</div>
-        <div className="hig-caption2 text-muted-foreground">{label}</div>
+      <div className="min-w-0 flex-1">
+        <div className="hig-title-2 font-semibold leading-none truncate">{value}</div>
+        <div className="hig-caption2 text-muted-foreground truncate">{label}</div>
       </div>
     </div>
   );
@@ -239,17 +239,17 @@ export default function TenantDetailPage({ params }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full overflow-x-hidden">
       {/* Header */}
-      <div>
+      <div className="min-w-0">
         <Button variant="ghost" size="sm" className="mb-2 -ml-2 h-8" asChild>
           <Link href="/admin/tenants">
             <ArrowLeft className="mr-1 h-4 w-4" />
             Back
           </Link>
         </Button>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
+        <div className="flex items-start justify-between gap-2 min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="hig-title-2 font-bold truncate sm:hig-title-1">
               {tenant.businessName || tenant.name || "Unnamed"}
             </h1>
@@ -260,7 +260,7 @@ export default function TenantDetailPage({ params }) {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2 min-w-0">
         <MiniStat icon={Calendar} label="Bookings" value={tenant._count?.bookings || 0} />
         <MiniStat icon={Users} label="Contacts" value={tenant._count?.contacts || 0} />
         <MiniStat icon={Package} label="Services" value={tenant._count?.services || 0} />
@@ -386,18 +386,18 @@ export default function TenantDetailPage({ params }) {
           <CardTitle className="text-base">This Month</CardTitle>
         </CardHeader>
         <CardContent className="p-3 pt-0">
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <div className="hig-title-1 font-bold">{usage?.bookingsThisMonth || 0}</div>
-              <div className="hig-caption2 text-muted-foreground">Bookings</div>
+          <div className="grid grid-cols-3 gap-3 text-center min-w-0">
+            <div className="min-w-0">
+              <div className="hig-title-1 font-bold truncate">{usage?.bookingsThisMonth || 0}</div>
+              <div className="hig-caption2 text-muted-foreground truncate">Bookings</div>
             </div>
-            <div>
-              <div className="hig-title-1 font-bold">{formatCurrency(usage?.totalRevenue || 0)}</div>
-              <div className="hig-caption2 text-muted-foreground">Revenue</div>
+            <div className="min-w-0">
+              <div className="hig-title-1 font-bold truncate">{formatCurrency(usage?.totalRevenue || 0)}</div>
+              <div className="hig-caption2 text-muted-foreground truncate">Revenue</div>
             </div>
-            <div>
-              <div className="hig-title-1 font-bold">{usage?.totalPayments || 0}</div>
-              <div className="hig-caption2 text-muted-foreground">Payments</div>
+            <div className="min-w-0">
+              <div className="hig-title-1 font-bold truncate">{usage?.totalPayments || 0}</div>
+              <div className="hig-caption2 text-muted-foreground truncate">Payments</div>
             </div>
           </div>
         </CardContent>
@@ -409,31 +409,31 @@ export default function TenantDetailPage({ params }) {
           <CardTitle className="text-base">Details</CardTitle>
         </CardHeader>
         <CardContent className="p-3 pt-0 space-y-3">
-          <div className="grid grid-cols-2 gap-3 hig-body">
-            <div>
+          <div className="grid grid-cols-2 gap-3 hig-body min-w-0">
+            <div className="min-w-0">
               <div className="hig-caption2 text-muted-foreground uppercase">Slug</div>
-              <div className="flex items-center gap-1">
-                <Globe className="h-3 w-3 text-muted-foreground" />
+              <div className="flex items-center gap-1 min-w-0">
+                <Globe className="h-3 w-3 text-muted-foreground shrink-0" />
                 <span className="truncate">/{tenant.slug || "-"}</span>
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="hig-caption2 text-muted-foreground uppercase">Created</div>
-              <div>{formatDate(tenant.createdAt)}</div>
+              <div className="truncate">{formatDate(tenant.createdAt)}</div>
             </div>
           </div>
 
           <Separator />
 
-          <div>
+          <div className="min-w-0">
             <div className="hig-caption2 text-muted-foreground uppercase mb-1">Stripe Connect</div>
             {tenant.stripeAccountId ? (
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
                 <Badge variant="outline" className="text-green-600 hig-caption2">
                   <CreditCard className="h-2.5 w-2.5 mr-0.5" />
                   Connected
                 </Badge>
-                <span className="hig-caption2 text-muted-foreground">
+                <span className="hig-caption2 text-muted-foreground truncate">
                   {tenant.stripeAccountStatus || "unknown"}
                 </span>
               </div>
@@ -446,21 +446,21 @@ export default function TenantDetailPage({ params }) {
 
           <Separator />
 
-          <div className="grid grid-cols-3 gap-2 text-center hig-body">
-            <div className="flex flex-col items-center gap-1">
+          <div className="grid grid-cols-3 gap-2 text-center hig-body min-w-0">
+            <div className="flex flex-col items-center gap-1 min-w-0">
               <Image className="h-4 w-4 text-muted-foreground" />
-              <span>{tenant._count?.images || 0}</span>
-              <span className="hig-caption2 text-muted-foreground">Images</span>
+              <span className="truncate w-full">{tenant._count?.images || 0}</span>
+              <span className="hig-caption2 text-muted-foreground truncate w-full">Images</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-1 min-w-0">
               <Workflow className="h-4 w-4 text-muted-foreground" />
-              <span>{tenant._count?.workflows || 0}</span>
-              <span className="hig-caption2 text-muted-foreground">Workflows</span>
+              <span className="truncate w-full">{tenant._count?.workflows || 0}</span>
+              <span className="hig-caption2 text-muted-foreground truncate w-full">Workflows</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-1 min-w-0">
               <Webhook className="h-4 w-4 text-muted-foreground" />
-              <span>{tenant._count?.webhooks || 0}</span>
-              <span className="hig-caption2 text-muted-foreground">Webhooks</span>
+              <span className="truncate w-full">{tenant._count?.webhooks || 0}</span>
+              <span className="hig-caption2 text-muted-foreground truncate w-full">Webhooks</span>
             </div>
           </div>
         </CardContent>
@@ -483,14 +483,14 @@ export default function TenantDetailPage({ params }) {
       {/* IDs - collapsible or at bottom */}
       <Card>
         <CardContent className="p-3">
-          <div className="hig-caption2 text-muted-foreground space-y-1">
-            <div className="flex justify-between">
-              <span>Tenant ID:</span>
-              <span className="font-mono truncate ml-2">{tenant.id}</span>
+          <div className="hig-caption2 text-muted-foreground space-y-1 min-w-0">
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="shrink-0">Tenant ID:</span>
+              <span className="font-mono truncate">{tenant.id}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Clerk Org:</span>
-              <span className="font-mono truncate ml-2">{tenant.clerkOrgId || "-"}</span>
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="shrink-0">Clerk Org:</span>
+              <span className="font-mono truncate">{tenant.clerkOrgId || "-"}</span>
             </div>
           </div>
         </CardContent>
