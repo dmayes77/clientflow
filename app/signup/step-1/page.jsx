@@ -57,8 +57,8 @@ export default function Step1Page() {
     try {
       await signUp.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/signup/step-2",
+        continueSignUpUrl: "/sso-callback",
+        fallbackRedirectUrl: "/signup/step-2",
       });
     } catch (err) {
       const errorMessage = err.errors?.[0]?.message || "Google sign up failed";

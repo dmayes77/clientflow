@@ -48,8 +48,8 @@ function SignInContent() {
     try {
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/dashboard",
+        continueSignUpUrl: "/sso-callback",
+        fallbackRedirectUrl: "/dashboard",
       });
     } catch (err) {
       const errorMessage = err.errors?.[0]?.message || "Google sign in failed";
