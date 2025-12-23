@@ -114,7 +114,7 @@ export async function POST(request) {
     const settings = await prisma.platformSettings.findUnique({
       where: { id: "platform" },
     });
-    const trialDays = settings?.trialDays ?? 14;
+    const trialDays = settings?.trialDays ?? 30;
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create({

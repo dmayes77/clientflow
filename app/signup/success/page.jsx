@@ -40,10 +40,8 @@ function SuccessContent() {
         setStatus("success");
       } catch (err) {
         console.error("Error verifying payment:", err);
-        setError(err.message);
-        // Still consider it success if session exists
-        clearSignupState();
-        setStatus("success");
+        setError(err.message || "Failed to verify payment");
+        setStatus("error");
       }
     };
 
