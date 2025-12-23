@@ -1,7 +1,7 @@
 "use client";
 
 import { useSignIn } from "@clerk/nextjs";
-import { useState, Suspense } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, KeyRound, Eye, EyeOff, Lock, Loader2, ArrowLeft } from "lucide-react";
@@ -17,6 +17,7 @@ function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromMarketing = searchParams.get("from") === "marketing";
+  const isSubmitting = useRef(false);
 
   const handleGoogleSignIn = async () => {
     if (!isLoaded) return;
@@ -41,6 +42,12 @@ function SignInContent() {
     e.preventDefault();
     e.stopPropagation();
 
+    // Prevent double submissions
+    if (isSubmitting.current) {
+      console.log("Already submitting, ignoring duplicate submission");
+      return;
+    }
+
     if (!isLoaded) {
       console.error("Clerk not loaded");
       setError("Authentication service not ready. Please refresh and try again.");
@@ -52,6 +59,12 @@ function SignInContent() {
       return;
     }
 
+    if (loading) {
+      console.log("Already loading, ignoring submission");
+      return;
+    }
+
+    isSubmitting.current = true;
     setError("");
     setLoading(true);
 
@@ -67,19 +80,34 @@ function SignInContent() {
 
       if (result.status === "complete") {
         console.log("Setting active session...");
-        await setActive({ session: result.createdSessionId });
+
+        try {
+          await setActive({ session: result.createdSessionId });
+          console.log("Session activated successfully");
+        } catch (sessionErr) {
+          // Handle "session already exists" error
+          if (sessionErr.message?.includes("already") || sessionErr.errors?.[0]?.message?.includes("already")) {
+            console.log("Session already active, proceeding to dashboard");
+          } else {
+            throw sessionErr;
+          }
+        }
+
         console.log("Redirecting to dashboard...");
-        router.push("/dashboard");
+        // Use window.location for more reliable mobile redirect
+        window.location.href = "/dashboard";
       } else {
         console.error("Sign in incomplete:", result);
         setError("Sign in failed. Please try again.");
         setLoading(false);
+        isSubmitting.current = false;
       }
     } catch (err) {
       console.error("Sign in error:", err);
       const errorMessage = err.errors?.[0]?.message || err.message || "Invalid email or password";
       setError(errorMessage);
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
