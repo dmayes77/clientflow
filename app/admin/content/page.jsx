@@ -640,7 +640,7 @@ export default function ContentManagementPage() {
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-between mt-2">
+                                <div className="flex items-center mt-2">
                                   <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
                                     {item.category && (
                                       <Badge variant="outline" className="hig-caption2">{item.category}</Badge>
@@ -651,17 +651,6 @@ export default function ContentManagementPage() {
                                     {item.votes > 0 && (
                                       <span>{item.votes} votes</span>
                                     )}
-                                  </div>
-                                  <div className="flex gap-1">
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
-                                      setEditingRoadmap(item);
-                                      setShowRoadmapDialog(true);
-                                    }}>
-                                      <Edit2 className="h-3 w-3" />
-                                    </Button>
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteRoadmap(item.id)}>
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
                                   </div>
                                 </div>
                               </CardContent>
