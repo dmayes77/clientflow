@@ -18,14 +18,56 @@ import {
   Image,
   Code,
   Webhook,
+  FileText,
+  Activity,
+  Link2,
+  Boxes,
 } from "lucide-react";
 
 const CHANGELOG = [
   {
+    version: "1.3.0",
+    date: "December 2024",
+    title: "TanStack Suite & Developer Experience",
+    isNew: true,
+    items: [
+      {
+        type: "improvement",
+        icon: FileText,
+        title: "TanStack Form Migration",
+        description: "Migrated 15+ forms to TanStack Form with Zod validation for better type safety, reduced boilerplate, and improved developer experience.",
+      },
+      {
+        type: "feature",
+        icon: Activity,
+        title: "Sentry Error Tracking",
+        description: "Automatic error tracking across client, server, and edge runtimes. Know when things break before users complain, with full context and session replay.",
+      },
+      {
+        type: "feature",
+        icon: Link2,
+        title: "URL State Management (nuqs)",
+        description: "Type-safe URL query parameters for shareable filtered views in data tables. Browser back/forward buttons now work correctly with filters.",
+      },
+      {
+        type: "feature",
+        icon: Zap,
+        title: "Virtual Scrolling Ready",
+        description: "TanStack Virtual installed for blazing-fast performance with large lists (100+ rows). Only renders visible items for 10-20x faster rendering.",
+      },
+      {
+        type: "improvement",
+        icon: Boxes,
+        title: "Hooks Reorganization",
+        description: "Moved all custom hooks to lib/hooks for better organization. Added 15+ new domain-specific hooks with centralized exports.",
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "December 2024",
     title: "Stripe Connect & Payment Processing",
-    isNew: true,
+    isNew: false,
     items: [
       {
         type: "feature",

@@ -158,6 +158,26 @@ const ROADMAP_ITEMS = [
         description: "Real-time notifications for booking, client, and payment events",
         icon: Webhook,
       },
+      {
+        title: "TanStack Form Suite",
+        description: "Modern form handling with TanStack Form, Zod validation, and automatic error handling",
+        icon: Code,
+      },
+      {
+        title: "Error Tracking (Sentry)",
+        description: "Production error monitoring with session replay and full context across all runtimes",
+        icon: Code,
+      },
+      {
+        title: "URL State Management",
+        description: "Type-safe URL query parameters for shareable filtered views and better UX",
+        icon: Code,
+      },
+      {
+        title: "Virtual Scrolling",
+        description: "High-performance rendering for large data tables with TanStack Virtual",
+        icon: Code,
+      },
     ],
   },
   {
