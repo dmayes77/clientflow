@@ -208,8 +208,8 @@ function RoadmapEditor({ item, onSave, onCancel }) {
   );
 }
 
-// Changelog Components
-function ChangelogEntryCard({ entry, onEdit, onDelete, onPublish }) {
+// Changelog Components (GitHub Releases)
+function ChangelogEntryCard({ entry }) {
   const typeConfig = TYPE_CONFIG[entry.type] || TYPE_CONFIG.feature;
   const TypeIcon = typeConfig.icon;
 
@@ -225,7 +225,7 @@ function ChangelogEntryCard({ entry, onEdit, onDelete, onPublish }) {
               )}
             </div>
             <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
-              {entry.content.substring(0, 100)}...
+              {entry.content ? entry.content.substring(0, 100) + "..." : "No description"}
             </p>
           </div>
           <div className="flex flex-col gap-1 shrink-0">
@@ -244,99 +244,31 @@ function ChangelogEntryCard({ entry, onEdit, onDelete, onPublish }) {
           </div>
         </div>
         <div className="flex items-center justify-between mt-2">
-          <span className="hig-caption2 text-muted-foreground">
-            {entry.publishedAt ? `Published ${formatDate(entry.publishedAt)}` : `Created ${formatDate(entry.createdAt)}`}
-          </span>
-          <div className="flex gap-1">
-            {!entry.published && (
-              <Button variant="ghost" size="sm" className="h-6 px-2 hig-caption2" onClick={() => onPublish(entry.id)}>
-                <Send className="h-3 w-3 mr-1" />
-                Publish
-              </Button>
+          <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+            <span>
+              {entry.publishedAt ? `Published ${formatDate(entry.publishedAt)}` : `Created ${formatDate(entry.createdAt)}`}
+            </span>
+            {entry.author && (
+              <Badge variant="outline" className="hig-caption2">@{entry.author}</Badge>
             )}
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onEdit(entry)}>
-              <Edit2 className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => onDelete(entry.id)}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
           </div>
+          {entry.htmlUrl && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 hig-caption2"
+              onClick={() => window.open(entry.htmlUrl, "_blank")}
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              View on GitHub
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function ChangelogEditor({ entry, onSave, onCancel }) {
-  const [form, setForm] = useState({
-    version: entry?.version || "",
-    title: entry?.title || "",
-    content: entry?.content || "",
-    type: entry?.type || "feature",
-  });
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    setSaving(true);
-    await onSave({ ...form, id: entry?.id });
-    setSaving(false);
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label className="hig-caption2">Version (optional)</Label>
-          <Input
-            value={form.version}
-            onChange={(e) => setForm({ ...form, version: e.target.value })}
-            placeholder="e.g., 1.2.0"
-            className="h-9"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="hig-caption2">Type</Label>
-          <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-            <SelectTrigger className="h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="feature">Feature</SelectItem>
-              <SelectItem value="improvement">Improvement</SelectItem>
-              <SelectItem value="fix">Fix</SelectItem>
-              <SelectItem value="breaking">Breaking Change</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Label className="hig-caption2">Title</Label>
-        <Input
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          placeholder="What's new..."
-          className="h-9"
-        />
-      </div>
-      <div className="space-y-1">
-        <Label className="hig-caption2">Content (Markdown)</Label>
-        <Textarea
-          value={form.content}
-          onChange={(e) => setForm({ ...form, content: e.target.value })}
-          placeholder="Describe the changes in detail..."
-          rows={6}
-          className="font-mono hig-caption2"
-        />
-      </div>
-      <div className="flex gap-2 justify-end">
-        <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" onClick={handleSave} disabled={saving || !form.title || !form.content}>
-          {saving ? "Saving..." : entry?.id ? "Update" : "Create"}
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState("roadmap");
@@ -345,8 +277,6 @@ export default function ContentManagementPage() {
   // Dialog state
   const [editingRoadmap, setEditingRoadmap] = useState(null);
   const [showRoadmapDialog, setShowRoadmapDialog] = useState(false);
-  const [editingChangelog, setEditingChangelog] = useState(null);
-  const [showChangelogDialog, setShowChangelogDialog] = useState(false);
 
   // Fetch roadmap items
   const { data: roadmapData, isLoading: roadmapLoading } = useAdminContent("roadmap");
@@ -387,47 +317,6 @@ export default function ContentManagementPage() {
     },
   });
 
-  // Changelog mutations
-  const saveChangelogMutation = useMutation({
-    mutationFn: async (entry) => {
-      const method = entry.id ? "PATCH" : "POST";
-      const res = await fetch("/api/admin/content/changelog", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry),
-      });
-      if (!res.ok) throw new Error("Failed to save");
-      return res.json();
-    },
-    onSuccess: () => {
-      setShowChangelogDialog(false);
-      setEditingChangelog(null);
-      queryClient.invalidateQueries(["admin-changelog"]);
-    },
-  });
-
-  const deleteChangelogMutation = useMutation({
-    mutationFn: async (id) => {
-      await fetch(`/api/admin/content/changelog?id=${id}`, { method: "DELETE" });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["admin-changelog"]);
-    },
-  });
-
-  const publishChangelogMutation = useMutation({
-    mutationFn: async (id) => {
-      await fetch("/api/admin/content/changelog", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, published: true }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["admin-changelog"]);
-    },
-  });
-
   // Handlers
   const handleSaveRoadmap = (item) => saveRoadmapMutation.mutate(item);
   const handleDeleteRoadmap = (id) => {
@@ -435,13 +324,6 @@ export default function ContentManagementPage() {
       deleteRoadmapMutation.mutate(id);
     }
   };
-  const handleSaveChangelog = (entry) => saveChangelogMutation.mutate(entry);
-  const handleDeleteChangelog = (id) => {
-    if (confirm("Delete this changelog entry?")) {
-      deleteChangelogMutation.mutate(id);
-    }
-  };
-  const handlePublishChangelog = (id) => publishChangelogMutation.mutate(id);
 
   return (
     <div className="space-y-4">
@@ -547,8 +429,24 @@ export default function ContentManagementPage() {
           )}
         </TabsContent>
 
-        {/* Changelog Tab */}
+        {/* Changelog Tab (GitHub Releases) */}
         <TabsContent value="changelog" className="space-y-4 mt-4">
+          {/* Info Banner */}
+          <Card className="border-blue-200 bg-blue-50/30">
+            <CardContent className="p-3">
+              <div className="flex items-start gap-2">
+                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div className="hig-body font-medium text-blue-900">Powered by GitHub Releases</div>
+                  <p className="hig-caption2 text-blue-700 mt-0.5">
+                    Changelog entries are automatically synced from your GitHub releases.
+                    Create a new release on GitHub to add entries here.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2">
             <Card>
@@ -571,31 +469,17 @@ export default function ContentManagementPage() {
             </Card>
           </div>
 
-          {/* Add Button */}
-          <Dialog open={showChangelogDialog} onOpenChange={(v) => {
-            setShowChangelogDialog(v);
-            if (!v) setEditingChangelog(null);
-          }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="w-full">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Changelog Entry
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>{editingChangelog ? "Edit" : "New"} Changelog Entry</DialogTitle>
-              </DialogHeader>
-              <ChangelogEditor
-                entry={editingChangelog}
-                onSave={handleSaveChangelog}
-                onCancel={() => {
-                  setShowChangelogDialog(false);
-                  setEditingChangelog(null);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+          {/* Create Release Button */}
+          <Button
+            size="sm"
+            className="w-full"
+            variant="outline"
+            onClick={() => window.open(`https://github.com/${process.env.NEXT_PUBLIC_GITHUB_REPO || 'dmayes77/clientflow'}/releases/new`, "_blank")}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Create Release on GitHub
+            <ExternalLink className="h-3 w-3 ml-auto" />
+          </Button>
 
           {/* Entries List */}
           {changelogLoading ? (
@@ -604,8 +488,16 @@ export default function ContentManagementPage() {
             </div>
           ) : changelogEntries.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                No changelog entries yet
+              <CardContent className="py-12 text-center">
+                <div className="text-muted-foreground hig-body mb-2">No releases yet</div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(`https://github.com/${process.env.NEXT_PUBLIC_GITHUB_REPO || 'dmayes77/clientflow'}/releases/new`, "_blank")}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Create your first release
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -614,12 +506,6 @@ export default function ContentManagementPage() {
                 <ChangelogEntryCard
                   key={entry.id}
                   entry={entry}
-                  onEdit={(entry) => {
-                    setEditingChangelog(entry);
-                    setShowChangelogDialog(true);
-                  }}
-                  onDelete={handleDeleteChangelog}
-                  onPublish={handlePublishChangelog}
                 />
               ))}
             </div>

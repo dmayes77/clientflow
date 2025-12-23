@@ -1,144 +1,90 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
-// GET - Fetch all changelog entries
+// GET - Fetch releases from GitHub
 export async function GET(request) {
   try {
     if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const published = searchParams.get("published");
+    const githubRepo = process.env.GITHUB_REPO;
+    const githubToken = process.env.GITHUB_TOKEN;
 
-    let where = {};
-    if (published === "true") {
-      where.published = true;
-    } else if (published === "false") {
-      where.published = false;
+    if (!githubRepo) {
+      return NextResponse.json({
+        error: "GitHub repo not configured. Set GITHUB_REPO in environment variables."
+      }, { status: 500 });
     }
 
-    const entries = await prisma.changelogEntry.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
+    // Fetch releases from GitHub
+    const headers = {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+
+    if (githubToken) {
+      headers.Authorization = `Bearer ${githubToken}`;
+    }
+
+    const response = await fetch(
+      `https://api.github.com/repos/${githubRepo}/releases?per_page=50`,
+      { headers, next: { revalidate: 300 } } // Cache for 5 minutes
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("GitHub API error:", error);
+      return NextResponse.json({
+        error: `Failed to fetch releases: ${error.message || response.statusText}`
+      }, { status: response.status });
+    }
+
+    const releases = await response.json();
+
+    // Transform GitHub releases to match our changelog format
+    const entries = releases.map(release => {
+      // Determine type from release tags or name
+      let type = "feature";
+      const name = release.name || release.tag_name;
+      const lowerName = name.toLowerCase();
+
+      if (lowerName.includes("fix") || lowerName.includes("patch") || lowerName.includes("hotfix")) {
+        type = "fix";
+      } else if (lowerName.includes("breaking")) {
+        type = "breaking";
+      } else if (lowerName.includes("improve") || lowerName.includes("update") || lowerName.includes("enhance")) {
+        type = "improvement";
+      }
+
+      return {
+        id: release.id.toString(),
+        version: release.tag_name,
+        title: release.name || release.tag_name,
+        content: release.body || "",
+        type,
+        published: !release.draft,
+        publishedAt: release.published_at,
+        createdAt: release.created_at,
+        htmlUrl: release.html_url,
+        author: release.author?.login || "Unknown",
+      };
     });
 
-    // Get counts
-    const [totalCount, publishedCount, draftCount] = await Promise.all([
-      prisma.changelogEntry.count(),
-      prisma.changelogEntry.count({ where: { published: true } }),
-      prisma.changelogEntry.count({ where: { published: false } }),
-    ]);
+    // Calculate counts
+    const publishedCount = entries.filter(e => e.published).length;
+    const draftCount = entries.filter(e => !e.published).length;
 
     return NextResponse.json({
       entries,
-      counts: { total: totalCount, published: publishedCount, draft: draftCount },
-    });
-  } catch (error) {
-    console.error("Error fetching changelog:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-// POST - Create changelog entry
-export async function POST(request) {
-  try {
-    if (!(await isAdminAuthenticated())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { version, title, content, type, published } = body;
-
-    if (!title || !content) {
-      return NextResponse.json({ error: "Title and content required" }, { status: 400 });
-    }
-
-    const entry = await prisma.changelogEntry.create({
-      data: {
-        version,
-        title,
-        content,
-        type: type || "feature",
-        published: published || false,
-        publishedAt: published ? new Date() : null,
-        createdBy: "admin",
+      counts: {
+        total: entries.length,
+        published: publishedCount,
+        draft: draftCount,
       },
     });
-
-    return NextResponse.json({ entry });
   } catch (error) {
-    console.error("Error creating changelog entry:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-// PATCH - Update changelog entry
-export async function PATCH(request) {
-  try {
-    if (!(await isAdminAuthenticated())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { id, ...updates } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: "ID required" }, { status: 400 });
-    }
-
-    const updateData = {};
-    const allowedFields = ["version", "title", "content", "type", "published"];
-
-    for (const field of allowedFields) {
-      if (updates[field] !== undefined) {
-        updateData[field] = updates[field];
-      }
-    }
-
-    // Handle publishing
-    if (updates.published === true) {
-      const existing = await prisma.changelogEntry.findUnique({
-        where: { id },
-        select: { publishedAt: true },
-      });
-      if (!existing?.publishedAt) {
-        updateData.publishedAt = new Date();
-      }
-    }
-
-    const entry = await prisma.changelogEntry.update({
-      where: { id },
-      data: updateData,
-    });
-
-    return NextResponse.json({ entry });
-  } catch (error) {
-    console.error("Error updating changelog entry:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
-
-// DELETE - Delete changelog entry
-export async function DELETE(request) {
-  try {
-    if (!(await isAdminAuthenticated())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
-      return NextResponse.json({ error: "ID required" }, { status: 400 });
-    }
-
-    await prisma.changelogEntry.delete({ where: { id } });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Error deleting changelog entry:", error);
+    console.error("Error fetching GitHub releases:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
