@@ -242,7 +242,7 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                 )}
 
                 {/* Book Button */}
-                <Link href={`/book/${slug}?${isPackage ? "packageId" : "serviceId"}=${item.id}`} className="block">
+                <Link href={`/${slug}/book?${isPackage ? "packageId" : "serviceId"}=${item.id}`} className="block">
                   <Button className={`w-full h-12 text-base ${isPackage ? "bg-violet-600 hover:bg-violet-700" : ""}`} size="lg">
                     <Calendar className="w-5 h-5 mr-2" />
                     Book {isPackage ? "Package" : "Service"}
@@ -466,7 +466,7 @@ export default function TenantLandingPage({ params }) {
             </div>
 
             {/* Book Now CTA */}
-            <Link href={`/book/${slug}`} className="block mt-5">
+            <Link href={`/${slug}/book`} className="block mt-5">
               <Button className="w-full h-12 text-base" size="lg">
                 <Calendar className="w-5 h-5 mr-2" />
                 Book an Appointment
@@ -588,7 +588,7 @@ export default function TenantLandingPage({ params }) {
 
       {/* Mobile Fixed CTA - Shows when scrolling */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-linear-to-t from-background via-background to-transparent lg:hidden">
-        <Link href={`/book/${slug}`} className="block">
+        <Link href={`/${slug}/book`} className="block">
           <Button className="w-full h-12 text-base shadow-xl" size="lg">
             <Calendar className="w-5 h-5 mr-2" />
             Book Now

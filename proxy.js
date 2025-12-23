@@ -7,7 +7,6 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/signup(.*)",
   "/forgot-password(.*)",
-  "/book(.*)",
   "/offline",
   "/sso-callback(.*)",
   "/api/public(.*)",
@@ -33,12 +32,11 @@ function isTenantRoute(pathname) {
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/admin") ||
       pathname.startsWith("/onboarding") ||
-      pathname.startsWith("/book") ||
       pathname.startsWith("/offline")) {
     return false;
   }
-  // Match patterns like /some-slug (business profile pages)
-  const tenantPattern = /^\/[a-z0-9][a-z0-9-]*[a-z0-9]$/;
+  // Match patterns like /some-slug (profile) or /some-slug/book (booking pages)
+  const tenantPattern = /^\/[a-z0-9][a-z0-9-]*[a-z0-9](\/book(\/success)?)?$/;
   return tenantPattern.test(pathname);
 }
 

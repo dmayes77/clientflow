@@ -205,7 +205,7 @@ export function BusinessSettings() {
         {({ businessName, slug }) => {
           const displaySlug = slug || (businessName ? generateSlug(businessName) : "");
           const bookingUrl = displaySlug
-            ? `${typeof window !== "undefined" ? window.location.origin : ""}/book/${displaySlug}`
+            ? `${typeof window !== "undefined" ? window.location.origin : ""}/${displaySlug}/book`
             : null;
 
           return bookingUrl ? (

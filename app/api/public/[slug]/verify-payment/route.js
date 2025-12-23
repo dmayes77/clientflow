@@ -174,7 +174,7 @@ export async function GET(request, { params }) {
             after_completion: {
               type: "redirect",
               redirect: {
-                url: `${process.env.NEXT_PUBLIC_APP_URL}/book/${slug}/success?booking_id=${booking.id}&balance_paid=true`,
+                url: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/book/success?booking_id=${booking.id}&balance_paid=true`,
               },
             },
           },

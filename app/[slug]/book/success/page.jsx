@@ -99,7 +99,7 @@ function SuccessPageContent({ params }) {
             </div>
             <h1 className="hig-title-1 font-bold mb-2">Something went wrong</h1>
             <p className="hig-body text-muted-foreground mb-6">{error}</p>
-            <Link href={`/book/${slug}`}>
+            <Link href={`/${slug}/book`}>
               <Button>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Booking
@@ -239,7 +239,7 @@ function SuccessPageContent({ params }) {
                 Back to {business?.name || "Business"}
               </Button>
             </Link>
-            <Link href={`/book/${slug}`}>
+            <Link href={`/${slug}/book`}>
               <Button variant="ghost" className="w-full">
                 Book Another Appointment
               </Button>

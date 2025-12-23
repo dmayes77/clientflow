@@ -210,8 +210,8 @@ export async function POST(request, { params }) {
           serviceTotal: serviceTotal.toString(),
           depositAmount: depositAmount?.toString() || "",
         },
-        success_url: `${origin}/book/${slug}/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
-        cancel_url: `${origin}/book/${slug}?canceled=true&booking_id=${booking.id}`,
+        success_url: `${origin}/${slug}/book/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${booking.id}`,
+        cancel_url: `${origin}/${slug}/book?canceled=true&booking_id=${booking.id}`,
       },
       {
         stripeAccount: tenant.stripeAccountId,
