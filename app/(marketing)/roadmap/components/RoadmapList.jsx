@@ -118,9 +118,9 @@ export function RoadmapList() {
   }
 
   const sections = [
-    { key: "completed", title: "Shipped", subtitle: "Features that are live and available to all users" },
     { key: "in_progress", title: "Building Now", subtitle: "Features currently in active development" },
     { key: "planned", title: "Planned Features", subtitle: "Vote for the features you want most" },
+    { key: "completed", title: "Shipped", subtitle: "Features that are live and available to all users" },
   ];
 
   return (

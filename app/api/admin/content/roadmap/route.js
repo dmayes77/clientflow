@@ -16,7 +16,11 @@ export async function GET(request) {
 
     const items = await prisma.roadmapItem.findMany({
       where,
-      orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
+      orderBy: [
+        { priority: "desc" }, // Manual priority overrides (drag-drop)
+        { votes: "desc" }, // Then by votes (automatic priority)
+        { createdAt: "desc" }, // Finally by creation date
+      ],
     });
 
     // Get counts by status

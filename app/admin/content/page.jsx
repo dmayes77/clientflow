@@ -564,12 +564,22 @@ export default function ContentManagementPage() {
             </Card>
           ) : (
             <div className="space-y-6">
-              {["planned", "in_progress", "completed", "archived"].map((status) => {
-                const statusItems = localRoadmapItems.filter((item) => item.status === status);
+              {["in_progress", "planned", "completed", "archived"].map((status) => {
+                const statusItems = localRoadmapItems
+                  .filter((item) => item.status === status)
+                  .sort((a, b) => {
+                    // Sort by priority DESC (manual ordering), then by votes DESC
+                    if (b.priority !== a.priority) {
+                      return b.priority - a.priority;
+                    }
+                    return b.votes - a.votes;
+                  });
+
                 if (statusItems.length === 0) return null;
 
                 const config = STATUS_CONFIG[status];
                 const Icon = config.icon;
+                const allowReorder = status !== "completed" && status !== "archived";
 
                 return (
                   <Card key={status}>
@@ -584,34 +594,81 @@ export default function ContentManagementPage() {
                         </Badge>
                       </div>
                       <CardDescription className="hig-caption2">
-                        Drag to reorder priority within this status
+                        {allowReorder
+                          ? "Sorted by votes. Drag to manually override priority."
+                          : "Completed items sorted by votes"}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <SortableContext
-                          items={statusItems.map((item) => item.id)}
-                          strategy={verticalListSortingStrategy}
+                      {allowReorder ? (
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={handleDragEnd}
                         >
-                          <div className="space-y-2">
-                            {statusItems.map((item) => (
-                              <SortableRoadmapItem
-                                key={item.id}
-                                item={item}
-                                onEdit={(item) => {
-                                  setEditingRoadmap(item);
-                                  setShowRoadmapDialog(true);
-                                }}
-                                onDelete={handleDeleteRoadmap}
-                              />
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </DndContext>
+                          <SortableContext
+                            items={statusItems.map((item) => item.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="space-y-2">
+                              {statusItems.map((item) => (
+                                <SortableRoadmapItem
+                                  key={item.id}
+                                  item={item}
+                                  onEdit={(item) => {
+                                    setEditingRoadmap(item);
+                                    setShowRoadmapDialog(true);
+                                  }}
+                                  onDelete={handleDeleteRoadmap}
+                                />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      ) : (
+                        <div className="space-y-2">
+                          {statusItems.map((item) => (
+                            <Card key={item.id}>
+                              <CardContent className="p-3">
+                                <div className="flex items-start gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium hig-body">{item.title}</div>
+                                    {item.description && (
+                                      <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
+                                        {item.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                                    {item.category && (
+                                      <Badge variant="outline" className="hig-caption2">{item.category}</Badge>
+                                    )}
+                                    {item.targetDate && (
+                                      <span>Target: {formatDate(item.targetDate)}</span>
+                                    )}
+                                    {item.votes > 0 && (
+                                      <span>{item.votes} votes</span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                                      setEditingRoadmap(item);
+                                      setShowRoadmapDialog(true);
+                                    }}>
+                                      <Edit2 className="h-3 w-3" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteRoadmap(item.id)}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );

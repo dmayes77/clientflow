@@ -13,9 +13,9 @@ export async function GET(request) {
       },
       orderBy: [
         { status: "asc" }, // Group by status
-        { votes: "desc" }, // Then by votes
-        { priority: "asc" }, // Then by priority
-        { createdAt: "desc" },
+        { priority: "desc" }, // Manual priority overrides (drag-drop)
+        { votes: "desc" }, // Then by votes (automatic priority)
+        { createdAt: "desc" }, // Finally by creation date
       ],
       select: {
         id: true,
