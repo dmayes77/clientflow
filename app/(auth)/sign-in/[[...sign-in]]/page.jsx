@@ -41,29 +41,44 @@ function SignInContent() {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      console.error("Clerk not loaded");
+      setError("Authentication service not ready. Please refresh and try again.");
+      return;
+    }
+
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
 
     setError("");
     setLoading(true);
 
     try {
+      console.log("Attempting sign in...");
+
       const result = await signIn.create({
         identifier: email.trim(),
         password,
       });
 
+      console.log("Sign in result:", result.status);
+
       if (result.status === "complete") {
+        console.log("Setting active session...");
         await setActive({ session: result.createdSessionId });
+        console.log("Redirecting to dashboard...");
         router.push("/dashboard");
       } else {
         console.error("Sign in incomplete:", result);
         setError("Sign in failed. Please try again.");
+        setLoading(false);
       }
     } catch (err) {
       console.error("Sign in error:", err);
       const errorMessage = err.errors?.[0]?.message || err.message || "Invalid email or password";
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };
@@ -137,7 +152,7 @@ function SignInContent() {
             <div className="flex-1 h-px bg-gray-300" />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4" noValidate>
             {/* Email Input */}
             <div className="flex h-11 sm:h-14 border border-gray-300 rounded-lg overflow-hidden">
               <div className="w-11 sm:w-14 shrink-0 flex items-center justify-center bg-gray-100 border-r border-gray-300">
@@ -147,11 +162,16 @@ function SignInContent() {
                 type="email"
                 name="email"
                 id="email"
+                inputMode="email"
                 autoComplete="email username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="Username or email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 min-w-0 px-3 sm:px-4 text-base outline-none bg-white text-gray-700 placeholder:text-gray-400"
+                disabled={loading || googleLoading}
+                className="flex-1 min-w-0 px-3 sm:px-4 text-base outline-none bg-white text-gray-700 placeholder:text-gray-400 disabled:opacity-50"
                 required
               />
             </div>
@@ -166,17 +186,22 @@ function SignInContent() {
                 name="password"
                 id="password"
                 autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="flex-1 min-w-0 px-3 sm:px-4 text-base outline-none bg-white text-gray-700 placeholder:text-gray-400"
+                disabled={loading || googleLoading}
+                className="flex-1 min-w-0 px-3 sm:px-4 text-base outline-none bg-white text-gray-700 placeholder:text-gray-400 disabled:opacity-50"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
-                className="w-11 sm:w-14 shrink-0 flex items-center justify-center text-gray-400 hover:text-gray-600 bg-white border-l border-gray-300"
+                disabled={loading || googleLoading}
+                className="w-11 sm:w-14 shrink-0 flex items-center justify-center text-gray-400 hover:text-gray-600 bg-white border-l border-gray-300 disabled:opacity-50"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -189,8 +214,8 @@ function SignInContent() {
             <div className="flex justify-center pt-2">
               <button
                 type="submit"
-                disabled={loading || !isLoaded}
-                className="w-full sm:w-auto h-11 sm:h-14 px-8 bg-blue-500 hover:bg-blue-600 text-white text-base font-medium rounded-lg shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={loading || googleLoading || !isLoaded}
+                className="w-full sm:w-auto h-11 sm:h-14 px-8 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-base font-medium rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -203,6 +228,13 @@ function SignInContent() {
               </button>
             </div>
           </form>
+
+          {/* Loading state indicator */}
+          {!isLoaded && (
+            <p className="text-center text-sm text-gray-500 mt-4">
+              Loading authentication...
+            </p>
+          )}
         </div>
 
         {/* Links - stacked below card */}
