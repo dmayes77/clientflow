@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-
-// Admin user IDs that can manage system-wide alerts
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",") || [];
-
-async function isAdmin() {
-  const { userId } = await auth();
-  if (!userId) return false;
-  return ADMIN_USER_IDS.includes(userId);
-}
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // GET /api/admin/alerts - List all alerts (platform-wide view for admin)
 export async function GET(request) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -88,7 +79,7 @@ export async function GET(request) {
 // POST /api/admin/alerts - Create alert (broadcast or per-tenant)
 export async function POST(request) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -169,7 +160,7 @@ export async function POST(request) {
 // PATCH /api/admin/alerts - Update or dismiss an alert
 export async function PATCH(request) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -235,7 +226,7 @@ export async function PATCH(request) {
 // DELETE /api/admin/alerts - Delete an alert
 export async function DELETE(request) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

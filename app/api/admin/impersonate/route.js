@@ -1,22 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",").map(id => id.trim()) || [];
 const IMPERSONATION_COOKIE = "cf_impersonate";
-
-async function isAdmin() {
-  const { userId } = await auth();
-  if (!userId) return { isAdmin: false, userId: null };
-  return { isAdmin: ADMIN_USER_IDS.includes(userId), userId };
-}
 
 // POST - Start impersonation
 export async function POST(request) {
   try {
-    const { isAdmin: admin, userId } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -43,7 +35,7 @@ export async function POST(request) {
       tenantId: tenant.id,
       tenantName: tenant.businessName || tenant.name,
       clerkOrgId: tenant.clerkOrgId,
-      adminUserId: userId,
+      adminUserId: "admin",
       startedAt: new Date().toISOString(),
     }), {
       httpOnly: true,
@@ -69,8 +61,7 @@ export async function POST(request) {
 // DELETE - End impersonation
 export async function DELETE() {
   try {
-    const { isAdmin: admin } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -87,8 +78,7 @@ export async function DELETE() {
 // GET - Check impersonation status
 export async function GET() {
   try {
-    const { isAdmin: admin } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ impersonating: false });
     }
 

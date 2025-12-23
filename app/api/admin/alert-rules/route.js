@@ -1,20 +1,12 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getScheduleTypes, getEventTypes, getFilterOptions, seedDefaultAlertRules } from "@/lib/alert-runner";
-
-// Verify admin access
-function isAdmin(userId) {
-  const adminIds = process.env.ADMIN_USER_IDS?.split(",").map((id) => id.trim()) || [];
-  return adminIds.includes(userId);
-}
 
 // GET /api/admin/alert-rules - List all alert rules
 export async function GET(request) {
-  const { userId } = await auth();
-
-  if (!userId || !isAdmin(userId)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {
@@ -82,10 +74,8 @@ export async function GET(request) {
 
 // POST /api/admin/alert-rules - Create a new alert rule
 export async function POST(request) {
-  const { userId } = await auth();
-
-  if (!userId || !isAdmin(userId)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {
@@ -150,7 +140,7 @@ export async function POST(request) {
         emailSubject,
         emailTemplate,
         cooldownHours,
-        createdBy: userId,
+        createdBy: "admin",
       },
     });
 
@@ -163,10 +153,8 @@ export async function POST(request) {
 
 // PATCH /api/admin/alert-rules - Update an alert rule
 export async function PATCH(request) {
-  const { userId } = await auth();
-
-  if (!userId || !isAdmin(userId)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {
@@ -198,10 +186,8 @@ export async function PATCH(request) {
 
 // DELETE /api/admin/alert-rules?id=xxx - Delete an alert rule
 export async function DELETE(request) {
-  const { userId } = await auth();
-
-  if (!userId || !isAdmin(userId)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {

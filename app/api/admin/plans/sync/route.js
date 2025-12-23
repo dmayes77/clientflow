@@ -1,15 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-// Verify admin access
-function isAdmin(userId) {
-  const adminIds = process.env.ADMIN_USER_IDS?.split(",") || [];
-  return adminIds.includes(userId);
-}
 
 // Slugify helper
 function slugify(text) {
@@ -21,10 +15,8 @@ function slugify(text) {
 
 // GET /api/admin/plans/sync - Fetch products from Stripe (preview)
 export async function GET() {
-  const { userId } = await auth();
-
-  if (!userId || !isAdmin(userId)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {
@@ -98,10 +90,8 @@ export async function GET() {
 
 // POST /api/admin/plans/sync - Import selected products from Stripe
 export async function POST(request) {
-  const { userId } = await auth();
-
-  if (!userId || !isAdmin(userId)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {

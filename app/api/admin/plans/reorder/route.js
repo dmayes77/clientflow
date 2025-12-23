@@ -1,19 +1,11 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// Verify admin access
-function isAdmin(userId) {
-  const adminIds = process.env.ADMIN_USER_IDS?.split(",") || [];
-  return adminIds.includes(userId);
-}
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // POST /api/admin/plans/reorder - Update plan ordering
 export async function POST(request) {
-  const { userId } = await auth();
-
-  if (!userId || !isAdmin(userId)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await isAdminAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {

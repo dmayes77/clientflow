@@ -1,14 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",").map(id => id.trim()) || [];
-
-async function isAdmin() {
-  const { userId } = await auth();
-  if (!userId) return false;
-  return ADMIN_USER_IDS.includes(userId);
-}
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // Get plan pricing from database
 async function getPlanPricing() {
@@ -33,7 +25,7 @@ async function getPlanPricing() {
 
 export async function GET(request) {
   try {
-    if (!(await isAdmin())) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

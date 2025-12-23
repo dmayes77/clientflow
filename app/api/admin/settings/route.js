@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",").map(id => id.trim()) || [];
-
-async function isAdmin() {
-  const { userId } = await auth();
-  if (!userId) return { isAdmin: false, userId: null };
-  return { isAdmin: ADMIN_USER_IDS.includes(userId), userId };
-}
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // GET - Fetch platform settings
 export async function GET() {
   try {
-    const { isAdmin: admin } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -39,8 +30,7 @@ export async function GET() {
 // PATCH - Update platform settings
 export async function PATCH(request) {
   try {
-    const { isAdmin: admin, userId } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -64,7 +54,7 @@ export async function PATCH(request) {
       "maxBookingsPerTenant",
     ];
 
-    const updateData = { updatedBy: userId };
+    const updateData = {};
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         if (field === "maintenanceEndTime" && body[field]) {

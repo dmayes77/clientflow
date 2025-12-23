@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-
-const ADMIN_USER_IDS = process.env.ADMIN_USER_IDS?.split(",").map(id => id.trim()) || [];
-
-async function isAdmin() {
-  const { userId } = await auth();
-  if (!userId) return { isAdmin: false, userId: null };
-  return { isAdmin: ADMIN_USER_IDS.includes(userId), userId };
-}
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 // GET - Fetch all changelog entries
 export async function GET(request) {
   try {
-    const { isAdmin: admin } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -53,8 +44,7 @@ export async function GET(request) {
 // POST - Create changelog entry
 export async function POST(request) {
   try {
-    const { isAdmin: admin, userId } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -73,7 +63,7 @@ export async function POST(request) {
         type: type || "feature",
         published: published || false,
         publishedAt: published ? new Date() : null,
-        createdBy: userId,
+        createdBy: "admin",
       },
     });
 
@@ -87,8 +77,7 @@ export async function POST(request) {
 // PATCH - Update changelog entry
 export async function PATCH(request) {
   try {
-    const { isAdmin: admin } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -134,8 +123,7 @@ export async function PATCH(request) {
 // DELETE - Delete changelog entry
 export async function DELETE(request) {
   try {
-    const { isAdmin: admin } = await isAdmin();
-    if (!admin) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
