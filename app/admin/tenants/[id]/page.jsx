@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -137,19 +137,23 @@ export default function TenantDetailPage({ params }) {
       if (!res.ok) throw new Error("Failed to fetch tenant");
       return res.json();
     },
-    onSuccess: (data) => {
-      setSubscriptionStatus(data.tenant.subscriptionStatus || "");
-      setCurrentPeriodEnd(data.tenant.currentPeriodEnd
-        ? new Date(data.tenant.currentPeriodEnd).toISOString().split("T")[0]
-        : "");
-      setPlanType(data.tenant.planType || "basic");
-      setAccountType(data.tenant.accountType || "standard");
-    },
   });
 
   const tenant = data?.tenant;
   const usage = data?.usage;
   const recentBookings = data?.recentBookings || [];
+
+  // Sync form state with fetched data
+  useEffect(() => {
+    if (tenant) {
+      setSubscriptionStatus(tenant.subscriptionStatus || "");
+      setCurrentPeriodEnd(tenant.currentPeriodEnd
+        ? new Date(tenant.currentPeriodEnd).toISOString().split("T")[0]
+        : "");
+      setPlanType(tenant.planType || "basic");
+      setAccountType(tenant.accountType || "standard");
+    }
+  }, [tenant]);
 
   const updateMutation = useMutation({
     mutationFn: async (updates) => {
