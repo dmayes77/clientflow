@@ -154,44 +154,40 @@ function SignInContent() {
         // Redirect immediately - session is now active
         window.location.href = "/dashboard";
       } else if (result.status === "needs_second_factor") {
-        addDebugLog("2FA required", "warn");
+        addDebugLog("2FA required - using email code", "warn");
 
-        // Determine which second factor strategy to use
-        const supportedFactors = result.supportedSecondFactors;
-        addDebugLog(`Supported factors: ${JSON.stringify(supportedFactors?.map(f => f.strategy))}`);
-
-        // Prefer email_code, fallback to totp
-        const emailFactor = supportedFactors?.find(f => f.strategy === "email_code");
-        const totpFactor = supportedFactors?.find(f => f.strategy === "totp");
-
-        if (emailFactor) {
+        try {
+          // Force email code strategy
           setSecondFactorType("email_code");
-          addDebugLog("Using email_code strategy", "success");
+
+          const supportedFactors = result.supportedSecondFactors;
+          const emailFactor = supportedFactors?.find(f => f.strategy === "email_code");
+
+          if (!emailFactor) {
+            addDebugLog("Email factor not found, but forcing email_code anyway", "warn");
+          }
 
           // Prepare the email code (this triggers Clerk to send the email)
           try {
             await signIn.prepareSecondFactor({
               strategy: "email_code",
-              emailAddressId: emailFactor.emailAddressId,
+              emailAddressId: emailFactor?.emailAddressId,
             });
-            addDebugLog("Email code sent", "success");
+            addDebugLog("Email verification code sent", "success");
           } catch (prepErr) {
             addDebugLog(`Failed to send email: ${prepErr.message}`, "error");
+            setError(`Failed to send verification code: ${prepErr.message}`);
           }
-        } else if (totpFactor) {
-          setSecondFactorType("totp");
-          addDebugLog("Using totp strategy", "success");
-        } else {
-          addDebugLog("No supported 2FA method found", "error");
-          setError("Two-factor authentication is required but no supported method is available.");
+
+          setSecondFactor(true);
           setLoading(false);
           isSubmitting.current = false;
-          return;
+        } catch (factorErr) {
+          addDebugLog(`Error processing 2FA: ${factorErr.message}`, "error");
+          setError("Failed to process two-factor authentication. Please try again.");
+          setLoading(false);
+          isSubmitting.current = false;
         }
-
-        setSecondFactor(true);
-        setLoading(false);
-        isSubmitting.current = false;
       } else {
         addDebugLog(`Sign in incomplete: ${result.status}`, "error");
         setError("Sign in failed. Please try again.");
@@ -293,11 +289,9 @@ function SignInContent() {
             // Two-Factor Authentication Form
             <form onSubmit={handleSecondFactor} className="space-y-4" noValidate>
               <div className="text-center">
-                <h2 className="text-lg font-semibold text-gray-800">Two-Factor Authentication</h2>
+                <h2 className="text-lg font-semibold text-gray-800">Email Verification</h2>
                 <p className="text-sm text-gray-600 mt-2">
-                  {secondFactorType === "email_code"
-                    ? "Enter the code we sent to your email"
-                    : "Enter the code from your authenticator app"}
+                  Enter the 6-digit code we sent to your email
                 </p>
               </div>
 
@@ -356,33 +350,29 @@ function SignInContent() {
                   >
                     Back to sign in
                   </button>
-                  {secondFactorType === "email_code" && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setError("");
-                        addDebugLog("Resending email code...");
-                        try {
-                          const supportedFactors = signIn.supportedSecondFactors;
-                          const emailFactor = supportedFactors?.find(f => f.strategy === "email_code");
-                          if (emailFactor) {
-                            await signIn.prepareSecondFactor({
-                              strategy: "email_code",
-                              emailAddressId: emailFactor.emailAddressId,
-                            });
-                            addDebugLog("Email code resent", "success");
-                            setError("Code resent! Check your email.");
-                          }
-                        } catch (err) {
-                          addDebugLog(`Failed to resend: ${err.message}`, "error");
-                          setError("Failed to resend code. Please try again.");
-                        }
-                      }}
-                      className="text-sm text-blue-500 hover:text-blue-700"
-                    >
-                      Resend Code
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setError("");
+                      addDebugLog("Resending email code...");
+                      try {
+                        const supportedFactors = signIn.supportedSecondFactors;
+                        const emailFactor = supportedFactors?.find(f => f.strategy === "email_code");
+                        await signIn.prepareSecondFactor({
+                          strategy: "email_code",
+                          emailAddressId: emailFactor?.emailAddressId,
+                        });
+                        addDebugLog("Email code resent", "success");
+                        setError("Code resent! Check your email.");
+                      } catch (err) {
+                        addDebugLog(`Failed to resend: ${err.message}`, "error");
+                        setError("Failed to resend code. Please try again.");
+                      }
+                    }}
+                    className="text-sm text-blue-500 hover:text-blue-700"
+                  >
+                    Resend Code
+                  </button>
                 </div>
               </div>
             </form>
