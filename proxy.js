@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/signup(.*)",
+  "/forgot-password(.*)",
   "/book(.*)",
   "/offline",
   "/sso-callback(.*)",
@@ -25,6 +26,7 @@ function isTenantRoute(pathname) {
   if (pathname.startsWith("/api/") ||
       pathname.startsWith("/sign-") ||
       pathname.startsWith("/signup") ||
+      pathname.startsWith("/forgot-password") ||
       pathname.startsWith("/_next/") ||
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/admin") ||
