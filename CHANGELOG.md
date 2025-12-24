@@ -1,3 +1,9 @@
+## [1.5.13] - 2025-12-23
+
+### Changes
+- feat: Add trial banner and Clerk organization diagnostics
+
+
 ## [1.5.12] - 2025-12-23
 
 ### Changes
