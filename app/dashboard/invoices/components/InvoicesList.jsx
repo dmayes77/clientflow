@@ -445,10 +445,12 @@ export function InvoicesList() {
               {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
-            <AddIcon className="h-4 w-4 mr-1" />
-            Create Invoice
-          </Button>
+          {invoices.length > 0 && (
+            <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
+              <AddIcon className="h-4 w-4 mr-1" />
+              Create Invoice
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {invoices.length === 0 ? (
