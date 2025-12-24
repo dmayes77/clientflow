@@ -273,6 +273,13 @@ async function handleCheckoutSessionCompleted(session) {
     // Determine plan type from metadata first, then lookup by price
     if (metadata?.planSlug) {
       updateData.planType = metadata.planSlug;
+      // Also lookup and set planId
+      const plan = await prisma.plan.findFirst({
+        where: { slug: metadata.planSlug },
+      });
+      if (plan) {
+        updateData.planId = plan.id;
+      }
     } else {
       // Lookup plan from database by price ID
       const priceId = sub.items.data[0]?.price.id;
@@ -287,6 +294,7 @@ async function handleCheckoutSessionCompleted(session) {
         });
         if (plan) {
           updateData.planType = plan.slug;
+          updateData.planId = plan.id;
         }
       }
     }
@@ -359,6 +367,7 @@ async function handleSubscriptionUpdated(subscription) {
       });
       if (plan) {
         updateData.planType = plan.slug;
+        updateData.planId = plan.id;
       }
     }
 
