@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAdminSettings, useUpdateAdminSettings } from "@/lib/hooks/use-admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   Clock,
   CheckCircle,
   Loader2,
+  Activity,
 } from "lucide-react";
 
 function SettingRow({ label, description, children }) {
@@ -47,9 +48,31 @@ function SettingToggle({ checked, onCheckedChange, disabled }) {
 export default function SettingsPage() {
   const [settings, setSettings] = useState(null);
   const [error, setError] = useState(null);
+  const [clerkData, setClerkData] = useState(null);
+  const [loadingClerk, setLoadingClerk] = useState(false);
 
   const { data, isLoading: loading, refetch } = useAdminSettings();
   const updateMutation = useUpdateAdminSettings();
+
+  // Fetch Clerk organization data
+  const fetchClerkData = async () => {
+    setLoadingClerk(true);
+    try {
+      const response = await fetch("/api/admin/clerk/organizations");
+      if (response.ok) {
+        const data = await response.json();
+        setClerkData(data);
+      }
+    } catch (err) {
+      console.error("Error fetching Clerk data:", err);
+    } finally {
+      setLoadingClerk(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClerkData();
+  }, []);
 
   // Initialize settings state when data is loaded
   if (data?.settings && !settings) {
@@ -371,6 +394,106 @@ export default function SettingsPage() {
               className="w-20 h-8 hig-body"
             />
           </SettingRow>
+        </CardContent>
+      </Card>
+
+      {/* Clerk Diagnostics */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="hig-body flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Clerk Diagnostics
+              </CardTitle>
+              <CardDescription className="hig-caption2">
+                Organization usage and limits
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchClerkData}
+              disabled={loadingClerk}
+            >
+              {loadingClerk ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                "Refresh"
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loadingClerk && !clerkData ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ) : clerkData ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="hig-caption2 text-muted-foreground">Total Organizations</p>
+                  <p className="hig-title-2 font-bold">{clerkData.totalCount}</p>
+                </div>
+                <div>
+                  <p className="hig-caption2 text-muted-foreground">Remaining</p>
+                  <p className="hig-title-2 font-bold">{clerkData.remaining}</p>
+                </div>
+                <div>
+                  <p className="hig-caption2 text-muted-foreground">Plan Limit</p>
+                  <p className="hig-title-2 font-bold">{clerkData.limit}</p>
+                </div>
+                <div>
+                  <p className="hig-caption2 text-muted-foreground">Usage</p>
+                  <p className="hig-title-2 font-bold">{clerkData.percentUsed}%</p>
+                </div>
+              </div>
+
+              {clerkData.percentUsed >= 90 && (
+                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <div className="flex gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="hig-caption2 font-medium text-yellow-900 dark:text-yellow-100">
+                        {clerkData.percentUsed >= 100 ? "Organization Limit Reached" : "Approaching Organization Limit"}
+                      </p>
+                      <p className="hig-caption2 text-yellow-800 dark:text-yellow-200 mt-1">
+                        {clerkData.percentUsed >= 100
+                          ? "You've reached the maximum number of organizations. Upgrade your Clerk plan to continue accepting signups."
+                          : "You're approaching the maximum number of organizations. Consider upgrading your Clerk plan."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {clerkData.organizations && clerkData.organizations.length > 0 && (
+                <details className="mt-3">
+                  <summary className="hig-caption2 text-muted-foreground cursor-pointer hover:text-foreground">
+                    View all organizations ({clerkData.organizations.length})
+                  </summary>
+                  <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                    {clerkData.organizations.map((org, index) => (
+                      <div key={org.id} className="p-2 bg-muted/30 rounded text-xs">
+                        <div className="font-medium">{index + 1}. {org.name}</div>
+                        <div className="text-muted-foreground">
+                          Created: {new Date(org.createdAt).toLocaleDateString()} • Members: {org.membersCount}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          ) : (
+            <p className="hig-caption2 text-muted-foreground">No data available</p>
+          )}
         </CardContent>
       </Card>
 

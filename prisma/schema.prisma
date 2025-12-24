@@ -883,7 +883,7 @@ model PlatformSettings {
   bookingsEnabled       Boolean   @default(true)
 
   // Trial settings
-  trialDays             Int       @default(14)
+  trialDays             Int       @default(30)
   requirePaymentMethod  Boolean   @default(false)
 
   // Branding / customization

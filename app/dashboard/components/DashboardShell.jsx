@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
+import { TrialBanner } from "./TrialBanner";
 import packageJson from "@/package.json";
 
 const businessItems = [
@@ -210,6 +211,7 @@ export function DashboardShell({ children }) {
         <SidebarNav businessName={businessName} />
 
         <SidebarInset className="overflow-auto min-h-0">
+        <TrialBanner />
         <header className="sticky top-0 z-10 flex h-11 sm:h-10 items-center border-b border-border bg-background px-3 shadow-sm">
           <div className="w-11 flex items-center justify-start sm:w-auto">
             <SidebarTrigger />

@@ -7,7 +7,7 @@ import {
   dispatchPaymentFailed,
   dispatchInvoicePaid,
 } from "@/lib/webhooks";
-import { sendDisputeNotification } from "@/lib/email";
+import { sendDisputeNotification, sendTrialEndingNotification } from "@/lib/email";
 import { triggerEventAlert, triggerEventAlertByStripeCustomer } from "@/lib/alert-runner";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -410,14 +410,53 @@ async function handleTrialWillEnd(subscription) {
 
   const tenant = await prisma.tenant.findFirst({
     where: { stripeSubscriptionId: subscription.id },
+    include: {
+      plan: true,
+    },
   });
 
   if (!tenant) {
+    console.log("No tenant found for trial ending subscription:", subscription.id);
     return;
   }
 
-  // TODO: Send trial ending notification email
-  console.log(`Trial ending for tenant ${tenant.id} in 3 days`);
+  if (!tenant.email) {
+    console.log("No email address for tenant:", tenant.id);
+    return;
+  }
+
+  // Get trial end date from subscription
+  const trialEndDate = subscription.trial_end
+    ? new Date(subscription.trial_end * 1000)
+    : tenant.currentPeriodEnd;
+
+  if (!trialEndDate) {
+    console.log("No trial end date available for tenant:", tenant.id);
+    return;
+  }
+
+  // Get plan name (fallback to planType if plan relation doesn't exist)
+  const planName = tenant.plan?.name || tenant.planType || "your plan";
+
+  // Send trial ending notification email
+  try {
+    const billingUrl = process.env.NEXT_PUBLIC_APP_URL
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/billing`
+      : "https://app.getclientflow.app/dashboard/settings/billing";
+
+    await sendTrialEndingNotification({
+      to: tenant.email,
+      businessName: tenant.businessName || tenant.name,
+      planName,
+      trialEndDate,
+      billingUrl,
+    });
+
+    console.log(`Trial ending email sent to tenant ${tenant.id} (${tenant.email})`);
+  } catch (error) {
+    console.error("Failed to send trial ending email:", error);
+    // Don't throw - email failure shouldn't break webhook processing
+  }
 }
 
 // Handler: Invoice Payment Succeeded
