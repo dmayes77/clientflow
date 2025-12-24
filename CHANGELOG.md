@@ -1,3 +1,11 @@
+## [1.5.12] - 2025-12-23
+
+### Changes
+- fix: Remove internal scrolling from mobile calendar today section
+- feat: Add device detection for camera capture vs file upload
+- fix: Remove duplicate Create Invoice button on Financials page
+
+
 ## [1.5.11] - 2025-12-23
 
 ### Changes
