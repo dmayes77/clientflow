@@ -1,10 +1,7 @@
 /**
  * Diagnostic script to check Clerk organization count and details
- * Run with: node scripts/check-clerk-orgs.js
+ * Run with: npm run check-clerk-orgs
  */
-
-// Load environment variables
-require('dotenv').config({ path: '.env.local' });
 
 const { clerkClient } = require('@clerk/nextjs/server');
 
