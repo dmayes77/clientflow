@@ -439,7 +439,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
                   buttonText="Capture Profile Photo"
                   buttonVariant="outline"
                   facingMode="user"
-                  showPreview={true}
+                  showPreview={false}
                   title="Capture Profile Photo"
                   description="Take a photo for this contact's profile"
                   className="w-full"
