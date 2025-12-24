@@ -9,8 +9,7 @@ import { formatDate } from "date-fns";
 
 export function TrialBanner() {
   const router = useRouter();
-  const { data: tenantData } = useTenant();
-  const tenant = tenantData?.tenant;
+  const { data: tenant } = useTenant();
 
   const trialInfo = useMemo(() => {
     if (!tenant || tenant.subscriptionStatus !== "trialing" || !tenant.currentPeriodEnd) {

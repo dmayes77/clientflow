@@ -34,6 +34,7 @@ export async function GET() {
         slug: true,
         planType: true,
         subscriptionStatus: true,
+        currentPeriodEnd: true,
         stripeCustomerId: true,
         stripeAccountId: true,
         stripeAccountStatus: true,
@@ -62,6 +63,15 @@ export async function GET() {
         setupComplete: true,
         createdAt: true,
         updatedAt: true,
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            priceMonthly: true,
+            priceYearly: true,
+          },
+        },
       },
     });
 
