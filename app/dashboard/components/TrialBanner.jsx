@@ -12,6 +12,13 @@ export function TrialBanner() {
   const { data: tenant } = useTenant();
 
   const trialInfo = useMemo(() => {
+    console.log("TrialBanner - tenant data:", {
+      exists: !!tenant,
+      subscriptionStatus: tenant?.subscriptionStatus,
+      currentPeriodEnd: tenant?.currentPeriodEnd,
+      plan: tenant?.plan,
+    });
+
     if (!tenant || tenant.subscriptionStatus !== "trialing" || !tenant.currentPeriodEnd) {
       return null;
     }
