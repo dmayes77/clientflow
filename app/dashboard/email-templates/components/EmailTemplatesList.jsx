@@ -256,7 +256,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
 
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none p-3 min-h-[200px] focus-within:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:hig-caption2 [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0"
+        className="prose prose-sm max-w-none p-3 min-h-50 focus-within:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-45 [&_.ProseMirror]:hig-caption2 [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0"
       />
     </div>
   );
@@ -393,15 +393,15 @@ export function EmailTemplatesList() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <CardTitle className="font-semibold flex items-center gap-2">
-                <Mail className="size-[17px] sm:size-5 text-primary" />
+                <Mail className="size-4.25 sm:size-5 text-primary" />
                 Templates
               </CardTitle>
               <CardDescription className="truncate sm:whitespace-normal mt-1">
                 {filteredTemplates.length} template{filteredTemplates.length !== 1 ? "s" : ""}
               </CardDescription>
             </div>
-            <Button onClick={handleOpenCreate} size="sm" className="shrink-0 w-full sm:w-auto h-[34px] sm:h-9">
-              <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
+            <Button onClick={handleOpenCreate} size="sm" className="shrink-0 w-full sm:w-auto h-8.5 sm:h-9">
+              <Plus className="size-4.25 sm:size-4.5 mr-1.5" />
               {isMobile ? "New" : "New Template"}
             </Button>
           </div>
@@ -409,7 +409,7 @@ export function EmailTemplatesList() {
         <CardContent className={cn(isMobile && filteredTemplates.length > 0 && "p-0")}>
           <div className={cn("mb-3 sm:mb-4", isMobile && filteredTemplates.length > 0 && "px-4")}>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-full sm:w-48 h-[34px] sm:h-9">
+              <SelectTrigger className="w-full sm:w-48 h-8.5 sm:h-9">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -426,14 +426,14 @@ export function EmailTemplatesList() {
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-8 sm:py-12">
               <div className="size-11 sm:size-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Mail className="size-[22px] sm:size-7 text-primary" />
+                <Mail className="size-5.5 sm:size-7 text-primary" />
               </div>
               <h3 className="font-semibold mb-0.5 sm:mb-1">No email templates</h3>
               <p className="text-muted-foreground mb-3 sm:mb-4">
                 {filterCategory === "all" ? "Create your first email template to get started" : "No templates found in this category"}
               </p>
               {filterCategory === "all" && (
-                <Button onClick={handleOpenCreate} variant="outline" size="sm" className="h-[34px] sm:h-9">
+                <Button onClick={handleOpenCreate} variant="outline" size="sm" className="h-8.5 sm:h-9">
                   <Plus className="size-4 mr-1.5" />
                   Create Template
                 </Button>
@@ -450,7 +450,7 @@ export function EmailTemplatesList() {
                 >
                   {/* Icon */}
                   <div className="size-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <Mail className="size-[22px] text-primary" />
+                    <Mail className="size-5.5 text-primary" />
                   </div>
 
                   {/* Content with iOS-style divider */}

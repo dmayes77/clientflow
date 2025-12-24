@@ -360,7 +360,7 @@ function SidebarGroupContent({ className, ...props }) {
         "w-full",
         "tablet:text-sm desktop:text-xs",
         /* HIG footnote (mobile default) */
-        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        "text-[13px] tracking-[-0.078px] leading-4.5",
         className
       )}
       {...props}
@@ -534,7 +534,7 @@ function SidebarMenuSubButton({ asChild = false, size = "md", isActive = false, 
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
         // Size variants with HIG typography
         size === "sm" && "tablet:text-xs desktop:text-2xs text-[12px] tracking-[0px] leading-4",
-        size === "md" && "tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-[18px]",
+        size === "md" && "tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-4.5",
         "group-data-[collapsible=icon]:hidden",
         className
       )}

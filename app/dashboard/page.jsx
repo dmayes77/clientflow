@@ -721,7 +721,7 @@ export default function DashboardPage() {
                     onClick={() => router.push(`/dashboard/contacts/${client.id}`)}
                   >
                     {/* iOS-style Avatar */}
-                    <div className="size-11 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 text-white flex items-center justify-center text-base font-medium shrink-0">
+                    <div className="size-11 rounded-full bg-linear-to-br from-gray-400 to-gray-500 text-white flex items-center justify-center text-base font-medium shrink-0">
                       {client.name?.charAt(0)?.toUpperCase() || "?"}
                     </div>
                     {/* Content with iOS-style divider */}

@@ -488,7 +488,7 @@ export function WebhooksList() {
                   return (
                     <div className="space-y-3">
                       <Label>Events to Subscribe</Label>
-                      <ScrollArea className="h-[200px] rounded-md border p-3">
+                      <ScrollArea className="h-50 rounded-md border p-3">
                         {EVENT_CATEGORIES.map((category) => {
                           const categoryEvents = WEBHOOK_EVENTS.filter(
                             (e) => e.category === category
@@ -653,10 +653,10 @@ export function WebhooksList() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead className="w-25">Status</TableHead>
                         <TableHead>Event</TableHead>
-                        <TableHead className="w-[100px]">Code</TableHead>
-                        <TableHead className="w-[150px]">Time</TableHead>
+                        <TableHead className="w-25">Code</TableHead>
+                        <TableHead className="w-37.5">Time</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

@@ -50,7 +50,7 @@ export default function Step7Page() {
 
   if (!isLoaded || businessLoading || availabilityLoading || servicesLoading) {
     return (
-      <div className="flex min-h-[200px] items-center justify-center">
+      <div className="flex min-h-50 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );

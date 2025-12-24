@@ -450,7 +450,7 @@ export function ContactsList() {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search..."
-                      className="pl-8 w-full sm:w-[180px] h-9"
+                      className="pl-8 w-full sm:w-45 h-9"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -520,7 +520,7 @@ export function ContactsList() {
                 <div className="h-4 w-px bg-border" />
                 <div className="flex flex-wrap items-center gap-2">
                   <Select onValueChange={handleBulkStatusChange}>
-                    <SelectTrigger className="h-8 w-[140px]">
+                    <SelectTrigger className="h-8 w-35">
                       <SelectValue placeholder="Change status" />
                     </SelectTrigger>
                     <SelectContent>

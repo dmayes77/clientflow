@@ -480,7 +480,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -535,7 +535,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[350px] p-0" align="start">
+                  <PopoverContent className="w-87.5 p-0" align="start">
                     <Command>
                       <CommandInput placeholder="Search contacts..." />
                       <CommandList>
@@ -687,7 +687,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                                 )}
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-[300px] p-0" align="start">
+                            <PopoverContent className="w-75 p-0" align="start">
                               <Command>
                                 <CommandInput placeholder="Search services & packages..." />
                                 <CommandList>

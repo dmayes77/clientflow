@@ -264,20 +264,20 @@ export function WorkflowsList() {
     <>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-          <TabsList className="h-[34px] sm:h-9 p-1">
-            <TabsTrigger value="workflows" className="gap-1 sm:gap-1.5 h-[26px] sm:h-7 px-2.5 sm:px-3 rounded-md">
-              <Settings className="size-[17px] sm:size-[18px]" />
+          <TabsList className="h-8.5 sm:h-9 p-1">
+            <TabsTrigger value="workflows" className="gap-1 sm:gap-1.5 h-6.5 sm:h-7 px-2.5 sm:px-3 rounded-md">
+              <Settings className="size-4.25 sm:size-4.5" />
               <span className="hidden sm:inline">Workflows</span>
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="gap-1 sm:gap-1.5 h-[26px] sm:h-7 px-2.5 sm:px-3 rounded-md">
-              <Megaphone className="size-[17px] sm:size-[18px]" />
+            <TabsTrigger value="campaigns" className="gap-1 sm:gap-1.5 h-6.5 sm:h-7 px-2.5 sm:px-3 rounded-md">
+              <Megaphone className="size-4.25 sm:size-4.5" />
               <span className="hidden sm:inline">Campaigns</span>
             </TabsTrigger>
           </TabsList>
 
           {activeTab === "workflows" && (
-            <Button size="sm" onClick={() => handleOpenDialog()} className="w-full sm:w-auto h-[34px] sm:h-9">
-              <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
+            <Button size="sm" onClick={() => handleOpenDialog()} className="w-full sm:w-auto h-8.5 sm:h-9">
+              <Plus className="size-4.25 sm:size-4.5 mr-1.5" />
               {isMobile ? "New" : "Create Workflow"}
             </Button>
           )}
@@ -289,7 +289,7 @@ export function WorkflowsList() {
               <CardContent className="py-8 sm:py-12">
                 <div className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
                   <div className="size-11 sm:size-14 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <Settings className="size-[22px] sm:size-7 text-indigo-600" />
+                    <Settings className="size-5.5 sm:size-7 text-indigo-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold">No workflows yet</h3>
@@ -297,7 +297,7 @@ export function WorkflowsList() {
                       Create workflows to automate actions. For example, send an email when a "hot-lead" tag is added.
                     </p>
                   </div>
-                  <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-[34px] sm:h-9">
+                  <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-8.5 sm:h-9">
                     <Plus className="size-4 mr-1.5" />
                     Create Your First Workflow
                   </Button>
@@ -321,7 +321,7 @@ export function WorkflowsList() {
                         "size-11 rounded-full flex items-center justify-center shrink-0",
                         workflow.active ? "bg-indigo-100" : "bg-gray-100"
                       )}>
-                        <TriggerIcon className={cn("size-[22px]", workflow.active ? "text-indigo-600" : "text-gray-400")} />
+                        <TriggerIcon className={cn("size-5.5", workflow.active ? "text-indigo-600" : "text-gray-400")} />
                       </div>
 
                       {/* Content with iOS-style divider */}
@@ -483,7 +483,7 @@ export function WorkflowsList() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-137.5 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingWorkflow ? "Edit Workflow" : "Create Workflow"}

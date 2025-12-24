@@ -378,7 +378,7 @@ export function PackagesList() {
                     return (
                       <div className="space-y-2">
                         <Label>Included Services</Label>
-                        <div className="rounded-md border p-3 space-y-2 max-h-[200px] overflow-y-auto">
+                        <div className="rounded-md border p-3 space-y-2 max-h-50 overflow-y-auto">
                           {services.map((service) => (
                             <div key={service.id} className="flex items-center space-x-2">
                               <Checkbox

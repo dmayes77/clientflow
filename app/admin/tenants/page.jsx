@@ -175,7 +175,7 @@ function TenantsTableContent() {
           value={status || "all"}
           onValueChange={(value) => updateParams({ status: value === "all" ? "" : value })}
         >
-          <SelectTrigger className="w-full sm:w-[140px] h-9">
+          <SelectTrigger className="w-full sm:w-35 h-9">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>

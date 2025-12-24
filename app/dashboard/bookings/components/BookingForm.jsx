@@ -662,7 +662,7 @@ export function BookingForm({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center">
           <Loader2 className="size-6 animate-spin text-muted-foreground mx-auto mb-2" />
           <p className="text-muted-foreground">Loading...</p>
@@ -746,7 +746,7 @@ export function BookingForm({
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
+                    <PopoverContent className="w-100 p-0" align="start">
                       <Command>
                         <CommandInput placeholder="Search contacts..." />
                         <CommandList>
@@ -885,7 +885,7 @@ export function BookingForm({
                     <span className="hidden sm:inline ml-1">Add</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="end">
+                <PopoverContent className="w-70 p-0" align="end">
                   <Command>
                     <CommandInput placeholder="Search services..." />
                     <CommandList>
@@ -951,7 +951,7 @@ export function BookingForm({
                     <span className="hidden sm:inline ml-1">Add</span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="end">
+                <PopoverContent className="w-70 p-0" align="end">
                   <Command>
                     <CommandInput placeholder="Search packages..." />
                     <CommandList>
@@ -1147,7 +1147,7 @@ export function BookingForm({
                       Add Tag
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start">
+                  <PopoverContent className="w-50 p-0" align="start">
                     <Command>
                       <CommandInput placeholder="Search tags..." />
                       <CommandList>

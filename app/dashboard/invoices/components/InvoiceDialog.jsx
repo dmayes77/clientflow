@@ -594,7 +594,7 @@ export function InvoiceDialog({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[350px] p-0" align="start">
+            <PopoverContent className="w-87.5 p-0" align="start">
               <Command>
                 <CommandInput placeholder="Search contacts..." />
                 <CommandList>
@@ -732,7 +732,7 @@ export function InvoiceDialog({
                           {item.serviceId ? <Wrench className="h-4 w-4" /> : item.packageId ? <Package className="h-4 w-4" /> : <Search className="h-4 w-4" />}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[280px] p-0" align="start">
+                      <PopoverContent className="w-70 p-0" align="start">
                         <Command>
                           <CommandInput placeholder="Search..." />
                           <CommandList>
@@ -839,8 +839,8 @@ export function InvoiceDialog({
                   <TableRow>
                     <TableHead>Service / Description</TableHead>
                     <TableHead className="w-20">Qty</TableHead>
-                    <TableHead className="w-[100px]">Price</TableHead>
-                    <TableHead className="w-[100px]">Amount</TableHead>
+                    <TableHead className="w-25">Price</TableHead>
+                    <TableHead className="w-25">Amount</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -859,7 +859,7 @@ export function InvoiceDialog({
                                   {item.serviceId ? <Wrench className="h-4 w-4" /> : item.packageId ? <Package className="h-4 w-4" /> : <Search className="h-4 w-4" />}
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[300px] p-0" align="start">
+                              <PopoverContent className="w-75 p-0" align="start">
                                 <Command>
                                   <CommandInput placeholder="Search services & packages..." />
                                   <CommandList>

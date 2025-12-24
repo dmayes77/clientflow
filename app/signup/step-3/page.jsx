@@ -83,7 +83,7 @@ export default function Step3Page() {
 
   if (loading || plansLoading) {
     return (
-      <div className="flex items-center justify-center py-12 min-h-[200px]">
+      <div className="flex items-center justify-center py-12 min-h-50">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     );

@@ -171,20 +171,20 @@ export function TagsList() {
       {/* Filter Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <Tabs value={activeFilter} onValueChange={setActiveFilter}>
-          <TabsList className="h-[34px] sm:h-9 p-1">
+          <TabsList className="h-8.5 sm:h-9 p-1">
             {TAG_TYPES.map((type) => {
               const Icon = type.icon;
               return (
-                <TabsTrigger key={type.value} value={type.value} className="gap-1 sm:gap-1.5 h-[26px] sm:h-7 px-2 sm:px-3 rounded-md">
-                  <Icon className="size-[17px] sm:size-[18px]" />
+                <TabsTrigger key={type.value} value={type.value} className="gap-1 sm:gap-1.5 h-6.5 sm:h-7 px-2 sm:px-3 rounded-md">
+                  <Icon className="size-4.25 sm:size-4.5" />
                   <span className="hidden sm:inline">{type.label}</span>
                 </TabsTrigger>
               );
             })}
           </TabsList>
         </Tabs>
-        <Button size="sm" onClick={() => handleOpenDialog()} className="h-[34px] sm:h-9 px-3 sm:px-4">
-          <Plus className="size-[17px] sm:size-[18px] mr-1.5" />
+        <Button size="sm" onClick={() => handleOpenDialog()} className="h-8.5 sm:h-9 px-3 sm:px-4">
+          <Plus className="size-4.25 sm:size-4.5 mr-1.5" />
           Create Tag
         </Button>
       </div>
@@ -200,7 +200,7 @@ export function TagsList() {
           <CardContent className="py-8 sm:py-12">
             <div className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
               <div className="size-11 sm:size-14 rounded-full bg-rose-100 flex items-center justify-center">
-                <Tag className="size-[22px] sm:size-7 text-rose-600" />
+                <Tag className="size-5.5 sm:size-7 text-rose-600" />
               </div>
               <div>
                 <h3 className="font-semibold">No tags yet</h3>
@@ -231,7 +231,7 @@ export function TagsList() {
                 >
                   {/* Color dot indicator */}
                   <div className={cn("size-11 rounded-full flex items-center justify-center shrink-0", colorClasses.bg)}>
-                    <Tag className={cn("size-[22px]", colorClasses.text)} />
+                    <Tag className={cn("size-5.5", colorClasses.text)} />
                   </div>
 
                   {/* Content with iOS-style divider */}
@@ -363,7 +363,7 @@ export function TagsList() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-100">
           <DialogHeader>
             <DialogTitle>
               {editingTag ? "Edit Tag" : "Create Tag"}

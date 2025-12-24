@@ -364,7 +364,7 @@ export function CheckboxGroupField({
             error={field.state.meta.isTouched && field.state.meta.errors[0]}
             className={className}
           >
-            <div className="rounded-md border p-3 space-y-2 max-h-[200px] overflow-y-auto">
+            <div className="rounded-md border p-3 space-y-2 max-h-50 overflow-y-auto">
               {options.map((option) => (
                 <div key={option.value} className="flex items-center space-x-2">
                   <Checkbox
