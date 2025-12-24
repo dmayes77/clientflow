@@ -241,7 +241,7 @@ export function CalendarView() {
     const selectedDayBookings = getBookingsForDay(selectedDate).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
 
     return (
-      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col">
         {/* Mini Calendar */}
         <div className="bg-card border-b border-border p-3 shrink-0">
           <div className="flex items-center justify-between mb-2">
@@ -303,7 +303,7 @@ export function CalendarView() {
         </div>
 
         {/* Agenda List */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="pb-3">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -638,7 +638,7 @@ export function CalendarView() {
   if (isMobile) {
     return (
       <>
-        <div className="rounded-lg border bg-card flex flex-col min-h-0" style={{ height: "calc(100dvh - 9rem)" }}>
+        <div className="rounded-lg border bg-card flex flex-col">
           <div className="flex items-center justify-between p-3 border-b border-border">
             <Button variant="outline" size="sm" onClick={goToToday}>
               Today
