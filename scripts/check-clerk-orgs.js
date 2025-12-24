@@ -3,6 +3,9 @@
  * Run with: node scripts/check-clerk-orgs.js
  */
 
+// Load environment variables
+require('dotenv').config({ path: '.env.local' });
+
 const { clerkClient } = require('@clerk/nextjs/server');
 
 async function checkOrganizations() {

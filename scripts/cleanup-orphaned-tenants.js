@@ -5,6 +5,9 @@
  *   node scripts/cleanup-orphaned-tenants.js --delete   (actually delete)
  */
 
+// Load environment variables
+require('dotenv').config({ path: '.env.local' });
+
 const { PrismaClient } = require("@prisma/client");
 const { clerkClient } = require("@clerk/nextjs/server");
 
