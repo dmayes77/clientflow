@@ -67,12 +67,31 @@ To enable CI/CD, add these secrets in GitHub Settings → Secrets and variables 
 - `VERCEL_ORG_ID` - Vercel organization ID
 - `VERCEL_PROJECT_ID` - Vercel project ID
 
-### How to Get Vercel Secrets
+### Automated Setup
+
+We provide a script to automate the CI/CD setup process:
+
+```bash
+npm run setup-cicd
+```
+
+This script will:
+1. ✅ Check if Vercel CLI is installed
+2. ✅ Verify Vercel authentication
+3. ✅ Link your project to Vercel
+4. ✅ Get project credentials
+5. ✅ Optionally set GitHub secrets automatically (if GitHub CLI is installed)
+6. ✅ Provide manual setup instructions if needed
+
+### Manual Setup
+
+If you prefer to set up manually:
 
 1. Install Vercel CLI: `npm i -g vercel`
-2. Link project: `vercel link`
-3. Get secrets: `vercel env pull .env.vercel`
-4. Find IDs in `.vercel/project.json`
+2. Link project: `npx vercel link --yes`
+3. Get IDs: `cat .vercel/project.json`
+4. Create Vercel token: https://vercel.com/account/tokens
+5. Add GitHub secrets: https://github.com/YOUR_REPO/settings/secrets/actions
 
 ## Commit Message Convention
 

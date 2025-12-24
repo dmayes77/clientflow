@@ -12,7 +12,8 @@
     "clear-locks": "node scripts/clear-locks.js",
     "cleanup-tenants": "node scripts/cleanup-orphaned-tenants.js",
     "check-clerk-orgs": "node scripts/check-clerk-orgs.js",
-    "sync-stripe": "node scripts/sync-stripe-prices.js"
+    "sync-stripe": "node scripts/sync-stripe-prices.js",
+    "setup-cicd": "node scripts/setup-cicd.js"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",
