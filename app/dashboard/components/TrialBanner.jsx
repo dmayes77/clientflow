@@ -121,11 +121,17 @@ export function TrialBanner() {
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Icon className={`size-4 sm:size-5 shrink-0 ${config.iconColor}`} />
           {/* Mobile message - short */}
-          <p className={`text-sm font-medium ${config.textColor} sm:hidden`}>
+          <p
+            className={`font-medium ${config.textColor} sm:hidden`}
+            style={{ fontSize: 'var(--text-subheadline-size)' }}
+          >
             {getMobileMessage()}
           </p>
           {/* Desktop message - full */}
-          <p className={`hidden sm:block text-sm font-medium ${config.textColor}`}>
+          <p
+            className={`hidden sm:block font-medium ${config.textColor}`}
+            style={{ fontSize: 'var(--text-subheadline-size)' }}
+          >
             {getDesktopMessage()}
           </p>
         </div>
