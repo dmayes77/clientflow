@@ -54,13 +54,18 @@ export function CameraCapture({
     setIsCapturing(true);
 
     try {
+      console.log("[CameraCapture] Calling quickCapture...");
       const result = await quickCapture({ facingMode });
+      console.log("[CameraCapture] quickCapture result:", result);
 
       if (result.success && result.file) {
+        console.log("[CameraCapture] File captured successfully:", result.file);
         if (showPreview) {
+          console.log("[CameraCapture] Showing preview...");
           // Show preview
           const reader = new FileReader();
           reader.onload = (e) => {
+            console.log("[CameraCapture] FileReader loaded, setting capturedImage");
             setCapturedImage({
               file: result.file,
               preview: e.target.result,
@@ -69,20 +74,23 @@ export function CameraCapture({
           reader.readAsDataURL(result.file);
           // Keep dialog open to show preview
         } else {
+          console.log("[CameraCapture] No preview, uploading directly...");
           // Direct upload without preview
           await onCapture(result.file);
           toast.success("Photo captured and uploaded successfully");
           setIsOpen(false);
         }
       } else if (result.cancelled) {
+        console.log("[CameraCapture] User cancelled");
         // User cancelled, close dialog
         setIsOpen(false);
       } else {
+        console.log("[CameraCapture] Capture failed:", result.error);
         toast.error(result.error || "Failed to capture photo");
         setIsOpen(false);
       }
     } catch (error) {
-      console.error("Camera capture error:", error);
+      console.error("[CameraCapture] Exception:", error);
       toast.error(error.message || "Failed to access camera");
       setIsOpen(false);
     } finally {
@@ -93,13 +101,16 @@ export function CameraCapture({
   const handleConfirm = async () => {
     if (!capturedImage) return;
 
+    console.log("[CameraCapture] Confirming upload with file:", capturedImage.file);
     setIsCapturing(true);
     try {
       await onCapture(capturedImage.file);
+      console.log("[CameraCapture] Upload successful");
       toast.success("Photo uploaded successfully");
       setCapturedImage(null);
       setIsOpen(false);
     } catch (error) {
+      console.error("[CameraCapture] Upload failed:", error);
       toast.error(error.message || "Failed to upload photo");
     } finally {
       setIsCapturing(false);
