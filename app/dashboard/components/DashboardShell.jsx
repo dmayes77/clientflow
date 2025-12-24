@@ -111,7 +111,7 @@ function SidebarNav({ businessName }) {
           <SidebarMenuItem>
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Briefcase className="size-4" />
+                <Briefcase className="size-5 md:size-4" />
               </div>
               <span className="truncate font-semibold">{businessName || "ClientFlow"}</span>
             </div>
@@ -126,7 +126,7 @@ function SidebarNav({ businessName }) {
             }`}
             onClick={() => handleSectionChange("business")}
           >
-            <Briefcase className="size-4" />
+            <Briefcase className="size-5 md:size-4" />
             Business
           </Button>
           <Button
@@ -137,7 +137,7 @@ function SidebarNav({ businessName }) {
             }`}
             onClick={() => handleSectionChange("account")}
           >
-            <User className="size-4" />
+            <User className="size-5 md:size-4" />
             Account
           </Button>
         </div>
