@@ -145,3 +145,12 @@ jobs:
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
+
+      - name: Sync dev branch with main
+        run: |
+          git fetch origin dev
+          git checkout dev
+          git merge origin/main --no-edit -m "chore: Sync dev with main after v${{ steps.new_version.outputs.version }} release
+
+          🤖 Automated sync by GitHub Actions"
+          git push origin dev
