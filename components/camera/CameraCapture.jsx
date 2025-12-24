@@ -66,10 +66,15 @@ export function CameraCapture({
           const reader = new FileReader();
           reader.onload = (e) => {
             console.log("[CameraCapture] FileReader loaded, setting capturedImage");
+            console.log("[CameraCapture] Preview data URL length:", e.target.result?.length);
             setCapturedImage({
               file: result.file,
               preview: e.target.result,
             });
+          };
+          reader.onerror = (e) => {
+            console.error("[CameraCapture] FileReader error:", e);
+            toast.error("Failed to load image preview");
           };
           reader.readAsDataURL(result.file);
           // Keep dialog open to show preview
@@ -183,11 +188,22 @@ export function CameraCapture({
             ) : (
               <div className="space-y-4">
                 <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-                  <img
-                    src={capturedImage.preview}
-                    alt="Captured"
-                    className="w-full h-full object-contain"
-                  />
+                  {capturedImage?.preview ? (
+                    <img
+                      src={capturedImage.preview}
+                      alt="Captured"
+                      className="w-full h-full object-contain"
+                      onLoad={() => console.log("[CameraCapture] Image loaded successfully")}
+                      onError={(e) => {
+                        console.error("[CameraCapture] Image failed to load:", e);
+                        toast.error("Failed to display image preview");
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
 
                 <DialogFooter className="flex-col sm:flex-row gap-2">
