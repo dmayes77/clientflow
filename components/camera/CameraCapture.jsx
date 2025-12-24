@@ -187,12 +187,12 @@ export function CameraCapture({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+                <div className="relative w-full h-64 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
                   {capturedImage?.preview ? (
                     <img
                       src={capturedImage.preview}
                       alt="Captured"
-                      className="w-full h-full object-contain"
+                      className="max-w-full max-h-full object-contain"
                       onLoad={() => console.log("[CameraCapture] Image loaded successfully")}
                       onError={(e) => {
                         console.error("[CameraCapture] Image failed to load:", e);
@@ -200,9 +200,7 @@ export function CameraCapture({
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                    </div>
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                   )}
                 </div>
 
