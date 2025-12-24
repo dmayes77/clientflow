@@ -1,3 +1,11 @@
+## [1.5.9] - 2025-12-23
+
+### Changes
+- refactor: Update all Tailwind classes to use canonical notation
+- feat: Replace GitHub bug report link with in-app bug report form
+- fix: Remove conflicting marketing API support route
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
