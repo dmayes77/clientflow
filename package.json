@@ -11,7 +11,8 @@
     "postinstall": "prisma generate",
     "clear-locks": "node scripts/clear-locks.js",
     "cleanup-tenants": "node scripts/cleanup-orphaned-tenants.js",
-    "check-clerk-orgs": "node scripts/check-clerk-orgs.js"
+    "check-clerk-orgs": "node scripts/check-clerk-orgs.js",
+    "sync-stripe": "node scripts/sync-stripe-prices.js"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",
