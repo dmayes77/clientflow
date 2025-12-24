@@ -1,3 +1,16 @@
+## [1.5.11] - 2025-12-23
+
+### Changes
+- fix: Fix media library preview not showing images on mobile
+- fix: Improve camera preview rendering on mobile
+- fix: Disable camera preview, upload directly
+- feat: Increase all icon sizes on mobile globally
+- feat: Increase icon sizes on mobile for better visibility
+- debug: Add error handling and logging to image preview
+- debug: Add comprehensive logging to camera capture flow
+- chore: Bump version to 1.5.10
+
+
 ## [1.5.9] - 2025-12-23
 
 ### Changes
