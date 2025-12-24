@@ -752,13 +752,13 @@ export function MediaLibrary() {
           header={
             <div className="flex items-center justify-center bg-muted/30 -mx-5 -mt-3 pb-3">
               {activeTab === "images" ? (
-                <div className="relative max-h-[45vh] w-auto max-w-full" style={{ aspectRatio: `${previewItem.width}/${previewItem.height}` }}>
+                <div className="relative w-full h-64 flex items-center justify-center">
                   <Image
                     src={previewItem.url}
                     alt={previewItem.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="rounded-lg object-contain"
+                    width={previewItem.width}
+                    height={previewItem.height}
+                    className="max-w-full max-h-full rounded-lg object-contain"
                   />
                 </div>
               ) : (
