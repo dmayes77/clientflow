@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, HelpCircle, Github, Mail, MessageSquare } from "lucide-react";
+import { ArrowRight, HelpCircle, Bug, Mail, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ContactForm } from "./components";
+import { ContactForm, BugReportForm } from "./components";
 
 export const metadata = {
   title: "Support & Help Center | ClientFlow",
@@ -91,23 +91,15 @@ export default function SupportPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start gap-4 mb-4">
-                <Github className="h-8 w-8 shrink-0" />
+                <Bug className="h-8 w-8 text-primary shrink-0" />
                 <div>
                   <h3 className="font-semibold mft-text-lg">Report a Bug</h3>
                   <p className="mft-small text-muted-foreground">
-                    Found a bug? Let us know on GitHub
+                    Found a bug? Report it directly to our team
                   </p>
                 </div>
               </div>
-              <p className="mft-small text-muted-foreground mb-4">
-                If you&apos;ve encountered a technical issue or bug, please report it on our GitHub repository with detailed steps to reproduce.
-              </p>
-              <Button variant="outline" asChild>
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-                  <Github className="mr-2 h-4 w-4" />
-                  Open GitHub
-                </a>
-              </Button>
+              <BugReportForm />
             </CardContent>
           </Card>
 
