@@ -258,7 +258,6 @@ async function handleCheckoutSessionCompleted(session) {
   // Update tenant with subscription info
   const updateData = {
     stripeCustomerId: customer,
-    subscriptionStatus: "trialing",
   };
 
   if (subscription) {
@@ -268,9 +267,8 @@ async function handleCheckoutSessionCompleted(session) {
     const sub = await stripe.subscriptions.retrieve(subscription);
     updateData.currentPeriodEnd = new Date(sub.current_period_end * 1000);
 
-    if (sub.status === "active") {
-      updateData.subscriptionStatus = "active";
-    }
+    // Set subscription status based on Stripe's status
+    updateData.subscriptionStatus = sub.status;
 
     // Determine plan type from metadata first, then lookup by price
     if (metadata?.planSlug) {
