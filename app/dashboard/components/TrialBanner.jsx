@@ -125,7 +125,7 @@ export function TrialBanner() {
             {getMobileMessage()}
           </p>
           {/* Desktop message - full */}
-          <p className={`hidden sm:block text-base font-medium ${config.textColor}`}>
+          <p className={`hidden sm:block text-sm font-medium ${config.textColor}`}>
             {getDesktopMessage()}
           </p>
         </div>
