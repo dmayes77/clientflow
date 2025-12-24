@@ -119,7 +119,7 @@ export function TrialBanner() {
     >
       <div className="flex items-center justify-between gap-3 sm:gap-4 max-w-7xl mx-auto">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <Icon className={`size-4 sm:size-5 shrink-0 ${config.iconColor}`} />
+          <Icon className={`size-3 shrink-0 ${config.iconColor}`} />
           {/* Mobile message - short */}
           <p
             className={`font-medium ${config.textColor} sm:hidden`}
