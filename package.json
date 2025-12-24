@@ -10,8 +10,8 @@
     "studio": "export $(grep -v '^#' .env.local | grep -v '^$' | xargs) && prisma studio",
     "postinstall": "prisma generate",
     "clear-locks": "node scripts/clear-locks.js",
-    "cleanup-tenants": "export $(grep -v '^#' .env.local | grep -v '^$' | xargs) && node scripts/cleanup-orphaned-tenants.js",
-    "check-clerk-orgs": "export $(grep -v '^#' .env.local | grep -v '^$' | xargs) && node scripts/check-clerk-orgs.js"
+    "cleanup-tenants": "node scripts/cleanup-orphaned-tenants.js",
+    "check-clerk-orgs": "node scripts/check-clerk-orgs.js"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",

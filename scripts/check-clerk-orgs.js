@@ -1,7 +1,10 @@
 /**
  * Diagnostic script to check Clerk organization count and details
- * Run with: npm run check-clerk-orgs
+ * Run with: node scripts/check-clerk-orgs.js
  */
+
+// Load environment variables
+require('./load-env');
 
 const { clerkClient } = require('@clerk/nextjs/server');
 

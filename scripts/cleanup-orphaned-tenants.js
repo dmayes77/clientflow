@@ -1,9 +1,12 @@
 /**
  * Find and optionally delete tenants whose Clerk organizations no longer exist
  * Usage:
- *   npm run cleanup-tenants -- --dry-run  (preview only)
- *   npm run cleanup-tenants -- --delete   (actually delete)
+ *   node scripts/cleanup-orphaned-tenants.js --dry-run  (preview only)
+ *   node scripts/cleanup-orphaned-tenants.js --delete   (actually delete)
  */
+
+// Load environment variables
+require('./load-env');
 
 const { PrismaClient } = require("@prisma/client");
 const { clerkClient } = require("@clerk/nextjs/server");
