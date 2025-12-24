@@ -663,3 +663,19 @@ summary {
 [aria-disabled="true"] {
   cursor: not-allowed;
 }
+
+/* Larger icons on mobile for better visibility */
+@media (max-width: 768px) {
+  .size-3 {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+  .size-4, .h-4.w-4 {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+  .size-5, .h-5.w-5 {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+}
