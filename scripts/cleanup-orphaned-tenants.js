@@ -6,7 +6,7 @@
  */
 
 const { PrismaClient } = require("@prisma/client");
-const { clerkClient } = require("@clerk/clerk-sdk-node");
+const { clerkClient } = require("@clerk/nextjs/server");
 
 const prisma = new PrismaClient();
 

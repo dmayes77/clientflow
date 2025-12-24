@@ -3,14 +3,16 @@
  * Run with: node scripts/check-clerk-orgs.js
  */
 
-const { clerkClient } = require('@clerk/clerk-sdk-node');
+const { clerkClient } = require('@clerk/nextjs/server');
 
 async function checkOrganizations() {
   try {
     console.log('🔍 Checking Clerk organizations...\n');
 
+    const client = await clerkClient();
+
     // Fetch all organizations
-    const { data: organizations, totalCount } = await clerkClient.organizations.getOrganizationList({
+    const { data: organizations, totalCount } = await client.organizations.getOrganizationList({
       limit: 100,
       offset: 0,
     });
