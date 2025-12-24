@@ -399,7 +399,7 @@ export default function TenantLandingPage({ params }) {
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
         <Card className="max-w-sm w-full">
