@@ -378,7 +378,7 @@ function SidebarMenuItem({ className, ...props }) {
 
 const sidebarMenuButtonVariants = cva(
   [
-    "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-all duration-150 focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 text-sidebar-foreground hover:bg-blue-100 [&>svg]:text-blue-500 data-[active=true]:bg-blue-500 data-[active=true]:text-white data-[active=true]:[&>svg]:text-white data-[active=true]:font-medium data-[active=true]:hover:bg-blue-600 data-[state=open]:hover:bg-blue-100 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-5 md:[&>svg]:size-4 [&>svg]:shrink-0",
+    "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left outline-hidden ring-sidebar-ring transition-all duration-150 focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 text-sidebar-foreground hover:bg-blue-100 [&>svg]:text-blue-500 data-[active=true]:bg-blue-500 data-[active=true]:text-white data-[active=true]:[&>svg]:text-white data-[active=true]:font-medium data-[active=true]:hover:bg-blue-600 data-[state=open]:hover:bg-blue-100 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
   ].join(" "),
   {
     variants: {
