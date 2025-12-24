@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMediaCapture } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +11,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Camera, Loader2, X, RotateCcw } from "lucide-react";
+import { Camera, Loader2, X, RotateCcw, Upload } from "lucide-react";
 import { toast } from "sonner";
+
+// Detect if device is mobile
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  ) || window.matchMedia("(max-width: 768px) and (pointer: coarse)").matches;
+};
 
 /**
  * CameraCapture Component
@@ -44,6 +52,11 @@ export function CameraCapture({
   const [isOpen, setIsOpen] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
 
   const handleCapture = async () => {
     if (!isSupported && !navigator.mediaDevices) {
@@ -124,7 +137,13 @@ export function CameraCapture({
 
   const handleRetake = () => {
     setCapturedImage(null);
-    handleCapture();
+    if (isMobile) {
+      handleCapture();
+    } else {
+      setIsOpen(false);
+      // Small delay to allow dialog to close before opening file picker
+      setTimeout(() => handleFileUpload(), 100);
+    }
   };
 
   const handleCancel = () => {
@@ -132,25 +151,87 @@ export function CameraCapture({
     setIsOpen(false);
   };
 
+  // Handle file upload for desktop
+  const handleFileUpload = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setIsCapturing(true);
+        if (showPreview) {
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setCapturedImage({
+              file: file,
+              preview: e.target.result,
+            });
+            setIsOpen(true);
+          };
+          reader.onerror = () => {
+            toast.error("Failed to load image preview");
+            setIsCapturing(false);
+          };
+          reader.readAsDataURL(file);
+          setIsCapturing(false);
+        } else {
+          // Direct upload without preview
+          try {
+            await onCapture(file);
+            toast.success("Photo uploaded successfully");
+          } catch (error) {
+            toast.error(error.message || "Failed to upload photo");
+          } finally {
+            setIsCapturing(false);
+          }
+        }
+      }
+    };
+    input.click();
+  };
+
+  // Get appropriate button text and handler
+  const getButtonText = () => {
+    if (buttonText !== "Take Photo") return buttonText; // Use custom text if provided
+    return isMobile ? "Take Photo" : "Upload Photo";
+  };
+
+  const getButtonIcon = () => {
+    if (isCapturing) {
+      return <Loader2 className={`w-4 h-4 ${buttonText ? "mr-2" : ""} animate-spin`} />;
+    }
+    return isMobile ? (
+      <Camera className={`w-4 h-4 ${buttonText ? "mr-2" : ""}`} />
+    ) : (
+      <Upload className={`w-4 h-4 ${buttonText ? "mr-2" : ""}`} />
+    );
+  };
+
+  const handleButtonClick = () => {
+    if (isMobile) {
+      // Mobile: Use camera capture
+      setIsOpen(true);
+      if (!showPreview) {
+        handleCapture();
+      }
+    } else {
+      // Desktop: Use file upload
+      handleFileUpload();
+    }
+  };
+
   return (
     <>
       <Button
         variant={buttonVariant}
-        onClick={() => {
-          setIsOpen(true);
-          if (!showPreview) {
-            handleCapture();
-          }
-        }}
+        onClick={handleButtonClick}
         disabled={disabled || isCapturing}
         className={className}
       >
-        {isCapturing ? (
-          <Loader2 className={`w-4 h-4 ${buttonText ? "mr-2" : ""} animate-spin`} />
-        ) : (
-          <Camera className={`w-4 h-4 ${buttonText ? "mr-2" : ""}`} />
-        )}
-        {buttonText}
+        {getButtonIcon()}
+        {getButtonText()}
       </Button>
 
       {showPreview && (
@@ -158,10 +239,10 @@ export function CameraCapture({
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>{description}</DialogDescription>
+              <DialogDescription>{isMobile ? description : "Preview and confirm your photo"}</DialogDescription>
             </DialogHeader>
 
-            {!capturedImage ? (
+            {!capturedImage && isMobile ? (
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <Camera className="w-16 h-16 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground text-center">
