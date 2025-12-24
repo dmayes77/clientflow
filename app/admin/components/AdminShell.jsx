@@ -65,7 +65,7 @@ function SidebarNav() {
           <SidebarMenuItem>
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex size-8 items-center justify-center rounded-lg bg-red-600 text-white">
-                <Shield className="size-4" />
+                <Shield className="size-5 md:size-4" />
               </div>
               <div>
                 <span className="truncate font-semibold">Admin Panel</span>
@@ -90,11 +90,9 @@ function SidebarNav() {
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.label} onClick={handleNavClick}>
-                      <Link href={item.href} className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-2">
-                          <Icon />
-                          <span>{item.label}</span>
-                        </div>
+                      <Link href={item.href}>
+                        <Icon />
+                        <span>{item.label}</span>
                         {showBadge && (
                           <Badge variant="destructive" className="ml-auto">
                             {unreadCount}
