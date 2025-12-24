@@ -6,7 +6,7 @@
     "dev": "next dev --webpack",
     "build": "prisma generate && PRISMA_MIGRATE_LOCK_TIMEOUT=60000 node scripts/migrate-or-baseline.js && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "npx eslint",
     "studio": "export $(grep -v '^#' .env.local | grep -v '^$' | xargs) && prisma studio",
     "postinstall": "prisma generate",
     "clear-locks": "node scripts/clear-locks.js",
