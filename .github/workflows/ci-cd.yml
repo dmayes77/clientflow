@@ -286,6 +286,7 @@ jobs:
 
       - name: Push changes
         run: |
+          git pull --rebase origin main
           git push origin main
           git push origin "v${{ steps.new_version.outputs.version }}"
 
