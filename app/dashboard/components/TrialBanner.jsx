@@ -127,7 +127,7 @@ export function TrialBanner() {
             variant="ghost"
             size="sm"
             onClick={() => router.push("/dashboard/settings/billing")}
-            className="text-white hover:bg-white/20 hidden sm:inline-flex"
+            className="text-white hover:bg-white/30 bg-white/10 hidden sm:inline-flex"
           >
             View Billing
           </Button>
@@ -135,7 +135,7 @@ export function TrialBanner() {
             variant="outline"
             size="sm"
             onClick={() => router.push("/dashboard/settings/billing")}
-            className="text-white border-white hover:bg-white/20"
+            className="text-white border-white/80 hover:bg-white/30 bg-white/10"
           >
             {urgency === "urgent" ? "Cancel Trial" : "Manage"}
           </Button>
