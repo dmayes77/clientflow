@@ -27,6 +27,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -481,20 +489,21 @@ export function WorkflowsList() {
         </TabsContent>
       </Tabs>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-137.5 max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
+      {/* Create/Edit Sheet */}
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent className="sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
               {editingWorkflow ? "Edit Workflow" : "Create Workflow"}
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {editingWorkflow ? "Update the workflow settings" : "Create a new automated workflow"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-4">
+            <form onSubmit={handleSubmit}>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
                 <Label htmlFor="name">
                   Workflow Name <span className="text-red-500">*</span>
                 </Label>
@@ -751,25 +760,27 @@ export function WorkflowsList() {
                   onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
                 />
               </div>
-            </div>
+              </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+              <SheetFooter className="pt-6 gap-2">
+              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={createWorkflow.isPending || updateWorkflow.isPending}
+                className="flex-1 sm:flex-none"
               >
                 {(createWorkflow.isPending || updateWorkflow.isPending) && (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 )}
                 {editingWorkflow ? "Update" : "Create"}
               </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
