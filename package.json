@@ -7,6 +7,14 @@
     "build": "prisma generate && PRISMA_MIGRATE_LOCK_TIMEOUT=60000 node scripts/migrate-or-baseline.js && next build",
     "start": "next start",
     "lint": "npx eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
     "studio": "export $(grep -v '^#' .env.local | grep -v '^$' | xargs) && prisma studio",
     "postinstall": "prisma generate",
     "clear-locks": "node scripts/clear-locks.js",
@@ -90,14 +98,20 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.17",
     "web-push": "^3.6.7",
-    "zod": "^4.1.13"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.57.0",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^5.1.2",
     "dotenv": "^17.2.3",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "^16.0.10",
-    "typescript": "^5"
+    "jsdom": "^27.3.0",
+    "typescript": "^5",
+    "vitest": "^4.0.16"
   }
 }

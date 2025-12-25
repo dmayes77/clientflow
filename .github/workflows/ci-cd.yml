@@ -33,11 +33,58 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test
+        env:
+          # Provide test environment variables
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /onboarding
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+          ADMIN_PASSCODE: ${{ secrets.ADMIN_PASSCODE }}
+          NEXT_PUBLIC_APP_URL: https://getclientflow.app
+          NEXT_PUBLIC_API_URL: https://getclientflow.app/api
+          NODE_ENV: test
+
   deploy-preview:
     name: Deploy Preview (Dev)
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
-    needs: lint
+    needs: [lint, test]
 
     steps:
       - name: Checkout code
@@ -55,7 +102,7 @@ jobs:
     name: Deploy Staging
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/staging'
-    needs: lint
+    needs: [lint, test]
 
     steps:
       - name: Checkout code
@@ -76,7 +123,7 @@ jobs:
     name: Deploy Production
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    needs: lint
+    needs: [lint, test]
 
     steps:
       - name: Checkout code
