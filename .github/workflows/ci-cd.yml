@@ -1,12 +1,13 @@
 name: CI/CD Pipeline
 
 # Deployment Flow (3-tier promotion):
-# 1. Push to `dev` → Deploy to Dev Preview (after tests pass)
-# 2. Merge `dev` → `staging` → Deploy to Staging (after tests pass)
-# 3. Merge `staging` → `main` → Deploy to Production (after tests pass) → Auto-release
+# 1. Push to `dev` → Deploy to Vercel Preview (dev-*.vercel.app) - after tests pass
+# 2. Merge `dev` → `staging` → Deploy to Vercel Preview (staging-*.vercel.app) - after tests pass
+# 3. Merge `staging` → `main` → Deploy to Production (getclientflow.app) - after tests pass → Auto-release
 #
 # This ensures all code goes through: dev → staging → production
 # Production deployments only happen from staging merges (not direct pushes)
+# Vercel automatically creates preview URLs for dev and staging branches
 
 on:
   push:
@@ -89,9 +90,9 @@ jobs:
           NODE_ENV: test
 
   deploy-preview:
-    name: Deploy Preview (Dev)
+    name: Deploy Preview
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/staging'
     needs: [lint, test]
 
     steps:
@@ -99,6 +100,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Vercel (Preview)
+        id: vercel-deploy
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -106,26 +108,10 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./
 
-  deploy-staging:
-    name: Deploy Staging
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/staging'
-    needs: [lint, test]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel (Staging)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          vercel-args: '--prod'
-        env:
-          VERCEL_ALIAS: staging.getclientflow.app
+      - name: Comment Preview URL
+        run: |
+          echo "Preview URL: ${{ steps.vercel-deploy.outputs.preview-url }}"
+          echo "Branch: ${GITHUB_REF#refs/heads/}"
 
   deploy-production:
     name: Deploy Production
