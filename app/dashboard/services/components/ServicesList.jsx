@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import {
@@ -639,15 +640,15 @@ Format the includes list so I can easily copy each item individually.`;
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-[90vw] lg:max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col p-0">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-              <DialogTitle>{editingService ? "Edit Service" : "Create Service"}</DialogTitle>
+      {/* Add/Edit Sheet */}
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+          <SheetContent className="sm:max-w-6xl overflow-hidden flex flex-col p-0">
+            <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+              <SheetTitle>{editingService ? "Edit Service" : "Create Service"}</SheetTitle>
               <div className="flex items-center justify-between gap-4">
-                <DialogDescription className="flex-1">
+                <SheetDescription className="flex-1">
                   {editingService ? "Update your service details" : "Add a new service offering for your clients"}
-                </DialogDescription>
+                </SheetDescription>
                 <form.Field name="active">
                   {(field) => (
                     <div className="flex items-center gap-2 shrink-0">
@@ -915,7 +916,7 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
             </ScrollArea>
 
-            <DialogFooter className="px-6 py-4 border-t bg-muted/30 shrink-0">
+            <SheetFooter className="px-6 py-4 border-t bg-muted/30 shrink-0">
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
@@ -923,10 +924,10 @@ Format the includes list so I can easily copy each item individually.`;
                 {(createService.isPending || updateService.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {editingService ? "Save Changes" : "Create Service"}
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Image Selection Dialog */}
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
