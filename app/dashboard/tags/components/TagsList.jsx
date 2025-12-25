@@ -10,6 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -362,17 +370,17 @@ export function TagsList() {
         </div>
       )}
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-100">
-          <DialogHeader>
-            <DialogTitle>
+      {/* Create/Edit Sheet */}
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent className="sm:max-w-100">
+          <SheetHeader>
+            <SheetTitle>
               {editingTag ? "Edit Tag" : "Create Tag"}
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {editingTag ? "Update the tag details" : "Create a new tag to organize your contacts"}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -494,17 +502,17 @@ export function TagsList() {
               </form.Subscribe>
             </div>
 
-            <DialogFooter>
+            <SheetFooter>
               <Button type="button" variant="outline" onClick={handleCloseDialog}>
                 Cancel
               </Button>
               <SubmitButton form={form} loadingText={editingTag ? "Updating..." : "Creating..."}>
                 {editingTag ? "Update" : "Create"}
               </SubmitButton>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
