@@ -389,7 +389,7 @@ export function TagsList() {
             }}
             className="flex flex-col h-[calc(100vh-10rem)]"
           >
-            <div className="space-y-4 flex-1 overflow-y-auto py-6 pr-1">
+            <div className="space-y-4 flex-1 overflow-y-auto px-4 py-6">
               <TextField
                 form={form}
                 name="name"
