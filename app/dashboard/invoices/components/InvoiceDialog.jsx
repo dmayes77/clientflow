@@ -67,8 +67,7 @@ import {
   useTanstackForm,
   TextField,
   SelectField,
-  SaveButton,
-  useSaveButton,
+  SubmitButton,
 } from "@/components/ui/tanstack-form";
 
 // Safe lineItems parser - handles JSON string or array

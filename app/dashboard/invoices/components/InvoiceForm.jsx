@@ -32,7 +32,8 @@ import {
   useTanstackForm,
   TextField,
   SelectField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 
 // Safe lineItems parser - handles JSON string or array
@@ -88,6 +89,9 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     phone: "",
   });
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // Fetch data using TanStack Query hooks
   const { data: contacts = [], isLoading: contactsLoading } = useContacts();
   const { data: bookings = [], isLoading: bookingsLoading } = useBookings();
@@ -112,55 +116,74 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   // TanStack Form
   const form = useTanstackForm({
     defaultValues: initialFormState,
-    onSubmit: async (values) => {
-      if (!values.contactId) {
+    onSubmit: async ({ value }) => {
+      if (!value.contactId) {
         toast.error("Please select a contact for this invoice");
         return;
       }
 
-      const { subtotal, taxAmount, total } = calculateTotals(values);
+      const startTime = Date.now();
 
-      const payload = {
-        contactId: values.contactId,
-        bookingId: values.bookingId || null,
-        contactName: values.contactName,
-        contactEmail: values.contactEmail,
-        contactAddress: values.contactAddress || null,
-        dueDate: new Date(values.dueDate).toISOString(),
-        status: values.status,
-        lineItems: values.lineItems.map((item) => ({
-          description: item.description,
-          quantity: parseInt(item.quantity) || 1,
-          unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
-          amount: Math.round(parseFloat(item.amount) * 100) || 0,
-          serviceId: item.serviceId || null,
-          packageId: item.packageId || null,
-          isDiscount: item.isDiscount || false,
-        })),
-        subtotal: Math.round(subtotal * 100),
-        discountCode: values.discountCode || null,
-        discountAmount: Math.round((values.discountAmount || 0) * 100),
-        taxRate: parseFloat(values.taxRate) || 0,
-        taxAmount: Math.round(taxAmount * 100),
-        total: Math.round(total * 100),
-        depositPercent:
-          values.depositPercent !== null && values.depositPercent !== undefined && values.depositPercent > 0 ? values.depositPercent : null,
-        notes: values.notes || null,
-        terms: values.terms || null,
-      };
+      try {
+        const { subtotal, taxAmount, total } = calculateTotals(value);
 
-      const mutation = mode === "edit" ? updateInvoiceMutation : createInvoiceMutation;
-      const mutationPayload = mode === "edit" ? { id: invoiceId, ...payload } : payload;
+        const payload = {
+          contactId: value.contactId,
+          bookingId: value.bookingId || null,
+          contactName: value.contactName,
+          contactEmail: value.contactEmail,
+          contactAddress: value.contactAddress || null,
+          dueDate: new Date(value.dueDate).toISOString(),
+          status: value.status,
+          lineItems: value.lineItems.map((item) => ({
+            description: item.description,
+            quantity: parseInt(item.quantity) || 1,
+            unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
+            amount: Math.round(parseFloat(item.amount) * 100) || 0,
+            serviceId: item.serviceId || null,
+            packageId: item.packageId || null,
+            isDiscount: item.isDiscount || false,
+          })),
+          subtotal: Math.round(subtotal * 100),
+          discountCode: value.discountCode || null,
+          discountAmount: Math.round((value.discountAmount || 0) * 100),
+          taxRate: parseFloat(value.taxRate) || 0,
+          taxAmount: Math.round(taxAmount * 100),
+          total: Math.round(total * 100),
+          depositPercent:
+            value.depositPercent !== null && value.depositPercent !== undefined && value.depositPercent > 0 ? value.depositPercent : null,
+          notes: value.notes || null,
+          terms: value.terms || null,
+        };
 
-      mutation.mutate(mutationPayload, {
-        onSuccess: () => {
-          toast.success(mode === "edit" ? "Invoice updated" : "Invoice created");
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Perform the actual mutation
+        const mutation = mode === "edit" ? updateInvoiceMutation : createInvoiceMutation;
+        const mutationPayload = mode === "edit" ? { id: invoiceId, ...payload } : payload;
+        const mutationPromise = mutation.mutateAsync(mutationPayload);
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutationPromise, minDelay]);
+
+        toast.success(mode === "edit" ? "Invoice updated" : "Invoice created");
+        saveButton.handleSuccess();
+
+        // Navigate after showing success state for 2 seconds
+        setTimeout(() => {
           router.push("/dashboard/invoices");
-        },
-        onError: (error) => {
-          toast.error(error.message || "Failed to save invoice");
-        },
-      });
+        }, 2000);
+      } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
+        toast.error(error.message || "Failed to save invoice");
+        saveButton.handleError();
+      }
     },
   });
 
@@ -964,9 +987,15 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               Share
             </Button>
           )}
-          <SubmitButton form={form} variant="success" className="size-sm">
+          <SaveButton
+            form={form}
+            saveButton={saveButton}
+            variant="success"
+            className="size-sm"
+            loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+          >
             {mode === "edit" ? "Save" : "Create"}
-          </SubmitButton>
+          </SaveButton>
         </div>
       </form>
 

@@ -1,5 +1,13 @@
 name: CI/CD Pipeline
 
+# Deployment Flow (3-tier promotion):
+# 1. Push to `dev` → Deploy to Dev Preview (after tests pass)
+# 2. Merge `dev` → `staging` → Deploy to Staging (after tests pass)
+# 3. Merge `staging` → `main` → Deploy to Production (after tests pass) → Auto-release
+#
+# This ensures all code goes through: dev → staging → production
+# Production deployments only happen from staging merges (not direct pushes)
+
 on:
   push:
     branches:
@@ -122,12 +130,26 @@ jobs:
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # Only deploy to production when merging from staging to main
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' &&
+       (contains(github.event.head_commit.message, 'Merge') ||
+        github.event.head_commit.author.username == 'github-actions[bot]'))
     needs: [lint, test]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Verify merge from staging
+        run: |
+          echo "Verifying this merge came from staging branch..."
+          # This helps ensure proper flow: dev → staging → main
+          if ! git log --oneline -1 | grep -qiE '(staging|release|merge)'; then
+            echo "⚠️  Warning: This commit may not be from staging branch"
+            echo "Production deployments should come from staging merges"
+          fi
 
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25

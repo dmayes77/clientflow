@@ -12,13 +12,6 @@ export function TrialBanner() {
   const { data: tenant } = useTenant();
 
   const trialInfo = useMemo(() => {
-    console.log("TrialBanner - tenant data:", {
-      exists: !!tenant,
-      subscriptionStatus: tenant?.subscriptionStatus,
-      currentPeriodEnd: tenant?.currentPeriodEnd,
-      plan: tenant?.plan,
-    });
-
     if (!tenant || tenant.subscriptionStatus !== "trialing" || !tenant.currentPeriodEnd) {
       return null;
     }
@@ -64,24 +57,24 @@ export function TrialBanner() {
 
   const urgencyConfig = {
     info: {
-      bgColor: "bg-blue-50 dark:bg-blue-950/20",
-      borderColor: "border-blue-200 dark:border-blue-800",
-      textColor: "text-blue-900 dark:text-blue-100",
-      iconColor: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-500/10 dark:bg-blue-500/20",
+      borderColor: "border-blue-500/20 dark:border-blue-500/30",
+      textColor: "text-blue-900 dark:text-blue-50",
+      iconColor: "text-blue-700 dark:text-blue-300",
       Icon: Clock,
     },
     warning: {
-      bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
-      borderColor: "border-yellow-200 dark:border-yellow-800",
-      textColor: "text-yellow-900 dark:text-yellow-100",
-      iconColor: "text-yellow-600 dark:text-yellow-400",
+      bgColor: "bg-amber-500/10 dark:bg-amber-500/20",
+      borderColor: "border-amber-500/20 dark:border-amber-500/30",
+      textColor: "text-amber-900 dark:text-amber-50",
+      iconColor: "text-amber-700 dark:text-amber-300",
       Icon: AlertCircle,
     },
     urgent: {
-      bgColor: "bg-red-50 dark:bg-red-950/20",
-      borderColor: "border-red-200 dark:border-red-800",
-      textColor: "text-red-900 dark:text-red-100",
-      iconColor: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-500/10 dark:bg-red-500/20",
+      borderColor: "border-red-500/20 dark:border-red-500/30",
+      textColor: "text-red-900 dark:text-red-50",
+      iconColor: "text-red-700 dark:text-red-300",
       Icon: Flame,
     },
   };
@@ -119,19 +112,13 @@ export function TrialBanner() {
     >
       <div className="flex items-center justify-between gap-3 sm:gap-4 max-w-7xl mx-auto">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <Icon className={`size-3 shrink-0 ${config.iconColor}`} />
+          <Icon className={`size-4 sm:size-3 shrink-0 ${config.iconColor}`} />
           {/* Mobile message - short */}
-          <p
-            className={`font-medium ${config.textColor} sm:hidden`}
-            style={{ fontSize: 'var(--text-subheadline-size)' }}
-          >
+          <p className={`hig-callout font-medium ${config.textColor} sm:hidden`}>
             {getMobileMessage()}
           </p>
           {/* Desktop message - full */}
-          <p
-            className={`hidden sm:block font-medium ${config.textColor}`}
-            style={{ fontSize: 'var(--text-subheadline-size)' }}
-          >
+          <p className={`hidden sm:block hig-subheadline font-medium ${config.textColor}`}>
             {getDesktopMessage()}
           </p>
         </div>

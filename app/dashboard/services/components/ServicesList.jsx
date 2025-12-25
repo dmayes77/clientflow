@@ -660,7 +660,7 @@ Format the includes list so I can easily copy each item individually.`;
                   )}
                 </form.Field>
               </div>
-            </DialogHeader>
+            </SheetHeader>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
