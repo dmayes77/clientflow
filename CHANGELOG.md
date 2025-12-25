@@ -1,3 +1,45 @@
+## [1.8.0] - 2025-12-25
+
+## Changes
+- Merge pull request #13 from dmayes77/staging
+- Merge pull request #12 from dmayes77/dev
+- fix: Pull latest changes before pushing version bump
+- chore: Bump version to 1.7.0
+- Merge pull request #4 from dmayes77/staging
+- Merge pull request #3 from dmayes77/dev
+- fix: Remove Clerk auth from admin seed endpoint
+- Merge pull request #2 from dmayes77/dev
+- fix: Add GET handler to seed-roadmap endpoint for browser access
+- Merge pull request #1 from dmayes77/dev
+- refactor: Use Tailwind canonical classes
+- refactor: Move Geolocation API and Zapier to Building Now
+- feat: Add admin endpoint to seed roadmap items
+- fix: Simplify Vercel deployments to use automatic previews
+- fix: Add background to TrialBanner buttons for visibility
+- fix: Increase TrialBanner font size for better readability
+- fix: Improve TrialBanner contrast with solid backgrounds
+- fix: Exclude e2e directory from vitest
+- fix: Correct user-event usage in example test
+- fix: Add missing @testing-library/dom dependency
+- fix: CI/CD improvements and UX enhancements
+- fix: Add missing Label import to WebhooksList
+- feat: Add SaveButton with smooth UX to WebhooksList
+- feat: Convert WebhooksList form from Dialog to Sheet
+- feat: Convert WorkflowsList form from Dialog to Sheet
+- feat: Convert PackagesList form from Dialog to Sheet
+- feat: Convert ServicesList form from Dialog to Sheet
+- feat: Convert InvoiceDialog to use Sheet on desktop
+- fix: Add horizontal padding to sheet content area
+- fix: Remove custom overflow classes to restore default sheet padding
+- fix: Improve sheet spacing and layout for tag form
+- feat: Change tag create/edit form from modal to sheet
+- fix: Add missing Label import in TagsList component
+- feat: Add comprehensive testing suite and automation
+- Merge staging into dev: Add three-tier setup and auto-releases
+- feat: Add three-tier environment setup with automatic releases
+- feat: Enhance release workflow with auto-sync and update documentation
+
+
 ## [1.7.0] - 2025-12-25
 
 ## Changes
