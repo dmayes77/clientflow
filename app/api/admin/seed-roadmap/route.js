@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
 // Map phase to status
@@ -93,16 +92,7 @@ const ROADMAP_ITEMS = [
 
 async function seedRoadmapHandler(request) {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    // Verify admin access
+    // Admin endpoint - only passcode auth required (no Clerk)
     const { searchParams } = new URL(request.url);
     const passcode = searchParams.get("passcode");
 
