@@ -1,3 +1,24 @@
+## [1.8.21] - 2025-12-25
+
+## Changes
+- chore: Bump version to 1.8.20
+- Merge pull request #16 from dmayes77/dev
+- chore: Sync dev with main after v1.8.19 release
+- chore: Sync dev with main after v1.8.18 release
+- chore: Sync dev with main after v1.8.17 release
+- chore: Sync dev with main after v1.8.16 release
+- chore: Sync dev with main after v1.8.15 release
+- chore: Sync dev with main after v1.8.14 release
+- chore: Sync dev with main after v1.8.13 release
+- chore: Sync dev with main after v1.8.12 release
+- chore: Sync dev with main after v1.8.11 release
+- chore: Sync dev with main after v1.8.10 release
+- chore: Sync dev with main after v1.8.9 release
+- chore: Sync dev with main after v1.8.8 release
+- chore: Sync dev with main after v1.8.7 release
+- test: Add workflow test file to verify 2-tier CI/CD
+
+
 ## [1.8.20] - 2025-12-25
 
 ## Changes
