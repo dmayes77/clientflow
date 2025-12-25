@@ -372,8 +372,8 @@ export function TagsList() {
 
       {/* Create/Edit Sheet */}
       <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-        <SheetContent className="overflow-y-auto">
-          <SheetHeader className="space-y-1">
+        <SheetContent>
+          <SheetHeader>
             <SheetTitle>
               {editingTag ? "Edit Tag" : "Create Tag"}
             </SheetTitle>
@@ -387,9 +387,9 @@ export function TagsList() {
               e.stopPropagation();
               form.handleSubmit();
             }}
-            className="flex flex-col h-[calc(100vh-8rem)]"
+            className="flex flex-col h-[calc(100vh-10rem)]"
           >
-            <div className="space-y-4 flex-1 overflow-y-auto py-6">
+            <div className="space-y-4 flex-1 overflow-y-auto py-6 pr-1">
               <TextField
                 form={form}
                 name="name"
