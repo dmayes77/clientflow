@@ -1,3 +1,14 @@
+## [1.8.1] - 2025-12-25
+
+## Changes
+- Merge pull request #15 from dmayes77/dev
+- refactor: Run tests only on PRs to main, not on dev
+- refactor: Simplify CI/CD to 2-tier deployment (dev → main)
+- Merge branch 'dev' of github.com:dmayes77/clientflow into dev
+- fix: Use PAT token for release workflow to bypass branch protection
+- chore: Remove automated release workflow
+
+
 ## [1.8.0] - 2025-12-25
 
 ## Changes
