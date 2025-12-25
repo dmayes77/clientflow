@@ -77,7 +77,8 @@ import {
   TextField,
   TextareaField,
   SwitchField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 
 const WEBHOOK_EVENTS = [
@@ -127,6 +128,9 @@ export function WebhooksList() {
   // Fetch selected webhook details
   const { data: selectedWebhook } = useWebhook(selectedWebhookId);
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // TanStack Form
   const form = useTanstackForm({
     defaultValues: {
@@ -135,23 +139,42 @@ export function WebhooksList() {
       description: "",
       active: true,
     },
-    onSubmit: async (values) => {
-      if (values.events.length === 0) {
+    onSubmit: async ({ value }) => {
+      if (value.events.length === 0) {
         toast.error("Please select at least one event");
         return;
       }
 
+      const startTime = Date.now();
+
       try {
-        if (editingWebhook) {
-          await updateWebhook.mutateAsync({ id: editingWebhook.id, ...values });
-          toast.success("Webhook updated");
-        } else {
-          await createWebhook.mutateAsync(values);
-          toast.success("Webhook created");
-        }
-        handleCloseDialog();
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Perform the actual mutation
+        const mutation = editingWebhook
+          ? updateWebhook.mutateAsync({ id: editingWebhook.id, ...value })
+          : createWebhook.mutateAsync(value);
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutation, minDelay]);
+
+        toast.success(editingWebhook ? "Webhook updated" : "Webhook created");
+        saveButton.handleSuccess();
+
+        // Close dialog after 2 seconds to show success state
+        setTimeout(() => {
+          handleCloseDialog();
+        }, 2000);
       } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
         toast.error(error.message || "Failed to save webhook");
+        saveButton.handleError();
       }
     },
   });
@@ -583,9 +606,14 @@ export function WebhooksList() {
               <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText={editingWebhook ? "Saving..." : "Creating..."} className="flex-1 sm:flex-none">
+              <SaveButton
+                form={form}
+                saveButton={saveButton}
+                loadingText={editingWebhook ? "Saving..." : "Creating..."}
+                className="flex-1 sm:flex-none"
+              >
                 {editingWebhook ? "Save Changes" : "Create Webhook"}
-              </SubmitButton>
+              </SaveButton>
             </SheetFooter>
           </form>
           </div>

@@ -51,7 +51,8 @@ import {
   TextField,
   TextareaField,
   SelectField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 
 const TAG_TYPES = [
@@ -111,21 +112,43 @@ export function TagsList() {
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // TanStack Form
   const form = useTanstackForm({
     defaultValues: getInitialFormState(activeFilter),
-    onSubmit: async (values) => {
+    onSubmit: async ({ value }) => {
+      const startTime = Date.now();
+
       try {
-        if (editingTag) {
-          await updateTagMutation.mutateAsync({ id: editingTag.id, ...values });
-          toast.success("Tag updated");
-        } else {
-          await createTagMutation.mutateAsync(values);
-          toast.success("Tag created");
-        }
-        handleCloseDialog();
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Perform the actual mutation
+        const mutation = editingTag
+          ? updateTagMutation.mutateAsync({ id: editingTag.id, ...value })
+          : createTagMutation.mutateAsync(value);
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutation, minDelay]);
+
+        toast.success(editingTag ? "Tag updated" : "Tag created");
+        saveButton.handleSuccess();
+
+        // Close dialog after 2 seconds to show success state
+        setTimeout(() => {
+          handleCloseDialog();
+        }, 2000);
       } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
         toast.error(error.message || "Failed to save tag");
+        saveButton.handleError();
       }
     },
   });
@@ -507,9 +530,14 @@ export function TagsList() {
               <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText={editingTag ? "Updating..." : "Creating..."} className="flex-1 sm:flex-none">
+              <SaveButton
+                form={form}
+                saveButton={saveButton}
+                loadingText={editingTag ? "Updating..." : "Creating..."}
+                className="flex-1 sm:flex-none"
+              >
                 {editingTag ? "Update" : "Create"}
-              </SubmitButton>
+              </SaveButton>
             </SheetFooter>
           </form>
         </SheetContent>
