@@ -372,8 +372,8 @@ export function TagsList() {
 
       {/* Create/Edit Sheet */}
       <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-        <SheetContent className="sm:max-w-100">
-          <SheetHeader>
+        <SheetContent className="overflow-y-auto">
+          <SheetHeader className="space-y-1">
             <SheetTitle>
               {editingTag ? "Edit Tag" : "Create Tag"}
             </SheetTitle>
@@ -387,8 +387,9 @@ export function TagsList() {
               e.stopPropagation();
               form.handleSubmit();
             }}
+            className="flex flex-col h-[calc(100vh-8rem)]"
           >
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 flex-1 overflow-y-auto py-6">
               <TextField
                 form={form}
                 name="name"
@@ -502,11 +503,11 @@ export function TagsList() {
               </form.Subscribe>
             </div>
 
-            <SheetFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+            <SheetFooter className="pt-6 gap-2">
+              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText={editingTag ? "Updating..." : "Creating..."}>
+              <SubmitButton form={form} loadingText={editingTag ? "Updating..." : "Creating..."} className="flex-1 sm:flex-none">
                 {editingTag ? "Update" : "Create"}
               </SubmitButton>
             </SheetFooter>
