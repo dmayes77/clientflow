@@ -21,6 +21,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -288,19 +296,19 @@ export function PackagesList() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
+      {/* Add/Edit Sheet */}
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent className="sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
               {editingPackage ? "Edit Package" : "Create Package"}
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {editingPackage
                 ? "Update your package details"
                 : "Bundle services together for a package deal"}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -426,8 +434,8 @@ export function PackagesList() {
               </form.Field>
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+            <SheetFooter className="pt-6 gap-2">
+              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
@@ -435,6 +443,7 @@ export function PackagesList() {
                   <Button
                     type="submit"
                     disabled={!canSubmit || isSubmitting || createPackageMutation.isPending || updatePackageMutation.isPending}
+                    className="flex-1 sm:flex-none"
                   >
                     {(isSubmitting || createPackageMutation.isPending || updatePackageMutation.isPending) && (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -443,10 +452,10 @@ export function PackagesList() {
                   </Button>
                 )}
               </form.Subscribe>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

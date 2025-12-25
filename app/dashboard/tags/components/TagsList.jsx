@@ -7,7 +7,16 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -42,7 +51,8 @@ import {
   TextField,
   TextareaField,
   SelectField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 
 const TAG_TYPES = [
@@ -102,21 +112,43 @@ export function TagsList() {
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // TanStack Form
   const form = useTanstackForm({
     defaultValues: getInitialFormState(activeFilter),
-    onSubmit: async (values) => {
+    onSubmit: async ({ value }) => {
+      const startTime = Date.now();
+
       try {
-        if (editingTag) {
-          await updateTagMutation.mutateAsync({ id: editingTag.id, ...values });
-          toast.success("Tag updated");
-        } else {
-          await createTagMutation.mutateAsync(values);
-          toast.success("Tag created");
-        }
-        handleCloseDialog();
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Perform the actual mutation
+        const mutation = editingTag
+          ? updateTagMutation.mutateAsync({ id: editingTag.id, ...value })
+          : createTagMutation.mutateAsync(value);
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutation, minDelay]);
+
+        toast.success(editingTag ? "Tag updated" : "Tag created");
+        saveButton.handleSuccess();
+
+        // Close dialog after 2 seconds to show success state
+        setTimeout(() => {
+          handleCloseDialog();
+        }, 2000);
       } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
         toast.error(error.message || "Failed to save tag");
+        saveButton.handleError();
       }
     },
   });
@@ -361,25 +393,26 @@ export function TagsList() {
         </div>
       )}
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-100">
-          <DialogHeader>
-            <DialogTitle>
+      {/* Create/Edit Sheet */}
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>
               {editingTag ? "Edit Tag" : "Create Tag"}
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               {editingTag ? "Update the tag details" : "Create a new tag to organize your contacts"}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               e.stopPropagation();
               form.handleSubmit();
             }}
+            className="flex flex-col h-[calc(100vh-10rem)]"
           >
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 flex-1 overflow-y-auto px-4 py-6">
               <TextField
                 form={form}
                 name="name"
@@ -493,17 +526,22 @@ export function TagsList() {
               </form.Subscribe>
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+            <SheetFooter className="pt-6 gap-2">
+              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText={editingTag ? "Updating..." : "Creating..."}>
+              <SaveButton
+                form={form}
+                saveButton={saveButton}
+                loadingText={editingTag ? "Updating..." : "Creating..."}
+                className="flex-1 sm:flex-none"
+              >
                 {editingTag ? "Update" : "Create"}
-              </SubmitButton>
-            </DialogFooter>
+              </SaveButton>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -45,7 +45,7 @@ export function PreviewSheet({
         </SheetHeader>
 
         {/* Drag Handle */}
-        <div className="flex justify-center pt-2 pb-3 shrink-0">
+        <div className="flex justify-center pt-2 pb-3 shrink-0 hig-safe-top">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
 

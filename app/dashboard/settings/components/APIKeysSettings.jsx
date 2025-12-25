@@ -27,7 +27,8 @@ import {
 import {
   useTanstackForm,
   TextField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 import {
   Key,
@@ -52,18 +53,45 @@ export function APIKeysSettings() {
   const [newlyCreatedKey, setNewlyCreatedKey] = useState(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // Form for creating new API key
   const form = useTanstackForm({
     defaultValues: {
       name: "",
     },
     onSubmit: async ({ value }) => {
-      const newKey = await createApiKey.mutateAsync({ name: value.name || "API Key" });
-      setNewlyCreatedKey(newKey);
-      setNewKeyDialogOpen(false);
-      setShowKeyDialogOpen(true);
-      form.reset();
-      toast.success("API key generated successfully");
+      const startTime = Date.now();
+
+      try {
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+        const mutation = createApiKey.mutateAsync({ name: value.name || "API Key" });
+
+        // Wait for both the mutation and minimum delay
+        const [newKey] = await Promise.all([mutation, minDelay]);
+
+        setNewlyCreatedKey(newKey);
+        toast.success("API key generated successfully");
+        saveButton.handleSuccess();
+
+        // Show success state for 2 seconds before closing dialog
+        setTimeout(() => {
+          setNewKeyDialogOpen(false);
+          setShowKeyDialogOpen(true);
+          form.reset();
+        }, 2000);
+      } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
+        toast.error(error.message || "Failed to generate API key");
+        saveButton.handleError();
+      }
     },
   });
 
@@ -295,9 +323,9 @@ export function APIKeysSettings() {
               >
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText="Generating...">
+              <SaveButton form={form} saveButton={saveButton} loadingText="Generating...">
                 Generate Key
-              </SubmitButton>
+              </SaveButton>
             </DialogFooter>
           </form>
         </DialogContent>

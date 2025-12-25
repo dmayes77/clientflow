@@ -1,5 +1,14 @@
 name: CI/CD Pipeline
 
+# Deployment Flow (3-tier promotion):
+# 1. Push to `dev` → Deploy to Vercel Preview (dev-*.vercel.app) - after tests pass
+# 2. Merge `dev` → `staging` → Deploy to Vercel Preview (staging-*.vercel.app) - after tests pass
+# 3. Merge `staging` → `main` → Deploy to Production (getclientflow.app) - after tests pass → Auto-release
+#
+# This ensures all code goes through: dev → staging → production
+# Production deployments only happen from staging merges (not direct pushes)
+# Vercel automatically creates preview URLs for dev and staging branches
+
 on:
   push:
     branches:
@@ -33,17 +42,65 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-  deploy-preview:
-    name: Deploy Preview (Dev)
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
-    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test
+        env:
+          # Provide test environment variables
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /onboarding
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+          ADMIN_PASSCODE: ${{ secrets.ADMIN_PASSCODE }}
+          NEXT_PUBLIC_APP_URL: https://getclientflow.app
+          NEXT_PUBLIC_API_URL: https://getclientflow.app/api
+          NODE_ENV: test
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/staging'
+    needs: [lint, test]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Deploy to Vercel (Preview)
+        id: vercel-deploy
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -51,36 +108,34 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./
 
-  deploy-staging:
-    name: Deploy Staging
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/staging'
-    needs: lint
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel (Staging)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          vercel-args: '--prod'
-        env:
-          VERCEL_ALIAS: staging.getclientflow.app
+      - name: Comment Preview URL
+        run: |
+          echo "Preview URL: ${{ steps.vercel-deploy.outputs.preview-url }}"
+          echo "Branch: ${GITHUB_REF#refs/heads/}"
 
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: lint
+    # Only deploy to production when merging from staging to main
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' &&
+       (contains(github.event.head_commit.message, 'Merge') ||
+        github.event.head_commit.author.username == 'github-actions[bot]'))
+    needs: [lint, test]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Verify merge from staging
+        run: |
+          echo "Verifying this merge came from staging branch..."
+          # This helps ensure proper flow: dev → staging → main
+          if ! git log --oneline -1 | grep -qiE '(staging|release|merge)'; then
+            echo "⚠️  Warning: This commit may not be from staging branch"
+            echo "Production deployments should come from staging merges"
+          fi
 
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25

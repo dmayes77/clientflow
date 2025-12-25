@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Calendar, DollarSign, Loader2, Save, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle, Share2 } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, Loader2, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle, Share2 } from "lucide-react";
 import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
 import { CameraCapture } from "@/components/camera";
 import { useBooking, useCreateBooking, useUpdateBooking, useAddBookingTag, useRemoveBookingTag, useAddBookingService, useRemoveBookingService, useAddBookingPackage, useRemoveBookingPackage } from "@/lib/hooks";
@@ -25,7 +25,7 @@ import { useServices } from "@/lib/hooks";
 import { usePackages } from "@/lib/hooks";
 import { useTags, useCreateTag } from "@/lib/hooks";
 import { useTenant, useWebShare, useUploadImage } from "@/lib/hooks";
-import { useTanstackForm, TextField, TextareaField, NumberField, SelectField } from "@/components/ui/tanstack-form";
+import { useTanstackForm, TextField, TextareaField, NumberField, SelectField, SaveButton, useSaveButton } from "@/components/ui/tanstack-form";
 
 const TAG_COLORS = {
   blue: { bg: "bg-blue-100", text: "text-blue-700" },
@@ -169,6 +169,9 @@ export function BookingForm({
   const [selectedPackages, setSelectedPackages] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // Tenant timezone
   const timezone = tenant?.timezone || "America/New_York";
 
@@ -195,7 +198,13 @@ export function BookingForm({
       }),
     },
     onSubmit: async ({ value }) => {
+      const startTime = Date.now();
+
       try {
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+        let mutation;
         if (isEditMode) {
           // Update existing booking
           const { totalPrice, totalDuration } = calculateTotals();
@@ -205,7 +214,7 @@ export function BookingForm({
           // Convert tenant timezone datetime back to UTC
           const scheduledAt = fromZonedTime(value.scheduledAt, timezone);
 
-          await updateBookingMutation.mutateAsync({
+          mutation = updateBookingMutation.mutateAsync({
             id: bookingId,
             scheduledAt: scheduledAt.toISOString(),
             status: value.status,
@@ -213,10 +222,6 @@ export function BookingForm({
             notes: value.notes || null,
             totalPrice: Math.round(finalPrice * 100),
           });
-
-          toast.success("Booking saved successfully");
-          onSave?.();
-          router.push("/dashboard/calendar");
         } else {
           // Create new booking - use tenant's timezone for proper conversion
           const dateTimeString = `${value.scheduledAt}T${value.scheduledTime}:00`;
@@ -260,13 +265,34 @@ export function BookingForm({
             });
           }
 
-          toast.success("Booking created successfully");
-          onSave?.(newBookingId);
-          router.push("/dashboard/calendar");
+          mutation = Promise.resolve();
         }
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutation, minDelay]);
+
+        toast.success(isEditMode ? "Booking saved successfully" : "Booking created successfully");
+        saveButton.handleSuccess();
+
+        // Navigate after showing success state for 2 seconds
+        setTimeout(() => {
+          if (isEditMode) {
+            onSave?.();
+          } else {
+            onSave?.();
+          }
+          router.push("/dashboard/calendar");
+        }, 2000);
       } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
         console.error("Error saving booking:", error);
         toast.error(error.message || "Failed to save booking");
+        saveButton.handleError();
       }
     },
   });
@@ -658,7 +684,6 @@ export function BookingForm({
 
   // Loading state
   const isLoading = isEditMode && isLoadingBooking;
-  const isSaving = form.state.isSubmitting;
 
   if (isLoading) {
     return (
@@ -687,10 +712,15 @@ export function BookingForm({
               <ArrowLeft className="size-6" />
             </Button>
             <div className="flex items-center gap-2">
-              <Button type="submit" variant="success" size="sm" disabled={isSaving || (!isEditMode && !form.state.values.contactId)}>
-                {isSaving ? <Loader2 className="size-4 mr-1 animate-spin" /> : isEditMode ? <Save className="size-4 mr-1" /> : <Plus className="size-4 mr-1" />}
+              <SaveButton
+                form={form}
+                saveButton={saveButton}
+                variant="success"
+                size="sm"
+                loadingText={isEditMode ? "Saving..." : "Creating..."}
+              >
                 {isEditMode ? "Save" : "Create"}
-              </Button>
+              </SaveButton>
               {isEditMode && booking && (
                 <Button type="button" variant="outline" size="sm" onClick={handleShare}>
                   <Share2 className="size-4 mr-1" />

@@ -1,6 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
 // Map phase to status
 const PHASE_TO_STATUS = {
@@ -91,22 +91,37 @@ const ROADMAP_ITEMS = [
   },
 ];
 
-async function seedRoadmap() {
+export async function POST(request) {
   try {
-    console.log("Starting roadmap migration...\n");
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Verify admin access
+    const { searchParams } = new URL(request.url);
+    const passcode = searchParams.get("passcode");
+
+    if (passcode !== process.env.ADMIN_PASSCODE) {
+      return NextResponse.json(
+        { error: "Forbidden - Invalid passcode" },
+        { status: 403 }
+      );
+    }
 
     // Clear existing roadmap items
     const deleted = await prisma.roadmapItem.deleteMany({});
-    console.log(`Cleared ${deleted.count} existing roadmap items\n`);
 
     let totalCreated = 0;
-    let priorityCounter = 1000; // Start with high priority for shipped items
+    let priorityCounter = 1000;
 
     for (const section of ROADMAP_ITEMS) {
       const status = PHASE_TO_STATUS[section.phase];
       const category = PHASE_TO_CATEGORY[section.phase];
-
-      console.log(`Migrating ${section.phase} (${section.items.length} items)...`);
 
       for (const item of section.items) {
         await prisma.roadmapItem.create({
@@ -124,25 +139,28 @@ async function seedRoadmap() {
         totalCreated++;
         priorityCounter--;
       }
-
-      console.log(`✓ ${section.items.length} items migrated\n`);
     }
 
-    console.log(`\n✅ Migration complete! Created ${totalCreated} roadmap items.`);
-    console.log("\nBreakdown:");
     const counts = await prisma.roadmapItem.groupBy({
       by: ["status"],
       _count: true,
     });
-    counts.forEach((c) => {
-      console.log(`  ${c.status}: ${c._count} items`);
+
+    return NextResponse.json({
+      success: true,
+      message: `Seeded ${totalCreated} roadmap items`,
+      deleted: deleted.count,
+      created: totalCreated,
+      breakdown: counts.reduce((acc, c) => {
+        acc[c.status] = c._count;
+        return acc;
+      }, {}),
     });
   } catch (error) {
-    console.error("❌ Error seeding roadmap:", error);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
+    console.error("Seed roadmap error:", error);
+    return NextResponse.json(
+      { error: "Failed to seed roadmap", details: error.message },
+      { status: 500 }
+    );
   }
 }
-
-seedRoadmap();
