@@ -19,6 +19,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   Table,
   TableBody,
   TableCell,
@@ -417,17 +425,18 @@ export function WebhooksList() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingWebhook ? "Edit Webhook" : "Add Webhook Endpoint"}</DialogTitle>
-            <DialogDescription>
+      {/* Add/Edit Sheet */}
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent className="sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{editingWebhook ? "Edit Webhook" : "Add Webhook Endpoint"}</SheetTitle>
+            <SheetDescription>
               {editingWebhook
                 ? "Update your webhook configuration"
                 : "Configure a URL to receive webhook events"}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -570,17 +579,18 @@ export function WebhooksList() {
               />
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+            <SheetFooter className="pt-6 gap-2">
+              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText={editingWebhook ? "Saving..." : "Creating..."}>
+              <SubmitButton form={form} loadingText={editingWebhook ? "Saving..." : "Creating..."} className="flex-1 sm:flex-none">
                 {editingWebhook ? "Save Changes" : "Create Webhook"}
               </SubmitButton>
-            </DialogFooter>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
