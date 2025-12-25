@@ -11,7 +11,8 @@ describe('Example Component Tests', () => {
   });
 
   it('should handle button clicks', async () => {
-    const { user } = await import('@testing-library/user-event');
+    const userEvent = await import('@testing-library/user-event');
+    const user = userEvent.default.setup();
     let clicked = false;
 
     const Button = () => (
@@ -20,7 +21,7 @@ describe('Example Component Tests', () => {
 
     render(<Button />);
     const button = screen.getByRole('button', { name: /click me/i });
-    await user.default.click(button);
+    await user.click(button);
 
     expect(clicked).toBe(true);
   });
