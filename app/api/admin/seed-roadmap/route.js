@@ -48,17 +48,12 @@ const ROADMAP_ITEMS = [
     ],
   },
   {
-    phase: "infrastructure",
-    items: [
-      { title: "Geolocation API", description: "Location tracking API ready for future features like Smart Routing" },
-      { title: "Zapier Integration", description: "Connect to 5000+ apps including Google Sheets, Slack, Gmail, Mailchimp, and Airtable via webhooks and REST API" },
-    ],
-  },
-  {
     phase: "building-now",
     items: [
       { title: "Estimates & Quotes", description: "Create and send professional estimates that convert to bookings with approval workflow" },
       { title: "Automated Reminders", description: "Scheduled email reminders before appointments to reduce no-shows" },
+      { title: "Geolocation API", description: "Location tracking API ready for future features like Smart Routing" },
+      { title: "Zapier Integration", description: "Connect to 5000+ apps including Google Sheets, Slack, Gmail, Mailchimp, and Airtable via webhooks and REST API" },
     ],
   },
   {
