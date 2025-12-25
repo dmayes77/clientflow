@@ -91,7 +91,7 @@ const ROADMAP_ITEMS = [
   },
 ];
 
-export async function POST(request) {
+async function seedRoadmapHandler(request) {
   try {
     const { userId } = await auth();
 
@@ -163,4 +163,12 @@ export async function POST(request) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request) {
+  return seedRoadmapHandler(request);
+}
+
+export async function POST(request) {
+  return seedRoadmapHandler(request);
 }
