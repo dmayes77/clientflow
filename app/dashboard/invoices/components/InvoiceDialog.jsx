@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useIsMobile } from "@/lib/hooks/use-media-query";
 import {
@@ -1187,15 +1194,17 @@ export function InvoiceDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
-          </DialogHeader>
-          {formContent}
-        </DialogContent>
-      </Dialog>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{title}</SheetTitle>
+            <SheetDescription>{description}</SheetDescription>
+          </SheetHeader>
+          <div className="px-4">
+            {formContent}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* New Contact Dialog */}
       <Dialog open={newContactDialogOpen} onOpenChange={setNewContactDialogOpen}>

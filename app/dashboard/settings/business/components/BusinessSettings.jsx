@@ -16,7 +16,8 @@ import {
   TextareaField,
   NumberField,
   SelectField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 import {
   Building2,
@@ -53,6 +54,9 @@ export function BusinessSettings() {
   const { data: tenantData, isLoading: loading } = useTenant();
   const updateTenant = useUpdateTenant();
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // Initialize form with TanStack Form
   const form = useTanstackForm({
     defaultValues: {
@@ -75,11 +79,31 @@ export function BusinessSettings() {
       youtubeUrl: "",
     },
     onSubmit: async ({ value }) => {
-      // Exclude slug from updates - it's auto-generated and shouldn't be changed by users
-      const { slug, ...dataToSave } = value;
+      const startTime = Date.now();
 
-      await updateTenant.mutateAsync(dataToSave);
-      toast.success("Business settings saved successfully");
+      try {
+        // Exclude slug from updates - it's auto-generated and shouldn't be changed by users
+        const { slug, ...dataToSave } = value;
+
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+        const mutation = updateTenant.mutateAsync(dataToSave);
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutation, minDelay]);
+
+        toast.success("Business settings saved successfully");
+        saveButton.handleSuccess();
+      } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
+        toast.error(error.message || "Failed to save settings");
+        saveButton.handleError();
+      }
     },
   });
 
@@ -464,9 +488,9 @@ export function BusinessSettings() {
 
       {/* Save Button Footer */}
       <div className="flex justify-end">
-        <SubmitButton form={form} loadingText="Saving...">
+        <SaveButton form={form} saveButton={saveButton} loadingText="Saving...">
           Save Changes
-        </SubmitButton>
+        </SaveButton>
       </div>
     </form>
   );

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -18,6 +19,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -69,7 +78,8 @@ import {
   TextField,
   TextareaField,
   SwitchField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 
 const WEBHOOK_EVENTS = [
@@ -119,6 +129,9 @@ export function WebhooksList() {
   // Fetch selected webhook details
   const { data: selectedWebhook } = useWebhook(selectedWebhookId);
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // TanStack Form
   const form = useTanstackForm({
     defaultValues: {
@@ -127,23 +140,42 @@ export function WebhooksList() {
       description: "",
       active: true,
     },
-    onSubmit: async (values) => {
-      if (values.events.length === 0) {
+    onSubmit: async ({ value }) => {
+      if (value.events.length === 0) {
         toast.error("Please select at least one event");
         return;
       }
 
+      const startTime = Date.now();
+
       try {
-        if (editingWebhook) {
-          await updateWebhook.mutateAsync({ id: editingWebhook.id, ...values });
-          toast.success("Webhook updated");
-        } else {
-          await createWebhook.mutateAsync(values);
-          toast.success("Webhook created");
-        }
-        handleCloseDialog();
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Perform the actual mutation
+        const mutation = editingWebhook
+          ? updateWebhook.mutateAsync({ id: editingWebhook.id, ...value })
+          : createWebhook.mutateAsync(value);
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutation, minDelay]);
+
+        toast.success(editingWebhook ? "Webhook updated" : "Webhook created");
+        saveButton.handleSuccess();
+
+        // Close dialog after 2 seconds to show success state
+        setTimeout(() => {
+          handleCloseDialog();
+        }, 2000);
       } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
         toast.error(error.message || "Failed to save webhook");
+        saveButton.handleError();
       }
     },
   });
@@ -417,17 +449,18 @@ export function WebhooksList() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingWebhook ? "Edit Webhook" : "Add Webhook Endpoint"}</DialogTitle>
-            <DialogDescription>
+      {/* Add/Edit Sheet */}
+      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
+        <SheetContent className="sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{editingWebhook ? "Edit Webhook" : "Add Webhook Endpoint"}</SheetTitle>
+            <SheetDescription>
               {editingWebhook
                 ? "Update your webhook configuration"
                 : "Configure a URL to receive webhook events"}
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -570,17 +603,23 @@ export function WebhooksList() {
               />
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleCloseDialog}>
+            <SheetFooter className="pt-6 gap-2">
+              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText={editingWebhook ? "Saving..." : "Creating..."}>
+              <SaveButton
+                form={form}
+                saveButton={saveButton}
+                loadingText={editingWebhook ? "Saving..." : "Creating..."}
+                className="flex-1 sm:flex-none"
+              >
                 {editingWebhook ? "Save Changes" : "Create Webhook"}
-              </SubmitButton>
-            </DialogFooter>
+              </SaveButton>
+            </SheetFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

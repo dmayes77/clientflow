@@ -12,7 +12,8 @@ import {
   TextareaField,
   NumberField,
   SwitchField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 
 export function PlanForm({ plan }) {
@@ -20,6 +21,9 @@ export function PlanForm({ plan }) {
   const savePlanMutation = useSavePlan();
   const isEditing = !!plan;
   const [error, setError] = useState(null);
+
+  // Save button state
+  const saveButton = useSaveButton();
 
   const form = useTanstackForm({
     defaultValues: {
@@ -35,6 +39,7 @@ export function PlanForm({ plan }) {
     },
     onSubmit: async ({ value }) => {
       setError(null);
+      const startTime = Date.now();
 
       const payload = {
         name: value.name,
@@ -53,10 +58,28 @@ export function PlanForm({ plan }) {
       }
 
       try {
-        await savePlanMutation.mutateAsync(payload);
-        router.push("/admin/plans");
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+        const mutation = savePlanMutation.mutateAsync(payload);
+
+        // Wait for both the mutation and minimum delay
+        await Promise.all([mutation, minDelay]);
+
+        saveButton.handleSuccess();
+
+        // Navigate after showing success state for 2 seconds
+        setTimeout(() => {
+          router.push("/admin/plans");
+        }, 2000);
       } catch (err) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
         setError(err.message);
+        saveButton.handleError();
       }
     },
   });
@@ -231,9 +254,9 @@ export function PlanForm({ plan }) {
               >
                 Cancel
               </Button>
-              <SubmitButton form={form} loadingText="Saving...">
+              <SaveButton form={form} saveButton={saveButton} loadingText="Saving...">
                 {isEditing ? "Save Changes" : "Create Plan"}
-              </SubmitButton>
+              </SaveButton>
             </div>
           </form>
         </CardContent>

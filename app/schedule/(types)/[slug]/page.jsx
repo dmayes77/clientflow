@@ -380,7 +380,7 @@ export default function BookingTypePage({ params }) {
                               <p className="hig-footnote text-muted-foreground">No availability</p>
                             </div>
                           ) : (
-                            <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                            <div className="grid grid-cols-2 gap-2 max-h-50 overflow-y-auto pr-1">
                               {timeSlots.map((time) => (
                                 <button
                                   key={time}

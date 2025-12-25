@@ -28,7 +28,8 @@ import {
   TextField,
   TextareaField,
   SelectField,
-  SubmitButton,
+  SaveButton,
+  useSaveButton,
 } from "@/components/ui/tanstack-form";
 
 const SOURCE_OPTIONS = [
@@ -60,6 +61,9 @@ export function ContactForm({ mode = "create", contactId = null }) {
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [newTagName, setNewTagName] = useState("");
 
+  // Save button state
+  const saveButton = useSaveButton();
+
   // TanStack Query hooks
   const { data: contactData, isLoading: contactLoading, error: contactError } = useContact(mode === "edit" ? contactId : null);
   const { data: allTags = [], isLoading: tagsLoading } = useTags();
@@ -88,6 +92,8 @@ export function ContactForm({ mode = "create", contactId = null }) {
       notes: "",
     },
     onSubmit: async ({ value }) => {
+      const startTime = Date.now();
+
       try {
         const payload = {
           name: value.name,
@@ -99,16 +105,39 @@ export function ContactForm({ mode = "create", contactId = null }) {
           notes: value.notes,
         };
 
+        // Minimum 2 second delay for loading state visibility
+        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Perform the actual mutation
+        let mutationPromise;
         if (mode === "edit") {
-          await updateContactMutation.mutateAsync({ id: contactId, ...payload });
-          toast.success("Contact updated");
+          mutationPromise = updateContactMutation.mutateAsync({ id: contactId, ...payload });
         } else {
-          const savedContact = await createContactMutation.mutateAsync(payload);
-          toast.success("Contact created");
-          router.push(`/dashboard/contacts/${savedContact.id}`);
+          mutationPromise = createContactMutation.mutateAsync(payload);
+        }
+
+        // Wait for both the mutation and minimum delay
+        const [result] = await Promise.all([mutationPromise, minDelay]);
+
+        toast.success(mode === "edit" ? "Contact updated" : "Contact created");
+        saveButton.handleSuccess();
+
+        // For create mode, navigate after showing success state for 2 seconds
+        // For edit mode, just show success state
+        if (mode === "create") {
+          setTimeout(() => {
+            router.push(`/dashboard/contacts/${result.id}`);
+          }, 2000);
         }
       } catch (error) {
+        // Ensure error state is shown for at least the remaining time
+        const elapsed = Date.now() - startTime;
+        const remainingTime = Math.max(0, 2000 - elapsed);
+
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+
         toast.error(error.message || "Failed to save contact");
+        saveButton.handleError();
       }
     },
     validators: {
@@ -470,9 +499,14 @@ export function ContactForm({ mode = "create", contactId = null }) {
           <Button type="button" variant="outline" onClick={() => router.push("/dashboard/contacts")}>
             Cancel
           </Button>
-          <SubmitButton form={form} variant="success" loadingText={mode === "edit" ? "Saving..." : "Creating..."}>
+          <SaveButton
+            form={form}
+            saveButton={saveButton}
+            variant="success"
+            loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+          >
             {mode === "edit" ? "Save Changes" : "Create Contact"}
-          </SubmitButton>
+          </SaveButton>
         </div>
       </form>
 

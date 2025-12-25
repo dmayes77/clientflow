@@ -750,7 +750,7 @@ export function MediaLibrary() {
           title={previewItem?.name || "Media Preview"}
           actionColumns={4}
           header={
-            <div className="flex items-center justify-center bg-muted/30 -mx-5 -mt-3 pb-3">
+            <div className="flex items-center justify-center bg-muted/30 -mx-5 pt-14 pb-3">
               {activeTab === "images" ? (
                 <div className="relative w-full h-64 flex items-center justify-center">
                   <Image
@@ -779,7 +779,7 @@ export function MediaLibrary() {
                 onClick={() => copyToClipboard(previewItem.url)}
               >
                 <Copy className="h-5 w-5" />
-                <span className="hig-caption-2">Copy</span>
+                <span className="hig-caption-1">Copy</span>
               </Button>
               <Button
                 variant="ghost"
@@ -788,7 +788,7 @@ export function MediaLibrary() {
                 onClick={() => window.open(previewItem.url, "_blank")}
               >
                 <ExternalLink className="h-5 w-5" />
-                <span className="hig-caption-2">Open</span>
+                <span className="hig-caption-1">Open</span>
               </Button>
               <Button
                 variant="ghost"
@@ -800,7 +800,7 @@ export function MediaLibrary() {
                 }}
               >
                 <Pencil className="h-5 w-5" />
-                <span className="hig-caption-2">Edit</span>
+                <span className="hig-caption-1">Edit</span>
               </Button>
               <Button
                 variant="ghost"
@@ -812,7 +812,7 @@ export function MediaLibrary() {
                 }}
               >
                 <Trash2 className="h-5 w-5" />
-                <span className="hig-caption-2">Delete</span>
+                <span className="hig-caption-1">Delete</span>
               </Button>
             </>
           }
@@ -828,16 +828,16 @@ export function MediaLibrary() {
 
             {/* Metadata Pills */}
             <PreviewSheetSection className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="hig-caption-2">
+              <Badge variant="secondary" className="hig-caption-1">
                 {previewItem.width}x{previewItem.height}
               </Badge>
-              <Badge variant="secondary" className="hig-caption-2">
+              <Badge variant="secondary" className="hig-caption-1">
                 {formatFileSize(previewItem.size)}
               </Badge>
-              <Badge variant="outline" className="hig-caption-2">
+              <Badge variant="outline" className="hig-caption-1">
                 {currentTypes.find((t) => t.value === previewItem.type)?.label || previewItem.type}
               </Badge>
-              <Badge variant="outline" className="hig-caption-2">
+              <Badge variant="outline" className="hig-caption-1">
                 {format(new Date(previewItem.createdAt), "MMM d, yyyy")}
               </Badge>
             </PreviewSheetSection>

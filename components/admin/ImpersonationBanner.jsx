@@ -44,21 +44,21 @@ export function ImpersonationBanner() {
   if (!impersonation) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-purple-600 text-white px-3 py-1.5 flex items-center justify-between gap-2 shadow-lg">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-purple-600 text-white px-3 py-2 flex items-center justify-between gap-2 shadow-lg">
       <div className="flex items-center gap-2 min-w-0">
-        <Eye className="h-4 w-4 shrink-0" />
-        <span className="text-xs sm:text-sm font-medium truncate">
+        <Eye className="size-4 shrink-0" />
+        <span className="hig-callout sm:hig-subheadline font-medium truncate">
           Viewing as: <span className="font-bold">{impersonation.tenantName}</span>
         </span>
       </div>
       <Button
         variant="secondary"
         size="sm"
-        className="h-7 text-xs shrink-0 bg-white/20 hover:bg-white/30 text-white border-0"
+        className="h-7 hig-caption-1 shrink-0 bg-white/20 hover:bg-white/30 text-white border-0"
         onClick={handleEndImpersonation}
         disabled={ending}
       >
-        <ArrowLeft className="h-3 w-3 mr-1" />
+        <ArrowLeft className="size-3 mr-1" />
         {ending ? "Exiting..." : "Exit"}
       </Button>
     </div>

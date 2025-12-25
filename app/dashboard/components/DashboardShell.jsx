@@ -212,7 +212,7 @@ export function DashboardShell({ children }) {
 
         <SidebarInset className="overflow-auto min-h-0">
         <TrialBanner />
-        <header className="sticky top-0 z-10 flex h-11 sm:h-10 items-center border-b border-border bg-background px-3 shadow-sm">
+        <header className="sticky top-0 z-10 flex h-11 sm:h-10 items-center border-b border-border bg-background px-3 shadow-sm pt-[env(safe-area-inset-top)]">
           <div className="w-11 flex items-center justify-start sm:w-auto">
             <SidebarTrigger />
           </div>

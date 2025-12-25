@@ -12,13 +12,6 @@ export function TrialBanner() {
   const { data: tenant } = useTenant();
 
   const trialInfo = useMemo(() => {
-    console.log("TrialBanner - tenant data:", {
-      exists: !!tenant,
-      subscriptionStatus: tenant?.subscriptionStatus,
-      currentPeriodEnd: tenant?.currentPeriodEnd,
-      plan: tenant?.plan,
-    });
-
     if (!tenant || tenant.subscriptionStatus !== "trialing" || !tenant.currentPeriodEnd) {
       return null;
     }
@@ -64,24 +57,24 @@ export function TrialBanner() {
 
   const urgencyConfig = {
     info: {
-      bgColor: "bg-blue-50 dark:bg-blue-950/20",
-      borderColor: "border-blue-200 dark:border-blue-800",
-      textColor: "text-blue-900 dark:text-blue-100",
-      iconColor: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-600 dark:bg-blue-700",
+      borderColor: "border-blue-700 dark:border-blue-600",
+      textColor: "text-white",
+      iconColor: "text-blue-100",
       Icon: Clock,
     },
     warning: {
-      bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
-      borderColor: "border-yellow-200 dark:border-yellow-800",
-      textColor: "text-yellow-900 dark:text-yellow-100",
-      iconColor: "text-yellow-600 dark:text-yellow-400",
+      bgColor: "bg-amber-600 dark:bg-amber-700",
+      borderColor: "border-amber-700 dark:border-amber-600",
+      textColor: "text-white",
+      iconColor: "text-amber-100",
       Icon: AlertCircle,
     },
     urgent: {
-      bgColor: "bg-red-50 dark:bg-red-950/20",
-      borderColor: "border-red-200 dark:border-red-800",
-      textColor: "text-red-900 dark:text-red-100",
-      iconColor: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-600 dark:bg-red-700",
+      borderColor: "border-red-700 dark:border-red-600",
+      textColor: "text-white",
+      iconColor: "text-red-100",
       Icon: Flame,
     },
   };
@@ -119,19 +112,13 @@ export function TrialBanner() {
     >
       <div className="flex items-center justify-between gap-3 sm:gap-4 max-w-7xl mx-auto">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <Icon className={`size-3 shrink-0 ${config.iconColor}`} />
+          <Icon className={`size-4 sm:size-3 shrink-0 ${config.iconColor}`} />
           {/* Mobile message - short */}
-          <p
-            className={`font-medium ${config.textColor} sm:hidden`}
-            style={{ fontSize: 'var(--text-subheadline-size)' }}
-          >
+          <p className={`hig-body font-medium ${config.textColor} sm:hidden`}>
             {getMobileMessage()}
           </p>
           {/* Desktop message - full */}
-          <p
-            className={`hidden sm:block font-medium ${config.textColor}`}
-            style={{ fontSize: 'var(--text-subheadline-size)' }}
-          >
+          <p className={`hidden sm:block hig-callout font-medium ${config.textColor}`}>
             {getDesktopMessage()}
           </p>
         </div>
@@ -140,7 +127,7 @@ export function TrialBanner() {
             variant="ghost"
             size="sm"
             onClick={() => router.push("/dashboard/settings/billing")}
-            className={`${config.textColor} hover:bg-black/5 dark:hover:bg-white/5 hidden sm:inline-flex`}
+            className="text-white hover:bg-white/30 bg-white/10 hidden sm:inline-flex"
           >
             View Billing
           </Button>
@@ -148,7 +135,7 @@ export function TrialBanner() {
             variant="outline"
             size="sm"
             onClick={() => router.push("/dashboard/settings/billing")}
-            className={`${config.textColor} border-current hover:bg-black/5 dark:hover:bg-white/5`}
+            className="text-white border-white/80 hover:bg-white/30 bg-white/10"
           >
             {urgency === "urgent" ? "Cancel Trial" : "Manage"}
           </Button>

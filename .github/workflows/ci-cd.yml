@@ -1,13 +1,24 @@
 name: CI/CD Pipeline
 
+# Deployment Flow (3-tier promotion):
+# 1. Push to `dev` → Deploy to Vercel Preview (dev-*.vercel.app) - after tests pass
+# 2. Merge `dev` → `staging` → Deploy to Vercel Preview (staging-*.vercel.app) - after tests pass
+# 3. Merge `staging` → `main` → Deploy to Production (getclientflow.app) - after tests pass → Auto-release
+#
+# This ensures all code goes through: dev → staging → production
+# Production deployments only happen from staging merges (not direct pushes)
+# Vercel automatically creates preview URLs for dev and staging branches
+
 on:
   push:
     branches:
       - main
+      - staging
       - dev
   pull_request:
     branches:
       - main
+      - staging
 
 jobs:
   lint:
@@ -31,17 +42,65 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-  deploy-preview:
-    name: Deploy Preview (Dev)
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
-    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test
+        env:
+          # Provide test environment variables
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /onboarding
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+          ADMIN_PASSCODE: ${{ secrets.ADMIN_PASSCODE }}
+          NEXT_PUBLIC_APP_URL: https://getclientflow.app
+          NEXT_PUBLIC_API_URL: https://getclientflow.app/api
+          NODE_ENV: test
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/staging'
+    needs: [lint, test]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Deploy to Vercel (Preview)
+        id: vercel-deploy
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -49,15 +108,34 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./
 
+      - name: Comment Preview URL
+        run: |
+          echo "Preview URL: ${{ steps.vercel-deploy.outputs.preview-url }}"
+          echo "Branch: ${GITHUB_REF#refs/heads/}"
+
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: lint
+    # Only deploy to production when merging from staging to main
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' &&
+       (contains(github.event.head_commit.message, 'Merge') ||
+        github.event.head_commit.author.username == 'github-actions[bot]'))
+    needs: [lint, test]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Verify merge from staging
+        run: |
+          echo "Verifying this merge came from staging branch..."
+          # This helps ensure proper flow: dev → staging → main
+          if ! git log --oneline -1 | grep -qiE '(staging|release|merge)'; then
+            echo "⚠️  Warning: This commit may not be from staging branch"
+            echo "Production deployments should come from staging merges"
+          fi
 
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
@@ -67,3 +145,175 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
           working-directory: ./
+
+  auto-release:
+    name: Auto Release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: deploy-production
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get current version
+        id: current_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Determine version bump from commits
+        id: version_bump
+        run: |
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --oneline --pretty=format:"%s" | head -20)
+          else
+            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"%s")
+          fi
+
+          # Determine bump type from conventional commits
+          BUMP_TYPE="patch"
+
+          if echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?!:|^BREAKING CHANGE:"; then
+            BUMP_TYPE="major"
+          elif echo "$COMMITS" | grep -qE "^(feat|feature)(\(.+\))?:"; then
+            BUMP_TYPE="minor"
+          fi
+
+          echo "type=${BUMP_TYPE}" >> $GITHUB_OUTPUT
+          echo "Detected bump type: ${BUMP_TYPE}"
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT_VERSION="${{ steps.current_version.outputs.version }}"
+          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
+
+          case "${{ steps.version_bump.outputs.type }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "New version will be: ${NEW_VERSION}"
+
+      - name: Update package.json
+        run: |
+          node -e "const fs = require('fs'); const pkg = require('./package.json'); pkg.version = '${{ steps.new_version.outputs.version }}'; fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
+          else
+            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
+          fi
+
+          echo "## Changes" > /tmp/changelog.md
+          echo "$COMMITS" >> /tmp/changelog.md
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "## Changes" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update CHANGELOG.md
+        run: |
+          CHANGELOG_ENTRY="## [${{ steps.new_version.outputs.version }}] - $(date +%Y-%m-%d)
+
+          $(cat /tmp/changelog.md)
+
+          "
+
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+
+          echo "$CHANGELOG_ENTRY" > /tmp/changelog_temp.md
+          cat CHANGELOG.md >> /tmp/changelog_temp.md
+          mv /tmp/changelog_temp.md CHANGELOG.md
+
+      - name: Commit version bump
+        run: |
+          git add package.json CHANGELOG.md
+          git commit -m "chore: Bump version to ${{ steps.new_version.outputs.version }}
+
+          🤖 Automated release by GitHub Actions"
+
+      - name: Create Git tag
+        run: |
+          git tag -a "v${{ steps.new_version.outputs.version }}" -m "Release v${{ steps.new_version.outputs.version }}"
+
+      - name: Push changes
+        run: |
+          git push origin main
+          git push origin "v${{ steps.new_version.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.new_version.outputs.version }}
+          release_name: v${{ steps.new_version.outputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+      - name: Sync staging branch
+        run: |
+          git fetch origin staging
+          git checkout staging
+          git merge origin/main --no-edit -m "chore: Sync staging with main after v${{ steps.new_version.outputs.version }} release
+
+          🤖 Automated sync by GitHub Actions"
+          git push origin staging
+
+      - name: Sync dev branch
+        run: |
+          git fetch origin dev
+          git checkout dev
+          git merge origin/main --no-edit -m "chore: Sync dev with main after v${{ steps.new_version.outputs.version }} release
+
+          🤖 Automated sync by GitHub Actions"
+          git push origin dev

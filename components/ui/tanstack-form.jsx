@@ -490,7 +490,7 @@ export function DurationField({
   );
 }
 
-// Submit Button component
+// Submit Button component (legacy - use SaveButton for better UX)
 export function SubmitButton({
   form,
   children,
@@ -521,3 +521,6 @@ export function SubmitButton({
     </form.Subscribe>
   );
 }
+
+// Re-export SaveButton for convenience
+export { SaveButton, useSaveButton } from "@/components/ui/save-button";
