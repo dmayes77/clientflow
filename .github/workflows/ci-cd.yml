@@ -1,24 +1,21 @@
 name: CI/CD Pipeline
 
-# Deployment Flow (3-tier promotion):
-# 1. Push to `dev` → Deploy to Vercel Preview (dev-*.vercel.app) - after tests pass
-# 2. Merge `dev` → `staging` → Deploy to Vercel Preview (staging-*.vercel.app) - after tests pass
-# 3. Merge `staging` → `main` → Deploy to Production (getclientflow.app) - after tests pass → Auto-release
+# Deployment Flow (2-tier):
+# 1. Feature branches → `dev` via PR → Deploy to dev.getclientflow.app - after tests pass
+# 2. `dev` → `main` via PR → Deploy to Production (getclientflow.app) - after tests pass → Auto-release
 #
-# This ensures all code goes through: dev → staging → production
-# Production deployments only happen from staging merges (not direct pushes)
-# Vercel automatically creates preview URLs for dev and staging branches
+# This ensures all code is reviewed on dev before production
+# After release, main changes are synced back to dev
 
 on:
   push:
     branches:
       - main
-      - staging
       - dev
   pull_request:
     branches:
       - main
-      - staging
+      - dev
 
 jobs:
   lint:
@@ -90,9 +87,9 @@ jobs:
           NODE_ENV: test
 
   deploy-preview:
-    name: Deploy Preview
+    name: Deploy to Dev
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/staging'
+    if: github.ref == 'refs/heads/dev'
     needs: [lint, test]
 
     steps:
@@ -116,7 +113,7 @@ jobs:
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    # Only deploy to production when merging from staging to main
+    # Only deploy to production when merging from dev to main
     if: |
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' &&
@@ -128,13 +125,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify merge from staging
+      - name: Verify merge from dev
         run: |
-          echo "Verifying this merge came from staging branch..."
-          # This helps ensure proper flow: dev → staging → main
-          if ! git log --oneline -1 | grep -qiE '(staging|release|merge)'; then
-            echo "⚠️  Warning: This commit may not be from staging branch"
-            echo "Production deployments should come from staging merges"
+          echo "Verifying this merge came from dev branch..."
+          # This helps ensure proper flow: dev → main
+          if ! git log --oneline -1 | grep -qiE '(dev|release|merge)'; then
+            echo "⚠️  Warning: This commit may not be from dev branch"
+            echo "Production deployments should come from dev merges"
           fi
 
       - name: Deploy to Vercel (Production)
@@ -300,15 +297,6 @@ jobs:
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
-
-      - name: Sync staging branch
-        run: |
-          git fetch origin staging
-          git checkout staging
-          git merge origin/main --no-edit -m "chore: Sync staging with main after v${{ steps.new_version.outputs.version }} release
-
-          🤖 Automated sync by GitHub Actions"
-          git push origin staging
 
       - name: Sync dev branch
         run: |
