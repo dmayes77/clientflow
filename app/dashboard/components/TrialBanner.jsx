@@ -57,24 +57,24 @@ export function TrialBanner() {
 
   const urgencyConfig = {
     info: {
-      bgColor: "bg-blue-500/10 dark:bg-blue-500/20",
-      borderColor: "border-blue-500/20 dark:border-blue-500/30",
-      textColor: "text-blue-900 dark:text-blue-50",
-      iconColor: "text-blue-700 dark:text-blue-300",
+      bgColor: "bg-blue-600 dark:bg-blue-700",
+      borderColor: "border-blue-700 dark:border-blue-600",
+      textColor: "text-white",
+      iconColor: "text-blue-100",
       Icon: Clock,
     },
     warning: {
-      bgColor: "bg-amber-500/10 dark:bg-amber-500/20",
-      borderColor: "border-amber-500/20 dark:border-amber-500/30",
-      textColor: "text-amber-900 dark:text-amber-50",
-      iconColor: "text-amber-700 dark:text-amber-300",
+      bgColor: "bg-amber-600 dark:bg-amber-700",
+      borderColor: "border-amber-700 dark:border-amber-600",
+      textColor: "text-white",
+      iconColor: "text-amber-100",
       Icon: AlertCircle,
     },
     urgent: {
-      bgColor: "bg-red-500/10 dark:bg-red-500/20",
-      borderColor: "border-red-500/20 dark:border-red-500/30",
-      textColor: "text-red-900 dark:text-red-50",
-      iconColor: "text-red-700 dark:text-red-300",
+      bgColor: "bg-red-600 dark:bg-red-700",
+      borderColor: "border-red-700 dark:border-red-600",
+      textColor: "text-white",
+      iconColor: "text-red-100",
       Icon: Flame,
     },
   };
@@ -127,7 +127,7 @@ export function TrialBanner() {
             variant="ghost"
             size="sm"
             onClick={() => router.push("/dashboard/settings/billing")}
-            className={`${config.textColor} hover:bg-black/5 dark:hover:bg-white/5 hidden sm:inline-flex`}
+            className="text-white hover:bg-white/20 hidden sm:inline-flex"
           >
             View Billing
           </Button>
@@ -135,7 +135,7 @@ export function TrialBanner() {
             variant="outline"
             size="sm"
             onClick={() => router.push("/dashboard/settings/billing")}
-            className={`${config.textColor} border-current hover:bg-black/5 dark:hover:bg-white/5`}
+            className="text-white border-white hover:bg-white/20"
           >
             {urgency === "urgent" ? "Cancel Trial" : "Manage"}
           </Button>
