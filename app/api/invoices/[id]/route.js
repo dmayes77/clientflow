@@ -96,6 +96,8 @@ export async function PATCH(request, { params }) {
       }
       if (data.status === "paid" && !existingInvoice.paidAt) {
         statusUpdates.paidAt = new Date();
+        statusUpdates.amountPaid = existingInvoice.total; // Mark full amount as paid
+        statusUpdates.balanceDue = 0; // No balance remaining
       }
     }
 
