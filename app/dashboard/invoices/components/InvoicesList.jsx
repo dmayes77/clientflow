@@ -32,7 +32,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck } from "lucide-react";
+import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket } from "lucide-react";
 import {
   MoneyIcon,
   AddIcon,
@@ -737,6 +737,16 @@ export function InvoicesList() {
                   <span>-{formatPrice(previewInvoice.discountAmount)}</span>
                 </div>
               )}
+              {/* Coupons */}
+              {previewInvoice.coupons?.length > 0 && previewInvoice.coupons.map((invoiceCoupon) => (
+                <div key={invoiceCoupon.id} className="flex justify-between hig-footnote text-green-600">
+                  <span className="flex items-center gap-1">
+                    <Ticket className="h-3 w-3" />
+                    Coupon ({invoiceCoupon.coupon?.code || "Applied"})
+                  </span>
+                  <span>-{formatPrice(invoiceCoupon.calculatedAmount)}</span>
+                </div>
+              ))}
               {(previewInvoice.taxAmount || 0) > 0 && (
                 <div className="flex justify-between hig-footnote">
                   <span className="text-muted-foreground">Tax ({previewInvoice.taxRate}%)</span>
