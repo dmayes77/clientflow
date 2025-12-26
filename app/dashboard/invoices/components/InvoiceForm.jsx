@@ -243,6 +243,20 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       form.setFieldValue("depositPercent", safeDepositPercent);
       form.setFieldValue("notes", invoice.notes || "");
       form.setFieldValue("terms", invoice.terms || "");
+
+      // Load coupon if it exists
+      if (invoice.coupons && invoice.coupons.length > 0) {
+        const invoiceCoupon = invoice.coupons[0];
+        setSelectedCoupon(invoiceCoupon.coupon);
+        setValidatedCoupon({
+          valid: true,
+          coupon: invoiceCoupon.coupon,
+          calculation: {
+            discountAmount: invoiceCoupon.calculatedAmount,
+            discountAmountDisplay: (invoiceCoupon.calculatedAmount / 100).toFixed(2),
+          },
+        });
+      }
     }
   }, [mode, invoice, form]);
 

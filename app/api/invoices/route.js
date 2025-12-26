@@ -46,6 +46,11 @@ export async function GET(request) {
             tag: true,
           },
         },
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -162,6 +167,11 @@ export async function POST(request) {
         tags: {
           include: {
             tag: true,
+          },
+        },
+        coupons: {
+          include: {
+            coupon: true,
           },
         },
       },

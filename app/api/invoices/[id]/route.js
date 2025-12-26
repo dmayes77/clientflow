@@ -27,6 +27,11 @@ export async function GET(request, { params }) {
             package: true,
           },
         },
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
       },
     });
 
@@ -114,8 +119,46 @@ export async function PATCH(request, { params }) {
       include: {
         contact: true,
         booking: true,
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
       },
     });
+
+    // Handle coupon updates if couponId changed
+    if (data.couponId !== undefined) {
+      // Remove existing coupon associations
+      await prisma.invoiceCoupon.deleteMany({
+        where: { invoiceId: id },
+      });
+
+      // Add new coupon if provided
+      if (data.couponId && data.couponDiscountAmount) {
+        const coupon = await prisma.coupon.findUnique({
+          where: { id: data.couponId },
+        });
+
+        if (coupon) {
+          await prisma.invoiceCoupon.create({
+            data: {
+              invoiceId: id,
+              couponId: data.couponId,
+              discountType: coupon.discountType,
+              discountValue: coupon.discountValue,
+              calculatedAmount: data.couponDiscountAmount,
+            },
+          });
+
+          // Increment usage counter
+          await prisma.coupon.update({
+            where: { id: data.couponId },
+            data: { currentUses: { increment: 1 } },
+          });
+        }
+      }
+    }
 
     return NextResponse.json(invoice);
   } catch (error) {
