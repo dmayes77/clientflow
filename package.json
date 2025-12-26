@@ -21,10 +21,7 @@
     "cleanup-tenants": "node scripts/cleanup-orphaned-tenants.js",
     "check-clerk-orgs": "node scripts/check-clerk-orgs.js",
     "sync-stripe": "node scripts/sync-stripe-prices.js",
-    "setup-cicd": "node scripts/setup-cicd.js",
-    "release": "bash scripts/release.sh patch",
-    "release:minor": "bash scripts/release.sh minor",
-    "release:major": "bash scripts/release.sh major"
+    "setup-cicd": "node scripts/setup-cicd.js"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",
