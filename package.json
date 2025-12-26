@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "prisma generate && PRISMA_MIGRATE_LOCK_TIMEOUT=60000 node scripts/migrate-or-baseline.js && next build",
+    "build": "prisma generate && PRISMA_MIGRATE_LOCK_TIMEOUT=60000 node scripts/migrate-or-baseline.js && next build --webpack",
     "start": "next start",
     "lint": "npx eslint",
     "test": "vitest run",
