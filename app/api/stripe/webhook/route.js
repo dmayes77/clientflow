@@ -67,7 +67,6 @@ export async function POST(request) {
           break;
 
         default:
-          console.log(`Unhandled Connect event type: ${event.type}`);
       }
       return NextResponse.json({ received: true });
     }
@@ -117,7 +116,6 @@ export async function POST(request) {
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -129,12 +127,10 @@ export async function POST(request) {
 
 // Handler: Payment Intent Succeeded
 async function handlePaymentIntentSucceeded(paymentIntent) {
-  console.log("Payment succeeded:", paymentIntent.id);
 
   const { metadata } = paymentIntent;
 
   if (!metadata?.tenantId) {
-    console.log("No tenantId in metadata, skipping");
     return;
   }
 
@@ -193,7 +189,6 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
 
 // Handler: Payment Intent Failed
 async function handlePaymentIntentFailed(paymentIntent) {
-  console.log("Payment failed:", paymentIntent.id);
 
   const { metadata } = paymentIntent;
 
@@ -231,7 +226,6 @@ async function handlePaymentIntentFailed(paymentIntent) {
 
 // Handler: Checkout Session Completed
 async function handleCheckoutSessionCompleted(session) {
-  console.log("Checkout completed:", session.id);
 
   const { metadata, customer, subscription } = session;
 
@@ -251,7 +245,6 @@ async function handleCheckoutSessionCompleted(session) {
   }
 
   if (!tenant) {
-    console.log("No tenant found for checkout session");
     return;
   }
 
@@ -305,13 +298,11 @@ async function handleCheckoutSessionCompleted(session) {
     data: updateData,
   });
 
-  console.log(`Updated tenant ${tenant.id} with subscription ${subscription}`);
 }
 
 // Handler: Subscription Updated/Created
 async function handleSubscriptionUpdated(subscription) {
   try {
-    console.log("Subscription updated:", subscription.id);
 
     // Get customer ID (can be string or expanded object)
     const customerId =
@@ -319,7 +310,6 @@ async function handleSubscriptionUpdated(subscription) {
         ? subscription.customer
         : subscription.customer?.id;
 
-    console.log("Looking for tenant with customerId:", customerId);
 
     // Try to find tenant by subscription ID first
     let tenant = await prisma.tenant.findFirst({
@@ -334,11 +324,9 @@ async function handleSubscriptionUpdated(subscription) {
     }
 
     if (!tenant) {
-      console.log("No tenant found for subscription", subscription.id);
       return;
     }
 
-    console.log("Found tenant:", tenant.id);
 
     const updateData = {
       subscriptionStatus: subscription.status,
@@ -371,14 +359,12 @@ async function handleSubscriptionUpdated(subscription) {
       }
     }
 
-    console.log("Updating tenant with:", updateData);
 
     await prisma.tenant.update({
       where: { id: tenant.id },
       data: updateData,
     });
 
-    console.log("Subscription handler completed successfully");
   } catch (error) {
     console.error("Error in handleSubscriptionUpdated:", error);
     throw error;
@@ -387,7 +373,6 @@ async function handleSubscriptionUpdated(subscription) {
 
 // Handler: Subscription Deleted
 async function handleSubscriptionDeleted(subscription) {
-  console.log("Subscription deleted:", subscription.id);
 
   const tenant = await prisma.tenant.findFirst({
     where: { stripeSubscriptionId: subscription.id },
@@ -413,7 +398,6 @@ async function handleSubscriptionDeleted(subscription) {
 
 // Handler: Trial Will End
 async function handleTrialWillEnd(subscription) {
-  console.log("Trial ending soon:", subscription.id);
 
   const tenant = await prisma.tenant.findFirst({
     where: { stripeSubscriptionId: subscription.id },
@@ -423,12 +407,10 @@ async function handleTrialWillEnd(subscription) {
   });
 
   if (!tenant) {
-    console.log("No tenant found for trial ending subscription:", subscription.id);
     return;
   }
 
   if (!tenant.email) {
-    console.log("No email address for tenant:", tenant.id);
     return;
   }
 
@@ -438,7 +420,6 @@ async function handleTrialWillEnd(subscription) {
     : tenant.currentPeriodEnd;
 
   if (!trialEndDate) {
-    console.log("No trial end date available for tenant:", tenant.id);
     return;
   }
 
@@ -459,7 +440,6 @@ async function handleTrialWillEnd(subscription) {
       billingUrl,
     });
 
-    console.log(`Trial ending email sent to tenant ${tenant.id} (${tenant.email})`);
   } catch (error) {
     console.error("Failed to send trial ending email:", error);
     // Don't throw - email failure shouldn't break webhook processing
@@ -468,7 +448,6 @@ async function handleTrialWillEnd(subscription) {
 
 // Handler: Invoice Payment Succeeded
 async function handleInvoicePaymentSucceeded(invoice) {
-  console.log("Invoice payment succeeded:", invoice.id);
 
   // Update subscription status if needed
   if (invoice.subscription) {
@@ -517,7 +496,6 @@ async function handleInvoicePaymentSucceeded(invoice) {
 
 // Handler: Invoice Payment Failed
 async function handleInvoicePaymentFailed(invoice) {
-  console.log("Invoice payment failed:", invoice.id);
 
   if (invoice.subscription) {
     const tenant = await prisma.tenant.findFirst({
@@ -542,7 +520,6 @@ async function handleInvoicePaymentFailed(invoice) {
 
 // Handler: Stripe Connect Account Updated
 async function handleAccountUpdated(account) {
-  console.log("Account updated:", account.id);
 
   const tenant = await prisma.tenant.findFirst({
     where: { stripeAccountId: account.id },
@@ -578,7 +555,6 @@ async function handleAccountUpdated(account) {
 
 // Handler: Connect Checkout Session Completed
 async function handleConnectCheckoutCompleted(session, accountId) {
-  console.log("Connect checkout completed:", session.id, "for account:", accountId);
 
   const { metadata } = session;
 
@@ -586,7 +562,6 @@ async function handleConnectCheckoutCompleted(session, accountId) {
   // to ensure booking status is updated even if the customer doesn't reach the success page
 
   if (!metadata?.bookingId || !metadata?.tenantId) {
-    console.log("No booking/tenant in Connect checkout session metadata");
     return;
   }
 
@@ -599,7 +574,6 @@ async function handleConnectCheckoutCompleted(session, accountId) {
   });
 
   if (existingPayment) {
-    console.log("Payment already processed for booking:", metadata.bookingId);
     return;
   }
 
@@ -612,17 +586,14 @@ async function handleConnectCheckoutCompleted(session, accountId) {
     },
   });
 
-  console.log("Booking confirmed via Connect webhook:", metadata.bookingId);
 }
 
 // Handler: Connect Charge Succeeded - Capture card details for chargeback evidence
 async function handleConnectChargeSucceeded(charge, accountId) {
-  console.log("Connect charge succeeded:", charge.id, "for account:", accountId);
 
   const { payment_intent, metadata } = charge;
 
   if (!payment_intent) {
-    console.log("No payment_intent on charge, skipping");
     return;
   }
 
@@ -634,7 +605,6 @@ async function handleConnectChargeSucceeded(charge, accountId) {
   });
 
   if (!payment) {
-    console.log("No payment record found for charge:", charge.id);
     return;
   }
 
@@ -652,12 +622,10 @@ async function handleConnectChargeSucceeded(charge, accountId) {
     },
   });
 
-  console.log("Payment updated with charge details:", payment.id);
 }
 
 // Handler: Connect Charge Refunded
 async function handleConnectChargeRefunded(charge, accountId) {
-  console.log("Connect charge refunded:", charge.id, "for account:", accountId);
 
   const { payment_intent, amount_refunded, refunded } = charge;
 
@@ -673,7 +641,6 @@ async function handleConnectChargeRefunded(charge, accountId) {
   });
 
   if (!payment) {
-    console.log("No payment record found for refund:", charge.id);
     return;
   }
 
@@ -699,12 +666,10 @@ async function handleConnectChargeRefunded(charge, accountId) {
     });
   }
 
-  console.log("Payment marked as refunded:", payment.id, newStatus);
 }
 
 // Handler: Connect Dispute Created
 async function handleConnectDisputeCreated(dispute, accountId) {
-  console.log("Connect dispute created:", dispute.id, "for account:", accountId);
 
   const { charge, reason, status, amount } = dispute;
 
@@ -718,7 +683,6 @@ async function handleConnectDisputeCreated(dispute, accountId) {
   });
 
   if (!payment) {
-    console.log("No payment found for disputed charge:", charge);
     return;
   }
 
@@ -740,7 +704,6 @@ async function handleConnectDisputeCreated(dispute, accountId) {
     },
   });
 
-  console.log("Payment marked as disputed:", payment.id, reason);
 
   // Send notification to tenant about the dispute
   try {
@@ -788,7 +751,6 @@ async function handleConnectDisputeCreated(dispute, accountId) {
         },
       },
     });
-    console.log("In-app dispute alert created for tenant:", payment.tenantId);
 
     // Trigger automated dispute_created alert rules
     triggerEventAlert("dispute_created", payment.tenantId, {
@@ -810,7 +772,6 @@ async function handleConnectDisputeCreated(dispute, accountId) {
         chargeId: typeof charge === "string" ? charge : charge.id,
         dashboardUrl,
       });
-      console.log("Dispute email notification sent to:", tenant.email);
     }
   } catch (notificationError) {
     console.error("Failed to send dispute notifications:", notificationError);
@@ -820,12 +781,10 @@ async function handleConnectDisputeCreated(dispute, accountId) {
 
 // Handler: Connect Async Payment Succeeded (for delayed payment methods like ACH, SEPA)
 async function handleConnectAsyncPaymentSucceeded(session, accountId) {
-  console.log("Connect async payment succeeded:", session.id, "for account:", accountId);
 
   const { metadata, payment_intent } = session;
 
   if (!metadata?.bookingId || !metadata?.tenantId) {
-    console.log("No booking/tenant in async payment session metadata");
     return;
   }
 
@@ -878,7 +837,6 @@ async function handleConnectAsyncPaymentSucceeded(session, accountId) {
     },
   });
 
-  console.log("Async payment processed, booking confirmed:", metadata.bookingId);
 
   // Dispatch webhook notification
   dispatchPaymentReceived(metadata.tenantId, {
@@ -895,12 +853,10 @@ async function handleConnectAsyncPaymentSucceeded(session, accountId) {
 
 // Handler: Connect Async Payment Failed (for delayed payment methods)
 async function handleConnectAsyncPaymentFailed(session, accountId) {
-  console.log("Connect async payment failed:", session.id, "for account:", accountId);
 
   const { metadata, payment_intent } = session;
 
   if (!metadata?.bookingId || !metadata?.tenantId) {
-    console.log("No booking/tenant in failed async payment session metadata");
     return;
   }
 
@@ -913,7 +869,6 @@ async function handleConnectAsyncPaymentFailed(session, accountId) {
     },
   });
 
-  console.log("Async payment failed for booking:", metadata.bookingId);
 
   // Dispatch webhook notification
   dispatchPaymentFailed(metadata.tenantId, {
@@ -927,7 +882,6 @@ async function handleConnectAsyncPaymentFailed(session, accountId) {
 
 // Handler: Connect Payment Intent Succeeded (for Payment Link payments)
 async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
-  console.log("Connect payment intent succeeded:", paymentIntent.id, "for account:", accountId);
 
   const { metadata, charges } = paymentIntent;
 
@@ -944,7 +898,6 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
     });
 
     if (!invoice) {
-      console.log("No invoice found for balance payment:", metadata.invoiceNumber);
       return;
     }
 
@@ -993,7 +946,6 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       });
     }
 
-    console.log("Balance payment processed, invoice paid:", invoice.invoiceNumber);
 
     // Dispatch webhook
     dispatchInvoicePaid(invoice.tenantId, {

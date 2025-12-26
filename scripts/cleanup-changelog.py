@@ -8,7 +8,7 @@ Replaces internal-only releases with "- Internal improvements and bug fixes"
 import re
 from pathlib import Path
 
-CHANGELOG_PATH = Path("CHANGELOG.md")
+CHANGELOG_PATH = Path("docs/CHANGELOG.md")
 FALLBACK_MESSAGE = "- Internal improvements and bug fixes"
 
 # Patterns for internal commits (to exclude)
