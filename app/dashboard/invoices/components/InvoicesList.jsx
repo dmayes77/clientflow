@@ -527,6 +527,7 @@ export function InvoicesList() {
           onOpenChange={setPreviewSheetOpen}
           title={previewInvoice?.invoiceNumber || "Invoice Preview"}
           scrollable
+          actionColumns={getSafeDepositPercent(previewInvoice.depositPercent) > 0 ? 6 : 5}
           header={
             <div className="flex items-center justify-between">
               <h3 className="hig-headline">{previewInvoice.invoiceNumber}</h3>
@@ -589,8 +590,37 @@ export function InvoicesList() {
                 <span className="hig-caption-2">PDF</span>
               </Button>
 
-              {/* Action 3: Mark Paid (if applicable) */}
-              {["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
+              {/* Action 3: Toggle Payment Status */}
+              {previewInvoice.status === "paid" ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-amber-600 hover:text-amber-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Reset to sent status and clear payment fields
+                    updateInvoice.mutate({
+                      id: previewInvoice.id,
+                      status: "sent",
+                      amountPaid: 0,
+                      balanceDue: previewInvoice.total,
+                      paidAt: null,
+                      depositPaidAt: null,
+                    }, {
+                      onSuccess: () => {
+                        toast.success("Invoice marked as unpaid");
+                        setPreviewSheetOpen(false);
+                      },
+                      onError: () => {
+                        toast.error("Failed to update invoice");
+                      },
+                    });
+                  }}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  <span className="hig-caption-2">Unpaid</span>
+                </Button>
+              ) : ["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -611,7 +641,58 @@ export function InvoicesList() {
                 </Button>
               )}
 
-              {/* Action 4: Edit */}
+              {/* Action 4: Toggle Deposit (if has deposit) */}
+              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
+                previewInvoice.depositPaidAt ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-blue-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateInvoice.mutate({
+                        id: previewInvoice.id,
+                        depositPaidAt: null,
+                      }, {
+                        onSuccess: () => {
+                          toast.success("Deposit marked as unpaid");
+                        },
+                        onError: () => {
+                          toast.error("Failed to update deposit status");
+                        },
+                      });
+                    }}
+                  >
+                    <Percent className="h-5 w-5" />
+                    <span className="hig-caption-2">Dep.Unpaid</span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-green-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateInvoice.mutate({
+                        id: previewInvoice.id,
+                        depositPaidAt: new Date().toISOString(),
+                      }, {
+                        onSuccess: () => {
+                          toast.success("Deposit marked as paid");
+                        },
+                        onError: () => {
+                          toast.error("Failed to update deposit status");
+                        },
+                      });
+                    }}
+                  >
+                    <Percent className="h-5 w-5" />
+                    <span className="hig-caption-2">Dep.Paid</span>
+                  </Button>
+                )
+              )}
+
+              {/* Action 5: Edit */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -626,7 +707,7 @@ export function InvoicesList() {
                 <span className="hig-caption-2">Edit</span>
               </Button>
 
-              {/* Action 5: Delete */}
+              {/* Action 6: Delete */}
               <Button
                 variant="ghost"
                 size="sm"

@@ -32,7 +32,7 @@ export function PreviewSheet({
   side = "right",
   className = "",
 }) {
-  const gridColsClass = actionColumns === 4 ? "grid-cols-4" : "grid-cols-5";
+  const gridColsClass = actionColumns === 4 ? "grid-cols-4" : actionColumns === 6 ? "grid-cols-6" : "grid-cols-5";
   const isRightSide = side === "right";
 
   return (
