@@ -748,9 +748,16 @@ export function InvoicesList() {
                 <span>{formatPrice(previewInvoice.total)}</span>
               </div>
 
-              {/* Deposit - simple checkmark if paid */}
-              {previewInvoice.depositPaidAt && getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
-                <p className="hig-footnote text-green-600 pt-1">✓ Deposit Paid</p>
+              {/* Deposit */}
+              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
+                <div className="flex justify-between hig-footnote pt-2 border-t">
+                  <span className={previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}>
+                    {previewInvoice.depositPaidAt ? "✓ Deposit Paid" : `Deposit Due (${getSafeDepositPercent(previewInvoice.depositPercent)}%)`}
+                  </span>
+                  <span className={previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}>
+                    {formatPrice(getSafeDepositAmount(previewInvoice))}
+                  </span>
+                </div>
               )}
 
               {/* Balance Due */}

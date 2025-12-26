@@ -140,6 +140,12 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       try {
         const { subtotal, taxAmount, total } = calculateTotals(value);
 
+        console.log("[InvoiceForm] Form values before payload:", JSON.stringify({
+          depositPercent: value.depositPercent,
+          depositPercentType: typeof value.depositPercent,
+          depositPercentRaw: value.depositPercent,
+        }));
+
         const payload = {
           contactId: value.contactId,
           bookingId: value.bookingId || null,
@@ -169,6 +175,12 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           notes: value.notes || null,
           terms: value.terms || null,
         };
+
+        console.log("[InvoiceForm] Payload being sent:", JSON.stringify({
+          depositPercent: payload.depositPercent,
+          couponId: payload.couponId,
+          couponDiscountAmount: payload.couponDiscountAmount,
+        }));
 
         // Minimum 2 second delay for loading state visibility
         const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
@@ -204,6 +216,13 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   // Initialize form data when invoice or tenant data loads
   useEffect(() => {
     if (mode === "edit" && invoice) {
+      console.log("[InvoiceForm] Loading invoice for edit:", JSON.stringify({
+        depositPercent: invoice.depositPercent,
+        depositAmount: invoice.depositAmount,
+        hasCoupons: invoice.coupons?.length > 0,
+        couponData: invoice.coupons?.[0]
+      }));
+
       const convertedLineItems = getSafeLineItems(invoice.lineItems).map((item) => {
         const quantity = parseInt(item.quantity) || 1;
         const unitPrice = (parseFloat(item.unitPrice) || 0) / 100;
@@ -228,6 +247,8 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           safeDepositPercent = parsed;
         }
       }
+
+      console.log("[InvoiceForm] Setting depositPercent to:", safeDepositPercent);
 
       form.setFieldValue("contactId", invoice.contactId || "");
       form.setFieldValue("bookingId", invoice.bookingId || null);
