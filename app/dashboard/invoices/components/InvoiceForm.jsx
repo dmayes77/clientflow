@@ -241,14 +241,17 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       });
 
       let safeDepositPercent = null;
+      console.log("[InvoiceForm] Invoice depositPercent from API:", invoice.depositPercent, "type:", typeof invoice.depositPercent);
+
       if (invoice.depositPercent !== null && invoice.depositPercent !== undefined) {
         const parsed = parseInt(invoice.depositPercent, 10);
-        if (!isNaN(parsed) && parsed > 0) {
+        console.log("[InvoiceForm] Parsed depositPercent:", parsed, "isNaN:", isNaN(parsed));
+        if (!isNaN(parsed) && isFinite(parsed) && parsed > 0) {
           safeDepositPercent = parsed;
         }
       }
 
-      console.log("[InvoiceForm] Setting depositPercent to:", safeDepositPercent);
+      console.log("[InvoiceForm] Final safeDepositPercent to set:", safeDepositPercent);
 
       form.setFieldValue("contactId", invoice.contactId || "");
       form.setFieldValue("bookingId", invoice.bookingId || null);
@@ -1163,15 +1166,27 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                           <span className="text-muted-foreground">Deposit</span>
                           <form.Field name="depositPercent">
                             {(field) => {
+                              // Convert field value to select value, handling NaN
+                              const fieldValue = field.state.value;
+                              const isValidNumber = typeof fieldValue === 'number' && !isNaN(fieldValue) && isFinite(fieldValue) && fieldValue > 0;
+                              const selectValue = isValidNumber ? fieldValue.toString() : "none";
+
                               console.log("[InvoiceForm] Deposit field rendering:", {
-                                fieldValue: field.state.value,
-                                fieldValueType: typeof field.state.value,
-                                selectValue: field.state.value?.toString() || "none"
+                                fieldValue,
+                                fieldValueType: typeof fieldValue,
+                                isNaN: isNaN(fieldValue),
+                                isValidNumber,
+                                selectValue
                               });
+
                               return (
                                 <Select
-                                  value={field.state.value?.toString() || "none"}
-                                  onValueChange={(value) => field.handleChange(value === "none" ? null : parseInt(value))}
+                                  value={selectValue}
+                                  onValueChange={(value) => {
+                                    const newValue = value === "none" ? null : parseInt(value);
+                                    console.log("[InvoiceForm] Deposit value changing to:", newValue);
+                                    field.handleChange(newValue);
+                                  }}
                                 >
                                   <SelectTrigger className="w-20 h-8">
                                     <SelectValue placeholder="None" />
