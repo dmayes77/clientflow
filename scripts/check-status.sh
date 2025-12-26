@@ -8,6 +8,7 @@ set -e
 # Use ARM Homebrew binaries
 export PATH="/opt/homebrew/bin:/usr/bin:$PATH"
 
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
