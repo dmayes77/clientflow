@@ -1,3 +1,22 @@
+## [1.9.0] - 2025-12-26
+
+## Changes
+- Add validation in deposit Select onValueChange to prevent NaN
+- Prevent NaN from being set in depositPercent field
+- Fix NaN issue in deposit field with improved validation
+- Add comprehensive logging for invoice deposit and coupon flow
+- Add detailed debug logging for deposit Select field
+- Add debug logging for deposit data and improve preview display
+- Remove three-dot actions menu from invoice list
+- Add debug logging for deposit and coupon data in invoice updates
+- Fix invoice update to filter out relation and non-existent fields
+- Add couponId and couponDiscountAmount to invoice validation schemas
+- Fix coupon and deposit data not loading when viewing/editing invoices
+- Fix preview sheet to show as right sidebar on desktop instead of bottom sheet
+- Add comprehensive coupon management system and improve invoice form
+- feat: Add automated deployment scripts with real-time feedback
+
+
 ## [1.8.195] - 2025-12-26
 
 ## Changes
