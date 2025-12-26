@@ -247,23 +247,14 @@ jobs:
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
-            ALL_COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
+            COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
           else
-            ALL_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
+            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
           fi
 
-          # Filter out automated maintenance commits (version bumps, branch syncs, merges)
-          FILTERED=$(echo "$ALL_COMMITS" | grep -vE "^- (chore: Bump version|chore: Sync|Merge branch|chore: Merge)" || true)
-
-          # Further exclude internal-only changes (ci, test, refactor, docs, build, style)
-          # But keep feat, fix, perf, and commits without prefixes
-          FILTERED=$(echo "$FILTERED" | grep -vE "^- (ci|test|refactor|docs|build|style)(\(|:)" || true)
-
-          # If we have commits, use them; otherwise use fallback
-          if [ -n "$FILTERED" ]; then
-            COMMITS="$FILTERED"
-          else
-            COMMITS="- Internal improvements and bug fixes"
+          # No filtering - show all commits
+          if [ -z "$COMMITS" ]; then
+            COMMITS="- No changes"
           fi
 
           echo "## Changes" > /tmp/changelog.md
