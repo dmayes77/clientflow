@@ -32,7 +32,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket } from "lucide-react";
+import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket, Check, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   MoneyIcon,
   AddIcon,
@@ -252,8 +253,89 @@ export function InvoicesList() {
     };
   }, [invoices]);
 
+  // Bulk action handlers
+  const [selectedRows, setSelectedRows] = useState({});
+
+  const handleBulkMarkPaid = (selectedInvoices) => {
+    const updates = selectedInvoices.map((invoice) =>
+      updateInvoice.mutateAsync({
+        id: invoice.id,
+        status: "paid",
+        amountPaid: invoice.total,
+        balanceDue: 0,
+        paidAt: new Date().toISOString(),
+      })
+    );
+
+    Promise.all(updates)
+      .then(() => {
+        toast.success(`${selectedInvoices.length} invoice(s) marked as paid`);
+        setSelectedRows({});
+      })
+      .catch(() => {
+        toast.error("Failed to update some invoices");
+      });
+  };
+
+  const handleBulkMarkUnpaid = (selectedInvoices) => {
+    const updates = selectedInvoices.map((invoice) =>
+      updateInvoice.mutateAsync({
+        id: invoice.id,
+        status: "sent",
+        amountPaid: 0,
+        balanceDue: invoice.total,
+        paidAt: null,
+        depositPaidAt: null,
+      })
+    );
+
+    Promise.all(updates)
+      .then(() => {
+        toast.success(`${selectedInvoices.length} invoice(s) marked as unpaid`);
+        setSelectedRows({});
+      })
+      .catch(() => {
+        toast.error("Failed to update some invoices");
+      });
+  };
+
+  const handleBulkDelete = (selectedInvoices) => {
+    const deletes = selectedInvoices.map((invoice) =>
+      deleteInvoice.mutateAsync(invoice.id)
+    );
+
+    Promise.all(deletes)
+      .then(() => {
+        toast.success(`${selectedInvoices.length} invoice(s) deleted`);
+        setSelectedRows({});
+      })
+      .catch(() => {
+        toast.error("Failed to delete some invoices");
+      });
+  };
+
   // Define columns for DataTable
   const columns = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "invoiceNumber",
       header: ({ column }) => (
@@ -394,6 +476,59 @@ export function InvoicesList() {
                 setPreviewSheetOpen(true);
               }}
               emptyMessage="No invoices found."
+              toolbar={({ table }) => {
+                const selectedInvoices = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
+                const hasSelection = selectedInvoices.length > 0;
+
+                if (!hasSelection) return null;
+
+                return (
+                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg border">
+                    <span className="text-sm font-medium">
+                      {selectedInvoices.length} selected
+                    </span>
+                    <div className="flex-1" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => handleBulkMarkPaid(selectedInvoices)}
+                      disabled={updateInvoice.isPending}
+                    >
+                      <Check className="h-4 w-4 mr-1 text-green-600" />
+                      Mark Paid
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => handleBulkMarkUnpaid(selectedInvoices)}
+                      disabled={updateInvoice.isPending}
+                    >
+                      <CreditCard className="h-4 w-4 mr-1 text-amber-600" />
+                      Mark Unpaid
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-destructive hover:text-destructive"
+                      onClick={() => handleBulkDelete(selectedInvoices)}
+                      disabled={deleteInvoice.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => table.resetRowSelection()}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              }}
             />
           )}
         </CardContent>
