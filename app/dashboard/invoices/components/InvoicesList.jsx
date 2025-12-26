@@ -30,20 +30,12 @@ import {
   PreviewSheetSection,
 } from "@/components/ui/preview-sheet";
 import { Separator } from "@/components/ui/separator";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck } from "lucide-react";
 import {
   MoneyIcon,
   AddIcon,
-  MoreIcon,
   LoadingIcon,
   InvoiceIcon,
   SendIcon,
@@ -323,82 +315,6 @@ export function InvoicesList() {
           {statusConfig[row.original.status]?.label || row.original.status}
         </Badge>
       ),
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const invoice = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                <MoreIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDownload(invoice)}
-                disabled={downloadInvoicePDF.isPending}
-              >
-                {downloadInvoicePDF.isPending ? (
-                  <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <DownloadIcon className="h-4 w-4 mr-2" />
-                )}
-                {downloadInvoicePDF.isPending ? "Downloading..." : "Download PDF"}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {invoice.status === "draft" && (
-                <DropdownMenuItem
-                  onClick={() => handleSend(invoice)}
-                  disabled={sendingId === invoice.id}
-                >
-                  {sendingId === invoice.id ? (
-                    <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <SendIcon className="h-4 w-4 mr-2" />
-                  )}
-                  {sendingId === invoice.id ? "Sending..." : "Send Invoice"}
-                </DropdownMenuItem>
-              )}
-              {["sent", "viewed", "overdue"].includes(invoice.status) && (
-                <>
-                  <DropdownMenuItem onClick={() => handleOpenPaymentDialog(invoice)}>
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Record Payment
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusChange(invoice, "paid")}>
-                    <CompleteIcon className="h-4 w-4 mr-2" />
-                    Mark as Paid (Full)
-                  </DropdownMenuItem>
-                </>
-              )}
-              {invoice.status !== "cancelled" && invoice.status !== "paid" && (
-                <DropdownMenuItem onClick={() => handleStatusChange(invoice, "cancelled")}>
-                  <CloseIcon className="h-4 w-4 mr-2" />
-                  Cancel
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setInvoiceToDelete(invoice);
-                  setDeleteDialogOpen(true);
-                }}
-                className="text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-      size: 50,
     },
   ];
 
@@ -832,9 +748,16 @@ export function InvoicesList() {
                 <span>{formatPrice(previewInvoice.total)}</span>
               </div>
 
-              {/* Deposit - simple checkmark if paid */}
-              {previewInvoice.depositPaidAt && getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
-                <p className="hig-footnote text-green-600 pt-1">✓ Deposit Paid</p>
+              {/* Deposit */}
+              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
+                <div className="flex justify-between hig-footnote pt-2 border-t">
+                  <span className={previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}>
+                    {previewInvoice.depositPaidAt ? "✓ Deposit Paid" : `Deposit Due (${getSafeDepositPercent(previewInvoice.depositPercent)}%)`}
+                  </span>
+                  <span className={previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}>
+                    {formatPrice(getSafeDepositAmount(previewInvoice))}
+                  </span>
+                </div>
               )}
 
               {/* Balance Due */}

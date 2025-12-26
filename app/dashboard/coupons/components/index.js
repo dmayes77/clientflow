@@ -1,0 +1,1 @@
+export { CouponsList } from "./CouponsList";

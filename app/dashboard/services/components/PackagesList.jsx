@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -28,14 +28,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  PreviewSheet,
-  PreviewSheetHeader,
-  PreviewSheetContent,
-  PreviewSheetSection,
-} from "@/components/ui/preview-sheet";
 import { BottomSheet, BottomSheetFooter } from "@/components/ui/bottom-sheet";
-import { useIsMobile } from "@/lib/hooks/use-media-query";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -56,6 +57,7 @@ import {
   X,
   ChevronRight,
   Check,
+  MoreHorizontal,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -93,7 +95,6 @@ const initialFormState = {
 
 export function PackagesList() {
   const router = useRouter();
-  const isMobile = useIsMobile();
   const { formatDuration } = useBusinessHours();
 
   // TanStack Query hooks
@@ -112,8 +113,14 @@ export function PackagesList() {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
-  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
-  const [previewPackage, setPreviewPackage] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const loading = packagesLoading || servicesLoading || categoriesLoading;
 
@@ -344,6 +351,143 @@ export function PackagesList() {
     }).format(cents / 100);
   };
 
+  // Define columns for DataTable
+  const columns = [
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Package" />
+      ),
+      cell: ({ row }) => {
+        const pkg = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-muted shrink-0">
+              <Image
+                src="/default_img.webp"
+                alt={pkg.name}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium truncate">{pkg.name}</p>
+              {pkg.category && (
+                <p className="text-muted-foreground truncate hig-caption2">{pkg.category.name}</p>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "description",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Description" />
+      ),
+      cell: ({ row }) => (
+        <p className="text-muted-foreground line-clamp-2 max-w-xs">
+          {row.original.description || "—"}
+        </p>
+      ),
+    },
+    {
+      accessorKey: "serviceCount",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Services" />
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <Tag className="h-3.5 w-3.5" />
+          {row.original.serviceCount} service{row.original.serviceCount !== 1 ? "s" : ""}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "discountPercent",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Discount" />
+      ),
+      cell: ({ row }) => (
+        <Badge variant="secondary" className="font-medium">
+          {row.original.discountPercent}% off
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "price",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Price" />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{formatPrice(row.original.price)}</span>
+      ),
+    },
+    {
+      accessorKey: "active",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Status" />
+      ),
+      cell: ({ row }) => (
+        <Badge variant={row.original.active ? "success" : "secondary"}>
+          {row.original.active ? "Active" : "Off"}
+        </Badge>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => {
+        const pkg = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push(`/dashboard/packages/${pkg.id}`)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditingPackage(null);
+                  setFormData({
+                    name: `${pkg.name} (Copy)`,
+                    description: pkg.description || "",
+                    discountPercent: pkg.discountPercent,
+                    active: pkg.active,
+                    serviceIds: pkg.services.map((s) => s.id),
+                    categoryId: pkg.categoryId || null,
+                    newCategoryName: "",
+                    priceEnding: "9",
+                    customPrice: "",
+                  });
+                  setDialogOpen(true);
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setPackageToDelete(pkg);
+                  setDeleteDialogOpen(true);
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      size: 50,
+    },
+  ];
 
   if (loading) {
     return (
@@ -357,96 +501,60 @@ export function PackagesList() {
 
   return (
     <>
-      <Card className="py-0">
-        <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-amber-500" />
-            <span className="font-medium">Packages</span>
-            <span className="hig-caption2 text-muted-foreground">({packages.length})</span>
+      <Card>
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div>
+            <h3 className="flex items-center gap-2 font-semibold text-lg">
+              <Package className="h-5 w-5 text-amber-500" />
+              Packages
+            </h3>
+            <p className="text-muted-foreground mt-1">
+              {packages.length} package{packages.length !== 1 ? "s" : ""}
+            </p>
           </div>
           <Button
-            size="xs"
+            size="sm"
             onClick={() => router.push("/dashboard/packages/new")}
             disabled={services.length === 0}
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline ml-1">Create</span>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Package
           </Button>
         </div>
-        <CardContent className="p-0">
+        <CardContent className="pt-6">
           {services.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center mb-3">
-                <Package className="h-5 w-5 text-amber-600" />
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                <Package className="h-6 w-6 text-amber-600" />
               </div>
               <h3 className="text-zinc-900 mb-1">Create services first</h3>
-              <p className="hig-caption2 text-muted-foreground mb-3 max-w-xs">
+              <p className="text-muted-foreground mb-4 max-w-xs">
                 Create individual services first, then bundle them here with a discount.
               </p>
             </div>
           ) : packages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center mb-3">
-                <Package className="h-5 w-5 text-amber-600" />
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+                <Package className="h-6 w-6 text-amber-600" />
               </div>
               <h3 className="text-zinc-900 mb-1">Ready to create packages!</h3>
-              <p className="hig-caption2 text-muted-foreground mb-3">
+              <p className="text-muted-foreground mb-4">
                 Bundle your {services.length} service{services.length !== 1 ? "s" : ""} with a discount.
               </p>
-              <Button size="xs" onClick={() => router.push("/dashboard/packages/new")}>
-                <Plus className="h-3.5 w-3.5 mr-1" />
+              <Button size="sm" onClick={() => router.push("/dashboard/packages/new")}>
+                <Plus className="h-4 w-4 mr-1" />
                 Create Package
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-3">
-              {packages.map((pkg) => (
-                <button
-                  key={pkg.id}
-                  type="button"
-                  onClick={() => {
-                    if (isMobile) {
-                      setPreviewPackage(pkg);
-                      setPreviewSheetOpen(true);
-                    } else {
-                      router.push(`/dashboard/packages/${pkg.id}`);
-                    }
-                  }}
-                  className="relative flex flex-col bg-card border rounded-lg overflow-hidden text-left hover:border-primary/50 transition-colors"
-                  style={{ aspectRatio: "3/4" }}
-                >
-                  {/* Inactive overlay */}
-                  {!pkg.active && (
-                    <div className="absolute inset-0 bg-white/30 z-10 pointer-events-none" />
-                  )}
-                  {/* Image area - 1:1 ratio */}
-                  <div className="relative aspect-square bg-muted">
-                    <Image
-                      src="/default_img.webp"
-                      alt={pkg.name}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                      className="object-cover"
-                    />
-                    {/* Status badge - top left */}
-                    <Badge
-                      variant={pkg.active ? "success" : "secondary"}
-                      className="absolute top-2 left-2 hig-caption2 px-1.5 py-0.5 z-20"
-                    >
-                      {pkg.active ? "Active" : "Off"}
-                    </Badge>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 p-2">
-                    <p className="font-medium truncate leading-tight mb-0" style={{ fontSize: "12px" }}>{pkg.name}</p>
-                    <p className="text-muted-foreground truncate mt-0.5 mb-0" style={{ fontSize: "11px" }}>
-                      {pkg.serviceCount} service{pkg.serviceCount !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <DataTable
+              columns={columns}
+              data={packages}
+              searchPlaceholder="Search packages..."
+              pageSize={10}
+              onRowClick={(pkg) => router.push(`/dashboard/packages/${pkg.id}`)}
+              emptyMessage="No packages found."
+            />
           )}
         </CardContent>
       </Card>
@@ -918,170 +1026,6 @@ export function PackagesList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Package Preview Sheet (Mobile) */}
-      {previewPackage && (
-        <PreviewSheet
-          open={previewSheetOpen}
-          onOpenChange={setPreviewSheetOpen}
-          title={previewPackage?.name || "Package Preview"}
-          actionColumns={4}
-          header={
-            <div className="flex items-start gap-3">
-              <div className="shrink-0 size-16 rounded-lg overflow-hidden bg-muted relative">
-                <Image
-                  src="/default_img.webp"
-                  alt={previewPackage.name}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="hig-headline truncate">{previewPackage.name}</h3>
-                  <Badge variant={previewPackage.active ? "success" : "secondary"} className="shrink-0">
-                    {previewPackage.active ? "Active" : "Off"}
-                  </Badge>
-                </div>
-                {previewPackage.category && (
-                  <p className="hig-footnote text-muted-foreground">{previewPackage.category.name}</p>
-                )}
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="hig-footnote font-semibold">{formatPrice(previewPackage.price)}</span>
-                  {previewPackage.originalPrice > previewPackage.price && (
-                    <span className="hig-footnote text-muted-foreground line-through">
-                      {formatPrice(previewPackage.originalPrice)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          }
-          actions={
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
-                  setEditingPackage(null);
-                  setFormData({
-                    name: `${previewPackage.name} (Copy)`,
-                    description: previewPackage.description || "",
-                    discountPercent: previewPackage.discountPercent,
-                    active: previewPackage.active,
-                    serviceIds: previewPackage.services.map((s) => s.id),
-                    categoryId: previewPackage.categoryId || null,
-                    newCategoryName: "",
-                    priceEnding: "custom",
-                    customPrice: String(Math.round(previewPackage.price / 100)),
-                  });
-                  setDialogOpen(true);
-                }}
-              >
-                <Copy className="size-5" />
-                <span className="hig-caption-2">Duplicate</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 ${previewPackage.active ? "text-amber-600" : "text-green-600"}`}
-                onClick={() => {
-                  updatePackage.mutate(
-                    { id: previewPackage.id, active: !previewPackage.active },
-                    {
-                      onSuccess: (updated) => {
-                        setPreviewPackage(updated);
-                        toast.success(updated.active ? "Package activated" : "Package deactivated");
-                      },
-                      onError: () => {
-                        toast.error("Failed to update package");
-                      },
-                    }
-                  );
-                }}
-              >
-                {previewPackage.active ? (
-                  <>
-                    <X className="size-5" />
-                    <span className="hig-caption-2">Deactivate</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="size-5" />
-                    <span className="hig-caption-2">Activate</span>
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
-                  router.push(`/dashboard/packages/${previewPackage.id}`);
-                }}
-              >
-                <Pencil className="size-5" />
-                <span className="hig-caption-2">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
-                onClick={() => {
-                  setPreviewSheetOpen(false);
-                  setPackageToDelete(previewPackage);
-                  setDeleteDialogOpen(true);
-                }}
-              >
-                <Trash2 className="size-5" />
-                <span className="hig-caption-2">Delete</span>
-              </Button>
-            </>
-          }
-        >
-          <PreviewSheetContent>
-            {/* Description */}
-            {previewPackage.description && (
-              <PreviewSheetSection>
-                <p className="hig-footnote text-muted-foreground line-clamp-3">{previewPackage.description}</p>
-              </PreviewSheetSection>
-            )}
-
-            {/* Services Included */}
-            {previewPackage.services?.length > 0 && (
-              <PreviewSheetSection>
-                <p className="hig-caption-2 text-muted-foreground mb-1.5">Includes {previewPackage.services.length} services:</p>
-                <div className="space-y-1">
-                  {previewPackage.services.slice(0, 4).map((service) => (
-                    <div key={service.id} className="flex items-center gap-2 hig-footnote">
-                      <Check className="size-3.5 text-green-600 shrink-0" />
-                      <span className="truncate">{service.name}</span>
-                    </div>
-                  ))}
-                  {previewPackage.services.length > 4 && (
-                    <p className="hig-caption-2 text-muted-foreground pl-5">+{previewPackage.services.length - 4} more</p>
-                  )}
-                </div>
-              </PreviewSheetSection>
-            )}
-
-            {/* Metadata */}
-            <PreviewSheetSection className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="hig-caption-2">
-                {previewPackage.discountPercent}% off
-              </Badge>
-              <Badge variant="outline" className="hig-caption-2 flex items-center gap-1">
-                <Clock className="size-3" />
-                {formatDuration(previewPackage.totalDuration || previewPackage.services?.reduce((sum, s) => sum + s.duration, 0) || 0)}
-              </Badge>
-            </PreviewSheetSection>
-          </PreviewSheetContent>
-        </PreviewSheet>
-      )}
     </>
   );
 }

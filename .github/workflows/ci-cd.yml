@@ -267,20 +267,20 @@ jobs:
 
           "
 
-          if [ ! -f "CHANGELOG.md" ]; then
-            echo "# Changelog" > CHANGELOG.md
-            echo "" >> CHANGELOG.md
-            echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
-            echo "" >> CHANGELOG.md
+          if [ ! -f "docs/CHANGELOG.md" ]; then
+            echo "# Changelog" > docs/CHANGELOG.md
+            echo "" >> docs/CHANGELOG.md
+            echo "All notable changes to this project will be documented in this file." >> docs/CHANGELOG.md
+            echo "" >> docs/CHANGELOG.md
           fi
 
           echo "$CHANGELOG_ENTRY" > /tmp/changelog_temp.md
-          cat CHANGELOG.md >> /tmp/changelog_temp.md
-          mv /tmp/changelog_temp.md CHANGELOG.md
+          cat docs/CHANGELOG.md >> /tmp/changelog_temp.md
+          mv /tmp/changelog_temp.md docs/CHANGELOG.md
 
       - name: Commit version bump
         run: |
-          git add package.json CHANGELOG.md
+          git add package.json docs/CHANGELOG.md
           git commit -m "chore: Bump version to ${{ steps.new_version.outputs.version }}
 
           🤖 Automated release by GitHub Actions"

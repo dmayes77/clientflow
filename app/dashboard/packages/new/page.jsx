@@ -2,10 +2,12 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { toast } from "sonner";
 import { useCreatePackage } from "@/lib/hooks";
 import { useServices } from "@/lib/hooks/use-services";
 import { useServiceCategories } from "@/lib/hooks/use-service-categories";
+import { useImages, useUploadImage } from "@/lib/hooks/use-media";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +16,10 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 import {
   ArrowLeft,
@@ -25,6 +29,9 @@ import {
   Search,
   X,
   ChevronRight,
+  ImageIcon,
+  Upload,
+  Check,
 } from "lucide-react";
 
 const DISCOUNT_OPTIONS = [
@@ -51,6 +58,7 @@ const initialFormState = {
   newCategoryName: "",
   priceEnding: "9",
   customPrice: "",
+  imageId: null,
 };
 
 export default function PackageNewPage() {
@@ -61,11 +69,14 @@ export default function PackageNewPage() {
   const createPackageMutation = useCreatePackage();
   const { data: services = [], isLoading: servicesLoading } = useServices();
   const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
+  const { data: images = [], isLoading: imagesLoading } = useImages();
+  const uploadImageMutation = useUploadImage();
 
   const [formData, setFormData] = useState(initialFormState);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
   const loading = servicesLoading || categoriesLoading;
 
@@ -182,6 +193,7 @@ export default function PackageNewPage() {
         discountPercent: formData.discountPercent,
         active: formData.active,
         serviceIds: formData.serviceIds,
+        imageId: formData.imageId,
         ...(isCreatingCategory && formData.newCategoryName
           ? { newCategoryName: formData.newCategoryName }
           : { categoryId: formData.categoryId }),
@@ -202,6 +214,24 @@ export default function PackageNewPage() {
       currency: "USD",
     }).format(cents / 100);
   };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formDataUpload = new FormData();
+    formDataUpload.append("file", file);
+
+    try {
+      const newImage = await uploadImageMutation.mutateAsync(formDataUpload);
+      setFormData({ ...formData, imageId: newImage.id });
+      toast.success("Image uploaded");
+    } catch (error) {
+      toast.error(error.message || "Failed to upload image");
+    }
+  };
+
+  const selectedImage = images.find((img) => img.id === formData.imageId);
 
   if (loading) {
     return (
@@ -238,89 +268,135 @@ export default function PackageNewPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <form onSubmit={handleSubmit} className="lg:h-[calc(100vh-12rem)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-full">
           {/* Left Column - Package Info */}
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Package Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Full Session Package, VIP Bundle"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
+          <Card className="lg:overflow-hidden lg:flex lg:flex-col">
+            <CardContent className="p-6 space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+              <div className="space-y-4 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Package Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., Full Session Package, VIP Bundle"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe what's included in this package"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              {/* Category Selection */}
-              <div className="space-y-2">
-                <Label>Category (optional)</Label>
-                {isCreatingCategory ? (
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="New category name"
-                      value={formData.newCategoryName}
-                      onChange={(e) => setFormData({ ...formData, newCategoryName: e.target.value })}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsCreatingCategory(false);
-                        setFormData({ ...formData, newCategoryName: "" });
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                {/* Package Image */}
+                <div className="space-y-2">
+                  <Label>Package Image (optional)</Label>
+                  <div className="flex gap-3">
+                    <div className="relative group h-24 w-24">
+                      <Image
+                        src={selectedImage?.url || "/default_img.webp"}
+                        alt="Package"
+                        fill
+                        sizes="96px"
+                        className="rounded-lg object-cover border"
+                      />
+                      {selectedImage && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, imageId: null })}
+                          className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)}>
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Choose from Library
+                      </Button>
+                      <label>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadImageMutation.isPending} />
+                        <Button type="button" variant="outline" size="sm" className="w-full" disabled={uploadImageMutation.isPending} asChild>
+                          <span>
+                            {uploadImageMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                            Upload New
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.categoryId || "none"}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, categoryId: value === "none" ? null : value })
-                      }
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No category</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsCreatingCategory(true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description (optional)</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Describe what's included in this package"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+
+                {/* Category Selection */}
+                <div className="space-y-2">
+                  <Label>Category (optional)</Label>
+                  {isCreatingCategory ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="New category name"
+                        value={formData.newCategoryName}
+                        onChange={(e) => setFormData({ ...formData, newCategoryName: e.target.value })}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsCreatingCategory(false);
+                          setFormData({ ...formData, newCategoryName: "" });
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Select
+                        value={formData.categoryId || "none"}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, categoryId: value === "none" ? null : value })
+                        }
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue>
+                            {formData.categoryId
+                              ? categories.find(c => c.id === formData.categoryId)?.name || "Select category"
+                              : "No category"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No category</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCreatingCategory(true)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Discount & Price Ending */}
-              <div className="rounded-lg border p-4 space-y-4">
+              {/* Discount & Price Ending - Anchored to bottom */}
+              <div className="rounded-lg border p-4 space-y-4 lg:mt-4 lg:shrink-0">
                 <div className="space-y-2">
                   <Label>Package Discount</Label>
                   <div className="grid grid-cols-2 gap-2">
@@ -383,10 +459,116 @@ export default function PackageNewPage() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Price Preview */}
+          {/* Right Column - Service Selection */}
+          <Card className="lg:overflow-hidden lg:flex lg:flex-col">
+            <CardContent className="p-6 space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+              <div className="space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+                <div className="flex items-center justify-between">
+                  <Label>Select Services *</Label>
+                  <span className="hig-caption2 text-muted-foreground">
+                    {formData.serviceIds.length} selected
+                  </span>
+                </div>
+
+                {/* Selected Services as Chips */}
+                {selectedServices.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-muted/30 rounded-md max-h-24 overflow-y-auto">
+                    {selectedServices.map((service) => (
+                      <Badge
+                        key={service.id}
+                        variant="secondary"
+                        className="gap-1 pr-1 cursor-pointer hover:bg-destructive/10"
+                        onClick={() => handleServiceToggle(service.id)}
+                      >
+                        {service.name}
+                        <span className="text-muted-foreground ml-1">
+                          {formatPrice(service.price)}
+                        </span>
+                        <X className="h-3 w-3 ml-0.5 hover:text-destructive" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search services..."
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    className="pl-8 h-9"
+                  />
+                  {serviceSearch && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setServiceSearch("")}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Grouped Services */}
+                <div className="border rounded-md max-h-64 lg:max-h-72 overflow-y-auto">
+                {groupedServices.length === 0 ? (
+                  <p className="p-3 text-muted-foreground text-center">
+                    {serviceSearch ? "No services match your search" : "No active services available"}
+                  </p>
+                ) : (
+                  groupedServices.map((group) => (
+                    <Collapsible
+                      key={group.id}
+                      open={expandedCategories[group.id] !== false}
+                      onOpenChange={() => toggleCategory(group.id)}
+                    >
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 text-sm font-medium bg-muted/50 hover:bg-muted border-b">
+                        <ChevronRight
+                          className={`h-3.5 w-3.5 transition-transform ${
+                            expandedCategories[group.id] !== false ? "rotate-90" : ""
+                          }`}
+                        />
+                        <Tag className="h-3 w-3 text-muted-foreground" />
+                        {group.name}
+                        <span className="hig-caption2 text-muted-foreground ml-auto mr-1">
+                          {group.services.filter((s) => formData.serviceIds.includes(s.id)).length}/
+                          {group.services.length}
+                        </span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        {group.services.map((service) => (
+                          <label
+                            key={service.id}
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-muted/50 cursor-pointer border-b last:border-b-0"
+                          >
+                            <Checkbox
+                              checked={formData.serviceIds.includes(service.id)}
+                              onCheckedChange={() => handleServiceToggle(service.id)}
+                            />
+                            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                              <span className="truncate text-sm">{service.name}</span>
+                              <span className="hig-caption2 text-muted-foreground whitespace-nowrap">
+                                {formatDuration(service.duration)} • {formatPrice(service.price)}
+                              </span>
+                            </div>
+                          </label>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))
+                )}
+              </div>
+              </div>
+
+              {/* Price Preview - Anchored to bottom */}
               {pricePreview.serviceCount > 0 && (
-                <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="rounded-lg border bg-muted/30 p-4 lg:mt-4 lg:shrink-0">
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Services</p>
@@ -408,125 +590,68 @@ export default function PackageNewPage() {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
 
-          {/* Right Column - Service Selection */}
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Select Services *</Label>
-                <span className="hig-caption2 text-muted-foreground">
-                  {formData.serviceIds.length} selected
-                </span>
-              </div>
-
-              {/* Selected Services as Chips */}
-              {selectedServices.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 p-2 bg-muted/30 rounded-md max-h-24 overflow-y-auto">
-                  {selectedServices.map((service) => (
-                    <Badge
-                      key={service.id}
-                      variant="secondary"
-                      className="gap-1 pr-1 cursor-pointer hover:bg-destructive/10"
-                      onClick={() => handleServiceToggle(service.id)}
-                    >
-                      {service.name}
-                      <span className="text-muted-foreground ml-1">
-                        {formatPrice(service.price)}
-                      </span>
-                      <X className="h-3 w-3 ml-0.5 hover:text-destructive" />
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Search Input */}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search services..."
-                  value={serviceSearch}
-                  onChange={(e) => setServiceSearch(e.target.value)}
-                  className="pl-8 h-9"
-                />
-                {serviceSearch && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setServiceSearch("")}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Grouped Services */}
-              <div className="border rounded-md max-h-64 lg:max-h-96 overflow-y-auto">
-                {groupedServices.length === 0 ? (
-                  <p className="p-3 text-muted-foreground text-center">
-                    {serviceSearch ? "No services match your search" : "No active services available"}
-                  </p>
-                ) : (
-                  groupedServices.map((group) => (
-                    <Collapsible
-                      key={group.id}
-                      open={expandedCategories[group.id] !== false}
-                      onOpenChange={() => toggleCategory(group.id)}
-                    >
-                      <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 font-medium bg-muted/50 hover:bg-muted border-b">
-                        <ChevronRight
-                          className={`h-4 w-4 transition-transform ${
-                            expandedCategories[group.id] !== false ? "rotate-90" : ""
-                          }`}
-                        />
-                        <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                        {group.name}
-                        <span className="hig-caption2 text-muted-foreground ml-auto mr-1">
-                          {group.services.filter((s) => formData.serviceIds.includes(s.id)).length}/
-                          {group.services.length}
-                        </span>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        {group.services.map((service) => (
-                          <label
-                            key={service.id}
-                            className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 cursor-pointer border-b last:border-b-0"
-                          >
-                            <Checkbox
-                              checked={formData.serviceIds.includes(service.id)}
-                              onCheckedChange={() => handleServiceToggle(service.id)}
-                            />
-                            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                              <span className="truncate">{service.name}</span>
-                              <span className="hig-caption2 text-muted-foreground whitespace-nowrap">
-                                {formatDuration(service.duration)} • {formatPrice(service.price)}
-                              </span>
-                            </div>
-                          </label>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))
-                )}
+              {/* Action Buttons - Anchored to bottom */}
+              <div className="flex justify-end gap-3 lg:mt-4 lg:shrink-0">
+                <Button type="button" variant="outline" onClick={() => router.push("/dashboard/packages")}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="success" disabled={createPackageMutation.isPending || formData.serviceIds.length === 0}>
+                  {createPackageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Create Package
+                </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/packages")}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="success" disabled={createPackageMutation.isPending || formData.serviceIds.length === 0}>
-            {createPackageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Create Package
-          </Button>
         </div>
       </form>
+
+      {/* Image Selection Dialog */}
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Select Image</DialogTitle>
+            <DialogDescription>Choose an image from your library</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-96">
+            {images.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p>No images in your library</p>
+                <p>Upload an image to get started</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-3 p-1">
+                {images.map((img) => (
+                  <button
+                    key={img.id}
+                    type="button"
+                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      formData.imageId === img.id ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-muted-foreground/30"
+                    }`}
+                    onClick={() => {
+                      setFormData({ ...formData, imageId: img.id });
+                      setImageDialogOpen(false);
+                    }}
+                  >
+                    <Image src={img.url} alt={img.filename || "Image"} fill sizes="100px" className="object-cover" />
+                    {formData.imageId === img.id && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <Check className="h-6 w-6 text-primary" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImageDialogOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

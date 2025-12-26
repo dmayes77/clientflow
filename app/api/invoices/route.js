@@ -46,6 +46,11 @@ export async function GET(request) {
             tag: true,
           },
         },
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -131,6 +136,13 @@ export async function POST(request) {
       : null;
     const balanceDue = data.total;
 
+    console.log("[POST /api/invoices] Creating invoice with:", JSON.stringify({
+      depositPercent: safeDepositPercent,
+      depositAmount,
+      couponId: data.couponId,
+      couponDiscountAmount: data.couponDiscountAmount,
+    }));
+
     const invoice = await prisma.invoice.create({
       data: {
         tenantId: tenant.id,
@@ -140,8 +152,8 @@ export async function POST(request) {
         status: data.status || "draft",
         dueDate: data.dueDate,
         subtotal: data.subtotal,
-        discountCode: data.discountCode || null,
-        discountAmount: data.discountAmount || 0,
+        discountCode: data.discountCode || null, // Keep for backwards compatibility
+        discountAmount: data.discountAmount || 0, // Keep for backwards compatibility
         taxRate: data.taxRate || 0,
         taxAmount: data.taxAmount || 0,
         total: data.total,
@@ -164,14 +176,53 @@ export async function POST(request) {
             tag: true,
           },
         },
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
       },
     });
+
+    // Track coupon usage if a coupon was applied
+    if (data.couponId && data.couponDiscountAmount) {
+      // Get the coupon details for snapshot
+      const coupon = await prisma.coupon.findUnique({
+        where: { id: data.couponId },
+      });
+
+      if (coupon) {
+        // Create junction record with snapshot
+        await prisma.invoiceCoupon.create({
+          data: {
+            invoiceId: invoice.id,
+            couponId: data.couponId,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountValue,
+            calculatedAmount: data.couponDiscountAmount,
+          },
+        });
+
+        // Increment usage counter
+        await prisma.coupon.update({
+          where: { id: data.couponId },
+          data: { currentUses: { increment: 1 } },
+        });
+      }
+    }
 
     // Flatten tags
     const invoiceWithTags = {
       ...invoice,
       tags: invoice.tags.map((t) => t.tag),
     };
+
+    console.log("[POST /api/invoices] Created invoice:", JSON.stringify({
+      id: invoiceWithTags.id,
+      depositPercent: invoiceWithTags.depositPercent,
+      depositAmount: invoiceWithTags.depositAmount,
+      hasCoupons: invoiceWithTags.coupons?.length > 0,
+    }));
 
     return NextResponse.json(invoiceWithTags, { status: 201 });
   } catch (error) {

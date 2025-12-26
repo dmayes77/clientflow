@@ -46,22 +46,17 @@ export async function GET(request) {
 
 // POST /api/contacts - Create a new contact
 export async function POST(request) {
-  console.log("[API] POST /api/contacts - Request received");
 
   try {
-    console.log("[API] Authenticating tenant...");
     const { tenant, error, status } = await getAuthenticatedTenant(request);
 
     if (!tenant) {
-      console.log("[API] Authentication failed:", error, status);
       return NextResponse.json({ error }, { status });
     }
-    console.log("[API] Authenticated tenant:", tenant.id);
 
     // Check plan limits
     const limitCheck = await checkContactLimit(tenant.id);
     if (!limitCheck.allowed) {
-      console.log("[API] Contact limit reached:", limitCheck);
       return NextResponse.json(
         { error: limitCheck.message, code: "LIMIT_REACHED", limit: limitCheck.limit, current: limitCheck.current },
         { status: 403 }
@@ -69,15 +64,12 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    console.log("[API] Request body:", JSON.stringify(body));
 
     const { success, data, errors } = validateRequest(body, createContactSchema);
 
     if (!success) {
-      console.log("[API] Validation failed:", errors);
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
-    console.log("[API] Validation passed, creating contact...");
 
     const contact = await prisma.contact.create({
       data: {
@@ -88,7 +80,6 @@ export async function POST(request) {
         notes: data.notes,
       },
     });
-    console.log("[API] Contact created:", contact.id);
 
     // Trigger lead_created workflows (async, don't wait)
     triggerWorkflows("lead_created", {

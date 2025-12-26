@@ -38,6 +38,7 @@ import {
   DollarSign,
   Sparkles,
   Tag,
+  Ticket,
   Workflow,
   Mail,
   Briefcase,
@@ -65,6 +66,7 @@ const businessItems = [
 const accountItems = [
   { label: "Business", href: "/dashboard/settings/business", icon: Settings },
   { label: "Availability", href: "/dashboard/availability", icon: Clock },
+  { label: "Coupons", href: "/dashboard/coupons", icon: Ticket },
   { label: "Billing", href: "/dashboard/settings/billing", icon: Receipt },
   { label: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
   { label: "Integrations", href: "/dashboard/integrations", icon: Workflow },
@@ -228,7 +230,7 @@ export function DashboardShell({ children }) {
           </div>
         </header>
 
-        <div className="flex-1 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">{children}</div>
+        <div className="flex-1 flex flex-col min-h-0 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </>

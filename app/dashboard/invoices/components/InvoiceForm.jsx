@@ -7,12 +7,15 @@ import { format, addDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Trash2, Send, Share2 } from "lucide-react";
+import { ArrowLeft, Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Check, Calendar, Trash2, Send, Share2, Ticket, X } from "lucide-react";
 import { AddIcon, LoadingIcon, CloseIcon } from "@/lib/icons";
 import {
   useInvoice,
@@ -27,6 +30,8 @@ import {
   usePackages,
   useTenant,
   useWebShare,
+  useCoupons,
+  useValidateCoupon,
 } from "@/lib/hooks";
 import {
   useTanstackForm,
@@ -55,6 +60,7 @@ const DEPOSIT_OPTIONS = [
   { value: 10, label: "10%" },
   { value: 20, label: "20%" },
   { value: 25, label: "25%" },
+  { value: 30, label: "30% (Recommended)" },
   { value: 50, label: "50%" },
 ];
 
@@ -89,6 +95,11 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     phone: "",
   });
 
+  // Coupon state
+  const [couponPopoverOpen, setCouponPopoverOpen] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [validatedCoupon, setValidatedCoupon] = useState(null);
+
   // Save button state
   const saveButton = useSaveButton();
 
@@ -99,6 +110,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   const { data: packages = [], isLoading: packagesLoading } = usePackages();
   const { data: tenant, isLoading: tenantLoading } = useTenant();
   const { data: invoice, isLoading: invoiceLoading } = useInvoice(mode === "edit" ? invoiceId : null);
+  const { data: coupons = [] } = useCoupons({ active: true });
 
   // Mutations
   const createInvoiceMutation = useCreateInvoice();
@@ -106,6 +118,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   const deleteInvoiceMutation = useDeleteInvoice();
   const sendInvoiceMutation = useSendInvoice();
   const createContactMutation = useCreateContact();
+  const validateCouponMutation = useValidateCoupon();
 
   // Web Share
   const { share } = useWebShare();
@@ -127,6 +140,12 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       try {
         const { subtotal, taxAmount, total } = calculateTotals(value);
 
+        console.log("[InvoiceForm] Form values before payload:", JSON.stringify({
+          depositPercent: value.depositPercent,
+          depositPercentType: typeof value.depositPercent,
+          depositPercentRaw: value.depositPercent,
+        }));
+
         const payload = {
           contactId: value.contactId,
           bookingId: value.bookingId || null,
@@ -145,8 +164,9 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
             isDiscount: item.isDiscount || false,
           })),
           subtotal: Math.round(subtotal * 100),
-          discountCode: value.discountCode || null,
-          discountAmount: Math.round((value.discountAmount || 0) * 100),
+          // Coupon data (replaces manual discountCode and discountAmount)
+          couponId: selectedCoupon?.id || null,
+          couponDiscountAmount: validatedCoupon?.calculation?.discountAmount || 0,
           taxRate: parseFloat(value.taxRate) || 0,
           taxAmount: Math.round(taxAmount * 100),
           total: Math.round(total * 100),
@@ -155,6 +175,12 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           notes: value.notes || null,
           terms: value.terms || null,
         };
+
+        console.log("[InvoiceForm] Payload being sent:", JSON.stringify({
+          depositPercent: payload.depositPercent,
+          couponId: payload.couponId,
+          couponDiscountAmount: payload.couponDiscountAmount,
+        }));
 
         // Minimum 2 second delay for loading state visibility
         const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
@@ -190,6 +216,13 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   // Initialize form data when invoice or tenant data loads
   useEffect(() => {
     if (mode === "edit" && invoice) {
+      console.log("[InvoiceForm] Loading invoice for edit:", JSON.stringify({
+        depositPercent: invoice.depositPercent,
+        depositAmount: invoice.depositAmount,
+        hasCoupons: invoice.coupons?.length > 0,
+        couponData: invoice.coupons?.[0]
+      }));
+
       const convertedLineItems = getSafeLineItems(invoice.lineItems).map((item) => {
         const quantity = parseInt(item.quantity) || 1;
         const unitPrice = (parseFloat(item.unitPrice) || 0) / 100;
@@ -208,12 +241,20 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       });
 
       let safeDepositPercent = null;
+      console.log("[InvoiceForm] Invoice depositPercent from API:", invoice.depositPercent, "type:", typeof invoice.depositPercent);
+
       if (invoice.depositPercent !== null && invoice.depositPercent !== undefined) {
         const parsed = parseInt(invoice.depositPercent, 10);
-        if (!isNaN(parsed) && parsed > 0) {
+        console.log("[InvoiceForm] Parsed depositPercent:", parsed, "isNaN:", isNaN(parsed));
+        if (!isNaN(parsed) && isFinite(parsed) && parsed > 0) {
           safeDepositPercent = parsed;
         }
       }
+
+      console.log("[InvoiceForm] Final safeDepositPercent to set:", safeDepositPercent);
+
+      // Only set values if we have a valid deposit percent (not NaN)
+      console.log("[InvoiceForm] About to set form values, safeDepositPercent:", safeDepositPercent, "type:", typeof safeDepositPercent);
 
       form.setFieldValue("contactId", invoice.contactId || "");
       form.setFieldValue("bookingId", invoice.bookingId || null);
@@ -226,28 +267,55 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       form.setFieldValue("discountCode", invoice.discountCode || "");
       form.setFieldValue("discountAmount", (parseFloat(invoice.discountAmount) || 0) / 100);
       form.setFieldValue("taxRate", parseFloat(invoice.taxRate) || 0);
-      form.setFieldValue("depositPercent", safeDepositPercent);
+
+      // Never set NaN - always use null if the value is invalid
+      const depositValueToSet = (typeof safeDepositPercent === 'number' && !isNaN(safeDepositPercent))
+        ? safeDepositPercent
+        : null;
+      console.log("[InvoiceForm] Setting depositPercent to:", depositValueToSet);
+      form.setFieldValue("depositPercent", depositValueToSet);
+
       form.setFieldValue("notes", invoice.notes || "");
       form.setFieldValue("terms", invoice.terms || "");
-    } else if (mode === "create" && tenant && contacts) {
-      const taxRate = tenant.defaultTaxRate || 0;
 
-      // Handle default contact prefill
-      if (defaultContactId) {
-        const defaultContact = contacts.find((c) => c.id === defaultContactId);
-        if (defaultContact) {
-          form.setFieldValue("taxRate", taxRate);
-          form.setFieldValue("contactId", defaultContact.id);
-          form.setFieldValue("contactName", defaultContact.name);
-          form.setFieldValue("contactEmail", defaultContact.email || "");
-        } else {
-          form.setFieldValue("taxRate", taxRate);
-        }
-      } else {
+      // Load coupon if it exists
+      if (invoice.coupons && invoice.coupons.length > 0) {
+        const invoiceCoupon = invoice.coupons[0];
+        setSelectedCoupon(invoiceCoupon.coupon);
+        setValidatedCoupon({
+          valid: true,
+          coupon: invoiceCoupon.coupon,
+          calculation: {
+            discountAmount: invoiceCoupon.calculatedAmount,
+            discountAmountDisplay: (invoiceCoupon.calculatedAmount / 100).toFixed(2),
+          },
+        });
+      }
+    }
+  }, [mode, invoice]); // Removed 'form' from dependencies - it's stable from TanStack Form
+
+  // Set default tax rate from business settings when creating new invoice
+  useEffect(() => {
+    if (mode === "create" && tenant) {
+      const taxRate = parseFloat(tenant.defaultTaxRate) || 0;
+      const currentTaxRate = form.state.values.taxRate;
+      if (currentTaxRate !== taxRate) {
         form.setFieldValue("taxRate", taxRate);
       }
     }
-  }, [mode, invoice, tenant, contacts, defaultContactId]);
+  }, [mode, tenant]);
+
+  // Handle default contact prefill when creating new invoice
+  useEffect(() => {
+    if (mode === "create" && defaultContactId && contacts) {
+      const defaultContact = contacts.find((c) => c.id === defaultContactId);
+      if (defaultContact) {
+        form.setFieldValue("contactId", defaultContact.id);
+        form.setFieldValue("contactName", defaultContact.name);
+        form.setFieldValue("contactEmail", defaultContact.email || "");
+      }
+    }
+  }, [mode, defaultContactId, contacts]);
 
   // Combined services/packages for selection
   const serviceOptions = useMemo(() => {
@@ -274,17 +342,17 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   }, [services, packages]);
 
   const selectedContact = useMemo(() => {
-    const contactId = form.getFieldValue("contactId");
+    const contactId = form.state.values.contactId;
     if (!contactId) return null;
     return contacts.find((c) => c.id === contactId);
-  }, [form.getFieldValue("contactId"), contacts]);
+  }, [form.state.values.contactId, contacts]);
 
   const availableBookings = useMemo(() => {
-    const contactId = form.getFieldValue("contactId");
-    const bookingId = form.getFieldValue("bookingId");
+    const contactId = form.state.values.contactId;
+    const bookingId = form.state.values.bookingId;
     if (!contactId) return [];
     return bookings.filter((b) => b.contactId === contactId && !b.invoice && b.id !== bookingId);
-  }, [form.getFieldValue("contactId"), form.getFieldValue("bookingId"), bookings]);
+  }, [form.state.values.contactId, form.state.values.bookingId, bookings]);
 
   const handleContactSelect = (contactId) => {
     const selected = contacts.find((c) => c.id === contactId);
@@ -334,7 +402,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   };
 
   const handleLineItemChange = (index, field, value) => {
-    const lineItems = form.getFieldValue("lineItems");
+    const lineItems = form.state.values.lineItems || [];
     const newLineItems = [...lineItems];
     newLineItems[index] = { ...newLineItems[index], [field]: value };
 
@@ -349,7 +417,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   };
 
   const handleServiceSelect = (index, option) => {
-    const lineItems = form.getFieldValue("lineItems");
+    const lineItems = form.state.values.lineItems || [];
     const newLineItems = [...lineItems];
 
     if (!option) {
@@ -376,17 +444,17 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   };
 
   const addLineItem = () => {
-    const lineItems = form.getFieldValue("lineItems");
-    form.setFieldValue("lineItems", [...lineItems, { description: "", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: false }]);
+    const currentLineItems = form.state.values.lineItems || [];
+    form.setFieldValue("lineItems", [...currentLineItems, { description: "", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: false }]);
   };
 
   const addDiscountLine = () => {
-    const lineItems = form.getFieldValue("lineItems");
-    form.setFieldValue("lineItems", [...lineItems, { description: "Discount", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: true }]);
+    const currentLineItems = form.state.values.lineItems || [];
+    form.setFieldValue("lineItems", [...currentLineItems, { description: "Discount", quantity: 1, unitPrice: 0, amount: 0, serviceId: null, packageId: null, isDiscount: true }]);
   };
 
   const removeLineItem = (index) => {
-    const lineItems = form.getFieldValue("lineItems");
+    const lineItems = form.state.values.lineItems || [];
     if (lineItems.length > 1) {
       form.setFieldValue("lineItems", lineItems.filter((_, i) => i !== index));
     }
@@ -394,9 +462,8 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
   const calculateTotals = (values = null) => {
     const formValues = values || {
-      lineItems: form.getFieldValue("lineItems"),
-      discountAmount: form.getFieldValue("discountAmount"),
-      taxRate: form.getFieldValue("taxRate"),
+      lineItems: form.state.values.lineItems || [],
+      taxRate: form.state.values.taxRate || 0,
     };
 
     const items = Array.isArray(formValues.lineItems) ? formValues.lineItems : [];
@@ -411,8 +478,13 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       const amount = parseFloat(item.amount) || 0;
       return sum + Math.abs(isNaN(amount) ? 0 : amount);
     }, 0);
-    const discountAmount = parseFloat(formValues.discountAmount) || 0;
-    const discountedSubtotal = subtotal - lineDiscounts - (isNaN(discountAmount) ? 0 : discountAmount);
+
+    // Use coupon discount from validated coupon (already in dollars, not cents)
+    const couponDiscount = validatedCoupon?.calculation?.discountAmount
+      ? validatedCoupon.calculation.discountAmount / 100
+      : 0;
+
+    const discountedSubtotal = subtotal - lineDiscounts - couponDiscount;
     const taxRate = parseFloat(formValues.taxRate) || 0;
     const taxAmount = discountedSubtotal * ((isNaN(taxRate) ? 0 : taxRate) / 100);
     const total = discountedSubtotal + (isNaN(taxAmount) ? 0 : taxAmount);
@@ -420,6 +492,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     return {
       subtotal: isNaN(subtotal) ? 0 : subtotal,
       lineDiscounts: isNaN(lineDiscounts) ? 0 : lineDiscounts,
+      couponDiscount: isNaN(couponDiscount) ? 0 : couponDiscount,
       discountedSubtotal: isNaN(discountedSubtotal) ? 0 : discountedSubtotal,
       taxAmount: isNaN(taxAmount) ? 0 : taxAmount,
       total: isNaN(total) ? 0 : total,
@@ -449,7 +522,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
     sendInvoiceMutation.mutate(invoiceId, {
       onSuccess: () => {
-        const contactEmail = form.getFieldValue("contactEmail");
+        const contactEmail = form.state.values.contactEmail;
         toast.success("Invoice sent to " + contactEmail);
         form.setFieldValue("status", "sent");
       },
@@ -466,7 +539,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     }
 
     const invoiceUrl = `${window.location.origin}/dashboard/invoices/${invoiceId}`;
-    const contactName = form.getFieldValue("contactName") || "Client";
+    const contactName = form.state.values.contactName || "Client";
 
     const result = await share({
       title: `Invoice ${invoice.invoiceNumber}`,
@@ -485,10 +558,8 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     }
   };
 
-  const { subtotal, lineDiscounts, taxAmount, total } = calculateTotals();
-
   const getSafeDepositPercent = () => {
-    const depositPercent = form.getFieldValue("depositPercent");
+    const depositPercent = form.state.values.depositPercent;
     if (depositPercent === null || depositPercent === undefined) return 0;
     const parsed = typeof depositPercent === "number" ? depositPercent : parseInt(depositPercent, 10);
     return !isNaN(parsed) && parsed > 0 ? parsed : 0;
@@ -501,6 +572,47 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     return !isNaN(amount) && isFinite(amount) ? amount : 0;
   };
 
+  // Coupon handlers
+  const handleCouponSelect = async (code) => {
+    const lineItems = form.state.values.lineItems || [];
+
+    // Convert line items to cents for validation
+    const lineItemsInCents = lineItems.map((item) => ({
+      ...item,
+      amount: Math.round((item.amount || 0) * 100),
+    }));
+
+    validateCouponMutation.mutate(
+      { code, lineItems: lineItemsInCents },
+      {
+        onSuccess: (result) => {
+          if (result.valid) {
+            setSelectedCoupon(result.coupon);
+            setValidatedCoupon(result);
+            setCouponPopoverOpen(false);
+            toast.success(`Coupon "${code}" applied successfully!`);
+          } else {
+            toast.error(result.error || "This coupon cannot be applied to this invoice", {
+              description: "Please check the coupon requirements and try again.",
+            });
+          }
+        },
+        onError: (error) => {
+          toast.error("Failed to validate coupon", {
+            description: error.message || "Please try again.",
+          });
+        },
+      }
+    );
+  };
+
+  const handleRemoveCoupon = () => {
+    setSelectedCoupon(null);
+    setValidatedCoupon(null);
+    setCouponPopoverOpen(false);
+    toast.success("Coupon removed");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-100">
@@ -509,22 +621,18 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     );
   }
 
-  const lineItems = form.getFieldValue("lineItems") || [];
-  const contactId = form.getFieldValue("contactId");
-  const contactName = form.getFieldValue("contactName");
-  const contactEmail = form.getFieldValue("contactEmail");
-  const dueDate = form.getFieldValue("dueDate");
-  const status = form.getFieldValue("status");
-  const discountCode = form.getFieldValue("discountCode");
-  const discountAmount = form.getFieldValue("discountAmount");
-  const taxRate = form.getFieldValue("taxRate");
-  const depositPercent = form.getFieldValue("depositPercent");
-  const bookingId = form.getFieldValue("bookingId");
+  const contactId = form.state.values.contactId;
+  const contactName = form.state.values.contactName;
+  const contactEmail = form.state.values.contactEmail;
+  const dueDate = form.state.values.dueDate;
+  const status = form.state.values.status;
+  const depositPercent = form.state.values.depositPercent;
+  const bookingId = form.state.values.bookingId;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 shrink-0 mb-4">
         <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={() => router.back()}>
           <ArrowLeft className="size-6" />
         </Button>
@@ -534,13 +642,14 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         </div>
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
           {/* Left Column - Invoice Details */}
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              {/* Contact Selection */}
-              <div className="space-y-2">
+          <Card className="h-full overflow-hidden">
+            <CardContent className="p-6 flex flex-col h-full overflow-hidden">
+              <div className="space-y-4 shrink-0">
+                {/* Contact Selection */}
+                <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   Contact <span className="text-destructive">*</span>
@@ -669,25 +778,46 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 </form.Field>
               </div>
 
-              {/* Status */}
-              <SelectField
-                form={form}
-                name="status"
-                label="Status"
-                options={[
-                  { value: "draft", label: "Draft" },
-                  { value: "sent", label: "Sent" },
-                  { value: "paid", label: "Paid" },
-                ]}
-              />
+                {/* Status */}
+                <SelectField
+                  form={form}
+                  name="status"
+                  label="Status"
+                  options={[
+                    { value: "draft", label: "Draft" },
+                    { value: "sent", label: "Sent" },
+                    { value: "paid", label: "Paid" },
+                  ]}
+                />
+              </div>
+
+              {/* Notes Section - fills remaining space */}
+              <div className="flex-1 mt-4 flex flex-col min-h-0 overflow-hidden">
+                <Label className="mb-2 shrink-0">Notes</Label>
+                <form.Field name="notes">
+                  {(field) => (
+                    <Textarea
+                      placeholder="Add any additional notes or information..."
+                      className="flex-1 resize-none overflow-auto"
+                      value={field.state.value || ""}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                  )}
+                </form.Field>
+              </div>
             </CardContent>
           </Card>
 
           {/* Right Column - Line Items & Totals */}
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              {/* Line Items */}
-              <div className="space-y-2">
+          <Card className="h-full overflow-hidden">
+            <CardContent className="p-6 flex flex-col h-full overflow-hidden">
+              {/* Line Items - scrollable section */}
+              <div className="flex-1 overflow-auto min-h-0 -mr-6 pr-6">
+                <form.Subscribe selector={(state) => ({ lineItems: state.values.lineItems })}>
+                  {({ lineItems: currentLineItems }) => {
+                    const lineItems = currentLineItems || [];
+                    return (
+                <div className="space-y-2">
                 <Label>Line Items</Label>
                 <div className="space-y-3">
                   {lineItems.map((item, index) => (
@@ -807,20 +937,98 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
-                    <AddIcon className="h-4 w-4 mr-1" />
-                    Add Line Item
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={addDiscountLine} className="text-red-600 hover:text-red-700">
-                    <Percent className="h-4 w-4 mr-1" />
-                    Add Discount
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
+                      <AddIcon className="h-4 w-4 mr-1" />
+                      Add Line Item
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={addDiscountLine} className="text-red-600 hover:text-red-700">
+                      <Percent className="h-4 w-4 mr-1" />
+                      Add Discount
+                    </Button>
+                  </div>
                 </div>
+                    );
+                  }}
+                </form.Subscribe>
               </div>
 
-              {/* Totals */}
-              <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              {/* Totals - anchored to bottom */}
+              <div className="mt-auto pt-4 shrink-0">
+                <form.Subscribe selector={(state) => ({ lineItems: state.values.lineItems, taxRate: state.values.taxRate })}>
+                  {({ lineItems: currentLineItems }) => {
+                    const { subtotal, lineDiscounts, taxAmount, total } = calculateTotals();
+
+                    // Filter coupons based on current line items and their eligibility
+                    const filterApplicableCoupons = () => {
+                      const lineItems = currentLineItems || [];
+                      const regularItems = lineItems.filter((item) => !item.isDiscount);
+
+                      return coupons.filter((coupon) => {
+                        // Check expiration
+                        if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+                          return false;
+                        }
+
+                        // Check usage limits
+                        if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
+                          return false;
+                        }
+
+                        // Check if coupon has service/package restrictions
+                        const hasServiceRestriction = coupon.applicableServiceIds && coupon.applicableServiceIds.length > 0;
+                        const hasPackageRestriction = coupon.applicablePackageIds && coupon.applicablePackageIds.length > 0;
+                        const hasAnyRestriction = hasServiceRestriction || hasPackageRestriction;
+
+                        if (hasAnyRestriction) {
+                          // Check if any line item matches the restrictions
+                          const hasEligibleItem = regularItems.some((item) => {
+                            if (item.serviceId && coupon.applicableServiceIds?.includes(item.serviceId)) {
+                              return true;
+                            }
+                            if (item.packageId && coupon.applicablePackageIds?.includes(item.packageId)) {
+                              return true;
+                            }
+                            return false;
+                          });
+
+                          if (!hasEligibleItem) {
+                            return false;
+                          }
+                        }
+
+                        // Check minimum purchase amount
+                        if (coupon.minPurchaseAmount) {
+                          // Calculate eligible subtotal in cents for comparison
+                          let eligibleSubtotal = 0;
+
+                          if (hasAnyRestriction) {
+                            // Only count items that match restrictions
+                            eligibleSubtotal = regularItems
+                              .filter((item) => {
+                                if (item.serviceId && coupon.applicableServiceIds?.includes(item.serviceId)) return true;
+                                if (item.packageId && coupon.applicablePackageIds?.includes(item.packageId)) return true;
+                                return false;
+                              })
+                              .reduce((sum, item) => sum + (item.amount || 0) * 100, 0);
+                          } else {
+                            // All regular items are eligible
+                            eligibleSubtotal = regularItems.reduce((sum, item) => sum + (item.amount || 0) * 100, 0);
+                          }
+
+                          if (eligibleSubtotal < coupon.minPurchaseAmount) {
+                            return false;
+                          }
+                        }
+
+                        return true;
+                      });
+                    };
+
+                    const applicableCoupons = filterApplicableCoupons();
+
+                    return (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
@@ -832,170 +1040,264 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                   </div>
                 )}
                 <div className="flex items-center gap-2 pt-2 border-t">
-                  <Percent className="h-3.5 w-3.5 text-muted-foreground" />
-                  <form.Field name="discountCode">
-                    {(field) => (
-                      <Input
-                        placeholder="Coupon"
-                        className="h-8 flex-1"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                      />
-                    )}
-                  </form.Field>
-                  <form.Field name="discountAmount">
-                    {(field) => (
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="$0"
-                        className="w-16 h-8"
-                        value={field.state.value || ""}
-                        onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
-                      />
-                    )}
-                  </form.Field>
+                  <Ticket className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Popover open={couponPopoverOpen} onOpenChange={setCouponPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="h-8 flex-1 font-normal justify-start">
+                          {selectedCoupon ? (
+                            <span className="flex items-center gap-2">
+                              <Check className="h-3 w-3 text-green-600" />
+                              <span className="font-mono font-semibold">{selectedCoupon.code}</span>
+                              {validatedCoupon?.calculation?.discountAmountDisplay && (
+                                <span className="text-muted-foreground">
+                                  (-${validatedCoupon.calculation.discountAmountDisplay})
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Select coupon...</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-87.5 p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search coupons..." />
+                          <CommandList>
+                            <CommandEmpty>No applicable coupons available</CommandEmpty>
+                            <CommandGroup heading="Available Coupons">
+                              {applicableCoupons.slice(0, 10).map((coupon) => (
+                                <CommandItem
+                                  key={coupon.id}
+                                  value={coupon.code}
+                                  onSelect={() => handleCouponSelect(coupon.code)}
+                                >
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono font-semibold">{coupon.code}</span>
+                                      <Badge variant="outline">
+                                        {coupon.discountType === "percentage"
+                                          ? `${coupon.discountValue}%`
+                                          : `$${(coupon.discountValue / 100).toFixed(2)}`}
+                                      </Badge>
+                                    </div>
+                                    {coupon.description && (
+                                      <p className="text-xs text-muted-foreground mt-0.5">{coupon.description}</p>
+                                    )}
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                            {selectedCoupon && (
+                              <>
+                                <CommandSeparator />
+                                <CommandGroup>
+                                  <CommandItem onSelect={handleRemoveCoupon}>
+                                    <X className="h-4 w-4 mr-2" />
+                                    Remove Coupon
+                                  </CommandItem>
+                                </CommandGroup>
+                              </>
+                            )}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                 </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-red-600">
-                    <span>Coupon</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                {selectedCoupon && validatedCoupon?.calculation?.discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Ticket className="h-3 w-3" />
+                      Coupon ({selectedCoupon.code})
+                    </span>
+                    <span>-${(validatedCoupon.calculation.discountAmount / 100).toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-muted-foreground">Tax (%)</span>
-                  <form.Field name="taxRate">
-                    {(field) => (
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        className="w-16 h-8"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
-                      />
-                    )}
-                  </form.Field>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax</span>
-                  <span>${taxAmount.toFixed(2)}</span>
-                </div>
+                <form.Subscribe selector={(state) => ({ taxRate: state.values.taxRate })}>
+                  {({ taxRate: currentTaxRate }) => (
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={currentTaxRate > 0}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              const defaultTaxRate = parseFloat(tenant?.defaultTaxRate) || 0;
+                              form.setFieldValue("taxRate", defaultTaxRate);
+                            } else {
+                              form.setFieldValue("taxRate", 0);
+                            }
+                          }}
+                        />
+                        <span className="text-muted-foreground">
+                          Tax {currentTaxRate > 0 && `(${currentTaxRate}%)`}
+                        </span>
+                      </div>
+                      <span>${taxAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                </form.Subscribe>
                 <div className="flex justify-between font-bold pt-2 border-t">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
 
                 {/* Deposit Section */}
-                {invoice?.depositPaidAt ? (
-                  /* Deposit was already collected - show it as paid */
-                  <>
-                    <div className="flex justify-between pt-2 border-t text-green-600">
-                      <span>✓ Deposit Paid ({getSafeDepositPercent()}%)</span>
-                      <span>-${getDepositAmount().toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between font-bold pt-2 border-t">
-                      <span>Balance Due</span>
-                      <span>${(total - getDepositAmount()).toFixed(2)}</span>
-                    </div>
-                  </>
-                ) : (
-                  /* No deposit collected yet - allow configuration */
-                  <>
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <span className="text-muted-foreground">Deposit</span>
-                      <form.Field name="depositPercent">
-                        {(field) => (
-                          <Select
-                            value={field.state.value?.toString() || "none"}
-                            onValueChange={(value) => field.handleChange(value === "none" ? null : parseInt(value))}
-                          >
-                            <SelectTrigger className="w-20 h-8">
-                              <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {DEPOSIT_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value.toString()}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </form.Field>
-                    </div>
-                    {getSafeDepositPercent() > 0 && (
-                      <div className="flex justify-between text-blue-600">
-                        <span>Deposit Due ({getSafeDepositPercent()}%)</span>
-                        <span>${getDepositAmount().toFixed(2)}</span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                <form.Subscribe selector={(state) => ({ depositPercent: state.values.depositPercent })}>
+                  {({ depositPercent: currentDepositPercent }) => {
+                    const safeDepositPercent = (() => {
+                      if (currentDepositPercent === null || currentDepositPercent === undefined) return 0;
+                      const parsed = typeof currentDepositPercent === "number" ? currentDepositPercent : parseInt(currentDepositPercent, 10);
+                      return !isNaN(parsed) && parsed > 0 ? parsed : 0;
+                    })();
 
-              {/* Delete Button (edit mode only) */}
-              {mode === "edit" && (
-                <div className="pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Invoice
-                  </Button>
+                    const depositAmount = (() => {
+                      const safeTotal = typeof total === "number" && !isNaN(total) && total > 0 ? total : 0;
+                      const amount = safeTotal * (safeDepositPercent / 100);
+                      // Round up to the next full dollar
+                      const roundedAmount = !isNaN(amount) && isFinite(amount) ? Math.ceil(amount) : 0;
+                      return roundedAmount;
+                    })();
+
+                    return invoice?.depositPaidAt ? (
+                      /* Deposit was already collected - show it as paid */
+                      <>
+                        <div className="flex justify-between pt-2 border-t text-green-600">
+                          <span>✓ Deposit Paid ({safeDepositPercent}%)</span>
+                          <span>-${depositAmount.toFixed(0)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold pt-2 border-t">
+                          <span>Balance Due</span>
+                          <span>${(total - depositAmount).toFixed(2)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      /* No deposit collected yet - allow configuration */
+                      <>
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className="text-muted-foreground">Deposit</span>
+                          <form.Field name="depositPercent">
+                            {(field) => {
+                              // Convert field value to select value, handling NaN
+                              const fieldValue = field.state.value;
+                              const isValidNumber = typeof fieldValue === 'number' && !isNaN(fieldValue) && isFinite(fieldValue) && fieldValue > 0;
+                              const selectValue = isValidNumber ? fieldValue.toString() : "none";
+
+                              console.log("[InvoiceForm] Deposit field rendering:", {
+                                fieldValue,
+                                fieldValueType: typeof fieldValue,
+                                isNaN: isNaN(fieldValue),
+                                isValidNumber,
+                                selectValue
+                              });
+
+                              return (
+                                <Select
+                                  value={selectValue}
+                                  onValueChange={(value) => {
+                                    console.log("[InvoiceForm] Deposit onValueChange called with:", value);
+                                    if (value === "none") {
+                                      field.handleChange(null);
+                                    } else {
+                                      const parsed = parseInt(value, 10);
+                                      // Only update if we got a valid number
+                                      if (!isNaN(parsed) && isFinite(parsed)) {
+                                        console.log("[InvoiceForm] Deposit value changing to:", parsed);
+                                        field.handleChange(parsed);
+                                      } else {
+                                        console.warn("[InvoiceForm] Attempted to set invalid deposit value, ignoring:", value, parsed);
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="w-20 h-8">
+                                    <SelectValue placeholder="None" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {DEPOSIT_OPTIONS.map((opt) => (
+                                      <SelectItem key={opt.value} value={opt.value.toString()}>
+                                        {opt.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              );
+                            }}
+                          </form.Field>
+                        </div>
+                        {safeDepositPercent > 0 && (
+                          <div className="flex justify-between text-blue-600">
+                            <span>Deposit Due ({safeDepositPercent}%)</span>
+                            <span>${depositAmount.toFixed(0)}</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  }}
+                </form.Subscribe>
                 </div>
-              )}
+                    );
+                  }}
+                </form.Subscribe>
+
+                {/* Action Buttons inside totals section */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 min-w-[100px]">
+                    Cancel
+                  </Button>
+                  {mode === "edit" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 min-w-[100px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                      onClick={() => setDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  )}
+                  {mode === "edit" && contactEmail && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSend}
+                      disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
+                      className="flex-1 min-w-[100px]"
+                    >
+                      {sendInvoiceMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      Send
+                    </Button>
+                  )}
+                  {mode === "edit" && invoice && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleShare}
+                      className="flex-1 min-w-[100px]"
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share
+                    </Button>
+                  )}
+                  <SaveButton
+                    form={form}
+                    saveButton={saveButton}
+                    variant="success"
+                    size="sm"
+                    className="flex-1 min-w-[100px]"
+                  >
+                    {mode === "edit" ? "Update" : "Create"}
+                  </SaveButton>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap justify-end gap-2 mt-6">
-          <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")}>
-            Cancel
-          </Button>
-          {mode === "edit" && contactEmail && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSend}
-              disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
-            >
-              {sendInvoiceMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4 mr-2" />
-              )}
-              Send
-            </Button>
-          )}
-          {mode === "edit" && invoice && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-          )}
-          <SaveButton
-            form={form}
-            saveButton={saveButton}
-            variant="success"
-            className="size-sm"
-            loadingText={mode === "edit" ? "Saving..." : "Creating..."}
-          >
-            {mode === "edit" ? "Save" : "Create"}
-          </SaveButton>
         </div>
       </form>
 
@@ -1037,17 +1339,17 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               />
             </div>
           </div>
-          <DialogFooter className="flex flex-row gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setNewContactDialogOpen(false)} className="flex-1 sm:flex-none">
+          <DialogFooter className="flex-row justify-end gap-2">
+            <Button variant="outline" onClick={() => setNewContactDialogOpen(false)}>
               Cancel
             </Button>
             <Button
+              variant="ghost"
               onClick={handleCreateContact}
               disabled={createContactMutation.isPending || !newContactData.name.trim() || !newContactData.email.trim()}
-              className="flex-1 sm:flex-none"
             >
               {createContactMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Contact
+              Create
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1060,7 +1362,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
             <DialogTitle>Delete Invoice</DialogTitle>
             <DialogDescription>Are you sure you want to delete {invoice?.invoiceNumber}? This action cannot be undone.</DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="flex-row justify-end gap-2">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>

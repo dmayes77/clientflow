@@ -59,6 +59,7 @@ const ROADMAP_ITEMS = [
   {
     phase: "up-next",
     items: [
+      { title: "Cloudinary URL Transformations", description: "Generate optimized image URLs with presets (thumbnail, hero, square) for different use cases directly from Media Library" },
       { title: "Google Calendar Sync", description: "Two-way sync with Google Calendar for seamless scheduling" },
       { title: "SMS Notifications", description: "Text message confirmations and reminders for appointments" },
       { title: "Automated Google Reviews", description: "Request reviews automatically after completed appointments" },

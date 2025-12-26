@@ -93,6 +93,7 @@ model Tenant {
   alerts              Alert[]
   pushSubscriptions   PushSubscription[]
   supportMessages     SupportMessage[]
+  coupons             Coupon[]
   plan                Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
 
   @@index([clerkOrgId])
@@ -655,6 +656,7 @@ model Invoice {
   contact         Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
   booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   tags            InvoiceTag[]
+  coupons         InvoiceCoupon[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -662,6 +664,66 @@ model Invoice {
   @@index([status])
   @@index([dueDate])
   @@index([createdAt])
+}
+
+model Coupon {
+  id              String    @id @default(cuid())
+  tenantId        String
+
+  code            String    // Always uppercase
+  description     String?
+
+  // Discount configuration
+  discountType    String    // "percentage" or "fixed"
+  discountValue   Int       // 0-100 for %, cents for $
+
+  // Applicability - empty = all items
+  applicableServiceIds  String[]  @default([])
+  applicablePackageIds  String[]  @default([])
+
+  // Minimum and maximum restrictions
+  minPurchaseAmount Int?     // Minimum purchase amount in cents (null = no minimum)
+  maxDiscountAmount Int?     // Maximum discount amount in cents (null = no maximum)
+
+  // Usage tracking
+  maxUses         Int?      // null = unlimited
+  currentUses     Int       @default(0)
+
+  // Validity
+  expiresAt       DateTime?  // null = never expires
+  active          Boolean   @default(true)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices        InvoiceCoupon[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([code])
+  @@index([active])
+  @@index([expiresAt])
+}
+
+model InvoiceCoupon {
+  id              String    @id @default(cuid())
+  invoiceId       String
+  couponId        String
+
+  // Snapshot at time of use
+  discountType    String
+  discountValue   Int
+  calculatedAmount Int      // Actual discount in cents
+
+  createdAt       DateTime  @default(now())
+
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  coupon          Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, couponId])
+  @@index([invoiceId])
+  @@index([couponId])
 }
 
 model FeatureRequest {

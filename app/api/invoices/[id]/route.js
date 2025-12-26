@@ -27,12 +27,24 @@ export async function GET(request, { params }) {
             package: true,
           },
         },
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
       },
     });
 
     if (!invoice) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
+
+    console.log("[GET /api/invoices/[id]] Returning invoice:", JSON.stringify({
+      id: invoice.id,
+      depositPercent: invoice.depositPercent,
+      depositAmount: invoice.depositAmount,
+      hasCoupons: invoice.coupons?.length > 0,
+    }));
 
     return NextResponse.json(invoice);
   } catch (error) {
@@ -70,6 +82,12 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
+    console.log("[PATCH /api/invoices/[id]] Validated data:", JSON.stringify({
+      depositPercent: data.depositPercent,
+      couponId: data.couponId,
+      couponDiscountAmount: data.couponDiscountAmount
+    }));
+
     // Handle status transitions
     const statusUpdates = {};
     if (data.status && data.status !== existingInvoice.status) {
@@ -98,11 +116,21 @@ export async function PATCH(request, { params }) {
       : null;
     const depositAmount = safeDepositPercent ? Math.round(total * (safeDepositPercent / 100)) : null;
 
+    // Filter out fields that shouldn't be passed to Prisma update
+    // contactId, bookingId - relation fields that shouldn't change
+    // couponId, couponDiscountAmount - not fields on Invoice model, handled separately
+    const { contactId, bookingId, couponId, couponDiscountAmount, ...validData } = data;
+
     // Ensure depositPercent is explicitly set in data for the update
     const dataWithDeposit = {
-      ...data,
+      ...validData,
       depositPercent: safeDepositPercent,
     };
+
+    console.log("[PATCH /api/invoices/[id]] Updating with:", JSON.stringify({
+      depositPercent: safeDepositPercent,
+      depositAmount: depositAmount
+    }));
 
     const invoice = await prisma.invoice.update({
       where: { id },
@@ -114,8 +142,46 @@ export async function PATCH(request, { params }) {
       include: {
         contact: true,
         booking: true,
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
       },
     });
+
+    // Handle coupon updates if couponId changed
+    if (couponId !== undefined) {
+      // Remove existing coupon associations
+      await prisma.invoiceCoupon.deleteMany({
+        where: { invoiceId: id },
+      });
+
+      // Add new coupon if provided
+      if (couponId && couponDiscountAmount) {
+        const coupon = await prisma.coupon.findUnique({
+          where: { id: couponId },
+        });
+
+        if (coupon) {
+          await prisma.invoiceCoupon.create({
+            data: {
+              invoiceId: id,
+              couponId: couponId,
+              discountType: coupon.discountType,
+              discountValue: coupon.discountValue,
+              calculatedAmount: couponDiscountAmount,
+            },
+          });
+
+          // Increment usage counter
+          await prisma.coupon.update({
+            where: { id: couponId },
+            data: { currentUses: { increment: 1 } },
+          });
+        }
+      }
+    }
 
     return NextResponse.json(invoice);
   } catch (error) {

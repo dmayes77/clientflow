@@ -4,16 +4,13 @@ import { getAuthenticatedTenant } from "@/lib/auth";
 
 // GET /api/tags - List all tags
 export async function GET(request) {
-  console.log("[API] GET /api/tags - Request received");
 
   try {
     const { tenant, error, status } = await getAuthenticatedTenant(request);
 
     if (!tenant) {
-      console.log("[API] Tags auth failed:", error, status);
       return NextResponse.json({ error }, { status });
     }
-    console.log("[API] Tags auth success, tenant:", tenant.id);
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");

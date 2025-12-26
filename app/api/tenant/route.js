@@ -7,22 +7,17 @@ import { getOrCreateTenant } from "@/lib/auth";
 
 // GET /api/tenant - Get current tenant info
 export async function GET() {
-  console.log("[API] GET /api/tenant - Request received");
 
   try {
     const { userId, orgId } = await auth();
-    console.log("[API] Auth result - userId:", userId, "orgId:", orgId);
 
     if (!userId || !orgId) {
-      console.log("[API] Unauthorized - missing userId or orgId");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[API] Getting or creating tenant for orgId:", orgId);
 
     // Auto-create tenant if it doesn't exist
     const createdTenant = await getOrCreateTenant(orgId);
-    console.log("[API] Tenant found/created:", createdTenant.id);
 
     // Re-fetch with all fields we need
     const tenant = await prisma.tenant.findUnique({
