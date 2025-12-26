@@ -1193,9 +1193,19 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                                 <Select
                                   value={selectValue}
                                   onValueChange={(value) => {
-                                    const newValue = value === "none" ? null : parseInt(value);
-                                    console.log("[InvoiceForm] Deposit value changing to:", newValue);
-                                    field.handleChange(newValue);
+                                    console.log("[InvoiceForm] Deposit onValueChange called with:", value);
+                                    if (value === "none") {
+                                      field.handleChange(null);
+                                    } else {
+                                      const parsed = parseInt(value, 10);
+                                      // Only update if we got a valid number
+                                      if (!isNaN(parsed) && isFinite(parsed)) {
+                                        console.log("[InvoiceForm] Deposit value changing to:", parsed);
+                                        field.handleChange(parsed);
+                                      } else {
+                                        console.warn("[InvoiceForm] Attempted to set invalid deposit value, ignoring:", value, parsed);
+                                      }
+                                    }
                                   }}
                                 >
                                   <SelectTrigger className="w-20 h-8">
