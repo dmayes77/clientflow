@@ -75,6 +75,12 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
+    console.log("[PATCH /api/invoices/[id]] Validated data:", JSON.stringify({
+      depositPercent: data.depositPercent,
+      couponId: data.couponId,
+      couponDiscountAmount: data.couponDiscountAmount
+    }));
+
     // Handle status transitions
     const statusUpdates = {};
     if (data.status && data.status !== existingInvoice.status) {
@@ -114,6 +120,11 @@ export async function PATCH(request, { params }) {
       depositPercent: safeDepositPercent,
     };
 
+    console.log("[PATCH /api/invoices/[id]] Updating with:", JSON.stringify({
+      depositPercent: safeDepositPercent,
+      depositAmount: depositAmount
+    }));
+
     const invoice = await prisma.invoice.update({
       where: { id },
       data: {
@@ -133,32 +144,32 @@ export async function PATCH(request, { params }) {
     });
 
     // Handle coupon updates if couponId changed
-    if (data.couponId !== undefined) {
+    if (couponId !== undefined) {
       // Remove existing coupon associations
       await prisma.invoiceCoupon.deleteMany({
         where: { invoiceId: id },
       });
 
       // Add new coupon if provided
-      if (data.couponId && data.couponDiscountAmount) {
+      if (couponId && couponDiscountAmount) {
         const coupon = await prisma.coupon.findUnique({
-          where: { id: data.couponId },
+          where: { id: couponId },
         });
 
         if (coupon) {
           await prisma.invoiceCoupon.create({
             data: {
               invoiceId: id,
-              couponId: data.couponId,
+              couponId: couponId,
               discountType: coupon.discountType,
               discountValue: coupon.discountValue,
-              calculatedAmount: data.couponDiscountAmount,
+              calculatedAmount: couponDiscountAmount,
             },
           });
 
           // Increment usage counter
           await prisma.coupon.update({
-            where: { id: data.couponId },
+            where: { id: couponId },
             data: { currentUses: { increment: 1 } },
           });
         }
