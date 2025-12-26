@@ -103,9 +103,14 @@ export async function PATCH(request, { params }) {
       : null;
     const depositAmount = safeDepositPercent ? Math.round(total * (safeDepositPercent / 100)) : null;
 
+    // Filter out fields that shouldn't be passed to Prisma update
+    // contactId, bookingId - relation fields that shouldn't change
+    // couponId, couponDiscountAmount - not fields on Invoice model, handled separately
+    const { contactId, bookingId, couponId, couponDiscountAmount, ...validData } = data;
+
     // Ensure depositPercent is explicitly set in data for the update
     const dataWithDeposit = {
-      ...data,
+      ...validData,
       depositPercent: safeDepositPercent,
     };
 
