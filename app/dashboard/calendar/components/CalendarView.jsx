@@ -28,7 +28,6 @@ import {
 import { toZonedTime, format as formatTz } from "date-fns-tz";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { PreviewSheet, PreviewSheetHeader, PreviewSheetContent, PreviewSheetSection } from "@/components/ui/preview-sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -41,15 +40,12 @@ import {
   Pencil,
   Trash2,
   CheckCircle,
-  CheckCheck,
   XCircle,
   AlertCircle,
   Clock,
   CalendarDays,
   User,
-  Receipt,
   Eye,
-  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,21 +55,6 @@ const statusConfig = {
   confirmed: { label: "Confirmed", color: "bg-green-500", textColor: "text-green-600", icon: CheckCircle },
   completed: { label: "Completed", color: "bg-gray-500", textColor: "text-gray-600", icon: CheckCircle },
   cancelled: { label: "Cancelled", color: "bg-red-500", textColor: "text-red-600", icon: XCircle },
-};
-
-const getTagColorClass = (color) => {
-  const colorMap = {
-    blue: "bg-blue-100 text-blue-800 border-blue-200",
-    green: "bg-green-100 text-green-800 border-green-200",
-    red: "bg-red-100 text-red-800 border-red-200",
-    yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    purple: "bg-purple-100 text-purple-800 border-purple-200",
-    pink: "bg-pink-100 text-pink-800 border-pink-200",
-    orange: "bg-orange-100 text-orange-800 border-orange-200",
-    teal: "bg-teal-100 text-teal-800 border-teal-200",
-    gray: "bg-gray-100 text-gray-800 border-gray-200",
-  };
-  return colorMap[color] || colorMap.gray;
 };
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -90,8 +71,6 @@ export function CalendarView() {
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const [timezone, setTimezone] = useState("America/New_York");
   const [isMobile, setIsMobile] = useState(false);
-  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
-  const [previewBooking, setPreviewBooking] = useState(null);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
@@ -162,12 +141,7 @@ export function CalendarView() {
   };
 
   const handleBookingClick = (booking) => {
-    if (isMobile) {
-      setPreviewBooking(booking);
-      setPreviewSheetOpen(true);
-    } else {
-      router.push(`/dashboard/bookings/${booking.id}`);
-    }
+    router.push(`/dashboard/bookings/${booking.id}`);
   };
 
   const handleStatusChange = async (booking, newStatus) => {
@@ -663,185 +637,6 @@ export function CalendarView() {
         </div>
 
         {/* Booking Preview Sheet */}
-        {previewBooking && (
-          <PreviewSheet
-            open={previewSheetOpen}
-            onOpenChange={setPreviewSheetOpen}
-            title={previewBooking?.contact?.name || "Booking Details"}
-            header={
-              <PreviewSheetHeader avatar={<CalendarClock className="size-6" />} avatarClassName={cn("text-white", statusConfig[previewBooking.status]?.color)}>
-                <div className="flex items-center gap-2">
-                  <h3 className="hig-headline truncate">{previewBooking.contact?.name || "Unknown Contact"}</h3>
-                  <span className={cn("hig-caption-2 px-2 py-0.5 rounded-full text-white shrink-0", statusConfig[previewBooking.status]?.color)}>
-                    {statusConfig[previewBooking.status]?.label}
-                  </span>
-                </div>
-                <p className="hig-footnote text-muted-foreground">{formatTimeInTz(previewBooking.scheduledAt, "EEEE, MMMM d, yyyy")}</p>
-                <p className="hig-footnote font-medium">
-                  {formatTimeInTz(previewBooking.scheduledAt, "h:mm a")} • {previewBooking.duration} min
-                </p>
-              </PreviewSheetHeader>
-            }
-            actions={
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${
-                    previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled"
-                      ? "opacity-40"
-                      : "text-green-600"
-                  }`}
-                  disabled={previewBooking.status === "confirmed" || previewBooking.status === "completed" || previewBooking.status === "cancelled"}
-                  onClick={() => {
-                    handleStatusChange(previewBooking, "confirmed");
-                    setPreviewSheetOpen(false);
-                  }}
-                >
-                  <CheckCircle className="size-5" />
-                  <span className="hig-caption-2">Confirm</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 ${
-                    previewBooking.status === "completed" || previewBooking.status === "cancelled" ? "opacity-40" : ""
-                  }`}
-                  disabled={previewBooking.status === "completed" || previewBooking.status === "cancelled"}
-                  onClick={() => {
-                    handleStatusChange(previewBooking, "completed");
-                    setPreviewSheetOpen(false);
-                  }}
-                >
-                  <CheckCheck className="size-5" />
-                  <span className="hig-caption-2">Complete</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    router.push(`/dashboard/invoices?contactId=${previewBooking.contactId}`);
-                  }}
-                >
-                  <Receipt className="size-5" />
-                  <span className="hig-caption-2">Invoice</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0 text-red-600"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    setBookingToDelete(previewBooking);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="size-5" />
-                  <span className="hig-caption-2">Delete</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex flex-col items-center h-auto py-2 gap-0.5 focus-visible:ring-0"
-                  onClick={() => {
-                    setPreviewSheetOpen(false);
-                    router.push(`/dashboard/bookings/${previewBooking.id}`);
-                  }}
-                >
-                  <Pencil className="size-5" />
-                  <span className="hig-caption-2">Edit</span>
-                </Button>
-              </>
-            }
-          >
-            <PreviewSheetContent>
-              {/* Services & Packages */}
-              <PreviewSheetSection className="border-t border-border pt-3">
-                {(() => {
-                  // Check for many-to-many relations first, then fall back to legacy single relations
-                  const packages = previewBooking.packages?.length > 0
-                    ? previewBooking.packages.map((p) => p.package)
-                    : (previewBooking.package ? [previewBooking.package] : []);
-                  const services = previewBooking.services?.length > 0
-                    ? previewBooking.services.map((s) => s.service)
-                    : (previewBooking.service ? [previewBooking.service] : []);
-                  const hasItems = packages.length > 0 || services.length > 0;
-
-                  if (!hasItems) {
-                    return (
-                      <div className="flex items-center gap-2 hig-footnote">
-                        <span className="text-muted-foreground">Service/Package:</span>
-                        <span className="font-medium">Custom Booking</span>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="space-y-2">
-                      {packages.length > 0 && (
-                        <div>
-                          <span className="hig-caption-2 text-muted-foreground">{packages.length === 1 ? "Package" : "Packages"}</span>
-                          <div className="mt-1 flex flex-wrap">
-                            {packages.map((pkg, idx) => (
-                              <span key={pkg?.id || idx} className="hig-footnote font-medium bg-muted/50 px-2.5 rounded-md">
-                                {pkg?.name || "Unknown Package"}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {services.length > 0 && (
-                        <div>
-                          <span className="hig-caption-2 text-muted-foreground">{services.length === 1 ? "Service" : "Services"}</span>
-                          <div className="mt-1 flex flex-wrap">
-                            {services.map((svc, idx) => (
-                              <span key={svc?.id || idx} className="hig-footnote font-medium bg-muted/50 px-2.5 rounded-md">
-                                {svc?.name || "Unknown Service"}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {/* Total Duration & Price */}
-                      <div className="flex items-center gap-4 pt-1 hig-footnote text-muted-foreground">
-                        {previewBooking.duration > 0 && (
-                          <span className="flex items-center gap-1 hig-caption-1">
-                            <Clock className="size-3.5" />
-                            {previewBooking.duration} min
-                          </span>
-                        )}
-                        {previewBooking.totalPrice > 0 && (
-                          <span className="font-bold text-foreground hig-caption-1">${(previewBooking.totalPrice / 100).toFixed(2)}</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-                {previewBooking.notes && (
-                  <div className="mt-3">
-                    <span className="hig-caption-2 text-muted-foreground">Notes:</span>
-                    <p className="hig-footnote mt-1 p-2 bg-muted/50 rounded-md">{previewBooking.notes}</p>
-                  </div>
-                )}
-              </PreviewSheetSection>
-
-              {/* Metadata Pills */}
-              <PreviewSheetSection className="flex flex-wrap gap-2">
-                {previewBooking.contact?.email && <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.email}</span>}
-                {previewBooking.contact?.phone && <span className="hig-caption-2 bg-muted px-2 py-1 rounded-full">{previewBooking.contact.phone}</span>}
-                {previewBooking.tags?.length > 0 &&
-                  previewBooking.tags.map((tag) => (
-                    <span key={tag.id} className={`hig-caption-2 px-2 py-1 rounded-full border ${getTagColorClass(tag.color)}`}>
-                      {tag.name}
-                    </span>
-                  ))}
-              </PreviewSheetSection>
-            </PreviewSheetContent>
-          </PreviewSheet>
-        )}
-
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>

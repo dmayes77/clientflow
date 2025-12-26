@@ -140,8 +140,8 @@ export async function POST(request) {
         status: data.status || "draft",
         dueDate: data.dueDate,
         subtotal: data.subtotal,
-        discountCode: data.discountCode || null,
-        discountAmount: data.discountAmount || 0,
+        discountCode: data.discountCode || null, // Keep for backwards compatibility
+        discountAmount: data.discountAmount || 0, // Keep for backwards compatibility
         taxRate: data.taxRate || 0,
         taxAmount: data.taxAmount || 0,
         total: data.total,
@@ -166,6 +166,33 @@ export async function POST(request) {
         },
       },
     });
+
+    // Track coupon usage if a coupon was applied
+    if (data.couponId && data.couponDiscountAmount) {
+      // Get the coupon details for snapshot
+      const coupon = await prisma.coupon.findUnique({
+        where: { id: data.couponId },
+      });
+
+      if (coupon) {
+        // Create junction record with snapshot
+        await prisma.invoiceCoupon.create({
+          data: {
+            invoiceId: invoice.id,
+            couponId: data.couponId,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountValue,
+            calculatedAmount: data.couponDiscountAmount,
+          },
+        });
+
+        // Increment usage counter
+        await prisma.coupon.update({
+          where: { id: data.couponId },
+          data: { currentUses: { increment: 1 } },
+        });
+      }
+    }
 
     // Flatten tags
     const invoiceWithTags = {

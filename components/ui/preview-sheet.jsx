@@ -5,7 +5,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 /**
- * PreviewSheet - A reusable bottom sheet for previewing items with actions
+ * PreviewSheet - A responsive sheet for previewing items with actions
+ * - Desktop (≥768px): Slides from right, fixed 450px width
+ * - Mobile (<768px): Slides from bottom, full width
  *
  * @param {boolean} open - Whether the sheet is open
  * @param {function} onOpenChange - Callback when open state changes
@@ -15,6 +17,7 @@ import { cn } from "@/lib/utils";
  * @param {React.ReactNode} actions - Action bar content
  * @param {number} actionColumns - Number of action columns (default: 5)
  * @param {boolean} scrollable - Whether body content should be scrollable
+ * @param {string} side - Sheet side ("bottom" or "right", default: "bottom")
  * @param {string} className - Additional classes for the sheet content
  */
 export function PreviewSheet({
@@ -26,17 +29,23 @@ export function PreviewSheet({
   actions,
   actionColumns = 5,
   scrollable = false,
+  side = "bottom",
   className = "",
 }) {
   const gridColsClass = actionColumns === 4 ? "grid-cols-4" : "grid-cols-5";
+  const isRightSide = side === "right";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        side="bottom"
+        side={side}
         className={cn(
-          "rounded-t-2xl px-0 pb-0",
-          scrollable ? "h-[85vh] flex flex-col" : "h-auto max-h-[85vh]",
+          "px-0 pb-0",
+          isRightSide
+            ? "!w-full sm:!w-[450px] sm:!max-w-[450px] rounded-none h-full" // Side sheet: full height on desktop
+            : "rounded-t-2xl", // Bottom sheet
+          !isRightSide && (scrollable ? "h-[85vh] flex flex-col" : "h-auto max-h-[85vh]"), // Bottom sheet height
+          isRightSide && scrollable && "flex flex-col", // Side sheet with scrollable content
           className
         )}
       >
@@ -44,10 +53,12 @@ export function PreviewSheet({
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
 
-        {/* Drag Handle */}
-        <div className="flex justify-center pt-2 pb-3 shrink-0 hig-safe-top">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-        </div>
+        {/* Drag Handle (only for bottom sheets) */}
+        {!isRightSide && (
+          <div className="flex justify-center pt-2 pb-3 shrink-0 hig-safe-top">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
 
         <div className={cn("flex flex-col", scrollable && "flex-1 min-h-0")}>
           {/* Header */}

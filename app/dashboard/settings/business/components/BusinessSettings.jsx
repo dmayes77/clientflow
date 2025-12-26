@@ -416,7 +416,7 @@ export function BusinessSettings() {
                     type="number"
                     min="0"
                     max="100"
-                    step="0.1"
+                    step="0.01"
                     placeholder="0"
                     value={field.state.value || ""}
                     onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}

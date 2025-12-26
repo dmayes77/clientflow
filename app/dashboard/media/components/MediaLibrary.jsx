@@ -79,14 +79,18 @@ export function MediaLibrary() {
 
   // Dialog states
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   // Selected item states
-  const [selectedItem, setSelectedItem] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [previewItem, setPreviewItem] = useState(null);
+
+  // Edit mode state (inline editing in preview sheet)
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Copy feedback state
+  const [copiedUrl, setCopiedUrl] = useState(null);
 
   // Upload form state
   const [uploadForm, setUploadForm] = useState({
@@ -217,26 +221,30 @@ export function MediaLibrary() {
   };
 
   const handleEdit = async () => {
-    if (!selectedItem) return;
+    if (!previewItem) return;
 
     try {
       const isImage = activeTab === "images";
 
       if (isImage) {
         await updateImageMutation.mutateAsync({
-          id: selectedItem.id,
+          id: previewItem.id,
           data: editForm,
         });
       } else {
         await updateVideoMutation.mutateAsync({
-          id: selectedItem.id,
+          id: previewItem.id,
           data: editForm,
         });
       }
 
       toast.success(`${isImage ? "Image" : "Video"} updated successfully`);
-      setEditDialogOpen(false);
-      setSelectedItem(null);
+
+      // Update preview item with new data
+      setPreviewItem({ ...previewItem, ...editForm });
+
+      // Exit edit mode, stay in preview
+      setIsEditMode(false);
     } catch (error) {
       toast.error("Failed to update");
     }
@@ -262,16 +270,6 @@ export function MediaLibrary() {
     }
   };
 
-  const openEditDialog = (item) => {
-    setSelectedItem(item);
-    setEditForm({
-      name: item.name,
-      alt: item.alt,
-      type: item.type,
-    });
-    setEditDialogOpen(true);
-  };
-
   const openDeleteDialog = (item) => {
     setItemToDelete(item);
     setDeleteDialogOpen(true);
@@ -279,12 +277,39 @@ export function MediaLibrary() {
 
   const openPreviewDialog = (item) => {
     setPreviewItem(item);
+    setEditForm({
+      name: item.name,
+      alt: item.alt,
+      type: item.type,
+    });
+    setIsEditMode(false);
     setPreviewDialogOpen(true);
+  };
+
+  const enterEditMode = () => {
+    setIsEditMode(true);
+  };
+
+  const cancelEdit = () => {
+    // Reset edit form to current preview item values
+    if (previewItem) {
+      setEditForm({
+        name: previewItem.name,
+        alt: previewItem.alt,
+        type: previewItem.type,
+      });
+    }
+    setIsEditMode(false);
   };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    toast.success("URL copied to clipboard");
+    setCopiedUrl(text);
+
+    // Reset copy feedback after 2 seconds
+    setTimeout(() => {
+      setCopiedUrl(null);
+    }, 2000);
   };
 
   const formatFileSize = (bytes) => {
@@ -344,17 +369,7 @@ export function MediaLibrary() {
                 copyToClipboard(item.url);
               }}
             >
-              <Copy />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                openEditDialog(item);
-              }}
-            >
-              <Pencil />
+              {copiedUrl === item.url ? <Check className="text-green-500" /> : <Copy />}
             </Button>
           </div>
         </div>
@@ -495,11 +510,11 @@ export function MediaLibrary() {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(image.url)}>
-                              <Copy className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" onClick={() => openPreviewDialog(image)}>
+                              <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(image)}>
-                              <Pencil className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(image.url)}>
+                              {copiedUrl === image.url ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(image)}>
                               <Trash2 className="h-4 w-4" />
@@ -551,11 +566,11 @@ export function MediaLibrary() {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(video.url)}>
-                              <Copy className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" onClick={() => openPreviewDialog(video)}>
+                              <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(video)}>
-                              <Pencil className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(video.url)}>
+                              {copiedUrl === video.url ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(video)}>
                               <Trash2 className="h-4 w-4" />
@@ -675,54 +690,6 @@ export function MediaLibrary() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Details</DialogTitle>
-            <DialogDescription>Update the details for this file</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Name</Label>
-              <Input id="edit-name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-alt">Alt Text</Label>
-              <Input id="edit-alt" value={editForm.alt} onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-type">Type</Label>
-              <Select value={editForm.type} onValueChange={(value) => setEditForm({ ...editForm, type: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {currentTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="success" onClick={handleEdit}>
-              <Check className="mr-2 h-4 w-4" />
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
@@ -742,17 +709,24 @@ export function MediaLibrary() {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Sheet */}
+      {/* Preview Sheet - Responsive (side on desktop, bottom on mobile) */}
       {previewItem && (
         <PreviewSheet
           open={previewDialogOpen}
-          onOpenChange={setPreviewDialogOpen}
+          onOpenChange={(open) => {
+            setPreviewDialogOpen(open);
+            if (!open) {
+              setIsEditMode(false);
+            }
+          }}
           title={previewItem?.name || "Media Preview"}
+          side="right"
+          scrollable={true}
           actionColumns={4}
           header={
-            <div className="flex items-center justify-center bg-muted/30 -mx-5 pt-14 pb-3">
+            <div className="flex items-center justify-center bg-muted/30 -mx-5 sm:pt-14 pb-3">
               {activeTab === "images" ? (
-                <div className="relative w-full h-64 flex items-center justify-center">
+                <div className="relative w-full h-64 flex items-center justify-center px-4">
                   <Image
                     src={previewItem.url}
                     alt={previewItem.alt}
@@ -771,76 +745,161 @@ export function MediaLibrary() {
             </div>
           }
           actions={
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => copyToClipboard(previewItem.url)}
-              >
-                <Copy className="h-5 w-5" />
-                <span className="hig-caption-1">Copy</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => window.open(previewItem.url, "_blank")}
-              >
-                <ExternalLink className="h-5 w-5" />
-                <span className="hig-caption-1">Open</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={() => {
-                  setPreviewDialogOpen(false);
-                  openEditDialog(previewItem);
-                }}
-              >
-                <Pencil className="h-5 w-5" />
-                <span className="hig-caption-1">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
-                onClick={() => {
-                  setPreviewDialogOpen(false);
-                  openDeleteDialog(previewItem);
-                }}
-              >
-                <Trash2 className="h-5 w-5" />
-                <span className="hig-caption-1">Delete</span>
-              </Button>
-            </>
+            isEditMode ? (
+              /* Edit Mode Actions - Horizontal Buttons */
+              <div className="col-span-4 flex gap-2 px-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={cancelEdit}
+                  disabled={updateImageMutation.isPending || updateVideoMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={handleEdit}
+                  disabled={updateImageMutation.isPending || updateVideoMutation.isPending || !editForm.name}
+                >
+                  {updateImageMutation.isPending || updateVideoMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              /* View Mode Actions - Vertical Icon Buttons */
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                  onClick={() => copyToClipboard(previewItem.url)}
+                >
+                  {copiedUrl === previewItem.url ? (
+                    <>
+                      <Check className="h-5 w-5 text-green-500" />
+                      <span className="hig-caption-1 text-green-600">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-5 w-5" />
+                      <span className="hig-caption-1">Copy URL</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                  onClick={() => window.open(previewItem.url, "_blank")}
+                >
+                  <ExternalLink className="h-5 w-5" />
+                  <span className="hig-caption-1">Open</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
+                  onClick={enterEditMode}
+                >
+                  <Pencil className="h-5 w-5" />
+                  <span className="hig-caption-1">Edit</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    setPreviewDialogOpen(false);
+                    openDeleteDialog(previewItem);
+                  }}
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span className="hig-caption-1">Delete</span>
+                </Button>
+              </>
+            )
           }
         >
           <PreviewSheetContent>
-            {/* Info Section */}
-            <PreviewSheetSection>
-              <h3 className="hig-headline truncate">{previewItem.name}</h3>
-              {previewItem.alt && previewItem.alt !== previewItem.name && (
-                <p className="hig-footnote text-muted-foreground truncate mt-0.5">{previewItem.alt}</p>
-              )}
-            </PreviewSheetSection>
+            {isEditMode ? (
+              /* Edit Mode - Form Fields */
+              <>
+                <PreviewSheetSection className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input
+                      id="edit-name"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      placeholder="Enter a name"
+                    />
+                  </div>
 
-            {/* Metadata Pills */}
-            <PreviewSheetSection className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="hig-caption-1">
-                {previewItem.width}x{previewItem.height}
-              </Badge>
-              <Badge variant="secondary" className="hig-caption-1">
-                {formatFileSize(previewItem.size)}
-              </Badge>
-              <Badge variant="outline" className="hig-caption-1">
-                {currentTypes.find((t) => t.value === previewItem.type)?.label || previewItem.type}
-              </Badge>
-              <Badge variant="outline" className="hig-caption-1">
-                {format(new Date(previewItem.createdAt), "MMM d, yyyy")}
-              </Badge>
-            </PreviewSheetSection>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-alt">Alt Text</Label>
+                    <Input
+                      id="edit-alt"
+                      value={editForm.alt}
+                      onChange={(e) => setEditForm({ ...editForm, alt: e.target.value })}
+                      placeholder="Describe this file for accessibility"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-type">Type</Label>
+                    <Select value={editForm.type} onValueChange={(value) => setEditForm({ ...editForm, type: value })}>
+                      <SelectTrigger id="edit-type">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currentTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </PreviewSheetSection>
+              </>
+            ) : (
+              /* View Mode */
+              <>
+                {/* Info Section */}
+                <PreviewSheetSection>
+                  <h3 className="hig-headline truncate">{previewItem.name}</h3>
+                  {previewItem.alt && previewItem.alt !== previewItem.name && (
+                    <p className="hig-footnote text-muted-foreground truncate mt-0.5">{previewItem.alt}</p>
+                  )}
+                </PreviewSheetSection>
+
+                {/* Metadata Pills */}
+                <PreviewSheetSection className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="hig-caption-1">
+                    {previewItem.width}x{previewItem.height}
+                  </Badge>
+                  <Badge variant="secondary" className="hig-caption-1">
+                    {formatFileSize(previewItem.size)}
+                  </Badge>
+                  <Badge variant="outline" className="hig-caption-1">
+                    {currentTypes.find((t) => t.value === previewItem.type)?.label || previewItem.type}
+                  </Badge>
+                  <Badge variant="outline" className="hig-caption-1">
+                    {format(new Date(previewItem.createdAt), "MMM d, yyyy")}
+                  </Badge>
+                </PreviewSheetSection>
+              </>
+            )}
           </PreviewSheetContent>
         </PreviewSheet>
       )}
