@@ -247,9 +247,19 @@ jobs:
             ALL_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
           fi
 
-          # Filter to user-facing changes only (feat, fix, perf)
-          # Exclude: chore, ci, test, refactor, docs, build, style
-          COMMITS=$(echo "$ALL_COMMITS" | grep -vE "^- (chore|ci|test|refactor|docs|build|style)(\(|:)" || echo "- Internal improvements and bug fixes")
+          # Filter out automated maintenance commits (version bumps, branch syncs, merges)
+          FILTERED=$(echo "$ALL_COMMITS" | grep -vE "^- (chore: Bump version|chore: Sync|Merge branch|chore: Merge)" || true)
+
+          # Further exclude internal-only changes (ci, test, refactor, docs, build, style)
+          # But keep feat, fix, perf, and commits without prefixes
+          FILTERED=$(echo "$FILTERED" | grep -vE "^- (ci|test|refactor|docs|build|style)(\(|:)" || true)
+
+          # If we have commits, use them; otherwise use fallback
+          if [ -n "$FILTERED" ]; then
+            COMMITS="$FILTERED"
+          else
+            COMMITS="- Internal improvements and bug fixes"
+          fi
 
           echo "## Changes" > /tmp/changelog.md
           echo "$COMMITS" >> /tmp/changelog.md
