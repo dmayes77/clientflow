@@ -41,7 +41,7 @@ export default function OnboardingPage() {
   }, [isLoaded, userId, orgId, router, progress, isLoading, isError]);
 
   return (
-    <div className="flex min-h-[300px] items-center justify-center">
+    <div className="flex min-h-75 items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
     </div>
   );
