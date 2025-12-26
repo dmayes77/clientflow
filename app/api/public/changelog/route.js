@@ -86,6 +86,34 @@ export async function GET(request) {
   }
 }
 
+// Check if a changelog line is internal-only (should be filtered out)
+function isInternalChange(text) {
+  const lowerText = text.toLowerCase();
+
+  // Filter out internal commit types
+  const internalPrefixes = [
+    'chore:',
+    'chore(',
+    'ci:',
+    'ci(',
+    'test:',
+    'test(',
+    'refactor:',
+    'refactor(',
+    'docs:',
+    'docs(',
+    'build:',
+    'build(',
+    'style:',
+    'style(',
+    'debug:',
+    'debug(',
+    'merge ',
+  ];
+
+  return internalPrefixes.some(prefix => lowerText.startsWith(prefix));
+}
+
 // Parse release body markdown to extract changelog items
 function parseReleaseBody(body) {
   const items = [];
@@ -104,6 +132,11 @@ function parseReleaseBody(body) {
     if (listMatch) {
       const text = listMatch[1];
 
+      // Filter out internal changes
+      if (isInternalChange(text)) {
+        continue;
+      }
+
       // Determine type and extract title/description
       let type = "feature";
       let icon = "Sparkles";
@@ -112,6 +145,12 @@ function parseReleaseBody(body) {
         type = "fix";
         icon = "Bug";
       } else if (text.toLowerCase().includes("improv") || text.toLowerCase().includes("updat") || text.toLowerCase().includes("enhanc")) {
+        type = "improvement";
+        icon = "Zap";
+      } else if (text.toLowerCase().startsWith("feat:") || text.toLowerCase().startsWith("feat(")) {
+        type = "feature";
+        icon = "Sparkles";
+      } else if (text.toLowerCase().startsWith("perf:") || text.toLowerCase().startsWith("perf(")) {
         type = "improvement";
         icon = "Zap";
       }
@@ -135,13 +174,13 @@ function parseReleaseBody(body) {
     }
   }
 
-  // If no items parsed, create a single item from the body
+  // If no items parsed (all were filtered), show fallback message
   if (items.length === 0 && body.trim()) {
     items.push({
-      type: "feature",
-      icon: "Sparkles",
-      title: "Release Notes",
-      description: body.substring(0, 200) + (body.length > 200 ? "..." : ""),
+      type: "improvement",
+      icon: "Zap",
+      title: "Internal improvements and bug fixes",
+      description: "This release includes behind-the-scenes improvements to make ClientFlow better.",
     });
   }
 
