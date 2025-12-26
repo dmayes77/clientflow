@@ -1,6 +1,6 @@
 {
   "name": "my-clientflow-saas",
-  "version": "1.8.146",
+  "version": "1.8.147",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
