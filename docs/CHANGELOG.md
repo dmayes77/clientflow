@@ -1086,25 +1086,50 @@
 
 ## Changes
 
+### New Features
+- Add comprehensive coupon management system with discount codes
+- Create dedicated Coupons page with full CRUD operations
+- Coupon validation and intelligent discount calculation in invoices
+- Usage tracking and expiration date support for coupons
+
+### Bug Fixes
+- Fix coupon and deposit data not saving to invoices
+- Fix deposit percentage not persisting when creating/editing invoices
+- Fix NaN issue in deposit field with improved validation
+- Fix invoice update to filter out relation and non-existent fields
+- Add couponId and couponDiscountAmount to invoice validation schemas
+- Prevent NaN from being set in depositPercent field
+
+### UI Improvements
+- Remove three-dot actions menu from invoice list
+- Fix preview sheet to show as right sidebar on desktop
+- Update Create Contact button styling to ghost variant
+- Improve invoice form with coupon selector popover
+
+### Technical
+- Add comprehensive debug logging for invoice data flow
+- Improve validation schemas for invoice operations
+- Better error handling for Prisma relation fields
 
 ## [1.8.193] - 2025-12-26
 
 ## Changes
-
+- Internal bug fixes and improvements
 
 ## [1.8.192] - 2025-12-26
 
 ## Changes
-
+- Internal bug fixes and improvements
 
 ## [1.8.191] - 2025-12-26
 
 ## Changes
-
+- Internal bug fixes and improvements
 
 ## [1.8.190] - 2025-12-26
 
 ## Changes
+- Internal bug fixes and improvements
 
 
 ## [1.8.189] - 2025-12-26
