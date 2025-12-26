@@ -253,6 +253,9 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
       console.log("[InvoiceForm] Final safeDepositPercent to set:", safeDepositPercent);
 
+      // Only set values if we have a valid deposit percent (not NaN)
+      console.log("[InvoiceForm] About to set form values, safeDepositPercent:", safeDepositPercent, "type:", typeof safeDepositPercent);
+
       form.setFieldValue("contactId", invoice.contactId || "");
       form.setFieldValue("bookingId", invoice.bookingId || null);
       form.setFieldValue("contactName", invoice.contactName || "");
@@ -264,7 +267,14 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       form.setFieldValue("discountCode", invoice.discountCode || "");
       form.setFieldValue("discountAmount", (parseFloat(invoice.discountAmount) || 0) / 100);
       form.setFieldValue("taxRate", parseFloat(invoice.taxRate) || 0);
-      form.setFieldValue("depositPercent", safeDepositPercent);
+
+      // Never set NaN - always use null if the value is invalid
+      const depositValueToSet = (typeof safeDepositPercent === 'number' && !isNaN(safeDepositPercent))
+        ? safeDepositPercent
+        : null;
+      console.log("[InvoiceForm] Setting depositPercent to:", depositValueToSet);
+      form.setFieldValue("depositPercent", depositValueToSet);
+
       form.setFieldValue("notes", invoice.notes || "");
       form.setFieldValue("terms", invoice.terms || "");
 
@@ -282,7 +292,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         });
       }
     }
-  }, [mode, invoice, form]);
+  }, [mode, invoice]); // Removed 'form' from dependencies - it's stable from TanStack Form
 
   // Set default tax rate from business settings when creating new invoice
   useEffect(() => {
