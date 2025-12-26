@@ -1162,24 +1162,31 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                         <div className="flex items-center justify-between pt-2 border-t">
                           <span className="text-muted-foreground">Deposit</span>
                           <form.Field name="depositPercent">
-                            {(field) => (
-                              <Select
-                                value={field.state.value?.toString() || "none"}
-                                onValueChange={(value) => field.handleChange(value === "none" ? null : parseInt(value))}
-                              >
-                                <SelectTrigger className="w-20 h-8">
-                                  <SelectValue placeholder="None" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">None</SelectItem>
-                                  {DEPOSIT_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value.toString()}>
-                                      {opt.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
+                            {(field) => {
+                              console.log("[InvoiceForm] Deposit field rendering:", {
+                                fieldValue: field.state.value,
+                                fieldValueType: typeof field.state.value,
+                                selectValue: field.state.value?.toString() || "none"
+                              });
+                              return (
+                                <Select
+                                  value={field.state.value?.toString() || "none"}
+                                  onValueChange={(value) => field.handleChange(value === "none" ? null : parseInt(value))}
+                                >
+                                  <SelectTrigger className="w-20 h-8">
+                                    <SelectValue placeholder="None" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {DEPOSIT_OPTIONS.map((opt) => (
+                                      <SelectItem key={opt.value} value={opt.value.toString()}>
+                                        {opt.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              );
+                            }}
                           </form.Field>
                         </div>
                         {safeDepositPercent > 0 && (
