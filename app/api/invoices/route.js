@@ -136,6 +136,13 @@ export async function POST(request) {
       : null;
     const balanceDue = data.total;
 
+    console.log("[POST /api/invoices] Creating invoice with:", JSON.stringify({
+      depositPercent: safeDepositPercent,
+      depositAmount,
+      couponId: data.couponId,
+      couponDiscountAmount: data.couponDiscountAmount,
+    }));
+
     const invoice = await prisma.invoice.create({
       data: {
         tenantId: tenant.id,
@@ -209,6 +216,13 @@ export async function POST(request) {
       ...invoice,
       tags: invoice.tags.map((t) => t.tag),
     };
+
+    console.log("[POST /api/invoices] Created invoice:", JSON.stringify({
+      id: invoiceWithTags.id,
+      depositPercent: invoiceWithTags.depositPercent,
+      depositAmount: invoiceWithTags.depositAmount,
+      hasCoupons: invoiceWithTags.coupons?.length > 0,
+    }));
 
     return NextResponse.json(invoiceWithTags, { status: 201 });
   } catch (error) {

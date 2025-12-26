@@ -39,6 +39,13 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
+    console.log("[GET /api/invoices/[id]] Returning invoice:", JSON.stringify({
+      id: invoice.id,
+      depositPercent: invoice.depositPercent,
+      depositAmount: invoice.depositAmount,
+      hasCoupons: invoice.coupons?.length > 0,
+    }));
+
     return NextResponse.json(invoice);
   } catch (error) {
     console.error("Error fetching invoice:", error);
