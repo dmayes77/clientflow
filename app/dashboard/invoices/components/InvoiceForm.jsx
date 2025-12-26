@@ -141,6 +141,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         const { subtotal, taxAmount, total } = calculateTotals(value);
 
         console.log("[InvoiceForm] Form values before payload:", JSON.stringify({
+          status: value.status,
           depositPercent: value.depositPercent,
           depositPercentType: typeof value.depositPercent,
           depositPercentRaw: value.depositPercent,
@@ -153,7 +154,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           contactEmail: value.contactEmail,
           contactAddress: value.contactAddress || null,
           dueDate: new Date(value.dueDate).toISOString(),
-          status: value.status,
+          status: value.status || "draft", // Always default to draft if empty
           lineItems: value.lineItems.map((item) => ({
             description: item.description,
             quantity: parseInt(item.quantity) || 1,
@@ -262,7 +263,8 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       form.setFieldValue("contactEmail", invoice.contactEmail || "");
       form.setFieldValue("contactAddress", invoice.contactAddress || "");
       form.setFieldValue("dueDate", format(new Date(invoice.dueDate), "yyyy-MM-dd"));
-      form.setFieldValue("status", invoice.status);
+      form.setFieldValue("status", invoice.status || "draft");
+      console.log("[InvoiceForm] Set status to:", invoice.status || "draft");
       form.setFieldValue("lineItems", convertedLineItems.length > 0 ? convertedLineItems : initialFormState.lineItems);
       form.setFieldValue("discountCode", invoice.discountCode || "");
       form.setFieldValue("discountAmount", (parseFloat(invoice.discountAmount) || 0) / 100);
@@ -779,16 +781,30 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               </div>
 
                 {/* Status */}
-                <SelectField
-                  form={form}
-                  name="status"
-                  label="Status"
-                  options={[
-                    { value: "draft", label: "Draft" },
-                    { value: "sent", label: "Sent" },
-                    { value: "paid", label: "Paid" },
-                  ]}
-                />
+                <form.Field name="status">
+                  {(field) => (
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select
+                        value={field.state.value || "draft"}
+                        onValueChange={(value) => {
+                          if (value && value !== "") {
+                            field.handleChange(value);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="sent">Sent</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </form.Field>
               </div>
 
               {/* Notes Section - fills remaining space */}
@@ -1150,11 +1166,15 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                     })();
 
                     const depositAmount = (() => {
+                      // Use the invoice's depositAmount from database if available (stored in cents)
+                      if (invoice?.depositAmount !== null && invoice?.depositAmount !== undefined) {
+                        const parsed = typeof invoice.depositAmount === 'number' ? invoice.depositAmount : parseFloat(invoice.depositAmount);
+                        return (!isNaN(parsed) && isFinite(parsed) && parsed >= 0) ? parsed / 100 : 0;
+                      }
+                      // Otherwise calculate it (matching API logic - rounds to nearest cent)
                       const safeTotal = typeof total === "number" && !isNaN(total) && total > 0 ? total : 0;
-                      const amount = safeTotal * (safeDepositPercent / 100);
-                      // Round up to the next full dollar
-                      const roundedAmount = !isNaN(amount) && isFinite(amount) ? Math.ceil(amount) : 0;
-                      return roundedAmount;
+                      const amountInCents = Math.round(safeTotal * 100 * (safeDepositPercent / 100));
+                      return amountInCents / 100;
                     })();
 
                     return invoice?.depositPaidAt ? (
@@ -1162,7 +1182,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       <>
                         <div className="flex justify-between pt-2 border-t text-green-600">
                           <span>✓ Deposit Paid ({safeDepositPercent}%)</span>
-                          <span>-${depositAmount.toFixed(0)}</span>
+                          <span>-${depositAmount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between font-bold pt-2 border-t">
                           <span>Balance Due</span>
@@ -1227,7 +1247,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                         {safeDepositPercent > 0 && (
                           <div className="flex justify-between text-blue-600">
                             <span>Deposit Due ({safeDepositPercent}%)</span>
-                            <span>${depositAmount.toFixed(0)}</span>
+                            <span>${depositAmount.toFixed(2)}</span>
                           </div>
                         )}
                       </>

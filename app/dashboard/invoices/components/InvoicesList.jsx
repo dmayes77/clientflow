@@ -134,17 +134,30 @@ export function InvoicesList() {
   const [previewInvoice, setPreviewInvoice] = useState(null);
 
   const handleStatusChange = (invoice, newStatus) => {
-    updateInvoice.mutate(
-      { id: invoice.id, status: newStatus },
-      {
-        onSuccess: () => {
-          toast.success(`Invoice marked as ${newStatus}`);
-        },
-        onError: () => {
-          toast.error("Failed to update invoice status");
-        },
-      }
-    );
+    // Validate state transitions
+    if (invoice.status === "draft" && newStatus === "paid") {
+      toast.error("Cannot mark draft invoice as paid. Send it first.");
+      return;
+    }
+
+    // Prepare update data based on status
+    const updateData = { id: invoice.id, status: newStatus };
+
+    // If marking as paid, include payment data
+    if (newStatus === "paid") {
+      updateData.amountPaid = invoice.total;
+      updateData.balanceDue = 0;
+      updateData.paidAt = new Date().toISOString();
+    }
+
+    updateInvoice.mutate(updateData, {
+      onSuccess: () => {
+        toast.success(`Invoice marked as ${newStatus}`);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to update invoice status");
+      },
+    });
   };
 
   const handleOpenPaymentDialog = (invoice) => {
@@ -257,7 +270,16 @@ export function InvoicesList() {
   const [selectedRows, setSelectedRows] = useState({});
 
   const handleBulkMarkPaid = (selectedInvoices) => {
-    const updates = selectedInvoices.map((invoice) =>
+    // Filter out draft invoices - they must be sent first
+    const validInvoices = selectedInvoices.filter(inv => inv.status !== "draft");
+    const skippedCount = selectedInvoices.length - validInvoices.length;
+
+    if (validInvoices.length === 0) {
+      toast.error("Cannot mark draft invoices as paid. Send them first.");
+      return;
+    }
+
+    const updates = validInvoices.map((invoice) =>
       updateInvoice.mutateAsync({
         id: invoice.id,
         status: "paid",
@@ -269,11 +291,14 @@ export function InvoicesList() {
 
     Promise.all(updates)
       .then(() => {
-        toast.success(`${selectedInvoices.length} invoice(s) marked as paid`);
+        const message = skippedCount > 0
+          ? `${validInvoices.length} invoice(s) marked as paid. ${skippedCount} draft invoice(s) skipped.`
+          : `${validInvoices.length} invoice(s) marked as paid`;
+        toast.success(message);
         setSelectedRows({});
       })
-      .catch(() => {
-        toast.error("Failed to update some invoices");
+      .catch((error) => {
+        toast.error(error.message || "Failed to update some invoices");
       });
   };
 
@@ -318,6 +343,7 @@ export function InvoicesList() {
   const columns = [
     {
       id: "select",
+      size: 40,
       header: ({ table }) => (
         <Checkbox
           checked={table.getIsAllPageRowsSelected()}

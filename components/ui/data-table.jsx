@@ -80,7 +80,7 @@ export function DataTable({
               />
             </div>
           )}
-          {toolbar && <div className="flex items-center gap-2">{toolbar}</div>}
+          {toolbar && typeof toolbar === "function" ? toolbar({ table }) : toolbar}
         </div>
       )}
 
