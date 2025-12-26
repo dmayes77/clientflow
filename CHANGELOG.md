@@ -1,3 +1,9 @@
+## [1.8.36] - 2025-12-26
+
+## Changes
+- Deploy to Production (#17)
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
