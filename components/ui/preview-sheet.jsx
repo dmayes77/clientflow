@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
  * @param {React.ReactNode} actions - Action bar content
  * @param {number} actionColumns - Number of action columns (default: 5)
  * @param {boolean} scrollable - Whether body content should be scrollable
- * @param {string} side - Sheet side ("bottom" or "right", default: "bottom")
+ * @param {string} side - Sheet side ("bottom" or "right", default: "right" for desktop sidebar)
  * @param {string} className - Additional classes for the sheet content
  */
 export function PreviewSheet({
@@ -29,7 +29,7 @@ export function PreviewSheet({
   actions,
   actionColumns = 5,
   scrollable = false,
-  side = "bottom",
+  side = "right",
   className = "",
 }) {
   const gridColsClass = actionColumns === 4 ? "grid-cols-4" : "grid-cols-5";
