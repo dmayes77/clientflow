@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -303,7 +303,7 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
   });
 
   // Update form when template data loads
-  useMemo(() => {
+  useEffect(() => {
     if (mode === "edit" && template) {
       form.setFieldValue("name", template.name || "");
       form.setFieldValue("subject", template.subject || "");
@@ -311,7 +311,7 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
       form.setFieldValue("description", template.description || "");
       form.setFieldValue("category", template.category || "");
     }
-  }, [template, mode]);
+  }, [template, mode, form]);
 
   const handleDelete = async () => {
     try {
