@@ -102,7 +102,7 @@ const BUTTON_POSITIONS = {
 const EmailButton = Node.create({
   name: "emailButton",
   group: "block",
-  content: "inline*",
+  atom: true, // Make it atomic so it's treated as a single unit
 
   addAttributes() {
     return {
@@ -118,6 +118,25 @@ const EmailButton = Node.create({
     return [
       {
         tag: 'div[data-email-button]',
+        getAttrs: (dom) => {
+          const link = dom.querySelector('a');
+          if (!link) return false;
+
+          const style = link.getAttribute('style') || '';
+          const bgMatch = style.match(/background-color:\s*([^;]+)/);
+          const colorMatch = style.match(/color:\s*([^;]+)/);
+
+          const containerStyle = dom.getAttribute('style') || '';
+          const alignMatch = containerStyle.match(/text-align:\s*([^;]+)/);
+
+          return {
+            href: link.getAttribute('href') || '#',
+            backgroundColor: bgMatch ? bgMatch[1].trim() : '#3b82f6',
+            color: colorMatch ? colorMatch[1].trim() : 'white',
+            text: link.textContent || 'Click Here',
+            position: alignMatch ? alignMatch[1].trim() : 'center',
+          };
+        },
       },
     ];
   },
@@ -150,12 +169,50 @@ const EmailButton = Node.create({
           attrs: attributes,
         });
       },
+      updateEmailButton: (attributes) => ({ commands, state }) => {
+        const { selection } = state;
+        const node = state.doc.nodeAt(selection.from);
+
+        if (node && node.type.name === this.name) {
+          return commands.updateAttributes(this.name, attributes);
+        }
+        return false;
+      },
+    };
+  },
+
+  addNodeView() {
+    return ({ node, getPos, editor }) => {
+      const dom = document.createElement('div');
+      dom.setAttribute('data-email-button', '');
+      dom.style.cssText = `margin: 24px 0; text-align: ${node.attrs.position || 'center'}; cursor: pointer;`;
+
+      const link = document.createElement('a');
+      link.className = 'not-prose';
+      link.href = '#';
+      link.style.cssText = `background-color: ${node.attrs.backgroundColor}; color: ${node.attrs.color}; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500; pointer-events: none;`;
+      link.textContent = node.attrs.text;
+
+      dom.appendChild(link);
+
+      // Make the button clickable to edit
+      dom.addEventListener('click', () => {
+        if (typeof getPos === 'function') {
+          const pos = getPos();
+          editor.commands.setNodeSelection(pos);
+          // Trigger a custom event that the editor can listen to
+          dom.dispatchEvent(new CustomEvent('edit-button', { detail: node.attrs, bubbles: true }));
+        }
+      });
+
+      return { dom };
     };
   },
 });
 
 function RichTextEditor({ content, onChange, placeholder }) {
   const [isButtonDialogOpen, setIsButtonDialogOpen] = useState(false);
+  const [isEditingButton, setIsEditingButton] = useState(false);
   const [buttonData, setButtonData] = useState({
     text: "Click Here",
     url: "#",
@@ -194,6 +251,35 @@ function RichTextEditor({ content, onChange, placeholder }) {
     }
   }, [editor, content]);
 
+  // Listen for button edit events
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleEditButton = (event) => {
+      const attrs = event.detail;
+      // Find the color key from the background color
+      const colorKey = Object.keys(BUTTON_COLORS).find(
+        key => BUTTON_COLORS[key].bg === attrs.backgroundColor
+      ) || 'primary';
+
+      setButtonData({
+        text: attrs.text,
+        url: attrs.href,
+        color: colorKey,
+        position: attrs.position || 'center',
+      });
+      setIsEditingButton(true);
+      setIsButtonDialogOpen(true);
+    };
+
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('edit-button', handleEditButton);
+
+    return () => {
+      editorElement.removeEventListener('edit-button', handleEditButton);
+    };
+  }, [editor]);
+
   const insertVariable = useCallback(
     (variable) => {
       if (editor) {
@@ -221,6 +307,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
 
   const openButtonDialog = useCallback(() => {
     setButtonData({ text: "Click Here", url: "#", color: "primary", position: "center" });
+    setIsEditingButton(false);
     setIsButtonDialogOpen(true);
   }, []);
 
@@ -228,22 +315,30 @@ function RichTextEditor({ content, onChange, placeholder }) {
     if (!editor) return;
 
     const colorStyle = BUTTON_COLORS[buttonData.color];
-
-    editor.chain().focus().setEmailButton({
+    const attrs = {
       href: buttonData.url,
       backgroundColor: colorStyle.bg,
       color: "white",
       text: buttonData.text,
       position: buttonData.position,
-    }).run();
+    };
+
+    if (isEditingButton) {
+      // Update existing button
+      editor.chain().focus().updateEmailButton(attrs).run();
+    } else {
+      // Insert new button
+      editor.chain().focus().setEmailButton(attrs).run();
+    }
 
     // Log what actually got inserted
     setTimeout(() => {
-      console.log("Editor HTML after insert:", editor.getHTML());
+      console.log("Editor HTML after insert/update:", editor.getHTML());
     }, 100);
 
     setIsButtonDialogOpen(false);
-  }, [editor, buttonData]);
+    setIsEditingButton(false);
+  }, [editor, buttonData, isEditingButton]);
 
   if (!editor) {
     return null;
@@ -376,8 +471,10 @@ function RichTextEditor({ content, onChange, placeholder }) {
       <Dialog open={isButtonDialogOpen} onOpenChange={setIsButtonDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Insert Button</DialogTitle>
-            <DialogDescription>Create a styled button for your email template</DialogDescription>
+            <DialogTitle>{isEditingButton ? "Edit Button" : "Insert Button"}</DialogTitle>
+            <DialogDescription>
+              {isEditingButton ? "Update the button properties" : "Create a styled button for your email template"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -457,11 +554,30 @@ function RichTextEditor({ content, onChange, placeholder }) {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsButtonDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleInsertButton}>Insert Button</Button>
+          <DialogFooter className={isEditingButton ? "justify-between" : ""}>
+            {isEditingButton && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  if (editor) {
+                    editor.chain().focus().deleteSelection().run();
+                    setIsButtonDialogOpen(false);
+                    setIsEditingButton(false);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button type="button" variant="outline" onClick={() => setIsButtonDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleInsertButton}>
+                {isEditingButton ? "Update" : "Insert"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
