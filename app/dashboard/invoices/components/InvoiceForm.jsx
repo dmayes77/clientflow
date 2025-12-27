@@ -824,443 +824,192 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
             </CardContent>
           </Card>
 
-          {/* Right Column - Line Items & Totals */}
-          <Card className="h-full overflow-hidden">
-            <CardContent className="p-6 flex flex-col h-full overflow-hidden">
-              {/* Line Items - scrollable section */}
-              <div className="flex-1 overflow-auto min-h-0 -mr-6 pr-6">
-                <form.Subscribe selector={(state) => ({ lineItems: state.values.lineItems })}>
-                  {({ lineItems: currentLineItems }) => {
+          {/* Right Column - Invoice Preview */}
+          <Card className="h-full overflow-hidden bg-white">
+            <CardContent className="p-0 flex flex-col h-full overflow-hidden">
+              {/* Invoice Preview - scrollable section */}
+              <div className="flex-1 overflow-auto min-h-0">
+                <form.Subscribe selector={(state) => ({
+                  lineItems: state.values.lineItems,
+                  contactName: state.values.contactName,
+                  contactEmail: state.values.contactEmail,
+                  contactAddress: state.values.contactAddress,
+                  dueDate: state.values.dueDate,
+                  notes: state.values.notes,
+                  terms: state.values.terms,
+                })}>
+                  {({ lineItems: currentLineItems, contactName, contactEmail, contactAddress, dueDate, notes, terms }) => {
                     const lineItems = currentLineItems || [];
+                    const { subtotal, lineDiscounts, taxAmount, total } = calculateTotals();
+
                     return (
-                <div className="space-y-2">
-                <Label>Line Items</Label>
-                <div className="space-y-3">
-                  {lineItems.map((item, index) => (
-                    <div key={index} className={`rounded-lg border p-3 space-y-3 ${item.isDiscount ? "bg-red-50/50 border-red-200" : ""}`}>
-                      {/* Row 1: Service selector + Description */}
-                      <div className="flex gap-2">
-                        {!item.isDiscount ? (
-                          <Popover
-                            open={servicePopoverOpen[index]}
-                            onOpenChange={(open) => setServicePopoverOpen({ ...servicePopoverOpen, [index]: open })}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0">
-                                {item.serviceId ? (
-                                  <Wrench className="h-4 w-4" />
-                                ) : item.packageId ? (
-                                  <Package className="h-4 w-4" />
-                                ) : (
-                                  <Search className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-75 p-0" align="start">
-                              <Command>
-                                <CommandInput placeholder="Search services & packages..." />
-                                <CommandList>
-                                  <CommandEmpty>No results found.</CommandEmpty>
-                                  <CommandGroup heading="Custom">
-                                    <CommandItem onSelect={() => handleServiceSelect(index, null)}>
-                                      <Plus className="mr-2 h-4 w-4" />
-                                      Custom Item
-                                    </CommandItem>
-                                  </CommandGroup>
-                                  {serviceOptions.filter((o) => o.type === "service").length > 0 && (
-                                    <CommandGroup heading="Services">
-                                      {serviceOptions
-                                        .filter((o) => o.type === "service")
-                                        .slice(0, 5)
-                                        .map((option) => (
-                                          <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
-                                            <Wrench className="mr-2 h-4 w-4 text-muted-foreground" />
-                                            <span className="flex-1">{option.name}</span>
-                                            <span className="text-muted-foreground">${option.price.toFixed(2)}</span>
-                                          </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                  )}
-                                  {serviceOptions.filter((o) => o.type === "package").length > 0 && (
-                                    <CommandGroup heading="Packages">
-                                      {serviceOptions
-                                        .filter((o) => o.type === "package")
-                                        .slice(0, 5)
-                                        .map((option) => (
-                                          <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
-                                            <Package className="mr-2 h-4 w-4 text-violet-500" />
-                                            <span className="flex-1">{option.name}</span>
-                                            <span className="text-muted-foreground">${option.price.toFixed(2)}</span>
-                                          </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                  )}
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        ) : (
-                          <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-md border bg-red-100">
-                            <Percent className="h-4 w-4 text-red-600" />
-                          </div>
-                        )}
-                        <Input
-                          placeholder={item.isDiscount ? "Discount description" : "Service description"}
-                          value={item.description}
-                          onChange={(e) => handleLineItemChange(index, "description", e.target.value)}
-                          className="flex-1"
-                          required
-                        />
-                        {lineItems.length > 1 && (
-                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeLineItem(index)}>
-                            <CloseIcon className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      {/* Row 2: Qty, Price, Amount */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <Label className="hig-caption2 text-muted-foreground mb-1 block">Qty</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => handleLineItemChange(index, "quantity", parseInt(e.target.value) || 1)}
-                            className="h-9"
-                          />
+                <div className="p-8 space-y-6">
+                  {/* Invoice Header */}
+                  <div className="flex justify-between items-start pb-6 border-b">
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900">INVOICE</h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {invoice?.invoiceNumber || "INV-DRAFT"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">{tenant?.businessName || "Your Business"}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{tenant?.businessEmail || ""}</p>
+                      {tenant?.businessPhone && (
+                        <p className="text-sm text-muted-foreground">{tenant.businessPhone}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bill To & Invoice Details */}
+                  <div className="grid grid-cols-2 gap-6 pb-6 border-b">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Bill To</p>
+                      <p className="font-semibold text-gray-900">{contactName || "Select a contact"}</p>
+                      {contactEmail && <p className="text-sm text-muted-foreground mt-1">{contactEmail}</p>}
+                      {contactAddress && <p className="text-sm text-muted-foreground mt-1">{contactAddress}</p>}
+                    </div>
+                    <div className="text-right">
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Issue Date:</span>
+                          <span className="font-medium">{format(new Date(), "MMM dd, yyyy")}</span>
                         </div>
-                        <div className="flex-1">
-                          <Label className="hig-caption2 text-muted-foreground mb-1 block">Price</Label>
-                          <div className="flex items-center">
-                            {item.isDiscount && <Minus className="h-3 w-3 mr-1 text-red-600" />}
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.unitPrice}
-                              onChange={(e) => handleLineItemChange(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                              className={`h-9 ${item.isDiscount ? "text-red-600" : ""}`}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <Label className="hig-caption2 text-muted-foreground mb-1 block">Amount</Label>
-                          <div className={`h-9 flex items-center px-3 rounded-md bg-muted font-medium ${item.isDiscount ? "text-red-600" : ""}`}>
-                            {item.isDiscount ? "-" : ""}${Math.abs(item.amount || 0).toFixed(2)}
-                          </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Due Date:</span>
+                          <span className="font-medium">{dueDate ? format(new Date(dueDate), "MMM dd, yyyy") : "-"}</span>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
-                      <AddIcon className="h-4 w-4 mr-1" />
-                      Add Line Item
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" onClick={addDiscountLine} className="text-red-600 hover:text-red-700">
-                      <Percent className="h-4 w-4 mr-1" />
-                      Add Discount
-                    </Button>
                   </div>
+
+                  {/* Line Items Table */}
+                  <div>
+                    <table className="w-full">
+                      <thead className="border-b-2">
+                        <tr className="text-left">
+                          <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase">Description</th>
+                          <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase text-center">Qty</th>
+                          <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase text-right">Rate</th>
+                          <th className="pb-3 text-xs font-semibold text-muted-foreground uppercase text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {lineItems.map((item, index) => (
+                          <tr key={index} className={item.isDiscount ? "text-red-600" : ""}>
+                            <td className="py-3">
+                              <p className="font-medium text-gray-900">{item.description || "—"}</p>
+                            </td>
+                            <td className="py-3 text-center text-gray-700">{item.quantity}</td>
+                            <td className="py-3 text-right text-gray-700">
+                              {item.isDiscount ? "-" : ""}${item.unitPrice?.toFixed(2) || "0.00"}
+                            </td>
+                            <td className="py-3 text-right font-medium text-gray-900">
+                              {item.isDiscount ? "-" : ""}${Math.abs(item.amount || 0).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Totals Section */}
+                  <div className="flex justify-end pt-6 border-t">
+                    <div className="w-64 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Subtotal:</span>
+                        <span className="font-medium">${subtotal.toFixed(2)}</span>
+                      </div>
+                      {lineDiscounts > 0 && (
+                        <div className="flex justify-between text-sm text-red-600">
+                          <span>Discounts:</span>
+                          <span>-${lineDiscounts.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {selectedCoupon && validatedCoupon?.calculation?.discountAmount > 0 && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>Coupon ({selectedCoupon.code}):</span>
+                          <span>-${(validatedCoupon.calculation.discountAmount / 100).toFixed(2)}</span>
+                        </div>
+                      )}
+                      <form.Subscribe selector={(state) => ({ taxRate: state.values.taxRate })}>
+                        {({ taxRate: currentTaxRate }) => currentTaxRate > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Tax ({currentTaxRate}%):</span>
+                            <span className="font-medium">${taxAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </form.Subscribe>
+                      <div className="flex justify-between pt-3 border-t text-lg font-bold">
+                        <span>Total:</span>
+                        <span>${total.toFixed(2)}</span>
+                      </div>
+                      <form.Subscribe selector={(state) => ({ depositPercent: state.values.depositPercent })}>
+                        {({ depositPercent: currentDepositPercent }) => {
+                          const safeDepositPercent = (() => {
+                            if (currentDepositPercent === null || currentDepositPercent === undefined) return 0;
+                            const parsed = typeof currentDepositPercent === "number" ? currentDepositPercent : parseInt(currentDepositPercent, 10);
+                            return !isNaN(parsed) && parsed > 0 ? parsed : 0;
+                          })();
+
+                          const depositAmount = (() => {
+                            if (invoice?.depositAmount !== null && invoice?.depositAmount !== undefined) {
+                              const parsed = typeof invoice.depositAmount === 'number' ? invoice.depositAmount : parseFloat(invoice.depositAmount);
+                              return (!isNaN(parsed) && isFinite(parsed) && parsed >= 0) ? parsed / 100 : 0;
+                            }
+                            const safeTotal = typeof total === "number" && !isNaN(total) && total > 0 ? total : 0;
+                            const amountInCents = Math.round(safeTotal * 100 * (safeDepositPercent / 100));
+                            return amountInCents / 100;
+                          })();
+
+                          return invoice?.depositPaidAt ? (
+                            <>
+                              <div className="flex justify-between text-sm text-green-600">
+                                <span>✓ Deposit Paid ({safeDepositPercent}%):</span>
+                                <span>-${depositAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between pt-2 border-t font-bold text-lg">
+                                <span>Balance Due:</span>
+                                <span>${(total - depositAmount).toFixed(2)}</span>
+                              </div>
+                            </>
+                          ) : safeDepositPercent > 0 ? (
+                            <div className="flex justify-between text-sm text-blue-600">
+                              <span>Deposit Required ({safeDepositPercent}%):</span>
+                              <span>${depositAmount.toFixed(2)}</span>
+                            </div>
+                          ) : null;
+                        }}
+                      </form.Subscribe>
+                    </div>
+                  </div>
+
+                  {/* Notes & Terms */}
+                  {(notes || terms) && (
+                    <div className="pt-6 border-t space-y-4">
+                      {notes && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Notes</p>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{notes}</p>
+                        </div>
+                      )}
+                      {terms && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Terms & Conditions</p>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{terms}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                     );
                   }}
                 </form.Subscribe>
               </div>
 
-              {/* Totals - anchored to bottom */}
-              <div className="mt-auto pt-4 shrink-0">
-                <form.Subscribe selector={(state) => ({ lineItems: state.values.lineItems, taxRate: state.values.taxRate })}>
-                  {({ lineItems: currentLineItems }) => {
-                    const { subtotal, lineDiscounts, taxAmount, total } = calculateTotals();
-
-                    // Filter coupons based on current line items and their eligibility
-                    const filterApplicableCoupons = () => {
-                      const lineItems = currentLineItems || [];
-                      const regularItems = lineItems.filter((item) => !item.isDiscount);
-
-                      return coupons.filter((coupon) => {
-                        // Check expiration
-                        if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
-                          return false;
-                        }
-
-                        // Check usage limits
-                        if (coupon.maxUses && coupon.currentUses >= coupon.maxUses) {
-                          return false;
-                        }
-
-                        // Check if coupon has service/package restrictions
-                        const hasServiceRestriction = coupon.applicableServiceIds && coupon.applicableServiceIds.length > 0;
-                        const hasPackageRestriction = coupon.applicablePackageIds && coupon.applicablePackageIds.length > 0;
-                        const hasAnyRestriction = hasServiceRestriction || hasPackageRestriction;
-
-                        if (hasAnyRestriction) {
-                          // Check if any line item matches the restrictions
-                          const hasEligibleItem = regularItems.some((item) => {
-                            if (item.serviceId && coupon.applicableServiceIds?.includes(item.serviceId)) {
-                              return true;
-                            }
-                            if (item.packageId && coupon.applicablePackageIds?.includes(item.packageId)) {
-                              return true;
-                            }
-                            return false;
-                          });
-
-                          if (!hasEligibleItem) {
-                            return false;
-                          }
-                        }
-
-                        // Check minimum purchase amount
-                        if (coupon.minPurchaseAmount) {
-                          // Calculate eligible subtotal in cents for comparison
-                          let eligibleSubtotal = 0;
-
-                          if (hasAnyRestriction) {
-                            // Only count items that match restrictions
-                            eligibleSubtotal = regularItems
-                              .filter((item) => {
-                                if (item.serviceId && coupon.applicableServiceIds?.includes(item.serviceId)) return true;
-                                if (item.packageId && coupon.applicablePackageIds?.includes(item.packageId)) return true;
-                                return false;
-                              })
-                              .reduce((sum, item) => sum + (item.amount || 0) * 100, 0);
-                          } else {
-                            // All regular items are eligible
-                            eligibleSubtotal = regularItems.reduce((sum, item) => sum + (item.amount || 0) * 100, 0);
-                          }
-
-                          if (eligibleSubtotal < coupon.minPurchaseAmount) {
-                            return false;
-                          }
-                        }
-
-                        return true;
-                      });
-                    };
-
-                    const applicableCoupons = filterApplicableCoupons();
-
-                    return (
-                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
-                </div>
-                {lineDiscounts > 0 && (
-                  <div className="flex justify-between text-red-600">
-                    <span>Discounts</span>
-                    <span>-${lineDiscounts.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 pt-2 border-t">
-                  <Ticket className="h-3.5 w-3.5 text-muted-foreground" />
-                  <Popover open={couponPopoverOpen} onOpenChange={setCouponPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="h-8 flex-1 font-normal justify-start">
-                          {selectedCoupon ? (
-                            <span className="flex items-center gap-2">
-                              <Check className="h-3 w-3 text-green-600" />
-                              <span className="font-mono font-semibold">{selectedCoupon.code}</span>
-                              {validatedCoupon?.calculation?.discountAmountDisplay && (
-                                <span className="text-muted-foreground">
-                                  (-${validatedCoupon.calculation.discountAmountDisplay})
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">Select coupon...</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-87.5 p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search coupons..." />
-                          <CommandList>
-                            <CommandEmpty>No applicable coupons available</CommandEmpty>
-                            <CommandGroup heading="Available Coupons">
-                              {applicableCoupons.slice(0, 10).map((coupon) => (
-                                <CommandItem
-                                  key={coupon.id}
-                                  value={coupon.code}
-                                  onSelect={() => handleCouponSelect(coupon.code)}
-                                >
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono font-semibold">{coupon.code}</span>
-                                      <Badge variant="outline">
-                                        {coupon.discountType === "percentage"
-                                          ? `${coupon.discountValue}%`
-                                          : `$${(coupon.discountValue / 100).toFixed(2)}`}
-                                      </Badge>
-                                    </div>
-                                    {coupon.description && (
-                                      <p className="text-xs text-muted-foreground mt-0.5">{coupon.description}</p>
-                                    )}
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                            {selectedCoupon && (
-                              <>
-                                <CommandSeparator />
-                                <CommandGroup>
-                                  <CommandItem onSelect={handleRemoveCoupon}>
-                                    <X className="h-4 w-4 mr-2" />
-                                    Remove Coupon
-                                  </CommandItem>
-                                </CommandGroup>
-                              </>
-                            )}
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                </div>
-                {selectedCoupon && validatedCoupon?.calculation?.discountAmount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span className="flex items-center gap-1">
-                      <Ticket className="h-3 w-3" />
-                      Coupon ({selectedCoupon.code})
-                    </span>
-                    <span>-${(validatedCoupon.calculation.discountAmount / 100).toFixed(2)}</span>
-                  </div>
-                )}
-                <form.Subscribe selector={(state) => ({ taxRate: state.values.taxRate })}>
-                  {({ taxRate: currentTaxRate }) => (
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={currentTaxRate > 0}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              const defaultTaxRate = parseFloat(tenant?.defaultTaxRate) || 0;
-                              form.setFieldValue("taxRate", defaultTaxRate);
-                            } else {
-                              form.setFieldValue("taxRate", 0);
-                            }
-                          }}
-                        />
-                        <span className="text-muted-foreground">
-                          Tax {currentTaxRate > 0 && `(${currentTaxRate}%)`}
-                        </span>
-                      </div>
-                      <span>${taxAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                </form.Subscribe>
-                <div className="flex justify-between font-bold pt-2 border-t">
-                  <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-
-                {/* Deposit Section */}
-                <form.Subscribe selector={(state) => ({ depositPercent: state.values.depositPercent })}>
-                  {({ depositPercent: currentDepositPercent }) => {
-                    const safeDepositPercent = (() => {
-                      if (currentDepositPercent === null || currentDepositPercent === undefined) return 0;
-                      const parsed = typeof currentDepositPercent === "number" ? currentDepositPercent : parseInt(currentDepositPercent, 10);
-                      return !isNaN(parsed) && parsed > 0 ? parsed : 0;
-                    })();
-
-                    const depositAmount = (() => {
-                      // Use the invoice's depositAmount from database if available (stored in cents)
-                      if (invoice?.depositAmount !== null && invoice?.depositAmount !== undefined) {
-                        const parsed = typeof invoice.depositAmount === 'number' ? invoice.depositAmount : parseFloat(invoice.depositAmount);
-                        return (!isNaN(parsed) && isFinite(parsed) && parsed >= 0) ? parsed / 100 : 0;
-                      }
-                      // Otherwise calculate it (matching API logic - rounds to nearest cent)
-                      const safeTotal = typeof total === "number" && !isNaN(total) && total > 0 ? total : 0;
-                      const amountInCents = Math.round(safeTotal * 100 * (safeDepositPercent / 100));
-                      return amountInCents / 100;
-                    })();
-
-                    return invoice?.depositPaidAt ? (
-                      /* Deposit was already collected - show it as paid */
-                      <>
-                        <div className="flex justify-between pt-2 border-t text-green-600">
-                          <span>✓ Deposit Paid ({safeDepositPercent}%)</span>
-                          <span>-${depositAmount.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between font-bold pt-2 border-t">
-                          <span>Balance Due</span>
-                          <span>${(total - depositAmount).toFixed(2)}</span>
-                        </div>
-                      </>
-                    ) : (
-                      /* No deposit collected yet - allow configuration */
-                      <>
-                        <div className="flex items-center justify-between pt-2 border-t">
-                          <span className="text-muted-foreground">Deposit</span>
-                          <form.Field name="depositPercent">
-                            {(field) => {
-                              // Convert field value to select value, handling NaN
-                              const fieldValue = field.state.value;
-                              const isValidNumber = typeof fieldValue === 'number' && !isNaN(fieldValue) && isFinite(fieldValue) && fieldValue > 0;
-                              const selectValue = isValidNumber ? fieldValue.toString() : "none";
-
-                              console.log("[InvoiceForm] Deposit field rendering:", {
-                                fieldValue,
-                                fieldValueType: typeof fieldValue,
-                                isNaN: isNaN(fieldValue),
-                                isValidNumber,
-                                selectValue
-                              });
-
-                              return (
-                                <Select
-                                  value={selectValue}
-                                  onValueChange={(value) => {
-                                    console.log("[InvoiceForm] Deposit onValueChange called with:", value);
-                                    if (value === "none") {
-                                      field.handleChange(null);
-                                    } else {
-                                      const parsed = parseInt(value, 10);
-                                      // Only update if we got a valid number
-                                      if (!isNaN(parsed) && isFinite(parsed)) {
-                                        console.log("[InvoiceForm] Deposit value changing to:", parsed);
-                                        field.handleChange(parsed);
-                                      } else {
-                                        console.warn("[InvoiceForm] Attempted to set invalid deposit value, ignoring:", value, parsed);
-                                      }
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="w-20 h-8">
-                                    <SelectValue placeholder="None" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
-                                    {DEPOSIT_OPTIONS.map((opt) => (
-                                      <SelectItem key={opt.value} value={opt.value.toString()}>
-                                        {opt.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              );
-                            }}
-                          </form.Field>
-                        </div>
-                        {safeDepositPercent > 0 && (
-                          <div className="flex justify-between text-blue-600">
-                            <span>Deposit Due ({safeDepositPercent}%)</span>
-                            <span>${depositAmount.toFixed(2)}</span>
-                          </div>
-                        )}
-                      </>
-                    );
-                  }}
-                </form.Subscribe>
-                </div>
-                    );
-                  }}
-                </form.Subscribe>
-
-                {/* Action Buttons inside totals section */}
-                <div className="flex flex-wrap gap-2 mt-4">
+              {/* Action Buttons - anchored to bottom */}
+              <div className="mt-auto pt-4 px-6 pb-6 shrink-0 border-t bg-muted/30">
+                <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 min-w-[100px]">
                     Cancel
                   </Button>
