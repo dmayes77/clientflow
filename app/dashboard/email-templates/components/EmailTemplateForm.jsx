@@ -83,7 +83,22 @@ const VARIABLES = [
   { value: "{{payment.method}}", label: "Payment Method", category: "Payment" },
 ];
 
+const BUTTON_COLORS = {
+  primary: { bg: "#3b82f6", label: "Primary (Blue)" },
+  success: { bg: "#22c55e", label: "Success (Green)" },
+  danger: { bg: "#ef4444", label: "Danger (Red)" },
+  warning: { bg: "#f59e0b", label: "Warning (Orange)" },
+  secondary: { bg: "#6b7280", label: "Secondary (Gray)" },
+};
+
 function RichTextEditor({ content, onChange, placeholder }) {
+  const [isButtonDialogOpen, setIsButtonDialogOpen] = useState(false);
+  const [buttonData, setButtonData] = useState({
+    text: "Click Here",
+    url: "#",
+    color: "primary",
+  });
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -137,19 +152,20 @@ function RichTextEditor({ content, onChange, placeholder }) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   }, [editor]);
 
-  const insertButton = useCallback(() => {
+  const openButtonDialog = useCallback(() => {
+    setButtonData({ text: "Click Here", url: "#", color: "primary" });
+    setIsButtonDialogOpen(true);
+  }, []);
+
+  const handleInsertButton = useCallback(() => {
     if (!editor) return;
 
-    const buttonText = window.prompt("Enter button text:", "Click Here");
-    if (buttonText === null) return;
-
-    const buttonUrl = window.prompt("Enter button URL:", "#");
-    if (buttonUrl === null) return;
-
-    const buttonHtml = `<div style="margin: 24px 0; text-align: center;"><a href="${buttonUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${buttonText}</a></div>`;
+    const colorStyle = BUTTON_COLORS[buttonData.color];
+    const buttonHtml = `<div style="margin: 24px 0; text-align: center;"><a href="${buttonData.url}" style="background-color: ${colorStyle.bg}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${buttonData.text}</a></div>`;
 
     editor.chain().focus().insertContent(buttonHtml).run();
-  }, [editor]);
+    setIsButtonDialogOpen(false);
+  }, [editor, buttonData]);
 
   if (!editor) {
     return null;
@@ -232,7 +248,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
           <LinkIcon className="h-4 w-4" />
         </Button>
 
-        <Button type="button" variant="ghost" size="sm" onClick={insertButton} className="h-auto px-2 py-1">
+        <Button type="button" variant="ghost" size="sm" onClick={openButtonDialog} className="h-auto px-2 py-1">
           <Square className="h-3.5 w-3.5 mr-1" />
           <span className="text-xs">Button</span>
         </Button>
@@ -277,6 +293,82 @@ function RichTextEditor({ content, onChange, placeholder }) {
         editor={editor}
         className="prose prose-sm max-w-none p-4 min-h-64 focus-within:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-60 [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0"
       />
+
+      {/* Insert Button Dialog */}
+      <Dialog open={isButtonDialogOpen} onOpenChange={setIsButtonDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Insert Button</DialogTitle>
+            <DialogDescription>Create a styled button for your email template</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="button-text">Button Text</Label>
+              <Input
+                id="button-text"
+                value={buttonData.text}
+                onChange={(e) => setButtonData({ ...buttonData, text: e.target.value })}
+                placeholder="e.g., Pay Invoice, Book Now"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="button-url">Button URL</Label>
+              <Input
+                id="button-url"
+                value={buttonData.url}
+                onChange={(e) => setButtonData({ ...buttonData, url: e.target.value })}
+                placeholder="e.g., {{invoice.paymentUrl}}"
+              />
+              <p className="text-xs text-muted-foreground">You can use template variables like {"{{"} invoice.paymentUrl {"}}"}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="button-color">Button Color</Label>
+              <Select value={buttonData.color} onValueChange={(color) => setButtonData({ ...buttonData, color })}>
+                <SelectTrigger id="button-color">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(BUTTON_COLORS).map(([key, { label, bg }]) => (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: bg }} />
+                        {label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Preview */}
+            <div className="pt-4 border-t">
+              <Label className="text-xs text-muted-foreground mb-2 block">Preview</Label>
+              <div className="bg-muted/30 p-4 rounded-md text-center">
+                <a
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  style={{
+                    backgroundColor: BUTTON_COLORS[buttonData.color].bg,
+                    color: "white",
+                    padding: "12px 24px",
+                    textDecoration: "none",
+                    borderRadius: "6px",
+                    display: "inline-block",
+                    fontWeight: 500,
+                  }}
+                >
+                  {buttonData.text || "Button Text"}
+                </a>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsButtonDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleInsertButton}>Insert Button</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
