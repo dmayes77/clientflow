@@ -10,8 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit, Sliders, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, Sliders, Loader2, Check, ChevronsUpDown } from "lucide-react";
 
 export default function CustomFieldsPage() {
   const { data: customFields = [], isLoading } = useCustomFields();
@@ -22,6 +24,7 @@ export default function CustomFieldsPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [groupPopoverOpen, setGroupPopoverOpen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -41,6 +44,9 @@ export default function CustomFieldsPage() {
     required: false,
     active: true,
   });
+
+  // Extract unique existing groups
+  const existingGroups = [...new Set(customFields.filter((f) => f.group).map((f) => f.group))].sort();
 
   const handleOpenSheet = (field = null) => {
     if (field) {
@@ -257,14 +263,64 @@ export default function CustomFieldsPage() {
 
             <div className="space-y-2">
               <Label htmlFor="group">Group (Optional)</Label>
-              <Input
-                id="group"
-                value={formData.group}
-                onChange={(e) => setFormData({ ...formData, group: e.target.value })}
-                placeholder="e.g., Vehicle Information, Emergency Contact"
-              />
+              <Popover open={groupPopoverOpen} onOpenChange={setGroupPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={groupPopoverOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {formData.group || "Select or create a group..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search or create group..."
+                      value={formData.group}
+                      onValueChange={(value) => setFormData({ ...formData, group: value })}
+                    />
+                    <CommandList>
+                      <CommandEmpty>Type to create a new group</CommandEmpty>
+                      {existingGroups.length > 0 && (
+                        <CommandGroup heading="Existing Groups">
+                          {existingGroups.map((group) => (
+                            <CommandItem
+                              key={group}
+                              value={group}
+                              onSelect={(selectedValue) => {
+                                setFormData({ ...formData, group: selectedValue === formData.group ? "" : selectedValue });
+                                setGroupPopoverOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${formData.group === group ? "opacity-100" : "opacity-0"}`}
+                              />
+                              {group}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                      {formData.group && (
+                        <CommandGroup>
+                          <CommandItem
+                            onSelect={() => {
+                              setFormData({ ...formData, group: "" });
+                              setGroupPopoverOpen(false);
+                            }}
+                          >
+                            Clear selection
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <p className="text-xs text-muted-foreground">
-                Group related fields together for better organization
+                Select an existing group or type to create a new one
               </p>
             </div>
 
