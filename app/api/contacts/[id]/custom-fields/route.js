@@ -43,9 +43,11 @@ export async function GET(request, { params }) {
       id: field.id,
       name: field.name,
       key: field.key,
+      group: field.group,
       fieldType: field.fieldType,
       options: field.options,
       required: field.required,
+      order: field.order,
       value: field.values[0]?.value || null,
     }));
 

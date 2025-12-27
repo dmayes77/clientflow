@@ -135,6 +135,40 @@ export async function POST(request) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
+    // Check for duplicate email
+    const existingByEmail = await prisma.contact.findFirst({
+      where: {
+        tenantId: tenant.id,
+        email: data.email,
+        archived: false,
+      },
+    });
+
+    if (existingByEmail) {
+      return NextResponse.json(
+        { error: `A contact with email "${data.email}" already exists`, field: "email", duplicate: true },
+        { status: 409 }
+      );
+    }
+
+    // Check for duplicate phone (if provided)
+    if (data.phone) {
+      const existingByPhone = await prisma.contact.findFirst({
+        where: {
+          tenantId: tenant.id,
+          phone: data.phone,
+          archived: false,
+        },
+      });
+
+      if (existingByPhone) {
+        return NextResponse.json(
+          { error: `A contact with phone number "${data.phone}" already exists`, field: "phone", duplicate: true },
+          { status: 409 }
+        );
+      }
+    }
+
     const contact = await prisma.contact.create({
       data: {
         tenantId: tenant.id,

@@ -110,7 +110,15 @@ export function DataTable({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
-                  className={`${onRowClick ? "cursor-pointer" : ""} ${
+                  onKeyDown={(e) => {
+                    if (onRowClick && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      onRowClick(row.original);
+                    }
+                  }}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  role={onRowClick ? "button" : undefined}
+                  className={`${onRowClick ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2" : ""} ${
                     typeof rowClassName === "function"
                       ? rowClassName(row.original)
                       : rowClassName || ""

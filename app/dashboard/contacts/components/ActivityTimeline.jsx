@@ -45,9 +45,9 @@ function ActivityItem({ activity }) {
       case "contact_created":
         return (
           <div className="space-y-1">
-            <p className="text-sm">
+            <div className="text-sm">
               Contact created as <Badge variant="outline">{activity.data.status}</Badge>
-            </p>
+            </div>
             <p className="text-xs text-muted-foreground">{activity.data.email}</p>
           </div>
         );
@@ -72,9 +72,9 @@ function ActivityItem({ activity }) {
       case "booking_updated":
         return (
           <div className="space-y-1">
-            <p className="text-sm">
+            <div className="text-sm">
               Booking status changed to <Badge variant="outline">{activity.data.status}</Badge>
-            </p>
+            </div>
             <p className="text-xs text-muted-foreground">{activity.data.service}</p>
           </div>
         );
@@ -118,9 +118,9 @@ function ActivityItem({ activity }) {
       case "tag_added":
         return (
           <div className="space-y-1">
-            <p className="text-sm">
+            <div className="text-sm">
               Tag added: <Badge variant="secondary">{activity.data.tagName}</Badge>
-            </p>
+            </div>
           </div>
         );
 

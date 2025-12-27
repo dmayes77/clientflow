@@ -39,6 +39,39 @@ export function ContactImport({ open, onOpenChange }) {
     parseCSV(selectedFile);
   };
 
+  // Helper function to parse a CSV line properly handling quoted fields
+  const parseCSVLine = (line) => {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote
+          current += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote mode
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+
+    // Add last field
+    result.push(current.trim());
+    return result;
+  };
+
   const parseCSV = (file) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -50,15 +83,15 @@ export function ContactImport({ open, onOpenChange }) {
         return;
       }
 
-      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+      const headers = parseCSVLine(lines[0]).map((h) => h.toLowerCase());
       const parsedContacts = [];
 
       for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(",").map((v) => v.trim());
+        const values = parseCSVLine(lines[i]);
         const contact = {};
 
         headers.forEach((header, index) => {
-          const value = values[index];
+          const value = values[index] || "";
           // Map common CSV headers to contact fields
           if (header.includes("name") || header === "contact name") {
             contact.name = value;
@@ -70,8 +103,8 @@ export function ContactImport({ open, onOpenChange }) {
             contact.company = value;
           } else if (header.includes("website") || header === "url") {
             contact.website = value;
-          } else if (header.includes("status")) {
-            contact.status = value;
+          } else if (header.includes("source")) {
+            contact.source = value;
           } else if (header.includes("note") || header === "comments") {
             contact.notes = value;
           }

@@ -17,6 +17,7 @@ export function ContactCustomFields({ contactId }) {
   const setCustomFieldsMutation = useSetContactCustomFields();
   const [fieldValues, setFieldValues] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // Initialize field values when data loads
   useEffect(() => {
@@ -29,15 +30,62 @@ export function ContactCustomFields({ contactId }) {
     }
   }, [customFields]);
 
+  const validateField = (field, value) => {
+    if (field.required) {
+      if (!value || (typeof value === 'string' && !value.trim())) {
+        return `${field.name} is required`;
+      }
+    }
+    return null;
+  };
+
+  const validateAllFields = () => {
+    const newErrors = {};
+    let isValid = true;
+
+    customFields.forEach((field) => {
+      const value = fieldValues[field.id] || "";
+      const error = validateField(field, value);
+      if (error) {
+        newErrors[field.id] = error;
+        isValid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleFieldChange = (fieldId, value) => {
     setFieldValues((prev) => ({
       ...prev,
       [fieldId]: value,
     }));
     setHasChanges(true);
+
+    // Clear error for this field when user starts typing
+    const field = customFields.find((f) => f.id === fieldId);
+    if (field) {
+      const error = validateField(field, value);
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        if (error) {
+          newErrors[fieldId] = error;
+        } else {
+          delete newErrors[fieldId];
+        }
+        return newErrors;
+      });
+    }
   };
 
   const handleSave = async () => {
+    // Validate all fields before saving
+    if (!validateAllFields()) {
+      toast.error("Please fill in all required custom fields");
+      return;
+    }
+
     try {
       const values = Object.entries(fieldValues).map(([fieldId, value]) => ({
         fieldId,
@@ -58,93 +106,131 @@ export function ContactCustomFields({ contactId }) {
 
   const renderField = (field) => {
     const value = fieldValues[field.id] || "";
+    const error = errors[field.id];
+    const errorId = `${field.id}-error`;
 
     switch (field.fieldType) {
       case "text":
         return (
-          <Input
-            value={value}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            placeholder={`Enter ${field.name.toLowerCase()}`}
-          />
+          <>
+            <Input
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              placeholder={`Enter ${field.name.toLowerCase()}`}
+              className={error ? "border-red-500 focus-visible:ring-red-500" : ""}
+              aria-invalid={!!error}
+              aria-describedby={error ? errorId : undefined}
+            />
+            {error && <p id={errorId} className="text-sm text-red-500">{error}</p>}
+          </>
         );
 
       case "number":
         return (
-          <Input
-            type="number"
-            value={value}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            placeholder={`Enter ${field.name.toLowerCase()}`}
-          />
+          <>
+            <Input
+              type="number"
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              placeholder={`Enter ${field.name.toLowerCase()}`}
+              className={error ? "border-red-500 focus-visible:ring-red-500" : ""}
+              aria-invalid={!!error}
+              aria-describedby={error ? errorId : undefined}
+            />
+            {error && <p id={errorId} className="text-sm text-red-500">{error}</p>}
+          </>
         );
 
       case "date":
         return (
-          <Input
-            type="date"
-            value={value}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-          />
+          <>
+            <Input
+              type="date"
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              className={error ? "border-red-500 focus-visible:ring-red-500" : ""}
+              aria-invalid={!!error}
+              aria-describedby={error ? errorId : undefined}
+            />
+            {error && <p id={errorId} className="text-sm text-red-500">{error}</p>}
+          </>
         );
 
       case "textarea":
         return (
-          <Textarea
-            value={value}
-            onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            placeholder={`Enter ${field.name.toLowerCase()}`}
-            rows={3}
-          />
+          <>
+            <Textarea
+              value={value}
+              onChange={(e) => handleFieldChange(field.id, e.target.value)}
+              placeholder={`Enter ${field.name.toLowerCase()}`}
+              rows={3}
+              className={error ? "border-red-500 focus-visible:ring-red-500" : ""}
+              aria-invalid={!!error}
+              aria-describedby={error ? errorId : undefined}
+            />
+            {error && <p id={errorId} className="text-sm text-red-500">{error}</p>}
+          </>
         );
 
       case "select":
         return (
-          <Select value={value} onValueChange={(val) => handleFieldChange(field.id, val)}>
-            <SelectTrigger>
-              <SelectValue placeholder={`Select ${field.name.toLowerCase()}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options?.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <>
+            <Select value={value} onValueChange={(val) => handleFieldChange(field.id, val)}>
+              <SelectTrigger
+                className={error ? "border-red-500 focus:ring-red-500" : ""}
+                aria-invalid={!!error}
+                aria-describedby={error ? errorId : undefined}
+              >
+                <SelectValue placeholder={`Select ${field.name.toLowerCase()}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {field.options?.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {error && <p id={errorId} className="text-sm text-red-500">{error}</p>}
+          </>
         );
 
       case "multiselect":
         return (
           <div className="space-y-2">
-            {field.options?.map((option) => {
-              const selectedValues = value ? value.split(",") : [];
-              const isChecked = selectedValues.includes(option);
+            <div className={error ? "border border-red-500 rounded-md p-2" : ""}>
+              {field.options?.map((option) => {
+                const selectedValues = value ? value.split(",") : [];
+                const isChecked = selectedValues.includes(option);
 
-              return (
-                <div key={option} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`${field.id}-${option}`}
-                    checked={isChecked}
-                    onCheckedChange={(checked) => {
-                      let newValues;
-                      if (checked) {
-                        newValues = [...selectedValues, option];
-                      } else {
-                        newValues = selectedValues.filter((v) => v !== option);
-                      }
-                      handleFieldChange(field.id, newValues.join(","));
-                    }}
-                  />
-                  <label
-                    htmlFor={`${field.id}-${option}`}
-                    className="text-sm cursor-pointer"
-                  >
-                    {option}
-                  </label>
-                </div>
-              );
-            })}
+                return (
+                  <div key={option} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`${field.id}-${option}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        let newValues;
+                        if (checked) {
+                          newValues = [...selectedValues, option];
+                        } else {
+                          newValues = selectedValues.filter((v) => v !== option);
+                        }
+                        handleFieldChange(field.id, newValues.join(","));
+                      }}
+                      aria-invalid={!!error}
+                      aria-describedby={error ? errorId : undefined}
+                    />
+                    <label
+                      htmlFor={`${field.id}-${option}`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {option}
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+            {error && <p id={errorId} className="text-sm text-red-500">{error}</p>}
           </div>
         );
 
@@ -201,7 +287,11 @@ export function ContactCustomFields({ contactId }) {
             <CardDescription>Additional information for this contact</CardDescription>
           </div>
           {hasChanges && (
-            <Button size="sm" onClick={handleSave} disabled={setCustomFieldsMutation.isPending}>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={setCustomFieldsMutation.isPending || Object.keys(errors).length > 0}
+            >
               {setCustomFieldsMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
               ) : (
@@ -219,6 +309,7 @@ export function ContactCustomFields({ contactId }) {
             <div className="space-y-4">
               {customFields
                 .filter((f) => !f.group)
+                .sort((a, b) => a.order - b.order)
                 .map((field) => (
                   <div key={field.id} className="space-y-2">
                     <Label>
@@ -241,22 +332,28 @@ export function ContactCustomFields({ contactId }) {
                 acc[group].push(field);
                 return acc;
               }, {})
-          ).map(([groupName, fields]) => (
-            <div key={groupName} className="space-y-4">
+          ).map(([groupName, fields]) => {
+            // Sort fields within group by order
+            const sortedFields = [...fields].sort((a, b) => a.order - b.order);
+            return (
+            <div key={groupName} className="space-y-3">
               <div className="flex items-center gap-2 pb-2 border-b">
                 <h4 className="font-semibold text-sm">{groupName}</h4>
               </div>
-              {fields.map((field) => (
-                <div key={field.id} className="space-y-2">
-                  <Label>
-                    {field.name}
-                    {field.required && <span className="text-destructive ml-1">*</span>}
-                  </Label>
-                  {renderField(field)}
-                </div>
-              ))}
+              <div className="grid grid-cols-1 tablet:grid-cols-2 desktop:grid-cols-3 gap-4">
+                {sortedFields.map((field) => (
+                  <div key={field.id} className="space-y-2">
+                    <Label>
+                      {field.name}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    {renderField(field)}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

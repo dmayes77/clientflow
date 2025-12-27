@@ -81,6 +81,21 @@ export async function POST(request) {
       );
     }
 
+    // Determine the order for this field
+    let order = data.order;
+    if (order === 0 && data.group) {
+      // If creating a field in a group with default order, assign next order
+      const fieldsInGroup = await prisma.customField.findMany({
+        where: {
+          tenantId: tenant.id,
+          group: data.group,
+        },
+        orderBy: { order: "desc" },
+        take: 1,
+      });
+      order = fieldsInGroup.length > 0 ? fieldsInGroup[0].order + 1 : 0;
+    }
+
     const customField = await prisma.customField.create({
       data: {
         tenantId: tenant.id,
@@ -90,7 +105,7 @@ export async function POST(request) {
         fieldType: data.fieldType,
         options: data.options || null,
         required: data.required,
-        order: data.order,
+        order: order,
         active: data.active,
       },
     });

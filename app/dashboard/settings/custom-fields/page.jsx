@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit, Sliders, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, Edit, Sliders, Loader2, Check, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 export default function CustomFieldsPage() {
   const { data: customFields = [], isLoading } = useCustomFields();
@@ -133,6 +133,41 @@ export default function CustomFieldsPage() {
     }
   };
 
+  const handleReorder = async (field, direction) => {
+    const fieldsInGroup = customFields
+      .filter((f) => f.group === field.group)
+      .sort((a, b) => a.order - b.order);
+
+    // Check if all fields have the same order (e.g., all 0)
+    const allSameOrder = fieldsInGroup.every((f) => f.order === fieldsInGroup[0].order);
+
+    try {
+      if (allSameOrder) {
+        // Reassign sequential orders to all fields in the group
+        for (let i = 0; i < fieldsInGroup.length; i++) {
+          await updateMutation.mutateAsync({ id: fieldsInGroup[i].id, order: i });
+        }
+        toast.success("Field orders initialized");
+        return;
+      }
+
+      const currentIndex = fieldsInGroup.findIndex((f) => f.id === field.id);
+      const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+      if (swapIndex < 0 || swapIndex >= fieldsInGroup.length) return;
+
+      const currentField = fieldsInGroup[currentIndex];
+      const swapField = fieldsInGroup[swapIndex];
+
+      // Swap orders sequentially to avoid race conditions
+      await updateMutation.mutateAsync({ id: currentField.id, order: swapField.order });
+      await updateMutation.mutateAsync({ id: swapField.id, order: currentField.order });
+      toast.success("Field order updated");
+    } catch (error) {
+      toast.error(error.message || "Failed to reorder field");
+    }
+  };
+
   const fieldTypeLabels = {
     text: "Text",
     number: "Number",
@@ -142,6 +177,19 @@ export default function CustomFieldsPage() {
     boolean: "Checkbox",
     textarea: "Long Text",
   };
+
+  // Group fields by their group property
+  const groupedFields = customFields.reduce((acc, field) => {
+    const groupName = field.group || "_ungrouped";
+    if (!acc[groupName]) acc[groupName] = [];
+    acc[groupName].push(field);
+    return acc;
+  }, {});
+
+  // Sort fields within each group by order
+  Object.keys(groupedFields).forEach((groupName) => {
+    groupedFields[groupName].sort((a, b) => a.order - b.order);
+  });
 
   if (isLoading) {
     return (
@@ -179,50 +227,130 @@ export default function CustomFieldsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {customFields.map((field) => (
-            <Card key={field.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{field.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 flex-wrap">
-                      <code className="text-xs bg-muted px-2 py-0.5 rounded">{field.key}</code>
-                      {field.group && <Badge variant="secondary">{field.group}</Badge>}
-                      <Badge variant="outline">{fieldTypeLabels[field.fieldType]}</Badge>
-                      {field.required && <Badge variant="destructive">Required</Badge>}
-                      {!field.active && <Badge variant="secondary">Inactive</Badge>}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleOpenSheet(field)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(field)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+        <div className="space-y-6">
+          {/* Ungrouped fields */}
+          {groupedFields._ungrouped && groupedFields._ungrouped.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Ungrouped Fields</h2>
+              <div className="grid gap-4">
+                {groupedFields._ungrouped.map((field) => (
+                  <Card key={field.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-lg">{field.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-2 flex-wrap">
+                            <code className="text-xs bg-muted px-2 py-0.5 rounded">{field.key}</code>
+                            <Badge variant="outline">{fieldTypeLabels[field.fieldType]}</Badge>
+                            {field.required && <Badge variant="destructive">Required</Badge>}
+                            {!field.active && <Badge variant="secondary">Inactive</Badge>}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenSheet(field)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(field)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    {field.options && field.options.length > 0 && (
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-muted-foreground mb-2">Options:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {field.options.map((option) => (
+                            <Badge key={option} variant="secondary">
+                              {option}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Grouped fields */}
+          {Object.entries(groupedFields)
+            .filter(([groupName]) => groupName !== "_ungrouped")
+            .map(([groupName, fields]) => (
+              <div key={groupName} className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  {groupName}
+                  <Badge variant="secondary">{fields.length} fields</Badge>
+                </h2>
+                <div className="grid gap-4">
+                  {fields.map((field, index) => (
+                    <Card key={field.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{field.name}</CardTitle>
+                            <CardDescription className="flex items-center gap-2 flex-wrap">
+                              <code className="text-xs bg-muted px-2 py-0.5 rounded">{field.key}</code>
+                              <Badge variant="secondary">{groupName}</Badge>
+                              <Badge variant="outline">{fieldTypeLabels[field.fieldType]}</Badge>
+                              {field.required && <Badge variant="destructive">Required</Badge>}
+                              {!field.active && <Badge variant="secondary">Inactive</Badge>}
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReorder(field, "up")}
+                              disabled={index === 0 || updateMutation.isPending}
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReorder(field, "down")}
+                              disabled={index === fields.length - 1 || updateMutation.isPending}
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenSheet(field)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(field)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      {field.options && field.options.length > 0 && (
+                        <CardContent className="pt-0">
+                          <p className="text-sm text-muted-foreground mb-2">Options:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {field.options.map((option) => (
+                              <Badge key={option} variant="secondary">
+                                {option}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
                 </div>
-              </CardHeader>
-              {field.options && field.options.length > 0 && (
-                <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground mb-2">Options:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {field.options.map((option) => (
-                      <Badge key={option} variant="secondary">
-                        {option}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
+              </div>
+            ))}
         </div>
       )}
 
