@@ -48,6 +48,7 @@ import {
   Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 const statusConfig = {
   inquiry: { label: "Inquiry", color: "bg-yellow-500", textColor: "text-yellow-600", icon: AlertCircle },
@@ -449,7 +450,19 @@ export function CalendarView() {
                     {hourBookings.map((booking) => {
                       const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
                       const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
-                      const height = Math.min((booking.duration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 4);
+
+                      // Calculate break-aware end time
+                      const startTime = new Date(booking.scheduledAt);
+                      const adjustedEndTime = calculateAdjustedEndTime(
+                        startTime,
+                        booking.duration,
+                        tenant?.breakStartTime,
+                        tenant?.breakEndTime
+                      );
+
+                      // Calculate actual display duration in minutes (including break extension)
+                      const displayDuration = (adjustedEndTime - startTime) / 60000;
+                      const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 4);
 
                       return (
                         <div
@@ -520,7 +533,19 @@ export function CalendarView() {
                   {hourBookings.map((booking) => {
                     const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
                     const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
-                    const height = Math.min((booking.duration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 4);
+
+                    // Calculate break-aware end time
+                    const startTime = new Date(booking.scheduledAt);
+                    const adjustedEndTime = calculateAdjustedEndTime(
+                      startTime,
+                      booking.duration,
+                      tenant?.breakStartTime,
+                      tenant?.breakEndTime
+                    );
+
+                    // Calculate actual display duration in minutes (including break extension)
+                    const displayDuration = (adjustedEndTime - startTime) / 60000;
+                    const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 4);
 
                     return (
                       <div
@@ -585,7 +610,7 @@ export function CalendarView() {
                         {height > 40 && (
                           <>
                             <div className="opacity-80">
-                              {formatTimeInTz(booking.scheduledAt, "h:mm a")} - {booking.duration}min
+                              {formatTimeInTz(booking.scheduledAt, "h:mm a")} - {formatTimeInTz(adjustedEndTime, "h:mm a")}
                             </div>
                             <div className="opacity-80 truncate">
                               {booking.services?.[0]?.service?.name ||
