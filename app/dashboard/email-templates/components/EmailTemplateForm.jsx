@@ -92,6 +92,12 @@ const BUTTON_COLORS = {
   secondary: { bg: "#6b7280", label: "Secondary (Gray)" },
 };
 
+const BUTTON_POSITIONS = {
+  left: { align: "left", label: "Left" },
+  center: { align: "center", label: "Center" },
+  right: { align: "right", label: "Right" },
+};
+
 // Custom TipTap extension for email buttons that preserves inline styles
 const EmailButton = Node.create({
   name: "emailButton",
@@ -104,6 +110,7 @@ const EmailButton = Node.create({
       backgroundColor: { default: "#3b82f6" },
       color: { default: "white" },
       text: { default: "Click Here" },
+      position: { default: "center" },
     };
   },
 
@@ -116,12 +123,12 @@ const EmailButton = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    const { href, backgroundColor, color, text } = HTMLAttributes;
+    const { href, backgroundColor, color, text, position } = HTMLAttributes;
     return [
       'div',
       {
         'data-email-button': '',
-        style: 'margin: 24px 0; text-align: center;'
+        style: `margin: 24px 0; text-align: ${position || 'center'};`
       },
       [
         'a',
@@ -153,6 +160,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
     text: "Click Here",
     url: "#",
     color: "primary",
+    position: "center",
   });
 
   const editor = useEditor({
@@ -212,7 +220,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
   }, [editor]);
 
   const openButtonDialog = useCallback(() => {
-    setButtonData({ text: "Click Here", url: "#", color: "primary" });
+    setButtonData({ text: "Click Here", url: "#", color: "primary", position: "center" });
     setIsButtonDialogOpen(true);
   }, []);
 
@@ -226,6 +234,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
       backgroundColor: colorStyle.bg,
       color: "white",
       text: buttonData.text,
+      position: buttonData.position,
     }).run();
 
     // Log what actually got inserted
@@ -408,10 +417,28 @@ function RichTextEditor({ content, onChange, placeholder }) {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="button-position">Button Position</Label>
+              <Select value={buttonData.position} onValueChange={(position) => setButtonData({ ...buttonData, position })}>
+                <SelectTrigger id="button-position">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(BUTTON_POSITIONS).map(([key, { label }]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {/* Preview */}
             <div className="pt-4 border-t">
               <Label className="text-xs text-muted-foreground mb-2 block">Preview</Label>
-              <div className="bg-muted/30 p-4 rounded-md text-center">
+              <div
+                className="bg-muted/30 p-4 rounded-md"
+                style={{ textAlign: buttonData.position || "center" }}
+              >
                 <a
                   href="#"
                   onClick={(e) => e.preventDefault()}
