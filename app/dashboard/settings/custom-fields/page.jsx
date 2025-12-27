@@ -25,6 +25,7 @@ export default function CustomFieldsPage() {
   const [editingField, setEditingField] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [groupPopoverOpen, setGroupPopoverOpen] = useState(false);
+  const [groupSearch, setGroupSearch] = useState("");
 
   useEffect(() => {
     const checkMobile = () => {
@@ -72,6 +73,7 @@ export default function CustomFieldsPage() {
         active: true,
       });
     }
+    setGroupSearch("");
     setIsSheetOpen(true);
   };
 
@@ -276,32 +278,51 @@ export default function CustomFieldsPage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
-                  <Command>
+                  <Command shouldFilter={false}>
                     <CommandInput
                       placeholder="Search or create group..."
-                      value={formData.group}
-                      onValueChange={(value) => setFormData({ ...formData, group: value })}
+                      value={groupSearch}
+                      onValueChange={setGroupSearch}
                     />
                     <CommandList>
-                      <CommandEmpty>Type to create a new group</CommandEmpty>
-                      {existingGroups.length > 0 && (
-                        <CommandGroup heading="Existing Groups">
-                          {existingGroups.map((group) => (
-                            <CommandItem
-                              key={group}
-                              value={group}
-                              onSelect={(selectedValue) => {
-                                setFormData({ ...formData, group: selectedValue === formData.group ? "" : selectedValue });
-                                setGroupPopoverOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={`mr-2 h-4 w-4 ${formData.group === group ? "opacity-100" : "opacity-0"}`}
-                              />
-                              {group}
-                            </CommandItem>
-                          ))}
+                      {groupSearch && !existingGroups.includes(groupSearch) && (
+                        <CommandGroup>
+                          <CommandItem
+                            onSelect={() => {
+                              setFormData({ ...formData, group: groupSearch });
+                              setGroupPopoverOpen(false);
+                              setGroupSearch("");
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create "{groupSearch}"
+                          </CommandItem>
                         </CommandGroup>
+                      )}
+                      {existingGroups.filter((g) => !groupSearch || g.toLowerCase().includes(groupSearch.toLowerCase())).length > 0 && (
+                        <CommandGroup heading="Existing Groups">
+                          {existingGroups
+                            .filter((g) => !groupSearch || g.toLowerCase().includes(groupSearch.toLowerCase()))
+                            .map((group) => (
+                              <CommandItem
+                                key={group}
+                                value={group}
+                                onSelect={() => {
+                                  setFormData({ ...formData, group });
+                                  setGroupPopoverOpen(false);
+                                  setGroupSearch("");
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${formData.group === group ? "opacity-100" : "opacity-0"}`}
+                                />
+                                {group}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      )}
+                      {!groupSearch && existingGroups.length === 0 && (
+                        <CommandEmpty>Type to create a new group</CommandEmpty>
                       )}
                       {formData.group && (
                         <CommandGroup>
@@ -309,6 +330,7 @@ export default function CustomFieldsPage() {
                             onSelect={() => {
                               setFormData({ ...formData, group: "" });
                               setGroupPopoverOpen(false);
+                              setGroupSearch("");
                             }}
                           >
                             Clear selection
