@@ -794,6 +794,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                   )}
                 </form.Field>
               </div>
+              </div>
             </CardContent>
           </Card>
 
