@@ -56,14 +56,14 @@ function ActivityItem({ activity }) {
         return (
           <div className="space-y-1">
             <p className="text-sm">
-              Booked <span className="font-medium">{activity.data.service}</span>
+              Booked <span className="font-medium">{activity.data.service || "Service"}</span>
             </p>
             <p className="text-xs text-muted-foreground">
               Scheduled for {format(new Date(activity.data.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
             </p>
-            {activity.data.totalPrice && (
+            {activity.data.totalPrice > 0 && (
               <p className="text-xs text-muted-foreground">
-                ${(activity.data.totalPrice / 100).toFixed(2)}
+                ${((activity.data.totalPrice || 0) / 100).toFixed(2)}
               </p>
             )}
           </div>
@@ -86,7 +86,7 @@ function ActivityItem({ activity }) {
               Invoice <span className="font-mono text-xs">{activity.data.invoiceNumber}</span> created
             </p>
             <p className="text-xs text-muted-foreground">
-              ${(activity.data.amount / 100).toFixed(2)} • {activity.data.status}
+              ${((activity.data.amount || 0) / 100).toFixed(2)} • {activity.data.status}
             </p>
           </div>
         );
@@ -98,7 +98,7 @@ function ActivityItem({ activity }) {
               Invoice <span className="font-mono text-xs">{activity.data.invoiceNumber}</span> paid
             </p>
             <p className="text-xs text-muted-foreground">
-              ${(activity.data.amount / 100).toFixed(2)}
+              ${((activity.data.amount || 0) / 100).toFixed(2)}
             </p>
           </div>
         );
@@ -107,10 +107,10 @@ function ActivityItem({ activity }) {
         return (
           <div className="space-y-1">
             <p className="text-sm">
-              Payment received via <span className="capitalize">{activity.data.method}</span>
+              Payment received via <span className="capitalize">{activity.data.method || "payment"}</span>
             </p>
             <p className="text-xs text-muted-foreground">
-              ${(activity.data.amount / 100).toFixed(2)}
+              ${((activity.data.amount || 0) / 100).toFixed(2)}
             </p>
           </div>
         );

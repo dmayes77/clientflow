@@ -44,6 +44,7 @@ import {
   Briefcase,
   User,
   Bell,
+  Sliders,
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
@@ -67,6 +68,7 @@ const accountItems = [
   { label: "Business", href: "/dashboard/settings/business", icon: Settings },
   { label: "Availability", href: "/dashboard/availability", icon: Clock },
   { label: "Coupons", href: "/dashboard/coupons", icon: Ticket },
+  { label: "Custom Fields", href: "/dashboard/settings/custom-fields", icon: Sliders },
   { label: "Billing", href: "/dashboard/settings/billing", icon: Receipt },
   { label: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
   { label: "Integrations", href: "/dashboard/integrations", icon: Workflow },
@@ -83,7 +85,8 @@ function SidebarNav({ businessName }) {
     return pathname.startsWith("/dashboard/settings") ||
       pathname.startsWith("/dashboard/availability") ||
       pathname.startsWith("/dashboard/webhooks") ||
-      pathname.startsWith("/dashboard/integrations")
+      pathname.startsWith("/dashboard/integrations") ||
+      pathname.startsWith("/dashboard/coupons")
       ? "account"
       : "business";
   };
