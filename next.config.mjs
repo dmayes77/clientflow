@@ -40,8 +40,11 @@ const sentryOptions = {
   disableLogger: true,
 };
 
-export default withSentryConfig(
-  nextConfig,
-  sentryWebpackPluginOptions,
-  sentryOptions
-);
+// Temporarily disable Sentry to debug build issue
+export default nextConfig;
+
+// export default withSentryConfig(
+//   nextConfig,
+//   sentryWebpackPluginOptions,
+//   sentryOptions
+// );
