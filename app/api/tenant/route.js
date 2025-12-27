@@ -51,6 +51,7 @@ export async function GET() {
         breakStartTime: true,
         breakEndTime: true,
         bufferTime: true,
+        minAdvanceHours: true,
         defaultCalendarView: true,
         defaultTaxRate: true,
         facebookUrl: true,

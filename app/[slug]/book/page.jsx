@@ -66,12 +66,25 @@ function formatTime(time) {
   return `${displayHour}:${minutes} ${ampm}`;
 }
 
-function generateTimeSlots(openTime, closeTime, interval, bookedSlots, duration) {
+function generateTimeSlots(openTime, closeTime, interval, bookedSlots, duration, breakStartTime, breakEndTime, selectedDate, earliestAllowedTime) {
   const slots = [];
   if (!openTime || !closeTime) return slots;
 
   const [openHour, openMin] = openTime.split(":").map(Number);
   const [closeHour, closeMin] = closeTime.split(":").map(Number);
+
+  // Parse break times if provided
+  let breakStart = null;
+  let breakEnd = null;
+  if (breakStartTime && breakEndTime) {
+    const [breakStartH, breakStartM] = breakStartTime.split(":").map(Number);
+    const [breakEndH, breakEndM] = breakEndTime.split(":").map(Number);
+    breakStart = breakStartH * 60 + breakStartM;
+    breakEnd = breakEndH * 60 + breakEndM;
+  }
+
+  // Parse earliest allowed time if provided
+  const earliestAllowed = earliestAllowedTime ? new Date(earliestAllowedTime) : null;
 
   let currentHour = openHour;
   let currentMin = openMin;
@@ -84,6 +97,17 @@ function generateTimeSlots(openTime, closeTime, interval, bookedSlots, duration)
     const slotStart = currentHour * 60 + currentMin;
     const slotEnd = slotStart + duration;
 
+    // Create a Date object for this time slot
+    const slotDateTime = selectedDate ? new Date(selectedDate) : new Date();
+    slotDateTime.setHours(currentHour, currentMin, 0, 0);
+
+    // Check if slot is before earliest allowed time
+    const isTooSoon = earliestAllowed && slotDateTime < earliestAllowed;
+
+    // Check if slot overlaps with break time
+    const overlapsBreak = breakStart !== null && breakEnd !== null &&
+      slotStart < breakEnd && slotEnd > breakStart;
+
     const isBooked = bookedSlots.some((booked) => {
       const [bStartH, bStartM] = booked.startTime.split(":").map(Number);
       const [bEndH, bEndM] = booked.endTime.split(":").map(Number);
@@ -92,7 +116,7 @@ function generateTimeSlots(openTime, closeTime, interval, bookedSlots, duration)
       return slotStart < bookedEnd && slotEnd > bookedStart;
     });
 
-    if (!isBooked) {
+    if (!isBooked && !overlapsBreak && !isTooSoon) {
       slots.push(timeStr);
     }
 
@@ -739,9 +763,13 @@ function TenantBookingPageContent({ params }) {
       availabilityData.closeTime,
       availabilityData.slotInterval || 30,
       availabilityData.bookedSlots || [],
-      selectedDuration || 30
+      selectedDuration || 30,
+      availabilityData.breakStartTime,
+      availabilityData.breakEndTime,
+      selectedDate,
+      availabilityData.earliestAllowedTime
     );
-  }, [availabilityData, selectedDuration]);
+  }, [availabilityData, selectedDuration, selectedDate]);
 
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();

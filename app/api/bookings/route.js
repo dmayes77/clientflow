@@ -4,6 +4,7 @@ import { getAuthenticatedTenant } from "@/lib/auth";
 import { createBookingSchema, validateRequest } from "@/lib/validations";
 import { triggerWorkflows } from "@/lib/workflow-executor";
 import { checkBookingLimit } from "@/lib/plan-limits";
+import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 // GET /api/bookings - List all bookings
 export async function GET(request) {
@@ -124,23 +125,87 @@ export async function POST(request) {
       }
     }
 
-    const booking = await prisma.booking.create({
-      data: {
-        tenantId: tenant.id,
-        contactId: data.contactId,
-        serviceId: data.serviceId,
-        packageId: data.packageId,
-        scheduledAt: data.scheduledAt,
-        status: data.status || "inquiry",
-        notes: data.notes,
-        totalPrice: data.totalPrice,
-        duration: data.duration,
-      },
-      include: {
-        contact: true,
-        service: true,
-        package: true,
-      },
+    // Use a transaction to prevent race conditions between conflict check and booking creation
+    const booking = await prisma.$transaction(async (tx) => {
+      // Check for conflicting bookings (including buffer time and break periods)
+      if (data.scheduledAt && data.duration) {
+        const appointmentStart = new Date(data.scheduledAt);
+
+        // Calculate adjusted end time accounting for break period
+        const appointmentEnd = calculateAdjustedEndTime(
+          appointmentStart,
+          data.duration,
+          tenant.breakStartTime,
+          tenant.breakEndTime
+        );
+
+        // Buffer time should only be added ONCE between appointments, not doubled
+        // We add it to the end of THIS appointment when checking conflicts
+        const bufferTimeMs = (tenant.bufferTime || 0) * 60000;
+        const checkStart = appointmentStart;
+        const checkEnd = new Date(appointmentEnd.getTime() + bufferTimeMs);
+
+        const conflictingBooking = await tx.booking.findFirst({
+          where: {
+            tenantId: tenant.id,
+            status: { in: ["pending", "confirmed", "inquiry", "scheduled"] },
+            AND: [
+              {
+                scheduledAt: { lt: checkEnd },
+              },
+              {
+                scheduledAt: { gte: new Date(checkStart.getTime() - 24 * 60 * 60000) },
+              },
+            ],
+          },
+          select: {
+            id: true,
+            scheduledAt: true,
+            duration: true,
+          },
+        });
+
+        if (conflictingBooking) {
+          const existingStart = conflictingBooking.scheduledAt;
+
+          // Calculate adjusted end time for existing booking (accounting for break period)
+          const existingEnd = calculateAdjustedEndTime(
+            existingStart,
+            conflictingBooking.duration,
+            tenant.breakStartTime,
+            tenant.breakEndTime
+          );
+
+          // Add buffer time only once - to the end of the existing booking
+          const existingCheckEnd = new Date(existingEnd.getTime() + bufferTimeMs);
+
+          // Check if appointments overlap
+          // New booking starts before existing ends (with buffer) AND new booking ends after existing starts
+          if (checkStart < existingCheckEnd && checkEnd > existingStart) {
+            throw new Error("CONFLICT:This time slot conflicts with an existing booking. Please choose a different time.");
+          }
+        }
+      }
+
+      // Create the booking
+      return await tx.booking.create({
+        data: {
+          tenantId: tenant.id,
+          contactId: data.contactId,
+          serviceId: data.serviceId,
+          packageId: data.packageId,
+          scheduledAt: data.scheduledAt,
+          status: data.status || "inquiry",
+          notes: data.notes,
+          totalPrice: data.totalPrice,
+          duration: data.duration,
+        },
+        include: {
+          contact: true,
+          service: true,
+          package: true,
+        },
+      });
     });
 
     // Auto-tag contact based on booking status
@@ -186,6 +251,15 @@ export async function POST(request) {
     return NextResponse.json(booking, { status: 201 });
   } catch (error) {
     console.error("Error creating booking:", error);
+
+    // Handle conflict errors specifically
+    if (error.message?.startsWith("CONFLICT:")) {
+      return NextResponse.json(
+        { error: error.message.replace("CONFLICT:", "") },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

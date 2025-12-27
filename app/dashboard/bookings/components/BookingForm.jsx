@@ -870,6 +870,14 @@ export function BookingForm({
                     />
                   </>
                 )}
+                {timezone && (
+                  <div className="col-span-full">
+                    <p className="text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3 inline mr-1" />
+                      Appointment time is in <span className="font-medium">{timezone.replace('_', ' ')}</span> timezone
+                    </p>
+                  </div>
+                )}
                 <form.Field name="duration">
                   {(field) => (
                     <div className="space-y-2">

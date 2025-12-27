@@ -143,119 +143,116 @@ export async function POST(request, { params }) {
     const finalPrice = totalPrice || calculatedPrice;
     const finalDuration = totalDuration || calculatedDuration;
 
-    // Check for conflicting bookings (including buffer time and break periods)
-    const bufferTimeMs = (tenant.bufferTime || 0) * 60000; // Convert buffer minutes to milliseconds
-    const appointmentStart = new Date(scheduledAt);
+    // Use a transaction to prevent race conditions between conflict check and booking creation
+    const { booking, contact, isNewContact } = await prisma.$transaction(async (tx) => {
+      // Check for conflicting bookings (including buffer time and break periods)
+      const appointmentStart = new Date(scheduledAt);
 
-    // Calculate adjusted end time accounting for break period
-    const appointmentEnd = calculateAdjustedEndTime(
-      appointmentStart,
-      finalDuration,
-      tenant.breakStartTime,
-      tenant.breakEndTime
-    );
-
-    // Include buffer time when checking conflicts
-    const checkStart = new Date(appointmentStart.getTime() - bufferTimeMs);
-    const checkEnd = new Date(appointmentEnd.getTime() + bufferTimeMs);
-
-    const conflictingBooking = await prisma.booking.findFirst({
-      where: {
-        tenantId: tenant.id,
-        status: { in: ["pending", "confirmed", "inquiry"] },
-        AND: [
-          {
-            scheduledAt: { lt: checkEnd },
-          },
-          {
-            OR: [
-              {
-                scheduledAt: { gte: checkStart },
-              },
-              {
-                scheduledAt: {
-                  gte: new Date(checkStart.getTime() - 24 * 60 * 60000),
-                  lt: checkStart,
-                },
-              },
-            ],
-          },
-        ],
-      },
-      select: {
-        scheduledAt: true,
-        duration: true,
-      },
-    });
-
-    if (conflictingBooking) {
-      const existingStart = conflictingBooking.scheduledAt;
-
-      // Calculate adjusted end time for existing booking (accounting for break period)
-      const existingEnd = calculateAdjustedEndTime(
-        existingStart,
-        conflictingBooking.duration,
+      // Calculate adjusted end time accounting for break period
+      const appointmentEnd = calculateAdjustedEndTime(
+        appointmentStart,
+        finalDuration,
         tenant.breakStartTime,
         tenant.breakEndTime
       );
 
-      // Add buffer time to existing booking as well
-      const existingCheckStart = new Date(existingStart.getTime() - bufferTimeMs);
-      const existingCheckEnd = new Date(existingEnd.getTime() + bufferTimeMs);
+      // Buffer time should only be added ONCE between appointments, not doubled
+      // We add it to the end of THIS appointment when checking conflicts
+      const bufferTimeMs = (tenant.bufferTime || 0) * 60000;
+      const checkStart = appointmentStart;
+      const checkEnd = new Date(appointmentEnd.getTime() + bufferTimeMs);
 
-      // Check if appointments overlap (including buffer time and break periods on both sides)
-      if (checkStart < existingCheckEnd && checkEnd > existingCheckStart) {
-        return NextResponse.json(
-          { error: "This time slot is no longer available. Please choose a different time." },
-          { status: 409 }
-        );
-      }
-    }
-
-    // Find or create the contact
-    let contact = await prisma.contact.findFirst({
-      where: {
-        tenantId: tenant.id,
-        email: contactEmail.toLowerCase(),
-      },
-    });
-
-    let isNewContact = false;
-    if (!contact) {
-      contact = await prisma.contact.create({
-        data: {
+      const conflictingBooking = await tx.booking.findFirst({
+        where: {
           tenantId: tenant.id,
-          name: contactName,
-          email: contactEmail.toLowerCase(),
-          phone: contactPhone || null,
+          status: { in: ["pending", "confirmed", "inquiry", "scheduled"] },
+          AND: [
+            {
+              scheduledAt: { lt: checkEnd },
+            },
+            {
+              scheduledAt: { gte: new Date(checkStart.getTime() - 24 * 60 * 60000) },
+            },
+          ],
+        },
+        select: {
+          scheduledAt: true,
+          duration: true,
         },
       });
-      isNewContact = true;
-    }
 
-    // Create the booking (store first service/package for backward compatibility)
-    const primaryServiceId = selectedServiceIds.length > 0 ? selectedServiceIds[0] : null;
-    const primaryPackageId = selectedPackageIds.length > 0 && selectedServiceIds.length === 0
-      ? selectedPackageIds[0]
-      : null;
+      if (conflictingBooking) {
+        const existingStart = conflictingBooking.scheduledAt;
 
-    const booking = await prisma.booking.create({
-      data: {
-        tenantId: tenant.id,
-        contactId: contact.id,
-        serviceId: primaryServiceId,
-        packageId: primaryPackageId,
-        scheduledAt: new Date(scheduledAt),
-        status: "inquiry",
-        notes: notes || null,
-        totalPrice: finalPrice,
-        duration: finalDuration,
-        paymentStatus: "unpaid",
-      },
-      include: {
-        service: { select: { name: true } },
-        package: { select: { name: true } },
-      },
+        // Calculate adjusted end time for existing booking (accounting for break period)
+        const existingEnd = calculateAdjustedEndTime(
+          existingStart,
+          conflictingBooking.duration,
+          tenant.breakStartTime,
+          tenant.breakEndTime
+        );
+
+        // Add buffer time only once - to the end of the existing booking
+        const existingCheckEnd = new Date(existingEnd.getTime() + bufferTimeMs);
+
+        // Check if appointments overlap
+        // New booking starts before existing ends (with buffer) AND new booking ends after existing starts
+        if (checkStart < existingCheckEnd && checkEnd > existingStart) {
+          throw new Error("CONFLICT:This time slot is no longer available. Please choose a different time.");
+        }
+      }
+
+      // Find or create the contact
+      let foundContact = await tx.contact.findFirst({
+        where: {
+          tenantId: tenant.id,
+          email: contactEmail.toLowerCase(),
+        },
+      });
+
+      let newContactFlag = false;
+      if (!foundContact) {
+        foundContact = await tx.contact.create({
+          data: {
+            tenantId: tenant.id,
+            name: contactName,
+            email: contactEmail.toLowerCase(),
+            phone: contactPhone || null,
+          },
+        });
+        newContactFlag = true;
+      }
+
+      // Create the booking (store first service/package for backward compatibility)
+      const primaryServiceId = selectedServiceIds.length > 0 ? selectedServiceIds[0] : null;
+      const primaryPackageId = selectedPackageIds.length > 0 && selectedServiceIds.length === 0
+        ? selectedPackageIds[0]
+        : null;
+
+      const createdBooking = await tx.booking.create({
+        data: {
+          tenantId: tenant.id,
+          contactId: foundContact.id,
+          serviceId: primaryServiceId,
+          packageId: primaryPackageId,
+          scheduledAt: new Date(scheduledAt),
+          status: "inquiry",
+          notes: notes || null,
+          totalPrice: finalPrice,
+          duration: finalDuration,
+          paymentStatus: "unpaid",
+        },
+        include: {
+          service: { select: { name: true } },
+          package: { select: { name: true } },
+        },
+      });
+
+      return {
+        booking: createdBooking,
+        contact: foundContact,
+        isNewContact: newContactFlag,
+      };
     });
 
     // Build service name for response
@@ -299,6 +296,15 @@ export async function POST(request, { params }) {
     });
   } catch (error) {
     console.error("Error creating public booking:", error);
+
+    // Handle conflict errors specifically
+    if (error.message?.startsWith("CONFLICT:")) {
+      return NextResponse.json(
+        { error: error.message.replace("CONFLICT:", "") },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
   }
 }

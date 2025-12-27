@@ -120,6 +120,18 @@ const BUFFER_TIME_OPTIONS = [
   { value: "60", label: "1 hour" },
 ];
 
+const MIN_ADVANCE_HOURS_OPTIONS = [
+  { value: "0", label: "Allow same-day bookings" },
+  { value: "2", label: "2 hours" },
+  { value: "4", label: "4 hours" },
+  { value: "8", label: "8 hours" },
+  { value: "12", label: "12 hours" },
+  { value: "24", label: "1 day" },
+  { value: "48", label: "2 days" },
+  { value: "72", label: "3 days" },
+  { value: "168", label: "1 week" },
+];
+
 const CALENDAR_VIEW_OPTIONS = [
   { value: "month", label: "Month View" },
   { value: "week", label: "Week View" },
@@ -168,6 +180,7 @@ export function AvailabilitySettings() {
   const [breakStartTime, setBreakStartTime] = useState("12:00");
   const [breakEndTime, setBreakEndTime] = useState("13:00");
   const [bufferTime, setBufferTime] = useState("0");
+  const [minAdvanceHours, setMinAdvanceHours] = useState("24");
   const [defaultCalendarView, setDefaultCalendarView] = useState("week");
 
   // Update schedule when availability data is loaded
@@ -200,6 +213,7 @@ export function AvailabilitySettings() {
       if (tenantData.breakStartTime) setBreakStartTime(tenantData.breakStartTime);
       if (tenantData.breakEndTime) setBreakEndTime(tenantData.breakEndTime);
       if (tenantData.bufferTime !== undefined) setBufferTime(String(tenantData.bufferTime));
+      if (tenantData.minAdvanceHours !== undefined) setMinAdvanceHours(String(tenantData.minAdvanceHours));
       if (tenantData.defaultCalendarView) setDefaultCalendarView(tenantData.defaultCalendarView);
     }
   }, [tenantData]);
@@ -224,28 +238,53 @@ export function AvailabilitySettings() {
   };
 
   const handleSave = async () => {
+    console.log("=== SAVE BUTTON CLICKED ===");
+    console.log("Schedule:", schedule);
+    console.log("Tenant settings:", {
+      timezone,
+      slotInterval: parseInt(slotInterval),
+      breakDuration: parseInt(breakDuration),
+      breakStartTime: breakDuration !== "0" ? breakStartTime : null,
+      breakEndTime: breakDuration !== "0" ? breakEndTime : null,
+      bufferTime: parseInt(bufferTime),
+      minAdvanceHours: parseInt(minAdvanceHours),
+      defaultCalendarView,
+    });
+
     try {
-      await Promise.all([
-        updateAvailabilityMutation.mutateAsync({
-          slots: schedule.map((day) => ({
-            dayOfWeek: day.dayOfWeek,
-            startTime: day.startTime,
-            endTime: day.endTime,
-            active: day.active,
-          })),
-        }),
-        updateTenantMutation.mutateAsync({
-          timezone,
-          slotInterval: parseInt(slotInterval),
-          breakDuration: parseInt(breakDuration),
-          breakStartTime: breakDuration !== "0" ? breakStartTime : null,
-          breakEndTime: breakDuration !== "0" ? breakEndTime : null,
-          bufferTime: parseInt(bufferTime),
-          defaultCalendarView,
-        }),
-      ]);
+      console.log("Starting mutations...");
+
+      const availabilityPromise = updateAvailabilityMutation.mutateAsync({
+        slots: schedule.map((day) => ({
+          dayOfWeek: day.dayOfWeek,
+          startTime: day.startTime,
+          endTime: day.endTime,
+          active: day.active,
+        })),
+      });
+
+      const tenantPromise = updateTenantMutation.mutateAsync({
+        timezone,
+        slotInterval: parseInt(slotInterval),
+        breakDuration: parseInt(breakDuration),
+        breakStartTime: breakDuration !== "0" ? breakStartTime : null,
+        breakEndTime: breakDuration !== "0" ? breakEndTime : null,
+        bufferTime: parseInt(bufferTime),
+        minAdvanceHours: parseInt(minAdvanceHours),
+        defaultCalendarView,
+      });
+
+      console.log("Waiting for promises...");
+      const results = await Promise.all([availabilityPromise, tenantPromise]);
+      console.log("Save results:", results);
+
       toast.success("Availability saved successfully");
+      console.log("=== SAVE COMPLETED ===");
     } catch (error) {
+      console.error("=== SAVE ERROR ===");
+      console.error("Error object:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
       toast.error(error.message || "Failed to save availability");
     }
   };
@@ -691,6 +730,25 @@ export function AvailabilitySettings() {
                   </Select>
                   <p className="hig-caption2 text-muted-foreground">
                     Prevents back-to-back bookings by adding padding time for travel, setup, or cleanup
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Minimum Advance Booking Time</Label>
+                  <Select value={minAdvanceHours} onValueChange={setMinAdvanceHours}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MIN_ADVANCE_HOURS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="hig-caption2 text-muted-foreground">
+                    Require clients to book at least this far in advance (prevents last-minute bookings)
                   </p>
                 </div>
               </div>

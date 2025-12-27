@@ -29,6 +29,7 @@ export async function GET(request, { params }) {
         breakStartTime: true,
         breakEndTime: true,
         bufferTime: true,
+        minAdvanceHours: true,
       },
     });
 
@@ -97,8 +98,21 @@ export async function GET(request, { params }) {
         closeTime: null,
         timezone: tenant.timezone,
         slotInterval: tenant.slotInterval,
+        minAdvanceHours: tenant.minAdvanceHours || 24,
       });
     }
+
+    // Check if requested date is too soon (within minimum advance hours)
+    const now = new Date();
+    const minAdvanceMs = (tenant.minAdvanceHours || 24) * 60 * 60 * 1000;
+    const earliestAllowedDate = new Date(now.getTime() + minAdvanceMs);
+
+    // Set to start of day for comparison
+    const requestedStartOfDay = new Date(requestedDate);
+    requestedStartOfDay.setHours(0, 0, 0, 0);
+
+    const earliestStartOfDay = new Date(earliestAllowedDate);
+    earliestStartOfDay.setHours(0, 0, 0, 0);
 
     // Get existing bookings for this date
     const startOfDay = new Date(dateParam);
@@ -152,6 +166,8 @@ export async function GET(request, { params }) {
       bufferTime: tenant.bufferTime || 0,
       timezone: tenant.timezone,
       slotInterval: tenant.slotInterval,
+      minAdvanceHours: tenant.minAdvanceHours || 24,
+      earliestAllowedTime: earliestAllowedDate.toISOString(),
     });
   } catch (error) {
     console.error("Error fetching availability:", error);
