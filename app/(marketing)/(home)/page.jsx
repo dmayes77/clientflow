@@ -2,7 +2,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionContainer, FeatureSection } from "../components";
-import { HeroText, HeroCTA, HowItWorks, FAQSection, WhoItsFor } from "./components";
+// Import components directly to avoid Next.js 16 client reference manifest issues
+import { HeroText } from "./components/HeroText";
+import { HeroCTA } from "./components/HeroCTA";
+import { HowItWorks } from "./components/HowItWorks";
+import { FAQSection } from "./components/FAQSection";
+import { WhoItsFor } from "./components/WhoItsFor";
 import { Calendar, Users, Settings, Image, Code, CreditCard, Webhook, Shield, ChartLine, MessageCircleQuestion } from "lucide-react";
 
 export const metadata = {
