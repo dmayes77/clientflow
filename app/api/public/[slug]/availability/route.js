@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 // GET /api/public/[slug]/availability - Get available time slots for a date
 export async function GET(request, { params }) {
@@ -25,6 +26,9 @@ export async function GET(request, { params }) {
         id: true,
         timezone: true,
         slotInterval: true,
+        breakStartTime: true,
+        breakEndTime: true,
+        bufferTime: true,
       },
     });
 
@@ -120,10 +124,15 @@ export async function GET(request, { params }) {
       },
     });
 
-    // Convert bookings to occupied time slots
+    // Convert bookings to occupied time slots (with break-aware end times)
     const bookedSlots = bookings.map((booking) => {
       const start = new Date(booking.scheduledAt);
-      const end = new Date(start.getTime() + booking.duration * 60000);
+      const end = calculateAdjustedEndTime(
+        start,
+        booking.duration,
+        tenant.breakStartTime,
+        tenant.breakEndTime
+      );
 
       return {
         start: start.toISOString(),
@@ -138,6 +147,9 @@ export async function GET(request, { params }) {
       bookedSlots,
       openTime,
       closeTime,
+      breakStartTime: tenant.breakStartTime,
+      breakEndTime: tenant.breakEndTime,
+      bufferTime: tenant.bufferTime || 0,
       timezone: tenant.timezone,
       slotInterval: tenant.slotInterval,
     });

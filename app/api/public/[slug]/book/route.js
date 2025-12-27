@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dispatchBookingCreated, dispatchContactCreated } from "@/lib/webhooks";
+import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 // POST /api/public/[slug]/book - Create a public booking
 export async function POST(request, { params }) {
@@ -75,6 +76,9 @@ export async function POST(request, { params }) {
         businessCity: true,
         businessState: true,
         businessZip: true,
+        bufferTime: true,
+        breakStartTime: true,
+        breakEndTime: true,
       },
     });
 
@@ -139,10 +143,17 @@ export async function POST(request, { params }) {
     const finalPrice = totalPrice || calculatedPrice;
     const finalDuration = totalDuration || calculatedDuration;
 
-    // Check for conflicting bookings (including buffer time)
+    // Check for conflicting bookings (including buffer time and break periods)
     const bufferTimeMs = (tenant.bufferTime || 0) * 60000; // Convert buffer minutes to milliseconds
     const appointmentStart = new Date(scheduledAt);
-    const appointmentEnd = new Date(appointmentStart.getTime() + finalDuration * 60000);
+
+    // Calculate adjusted end time accounting for break period
+    const appointmentEnd = calculateAdjustedEndTime(
+      appointmentStart,
+      finalDuration,
+      tenant.breakStartTime,
+      tenant.breakEndTime
+    );
 
     // Include buffer time when checking conflicts
     const checkStart = new Date(appointmentStart.getTime() - bufferTimeMs);
@@ -179,15 +190,20 @@ export async function POST(request, { params }) {
 
     if (conflictingBooking) {
       const existingStart = conflictingBooking.scheduledAt;
-      const existingEnd = new Date(
-        conflictingBooking.scheduledAt.getTime() + conflictingBooking.duration * 60000
+
+      // Calculate adjusted end time for existing booking (accounting for break period)
+      const existingEnd = calculateAdjustedEndTime(
+        existingStart,
+        conflictingBooking.duration,
+        tenant.breakStartTime,
+        tenant.breakEndTime
       );
 
       // Add buffer time to existing booking as well
       const existingCheckStart = new Date(existingStart.getTime() - bufferTimeMs);
       const existingCheckEnd = new Date(existingEnd.getTime() + bufferTimeMs);
 
-      // Check if appointments overlap (including buffer time on both sides)
+      // Check if appointments overlap (including buffer time and break periods on both sides)
       if (checkStart < existingCheckEnd && checkEnd > existingCheckStart) {
         return NextResponse.json(
           { error: "This time slot is no longer available. Please choose a different time." },
