@@ -25,6 +25,7 @@ import {
   Mail,
   Trash2,
   Square,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ import {
   useCreateEmailTemplate,
   useUpdateEmailTemplate,
   useDeleteEmailTemplate,
+  useSendTestEmail,
   useTenant,
 } from "@/lib/hooks";
 import { useTanstackForm, SaveButton, useSaveButton } from "@/components/ui/tanstack-form";
@@ -583,12 +585,15 @@ function RichTextEditor({ content, onChange, placeholder }) {
 export function EmailTemplateForm({ mode = "create", templateId = null }) {
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [testEmailDialogOpen, setTestEmailDialogOpen] = useState(false);
+  const [testRecipientEmail, setTestRecipientEmail] = useState("");
 
   const { data: tenant } = useTenant();
   const { data: template } = useEmailTemplate(templateId, { enabled: mode === "edit" && !!templateId });
   const createMutation = useCreateEmailTemplate();
   const updateMutation = useUpdateEmailTemplate();
   const deleteMutation = useDeleteEmailTemplate();
+  const sendTestMutation = useSendTestEmail();
   const saveButton = useSaveButton();
 
   const initialValues = useMemo(() => {
@@ -646,6 +651,26 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
       router.push("/dashboard/email-templates");
     } catch (error) {
       toast.error(error.message || "Failed to delete template");
+    }
+  };
+
+  const handleSendTest = async () => {
+    if (!testRecipientEmail) {
+      toast.error("Please enter a recipient email");
+      return;
+    }
+
+    try {
+      await sendTestMutation.mutateAsync({
+        id: templateId,
+        recipientEmail: testRecipientEmail,
+        sampleData: {},
+      });
+      toast.success(`Test email sent to ${testRecipientEmail}`);
+      setTestEmailDialogOpen(false);
+      setTestRecipientEmail("");
+    } catch (error) {
+      toast.error(error.message || "Failed to send test email");
     }
   };
 
@@ -874,17 +899,29 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
                     Cancel
                   </Button>
                   {mode === "edit" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 min-w-25 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                      onClick={() => setDeleteDialogOpen(true)}
-                      disabled={template?.isSystem}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 min-w-25"
+                        onClick={() => setTestEmailDialogOpen(true)}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Test
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 min-w-25 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => setDeleteDialogOpen(true)}
+                        disabled={template?.isSystem}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </>
                   )}
                   <SaveButton form={form} saveButton={saveButton} variant="default" size="sm" className="flex-1 min-w-25">
                     {mode === "edit" ? "Update" : "Create"}
@@ -912,6 +949,44 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Test Email Dialog */}
+      <Dialog open={testEmailDialogOpen} onOpenChange={setTestEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Test Email</DialogTitle>
+            <DialogDescription>Send a test email to see how your template looks in an actual inbox.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="test-email">Recipient Email</Label>
+              <Input
+                id="test-email"
+                type="email"
+                placeholder="you@example.com"
+                value={testRecipientEmail}
+                onChange={(e) => setTestRecipientEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSendTest();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                The test email will use sample data for template variables and include [TEST] in the subject line.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTestEmailDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendTest} disabled={sendTestMutation.isPending || !testRecipientEmail}>
+              {sendTestMutation.isPending ? "Sending..." : "Send Test"}
             </Button>
           </DialogFooter>
         </DialogContent>
