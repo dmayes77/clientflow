@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendPaymentReminder } from "@/lib/email";
+import { sendPaymentReminder } from "@/lib/send-system-email";
 
 /**
  * Cron job to send automated payment reminders
@@ -68,24 +68,14 @@ export async function GET(request) {
           continue;
         }
 
-        // Send reminder email
-        const result = await sendPaymentReminder({
-          to: invoice.contact.email,
-          contactName: invoice.contact.name || invoice.contact.email,
-          businessName: invoice.tenant.businessName || "Your Business",
-          invoiceNumber: invoice.invoiceNumber,
-          total: invoice.total,
-          balanceDue: invoice.balanceDue,
-          currency: invoice.currency || "usd",
-          dueDate: invoice.dueDate,
-          daysOverdue,
-          viewUrl: null, // TODO: Add public invoice view URL when customer portal is ready
-          payUrl: null, // TODO: Add payment URL when payment portal is ready
-        });
+        // Determine urgency level based on days overdue
+        const urgency = daysOverdue >= 7 ? "final" : daysOverdue >= 3 ? "urgent" : "gentle";
+
+        // Send reminder email using system template
+        const result = await sendPaymentReminder(invoice, urgency);
 
         if (result.success) {
-          const category = daysOverdue >= 7 ? "final" : daysOverdue >= 3 ? "urgent" : "gentle";
-          results[category].push({
+          results[urgency].push({
             invoiceNumber: invoice.invoiceNumber,
             contactEmail: invoice.contact.email,
             daysOverdue,
@@ -104,7 +94,7 @@ export async function GET(request) {
           });
 
           console.log(
-            `[Cron] Sent ${category} reminder for invoice ${invoice.invoiceNumber} (${daysOverdue} days overdue)`
+            `[Cron] Sent ${urgency} reminder for invoice ${invoice.invoiceNumber} (${daysOverdue} days overdue)`
           );
         } else {
           results.errors.push({

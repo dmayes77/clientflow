@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { useContacts, useCreateContact, useUpdateContact, useDeleteContact } from "@/lib/hooks";
+import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useTags } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TagFilter } from "@/components/ui/tag-filter";
 import {
   AddIcon,
   EditIcon,
@@ -60,6 +61,7 @@ export function ContactsList() {
 
   // TanStack Query hooks
   const { data: clients = [], isLoading: loading } = useContacts();
+  const { data: allTags = [] } = useTags("all");
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
@@ -71,6 +73,7 @@ export function ContactsList() {
   const [formData, setFormData] = useState(initialFormState);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkUpdating, setBulkUpdating] = useState(false);
@@ -103,13 +106,20 @@ export function ContactsList() {
   const filteredClients = useMemo(() => {
     let result = clients;
 
-    // Tag-based status filter
+    // Tag-based status filter (status pills)
     if (statusFilter !== "all") {
       if (statusFilter === "unclassified") {
         result = result.filter((c) => !hasAnyStatusTag(c));
       } else {
         result = result.filter((c) => hasTag(c, statusFilter));
       }
+    }
+
+    // Additional tag filter (non-status tags via TagFilter component)
+    if (selectedTagIds.length > 0) {
+      result = result.filter((contact) =>
+        contact.tags?.some((tag) => selectedTagIds.includes(tag.id))
+      );
     }
 
     // Search filter
@@ -121,7 +131,7 @@ export function ContactsList() {
     }
 
     return result;
-  }, [clients, searchQuery, statusFilter]);
+  }, [clients, searchQuery, statusFilter, selectedTagIds]);
 
   // Count by tags
   const statusCounts = useMemo(() => {
@@ -241,6 +251,64 @@ export function ContactsList() {
       clearSelection();
     } catch (error) {
       toast.error("Failed to update some contacts");
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  // Bulk tag operations
+  const handleBulkAddTag = async (tagId) => {
+    if (selectedIds.size === 0 || !tagId) return;
+
+    setBulkUpdating(true);
+    try {
+      const addPromises = Array.from(selectedIds).map(async (contactId) => {
+        const response = await fetch(`/api/contacts/${contactId}/tags`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tagId }),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          // Ignore "already exists" errors silently
+          if (!error.error?.includes("already added")) {
+            throw new Error(error.error || "Failed to add tag");
+          }
+        }
+      });
+      await Promise.all(addPromises);
+      toast.success(`Tag added to ${selectedIds.size} contact(s)`);
+      clearSelection();
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      toast.error("Failed to add tag to some contacts");
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
+  const handleBulkRemoveTag = async (tagId) => {
+    if (selectedIds.size === 0 || !tagId) return;
+
+    setBulkUpdating(true);
+    try {
+      const removePromises = Array.from(selectedIds).map(async (contactId) => {
+        const response = await fetch(`/api/contacts/${contactId}/tags?tagId=${tagId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to remove tag");
+        }
+      });
+      await Promise.all(removePromises);
+      toast.success(`Tag removed from ${selectedIds.size} contact(s)`);
+      clearSelection();
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      toast.error("Failed to remove tag from some contacts");
     } finally {
       setBulkUpdating(false);
     }
@@ -463,7 +531,7 @@ export function ContactsList() {
               </div>
 
               {/* Status Filter Pills */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button variant={statusFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("all")}>
                   All ({statusCounts.all})
                 </Button>
@@ -502,6 +570,18 @@ export function ContactsList() {
                 >
                   Unclassified ({statusCounts.unclassified})
                 </Button>
+
+                {/* Additional Tag Filter */}
+                <div className="ml-auto">
+                  <TagFilter
+                    tags={allTags}
+                    selectedTagIds={selectedTagIds}
+                    onSelectionChange={setSelectedTagIds}
+                    type="contact"
+                    excludeSystemTags={true}
+                    placeholder="Filter by tags"
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -519,7 +599,7 @@ export function ContactsList() {
                 </div>
                 <div className="h-4 w-px bg-border" />
                 <div className="flex flex-wrap items-center gap-2">
-                  <Select onValueChange={handleBulkStatusChange}>
+                  <Select onValueChange={handleBulkStatusChange} disabled={bulkUpdating}>
                     <SelectTrigger className="h-8 w-35">
                       <SelectValue placeholder="Change status" />
                     </SelectTrigger>
@@ -531,6 +611,39 @@ export function ContactsList() {
                       <SelectItem value="unclassified">Set as Unclassified</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  <Select onValueChange={handleBulkAddTag} disabled={bulkUpdating}>
+                    <SelectTrigger className="h-8 w-32">
+                      <SelectValue placeholder="Add tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allTags
+                        .filter((tag) => tag.type === "contact" || tag.type === "general")
+                        .filter((tag) => !tag.isSystem)
+                        .map((tag) => (
+                          <SelectItem key={tag.id} value={tag.id}>
+                            {tag.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select onValueChange={handleBulkRemoveTag} disabled={bulkUpdating}>
+                    <SelectTrigger className="h-8 w-32">
+                      <SelectValue placeholder="Remove tag" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allTags
+                        .filter((tag) => tag.type === "contact" || tag.type === "general")
+                        .filter((tag) => !tag.isSystem)
+                        .map((tag) => (
+                          <SelectItem key={tag.id} value={tag.id}>
+                            {tag.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+
                   <Button variant="outline" size="sm" onClick={handleExport}>
                     <DownloadIcon className="h-3 w-3 mr-1" />
                     Export CSV

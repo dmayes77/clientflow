@@ -1,34 +1,20 @@
 /**
- * Script to create system tags for all existing tenants
+ * Script to create system and default tags for all existing tenants
  * Run with: node scripts/create-system-tags.mjs
+ *
+ * This will create:
+ * - 14 system tags (status tags, cannot be deleted)
+ * - 31 default tags (organizational tags, can be deleted)
  */
 
 import { PrismaClient } from "@prisma/client";
+import { ALL_SYSTEM_TAGS, DEFAULT_TAGS } from "../lib/system-tags.js";
 
 const prisma = new PrismaClient();
 
-const ALL_SYSTEM_TAGS = [
-  // Invoice status tags
-  { name: "Draft", color: "gray", description: "Invoice has been created but not yet sent", type: "invoice" },
-  { name: "Sent", color: "blue", description: "Invoice has been sent to the client", type: "invoice" },
-  { name: "Viewed", color: "indigo", description: "Client has viewed the invoice", type: "invoice" },
-  { name: "Paid", color: "green", description: "Invoice has been paid", type: "invoice" },
-  { name: "Overdue", color: "red", description: "Invoice is past due date", type: "invoice" },
-  { name: "Cancelled", color: "gray", description: "Invoice has been cancelled", type: "invoice" },
-  // Booking status tags
-  { name: "Inquiry", color: "yellow", description: "Initial inquiry from client", type: "booking" },
-  { name: "Confirmed", color: "green", description: "Booking has been confirmed", type: "booking" },
-  { name: "Completed", color: "blue", description: "Booking has been completed", type: "booking" },
-  { name: "Cancelled", color: "red", description: "Booking has been cancelled", type: "booking" },
-  { name: "No Show", color: "gray", description: "Client did not show up", type: "booking" },
-  // Contact status tags
-  { name: "Lead", color: "yellow", description: "New potential client", type: "contact" },
-  { name: "Client", color: "green", description: "Active client", type: "contact" },
-  { name: "Inactive", color: "gray", description: "Inactive contact", type: "contact" },
-];
-
-async function createSystemTagsForTenant(tenantId) {
-  const createPromises = ALL_SYSTEM_TAGS.map((tag) =>
+async function createTagsForTenant(tenantId) {
+  // Create system tags (cannot be deleted)
+  const systemTagPromises = ALL_SYSTEM_TAGS.map((tag) =>
     prisma.tag.upsert({
       where: {
         tenantId_name: {
@@ -53,30 +39,64 @@ async function createSystemTagsForTenant(tenantId) {
     })
   );
 
-  return Promise.all(createPromises);
+  // Create default tags (can be deleted by users)
+  const defaultTagPromises = DEFAULT_TAGS.map((tag) =>
+    prisma.tag.upsert({
+      where: {
+        tenantId_name: {
+          tenantId,
+          name: tag.name,
+        },
+      },
+      update: {
+        isSystem: false,
+        color: tag.color,
+        description: tag.description,
+        type: tag.type,
+      },
+      create: {
+        tenantId,
+        name: tag.name,
+        color: tag.color,
+        description: tag.description,
+        type: tag.type,
+        isSystem: false,
+      },
+    })
+  );
+
+  return Promise.all([...systemTagPromises, ...defaultTagPromises]);
 }
 
 async function main() {
-  console.log("Starting system tags migration...");
+  console.log("Starting tags migration...");
+  console.log(`Creating 14 system tags + 31 default tags = 45 total tags per tenant\n`);
 
   // Get all tenants
   const tenants = await prisma.tenant.findMany({
     select: { id: true, name: true },
   });
 
-  console.log(`Found ${tenants.length} tenants`);
+  console.log(`Found ${tenants.length} tenant(s)\n`);
+
+  let successCount = 0;
+  let errorCount = 0;
 
   for (const tenant of tenants) {
-    console.log(`Creating system tags for tenant: ${tenant.name} (${tenant.id})`);
+    console.log(`Processing tenant: ${tenant.name || tenant.id}`);
     try {
-      await createSystemTagsForTenant(tenant.id);
-      console.log(`  ✓ Created system tags`);
+      await createTagsForTenant(tenant.id);
+      console.log(`  ✓ Created/updated tags for ${tenant.name || tenant.id}`);
+      successCount++;
     } catch (error) {
       console.error(`  ✗ Error creating tags:`, error.message);
+      errorCount++;
     }
   }
 
-  console.log("Migration complete!");
+  console.log(`\nMigration complete!`);
+  console.log(`  Success: ${successCount} tenant(s)`);
+  console.log(`  Errors: ${errorCount} tenant(s)`);
 }
 
 main()

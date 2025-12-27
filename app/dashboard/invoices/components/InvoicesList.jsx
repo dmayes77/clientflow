@@ -9,6 +9,7 @@ import {
   useDeleteInvoice,
   useSendInvoice,
   useDownloadInvoicePDF,
+  useTags,
 } from "@/lib/hooks";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +34,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { TagFilter } from "@/components/ui/tag-filter";
 import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket, Check, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -119,6 +122,7 @@ export function InvoicesList() {
 
   // TanStack Query hooks
   const { data: invoices = [], isLoading: loading } = useInvoices();
+  const { data: allTags = [] } = useTags("all");
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
   const sendInvoice = useSendInvoice();
@@ -132,6 +136,8 @@ export function InvoicesList() {
   const [sendingId, setSendingId] = useState(null);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewInvoice, setPreviewInvoice] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
 
   const handleStatusChange = (invoice, newStatus) => {
     // Validate state transitions
@@ -266,6 +272,55 @@ export function InvoicesList() {
     };
   }, [invoices]);
 
+  // Tag helper functions
+  const hasTag = (invoice, tagName) => {
+    if (!invoice.tags) return false;
+    return invoice.tags.some((t) => t.tag.name.toLowerCase() === tagName.toLowerCase());
+  };
+
+  const hasAnyStatusTag = (invoice) => {
+    if (!invoice.tags) return false;
+    const statusTagNames = ["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"];
+    return invoice.tags.some((t) => statusTagNames.includes(t.tag.name));
+  };
+
+  // Filtered invoices based on status filter and tag filter
+  const filteredInvoices = useMemo(() => {
+    let result = invoices;
+
+    // Tag-based status filter (status pills)
+    if (statusFilter !== "all") {
+      if (statusFilter === "unclassified") {
+        result = result.filter((inv) => !hasAnyStatusTag(inv));
+      } else {
+        result = result.filter((inv) => hasTag(inv, statusFilter));
+      }
+    }
+
+    // Additional tag filter (non-status tags via TagFilter component)
+    if (selectedTagIds.length > 0) {
+      result = result.filter((invoice) =>
+        invoice.tags?.some((tagAssoc) => selectedTagIds.includes(tagAssoc.tag.id))
+      );
+    }
+
+    return result;
+  }, [invoices, statusFilter, selectedTagIds]);
+
+  // Count by status tags
+  const statusCounts = useMemo(() => {
+    return {
+      all: invoices.length,
+      draft: invoices.filter((i) => hasTag(i, "Draft")).length,
+      sent: invoices.filter((i) => hasTag(i, "Sent")).length,
+      viewed: invoices.filter((i) => hasTag(i, "Viewed")).length,
+      paid: invoices.filter((i) => hasTag(i, "Paid")).length,
+      overdue: invoices.filter((i) => hasTag(i, "Overdue")).length,
+      cancelled: invoices.filter((i) => hasTag(i, "Cancelled")).length,
+      unclassified: invoices.filter((i) => !hasAnyStatusTag(i)).length,
+    };
+  }, [invoices]);
+
   // Bulk action handlers
   const [selectedRows, setSelectedRows] = useState({});
 
@@ -337,6 +392,58 @@ export function InvoicesList() {
       .catch(() => {
         toast.error("Failed to delete some invoices");
       });
+  };
+
+  // Bulk tag operations
+  const handleBulkAddTag = async (tagId, selectedInvoices) => {
+    if (selectedInvoices.length === 0 || !tagId) return;
+
+    try {
+      const addPromises = selectedInvoices.map(async (invoice) => {
+        const response = await fetch(`/api/invoices/${invoice.id}/tags`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tagId }),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          // Ignore "already exists" errors silently
+          if (!error.error?.includes("already added")) {
+            throw new Error(error.error || "Failed to add tag");
+          }
+        }
+      });
+      await Promise.all(addPromises);
+      toast.success(`Tag added to ${selectedInvoices.length} invoice(s)`);
+      setSelectedRows({});
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      toast.error("Failed to add tag to some invoices");
+    }
+  };
+
+  const handleBulkRemoveTag = async (tagId, selectedInvoices) => {
+    if (selectedInvoices.length === 0 || !tagId) return;
+
+    try {
+      const removePromises = selectedInvoices.map(async (invoice) => {
+        const response = await fetch(`/api/invoices/${invoice.id}/tags?tagId=${tagId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to remove tag");
+        }
+      });
+      await Promise.all(removePromises);
+      toast.success(`Tag removed from ${selectedInvoices.length} invoice(s)`);
+      setSelectedRows({});
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      toast.error("Failed to remove tag from some invoices");
+    }
   };
 
   // Define columns for DataTable
@@ -492,16 +599,90 @@ export function InvoicesList() {
               </Button>
             </div>
           ) : (
-            <DataTable
-              columns={columns}
-              data={invoices}
-              searchPlaceholder="Search invoices..."
-              pageSize={25}
-              onRowClick={(invoice) => {
-                setPreviewInvoice(invoice);
-                setPreviewSheetOpen(true);
-              }}
-              emptyMessage="No invoices found."
+            <>
+              {/* Status Filter Pills */}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <Button variant={statusFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("all")}>
+                  All ({statusCounts.all})
+                </Button>
+                <Button
+                  variant={statusFilter === "draft" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("draft")}
+                  className={`${statusFilter === "draft" ? "bg-slate-500 hover:bg-slate-600" : ""}`}
+                >
+                  Draft ({statusCounts.draft})
+                </Button>
+                <Button
+                  variant={statusFilter === "sent" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("sent")}
+                  className={`${statusFilter === "sent" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+                >
+                  Sent ({statusCounts.sent})
+                </Button>
+                <Button
+                  variant={statusFilter === "viewed" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("viewed")}
+                >
+                  Viewed ({statusCounts.viewed})
+                </Button>
+                <Button
+                  variant={statusFilter === "paid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("paid")}
+                  className={`${statusFilter === "paid" ? "bg-green-500 hover:bg-green-600" : ""}`}
+                >
+                  Paid ({statusCounts.paid})
+                </Button>
+                <Button
+                  variant={statusFilter === "overdue" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("overdue")}
+                  className={`${statusFilter === "overdue" ? "bg-red-500 hover:bg-red-600" : ""}`}
+                >
+                  Overdue ({statusCounts.overdue})
+                </Button>
+                <Button
+                  variant={statusFilter === "cancelled" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("cancelled")}
+                >
+                  Cancelled ({statusCounts.cancelled})
+                </Button>
+                <Button
+                  variant={statusFilter === "unclassified" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("unclassified")}
+                  className={`${statusFilter === "unclassified" ? "bg-slate-500 hover:bg-slate-600" : ""}`}
+                >
+                  Unclassified ({statusCounts.unclassified})
+                </Button>
+
+                {/* Additional Tag Filter */}
+                <div className="ml-auto">
+                  <TagFilter
+                    tags={allTags}
+                    selectedTagIds={selectedTagIds}
+                    onSelectionChange={setSelectedTagIds}
+                    type="invoice"
+                    excludeSystemTags={true}
+                    placeholder="Filter by tags"
+                  />
+                </div>
+              </div>
+
+              <DataTable
+                columns={columns}
+                data={filteredInvoices}
+                searchPlaceholder="Search invoices..."
+                pageSize={25}
+                onRowClick={(invoice) => {
+                  setPreviewInvoice(invoice);
+                  setPreviewSheetOpen(true);
+                }}
+                emptyMessage="No invoices found."
               toolbar={({ table }) => {
                 const selectedInvoices = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
                 const hasSelection = selectedInvoices.length > 0;
@@ -534,6 +715,39 @@ export function InvoicesList() {
                       <CreditCard className="h-4 w-4 mr-1 text-amber-600" />
                       Mark Unpaid
                     </Button>
+
+                    <Select onValueChange={(tagId) => handleBulkAddTag(tagId, selectedInvoices)}>
+                      <SelectTrigger className="h-8 w-32">
+                        <SelectValue placeholder="Add tag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allTags
+                          .filter((tag) => tag.type === "invoice" || tag.type === "general")
+                          .filter((tag) => !tag.isSystem)
+                          .map((tag) => (
+                            <SelectItem key={tag.id} value={tag.id}>
+                              {tag.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select onValueChange={(tagId) => handleBulkRemoveTag(tagId, selectedInvoices)}>
+                      <SelectTrigger className="h-8 w-32">
+                        <SelectValue placeholder="Remove tag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allTags
+                          .filter((tag) => tag.type === "invoice" || tag.type === "general")
+                          .filter((tag) => !tag.isSystem)
+                          .map((tag) => (
+                            <SelectItem key={tag.id} value={tag.id}>
+                              {tag.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -556,6 +770,7 @@ export function InvoicesList() {
                 );
               }}
             />
+            </>
           )}
         </CardContent>
       </Card>

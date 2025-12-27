@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { triggerWorkflows } from "@/lib/workflow-executor";
+import { isStatusTag, getStatusTagsForType, getStatusTag } from "@/lib/tag-status";
 
 // GET /api/bookings/[id]/tags - Get all tags for a booking
 export async function GET(request, { params }) {
@@ -84,7 +85,30 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Tag already added to booking" }, { status: 400 });
     }
 
-    // Add the tag
+    // Check if this is a status tag
+    const isStatus = isStatusTag(tag.name, "booking");
+
+    if (isStatus) {
+      // This is a status tag - remove any existing status tags first
+      const statusTagNames = getStatusTagsForType("booking");
+      const allStatusTags = await prisma.tag.findMany({
+        where: {
+          tenantId: tenant.id,
+          name: { in: statusTagNames },
+        },
+      });
+      const statusTagIds = allStatusTags.map((t) => t.id);
+
+      // Remove all existing status tags
+      await prisma.bookingTag.deleteMany({
+        where: {
+          bookingId: id,
+          tagId: { in: statusTagIds },
+        },
+      });
+    }
+
+    // Add the new tag
     const bookingTag = await prisma.bookingTag.create({
       data: { bookingId: id, tagId },
       include: { tag: true },

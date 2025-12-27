@@ -59,6 +59,9 @@ export async function PUT(request, { params }) {
     // Build update data - only include fields that were provided
     const updateData = {};
 
+    // System templates can be edited but systemKey and isSystem cannot be changed
+    // (name, subject, body, description, category can all be customized by tenant)
+
     if (name !== undefined) {
       if (name.trim().length < 2) {
         return NextResponse.json(
@@ -146,6 +149,16 @@ export async function DELETE(request, { params }) {
 
     if (!existingTemplate) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    }
+
+    // Prevent deletion of system templates
+    if (existingTemplate.isSystem) {
+      return NextResponse.json(
+        {
+          error: "System templates cannot be deleted. You can edit them to customize for your business.",
+        },
+        { status: 403 }
+      );
     }
 
     await prisma.emailTemplate.delete({
