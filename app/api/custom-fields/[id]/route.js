@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const updateCustomFieldSchema = z.object({
   name: z.string().min(1).max(100).optional(),
+  group: z.string().max(100).optional().nullable(),
   fieldType: z.enum(["text", "number", "date", "select", "multiselect", "boolean", "textarea"]).optional(),
   options: z.array(z.string()).optional(),
   required: z.boolean().optional(),

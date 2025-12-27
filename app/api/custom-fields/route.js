@@ -6,6 +6,7 @@ import { z } from "zod";
 const createCustomFieldSchema = z.object({
   name: z.string().min(1).max(100),
   key: z.string().min(1).max(50).regex(/^[a-z0-9_]+$/),
+  group: z.string().max(100).optional().nullable(),
   fieldType: z.enum(["text", "number", "date", "select", "multiselect", "boolean", "textarea"]),
   options: z.array(z.string()).optional(),
   required: z.boolean().optional().default(false),
@@ -85,6 +86,7 @@ export async function POST(request) {
         tenantId: tenant.id,
         name: data.name,
         key: data.key,
+        group: data.group || null,
         fieldType: data.fieldType,
         options: data.options || null,
         required: data.required,
