@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DeleteContactDialog } from "../components/DeleteContactDialog";
+import { ActivityTimeline } from "../components/ActivityTimeline";
+import { ContactCustomFields } from "../components/ContactCustomFields";
 import {
   BackIcon,
   BookingIcon,
@@ -774,6 +776,12 @@ export default function ClientDetailPage({ params }) {
           </div>
         )}
       </div>
+
+      {/* Activity Timeline */}
+      <ActivityTimeline contactId={id} />
+
+      {/* Custom Fields */}
+      <ContactCustomFields contactId={id} />
 
       <DeleteContactDialog
         contact={client}
