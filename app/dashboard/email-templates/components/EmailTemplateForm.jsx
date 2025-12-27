@@ -23,6 +23,7 @@ import {
   Variable,
   Mail,
   Trash2,
+  Square,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,6 +130,20 @@ function RichTextEditor({ content, onChange, placeholder }) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   }, [editor]);
 
+  const insertButton = useCallback(() => {
+    if (!editor) return;
+
+    const buttonText = window.prompt("Enter button text:", "Click Here");
+    if (buttonText === null) return;
+
+    const buttonUrl = window.prompt("Enter button URL:", "#");
+    if (buttonUrl === null) return;
+
+    const buttonHtml = `<div style="margin: 24px 0; text-align: center;"><a href="${buttonUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${buttonText}</a></div>`;
+
+    editor.chain().focus().insertContent(buttonHtml).run();
+  }, [editor]);
+
   if (!editor) {
     return null;
   }
@@ -208,6 +223,11 @@ function RichTextEditor({ content, onChange, placeholder }) {
 
         <Button type="button" variant={editor.isActive("link") ? "secondary" : "ghost"} size="sm" onClick={setLink}>
           <LinkIcon className="h-4 w-4" />
+        </Button>
+
+        <Button type="button" variant="ghost" size="sm" onClick={insertButton} className="h-auto px-2 py-1">
+          <Square className="h-3.5 w-3.5 mr-1" />
+          <span className="text-xs">Button</span>
         </Button>
 
         <div className="w-px h-6 bg-border mx-1 self-center" />
