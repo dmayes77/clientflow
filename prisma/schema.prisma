@@ -102,6 +102,7 @@ model Tenant {
   supportMessages     SupportMessage[]
   coupons             Coupon[]
   contactSegments     ContactSegment[]
+  customFields        CustomField[]
   plan                Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
 
   @@index([clerkOrgId])
@@ -216,6 +217,7 @@ model Contact {
   tags               ContactTag[]
   campaignRecipients CampaignRecipient[]
   recurringBookings  RecurringBooking[]
+  customFieldValues  ContactCustomFieldValue[]
 
   @@map("Client")
   @@index([tenantId])
@@ -266,6 +268,46 @@ model ContactSegment {
 
   @@unique([tenantId, name])
   @@index([tenantId])
+}
+
+model CustomField {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String    // Display name
+  key         String    // Internal key (e.g., "pet_name")
+  fieldType   String    // "text", "number", "date", "select", "multiselect", "boolean", "textarea"
+  options     Json?     // For select/multiselect: ["Option 1", "Option 2"]
+  required    Boolean   @default(false)
+  order       Int       @default(0)
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  values      ContactCustomFieldValue[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([active])
+}
+
+model ContactCustomFieldValue {
+  id           String   @id @default(cuid())
+  contactId    String
+  fieldId      String
+  value        String   // Stores all types as string (convert as needed)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contact      Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  field        CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, fieldId])
+  @@index([contactId])
+  @@index([fieldId])
 }
 
 model ContactTag {
