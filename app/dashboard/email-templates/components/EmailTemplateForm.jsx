@@ -8,6 +8,7 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
+import { Node, mergeAttributes } from "@tiptap/core";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -91,6 +92,61 @@ const BUTTON_COLORS = {
   secondary: { bg: "#6b7280", label: "Secondary (Gray)" },
 };
 
+// Custom TipTap extension for email buttons that preserves inline styles
+const EmailButton = Node.create({
+  name: "emailButton",
+  group: "block",
+  content: "inline*",
+
+  addAttributes() {
+    return {
+      href: { default: "#" },
+      backgroundColor: { default: "#3b82f6" },
+      color: { default: "white" },
+      text: { default: "Click Here" },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'div[data-email-button]',
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const { href, backgroundColor, color, text } = HTMLAttributes;
+    return [
+      'div',
+      {
+        'data-email-button': '',
+        style: 'margin: 24px 0; text-align: center;'
+      },
+      [
+        'a',
+        {
+          class: 'not-prose',
+          href: href,
+          style: `background-color: ${backgroundColor}; color: ${color}; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;`,
+        },
+        text,
+      ],
+    ];
+  },
+
+  addCommands() {
+    return {
+      setEmailButton: (attributes) => ({ commands }) => {
+        return commands.insertContent({
+          type: this.name,
+          attrs: attributes,
+        });
+      },
+    };
+  },
+});
+
 function RichTextEditor({ content, onChange, placeholder }) {
   const [isButtonDialogOpen, setIsButtonDialogOpen] = useState(false);
   const [buttonData, setButtonData] = useState({
@@ -114,6 +170,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
       Placeholder.configure({
         placeholder: placeholder || "Start typing your email content...",
       }),
+      EmailButton,
     ],
     content,
     immediatelyRender: false,
@@ -163,10 +220,13 @@ function RichTextEditor({ content, onChange, placeholder }) {
     if (!editor) return;
 
     const colorStyle = BUTTON_COLORS[buttonData.color];
-    const buttonHtml = `<div style="margin: 24px 0; text-align: center;"><a class="not-prose" href="${buttonData.url}" style="background-color: ${colorStyle.bg}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${buttonData.text}</a></div>`;
 
-    console.log("Inserting button HTML:", buttonHtml);
-    editor.chain().focus().insertContent(buttonHtml).run();
+    editor.chain().focus().setEmailButton({
+      href: buttonData.url,
+      backgroundColor: colorStyle.bg,
+      color: "white",
+      text: buttonData.text,
+    }).run();
 
     // Log what actually got inserted
     setTimeout(() => {
