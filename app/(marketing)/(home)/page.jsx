@@ -1,55 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionContainer, FeatureSection } from "../components";
-// Import components directly to avoid Next.js 16 client reference manifest issues
-import { HeroText } from "./components/HeroText";
-import { HeroCTA } from "./components/HeroCTA";
-import { HowItWorks } from "./components/HowItWorks";
-import { FAQSection } from "./components/FAQSection";
-import { WhoItsFor } from "./components/WhoItsFor";
+import { HeroText, HeroCTA, HowItWorks, FAQSection, WhoItsFor } from "./components";
 import { Calendar, Users, Settings, Image, Code, CreditCard, Webhook, Shield, ChartLine, MessageCircleQuestion } from "lucide-react";
 
-export const metadata = {
-  title: "ClientFlow | Booking Software & CRM for Service Businesses | Calendly Alternative",
-  description: "All-in-one booking software, client management, and payment processing for service businesses. Full REST API, no widgets. The Calendly & Square alternative with complete control. Start your 14-day free trial.",
-  keywords: [
-    "booking software",
-    "appointment scheduling software",
-    "client management software",
-    "CRM for service businesses",
-    "Calendly alternative",
-    "Square Appointments alternative",
-    "Acuity alternative",
-    "booking API",
-    "service business software",
-    "online booking system",
-  ],
-  openGraph: {
-    title: "ClientFlow | Booking Software & CRM for Service Businesses",
-    description: "All-in-one booking, client management, and payments. Full API access, no limiting widgets. The modern alternative to Calendly & Square.",
-    type: "website",
-    url: "https://getclientflow.com",
-    siteName: "ClientFlow",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "ClientFlow - Booking Software for Service Businesses",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "ClientFlow | Booking Software & CRM for Service Businesses",
-    description: "All-in-one booking, client management, and payments with full API access. Start your free trial.",
-    images: ["/og-image.png"],
-  },
-  alternates: {
-    canonical: "https://getclientflow.com",
-  },
-};
+// Note: Made this a client component to work around Next.js 16 client reference manifest bug
+// Metadata moved to layout.jsx
 
 // JSON-LD Schema for SEO
 const jsonLd = {
