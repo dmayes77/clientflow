@@ -105,6 +105,13 @@ function RichTextEditor({ content, onChange, placeholder }) {
     },
   });
 
+  // Update editor content when content prop changes (e.g., when template data loads)
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content || "");
+    }
+  }, [editor, content]);
+
   const insertVariable = useCallback(
     (variable) => {
       if (editor) {
