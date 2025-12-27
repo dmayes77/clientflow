@@ -10,9 +10,6 @@ import { FAQSection } from "./components/FAQSection";
 import { WhoItsFor } from "./components/WhoItsFor";
 import { Calendar, Users, Settings, Image, Code, CreditCard, Webhook, Shield, ChartLine, MessageCircleQuestion } from "lucide-react";
 
-// Force dynamic rendering to bypass Next.js 16 prerender bug
-export const dynamic = 'force-dynamic';
-
 export const metadata = {
   title: "ClientFlow | Booking Software & CRM for Service Businesses | Calendly Alternative",
   description: "All-in-one booking software, client management, and payment processing for service businesses. Full REST API, no widgets. The Calendly & Square alternative with complete control. Start your 14-day free trial.",
