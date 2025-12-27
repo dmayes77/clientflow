@@ -5,7 +5,7 @@ import { createContactSchema, validateRequest } from "@/lib/validations";
 import { triggerWorkflows } from "@/lib/workflow-executor";
 import { checkContactLimit } from "@/lib/plan-limits";
 
-// GET /api/contacts - List all contacts
+// GET /api/contacts - List all contacts with advanced filtering
 export async function GET(request) {
   try {
     const { tenant, error, status } = await getAuthenticatedTenant(request);
@@ -14,8 +14,61 @@ export async function GET(request) {
       return NextResponse.json({ error }, { status });
     }
 
+    const { searchParams } = new URL(request.url);
+    const includeArchived = searchParams.get("includeArchived") === "true";
+    const search = searchParams.get("search");
+    const tag = searchParams.get("tag");
+    const statusFilter = searchParams.get("status");
+    const dateFrom = searchParams.get("dateFrom");
+    const dateTo = searchParams.get("dateTo");
+    const minBookings = searchParams.get("minBookings");
+    const maxBookings = searchParams.get("maxBookings");
+
+    // Build where clause
+    const where = {
+      tenantId: tenant.id,
+      ...(includeArchived ? {} : { archived: false }),
+    };
+
+    // Search filter (name, email, phone, company)
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search } },
+        { company: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // Status filter
+    if (statusFilter) {
+      where.status = statusFilter;
+    }
+
+    // Tag filter
+    if (tag) {
+      where.tags = {
+        some: {
+          tag: {
+            name: tag,
+          },
+        },
+      };
+    }
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        where.createdAt.lte = new Date(dateTo);
+      }
+    }
+
     const contacts = await prisma.contact.findMany({
-      where: { tenantId: tenant.id },
+      where,
       include: {
         _count: {
           select: { bookings: true },
@@ -29,8 +82,19 @@ export async function GET(request) {
       orderBy: { createdAt: "desc" },
     });
 
+    // Filter by booking count if specified (post-query filtering)
+    let filteredContacts = contacts;
+    if (minBookings || maxBookings) {
+      filteredContacts = contacts.filter((contact) => {
+        const count = contact._count.bookings;
+        if (minBookings && count < parseInt(minBookings)) return false;
+        if (maxBookings && count > parseInt(maxBookings)) return false;
+        return true;
+      });
+    }
+
     // Transform to include booking count and flatten tags
-    const contactsWithStats = contacts.map((contact) => ({
+    const contactsWithStats = filteredContacts.map((contact) => ({
       ...contact,
       bookingCount: contact._count.bookings,
       tags: contact.tags.map((ct) => ct.tag),

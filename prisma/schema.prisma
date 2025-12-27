@@ -101,6 +101,7 @@ model Tenant {
   pushSubscriptions   PushSubscription[]
   supportMessages     SupportMessage[]
   coupons             Coupon[]
+  contactSegments     ContactSegment[]
   plan                Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
 
   @@index([clerkOrgId])
@@ -200,6 +201,9 @@ model Contact {
   status    String?   @default("lead") // lead, client, active, inactive, unclassified
   notes     String?
 
+  archived   Boolean   @default(false)
+  archivedAt DateTime?
+
   stripeCustomerId String?  @unique  // Stripe Customer ID for saved payment methods
 
   createdAt DateTime  @default(now())
@@ -216,6 +220,8 @@ model Contact {
   @@map("Client")
   @@index([tenantId])
   @@index([email])
+  @@index([archived])
+  @@index([tenantId, archived])
 }
 
 model Tag {
@@ -242,6 +248,24 @@ model Tag {
   @@index([tenantId])
   @@index([type])
   @@index([isSystem])
+}
+
+model ContactSegment {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String
+  description String?
+  filters     Json      // Stores filter configuration (status, tags, dateRange, etc.)
+  isSystem    Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
 }
 
 model ContactTag {
