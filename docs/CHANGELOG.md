@@ -1,3 +1,14 @@
+## [1.10.0] - 2025-12-27
+
+## Changes
+- Deploy to Production (#18)
+- chore: Remove changelog filtering to show all commits
+- feat: Display applied coupons in invoice preview
+- fix: Prevent auto-release infinite loop by skipping bot commits
+- docs: Update changelog with comprehensive coupon system details
+- fix: Improve changelog generation to capture actual user-facing changes
+
+
 ## [1.9.212] - 2025-12-26
 
 ## Changes
