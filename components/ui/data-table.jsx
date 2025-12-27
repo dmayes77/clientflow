@@ -76,11 +76,11 @@ export function DataTable({
                 placeholder={searchPlaceholder}
                 value={globalFilter ?? ""}
                 onChange={(event) => setGlobalFilter(event.target.value)}
-                className="pl-8 w-full sm:w-[250px]"
+                className="pl-8 w-full sm:w-62.5"
               />
             </div>
           )}
-          {toolbar && <div className="flex items-center gap-2">{toolbar}</div>}
+          {toolbar && typeof toolbar === "function" ? toolbar({ table }) : toolbar}
         </div>
       )}
 

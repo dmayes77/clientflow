@@ -112,6 +112,26 @@ const BREAK_DURATION_OPTIONS = [
   { value: "120", label: "2 hours" },
 ];
 
+const BUFFER_TIME_OPTIONS = [
+  { value: "0", label: "No buffer" },
+  { value: "15", label: "15 minutes" },
+  { value: "30", label: "30 minutes" },
+  { value: "45", label: "45 minutes" },
+  { value: "60", label: "1 hour" },
+];
+
+const MIN_ADVANCE_HOURS_OPTIONS = [
+  { value: "0", label: "Allow same-day bookings" },
+  { value: "2", label: "2 hours" },
+  { value: "4", label: "4 hours" },
+  { value: "8", label: "8 hours" },
+  { value: "12", label: "12 hours" },
+  { value: "24", label: "1 day" },
+  { value: "48", label: "2 days" },
+  { value: "72", label: "3 days" },
+  { value: "168", label: "1 week" },
+];
+
 const CALENDAR_VIEW_OPTIONS = [
   { value: "month", label: "Month View" },
   { value: "week", label: "Week View" },
@@ -157,6 +177,10 @@ export function AvailabilitySettings() {
   const [timezone, setTimezone] = useState("America/New_York");
   const [slotInterval, setSlotInterval] = useState("30");
   const [breakDuration, setBreakDuration] = useState("60");
+  const [breakStartTime, setBreakStartTime] = useState("12:00");
+  const [breakEndTime, setBreakEndTime] = useState("13:00");
+  const [bufferTime, setBufferTime] = useState("0");
+  const [minAdvanceHours, setMinAdvanceHours] = useState("24");
   const [defaultCalendarView, setDefaultCalendarView] = useState("week");
 
   // Update schedule when availability data is loaded
@@ -186,6 +210,10 @@ export function AvailabilitySettings() {
       if (tenantData.timezone) setTimezone(tenantData.timezone);
       if (tenantData.slotInterval) setSlotInterval(String(tenantData.slotInterval));
       if (tenantData.breakDuration !== undefined) setBreakDuration(String(tenantData.breakDuration));
+      if (tenantData.breakStartTime) setBreakStartTime(tenantData.breakStartTime);
+      if (tenantData.breakEndTime) setBreakEndTime(tenantData.breakEndTime);
+      if (tenantData.bufferTime !== undefined) setBufferTime(String(tenantData.bufferTime));
+      if (tenantData.minAdvanceHours !== undefined) setMinAdvanceHours(String(tenantData.minAdvanceHours));
       if (tenantData.defaultCalendarView) setDefaultCalendarView(tenantData.defaultCalendarView);
     }
   }, [tenantData]);
@@ -210,25 +238,53 @@ export function AvailabilitySettings() {
   };
 
   const handleSave = async () => {
+    console.log("=== SAVE BUTTON CLICKED ===");
+    console.log("Schedule:", schedule);
+    console.log("Tenant settings:", {
+      timezone,
+      slotInterval: parseInt(slotInterval),
+      breakDuration: parseInt(breakDuration),
+      breakStartTime: breakDuration !== "0" ? breakStartTime : null,
+      breakEndTime: breakDuration !== "0" ? breakEndTime : null,
+      bufferTime: parseInt(bufferTime),
+      minAdvanceHours: parseInt(minAdvanceHours),
+      defaultCalendarView,
+    });
+
     try {
-      await Promise.all([
-        updateAvailabilityMutation.mutateAsync({
-          slots: schedule.map((day) => ({
-            dayOfWeek: day.dayOfWeek,
-            startTime: day.startTime,
-            endTime: day.endTime,
-            active: day.active,
-          })),
-        }),
-        updateTenantMutation.mutateAsync({
-          timezone,
-          slotInterval: parseInt(slotInterval),
-          breakDuration: parseInt(breakDuration),
-          defaultCalendarView,
-        }),
-      ]);
+      console.log("Starting mutations...");
+
+      const availabilityPromise = updateAvailabilityMutation.mutateAsync({
+        slots: schedule.map((day) => ({
+          dayOfWeek: day.dayOfWeek,
+          startTime: day.startTime,
+          endTime: day.endTime,
+          active: day.active,
+        })),
+      });
+
+      const tenantPromise = updateTenantMutation.mutateAsync({
+        timezone,
+        slotInterval: parseInt(slotInterval),
+        breakDuration: parseInt(breakDuration),
+        breakStartTime: breakDuration !== "0" ? breakStartTime : null,
+        breakEndTime: breakDuration !== "0" ? breakEndTime : null,
+        bufferTime: parseInt(bufferTime),
+        minAdvanceHours: parseInt(minAdvanceHours),
+        defaultCalendarView,
+      });
+
+      console.log("Waiting for promises...");
+      const results = await Promise.all([availabilityPromise, tenantPromise]);
+      console.log("Save results:", results);
+
       toast.success("Availability saved successfully");
+      console.log("=== SAVE COMPLETED ===");
     } catch (error) {
+      console.error("=== SAVE ERROR ===");
+      console.error("Error object:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
       toast.error(error.message || "Failed to save availability");
     }
   };
@@ -616,6 +672,83 @@ export function AvailabilitySettings() {
                   </Select>
                   <p className="hig-caption2 text-muted-foreground">
                     Deducted from daily hours when calculating business days for service/booking durations
+                  </p>
+                </div>
+
+                {breakDuration !== "0" && (
+                  <div className="space-y-2">
+                    <Label>Break Time Slot</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Select value={breakStartTime} onValueChange={setBreakStartTime}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Start time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIME_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Select value={breakEndTime} onValueChange={setBreakEndTime}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="End time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIME_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <p className="hig-caption2 text-muted-foreground">
+                      Blocks this time slot from bookings (e.g., 12:00 PM - 1:00 PM for lunch)
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>Buffer Time Between Appointments</Label>
+                  <Select value={bufferTime} onValueChange={setBufferTime}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUFFER_TIME_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="hig-caption2 text-muted-foreground">
+                    Prevents back-to-back bookings by adding padding time for travel, setup, or cleanup
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Minimum Advance Booking Time</Label>
+                  <Select value={minAdvanceHours} onValueChange={setMinAdvanceHours}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MIN_ADVANCE_HOURS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="hig-caption2 text-muted-foreground">
+                    Require clients to book at least this far in advance (prevents last-minute bookings)
                   </p>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { triggerWorkflows } from "@/lib/workflow-executor";
+import { isStatusTag, getStatusTagsForType, getStatusTag } from "@/lib/tag-status";
 
 // GET /api/contacts/[id]/tags - Get all tags for a contact
 export async function GET(request, { params }) {
@@ -79,7 +80,41 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Tag already added to contact" }, { status: 400 });
     }
 
-    // Add the tag
+    // Check if this is a status tag
+    const isStatus = isStatusTag(tag.name, "contact");
+
+    // Get current status tag before making changes (for workflow detection)
+    const contactWithTags = await prisma.contact.findUnique({
+      where: { id },
+      include: {
+        tags: {
+          include: { tag: true },
+          },
+        },
+      });
+    const previousStatusTag = getStatusTag(contactWithTags, "contact");
+
+    if (isStatus) {
+      // This is a status tag - remove any existing status tags first
+      const statusTagNames = getStatusTagsForType("contact");
+      const allStatusTags = await prisma.tag.findMany({
+        where: {
+          tenantId: tenant.id,
+          name: { in: statusTagNames },
+        },
+      });
+      const statusTagIds = allStatusTags.map((t) => t.id);
+
+      // Remove all existing status tags
+      await prisma.contactTag.deleteMany({
+        where: {
+          contactId: id,
+          tagId: { in: statusTagIds },
+        },
+      });
+    }
+
+    // Add the new tag
     const contactTag = await prisma.contactTag.create({
       data: { contactId: id, tagId },
       include: { tag: true },
@@ -93,6 +128,21 @@ export async function POST(request, { params }) {
     }).catch((err) => {
       console.error("Error triggering tag_added workflows:", err);
     });
+
+    // Check for contact conversion (Lead → Client)
+    if (
+      isStatus &&
+      previousStatusTag?.name === "Lead" &&
+      tag.name === "Client"
+    ) {
+      // Trigger client_converted workflow (async, don't wait)
+      triggerWorkflows("client_converted", {
+        tenant,
+        contact: { ...contact, id },
+      }).catch((err) => {
+        console.error("Error triggering client_converted workflows:", err);
+      });
+    }
 
     return NextResponse.json(contactTag.tag, { status: 201 });
   } catch (error) {

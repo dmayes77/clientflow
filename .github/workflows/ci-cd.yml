@@ -151,7 +151,7 @@ jobs:
     name: Auto Release
     runs-on: ubuntu-latest
     # Only run on manual merges to main, skip auto-generated version bump commits
-    if: |\
+    if: |
       github.ref == 'refs/heads/main' &&
       github.event_name == 'push' &&
       github.event.head_commit.author.username != 'github-actions[bot]' &&

@@ -110,13 +110,15 @@ export function SaveButton({
 
             // Variant styles
             variant === "default" && status !== "success" && status !== "error" &&
-              "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+              "bg-blue-600 text-white shadow hover:bg-blue-700",
+            variant === "success" && status !== "success" && status !== "error" &&
+              "bg-blue-600 text-white shadow hover:bg-blue-700",
             variant === "destructive" && status !== "success" && status !== "error" &&
               "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
             variant === "outline" && status !== "success" && status !== "error" &&
               "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
 
-            // Success state
+            // Success state (after save)
             status === "success" && "bg-green-600 text-white shadow hover:bg-green-600",
 
             // Error state
@@ -218,13 +220,15 @@ export function StandaloneSaveButton({
 
         // Variant styles
         variant === "default" && status !== "success" && status !== "error" &&
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+          "bg-blue-600 text-white shadow hover:bg-blue-700",
+        variant === "success" && status !== "success" && status !== "error" &&
+          "bg-blue-600 text-white shadow hover:bg-blue-700",
         variant === "destructive" && status !== "success" && status !== "error" &&
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         variant === "outline" && status !== "success" && status !== "error" &&
           "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
 
-        // Success state
+        // Success state (after save)
         status === "success" && "bg-green-600 text-white shadow hover:bg-green-600",
 
         // Error state

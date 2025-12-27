@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "prisma generate && PRISMA_MIGRATE_LOCK_TIMEOUT=60000 node scripts/migrate-or-baseline.js && next build",
+    "build": "prisma generate && PRISMA_MIGRATE_LOCK_TIMEOUT=60000 node scripts/migrate-or-baseline.js && next build --webpack",
     "start": "next start",
     "lint": "npx eslint",
     "test": "vitest run",
@@ -76,7 +76,7 @@
     "framer-motion": "^12.23.25",
     "googleapis": "^167.0.0",
     "lucide-react": "^0.555.0",
-    "next": "^16.0.10",
+    "next": "^16.1.1",
     "next-pwa": "^5.6.0",
     "next-themes": "^0.4.6",
     "nuqs": "^2.8.5",

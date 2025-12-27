@@ -9,6 +9,7 @@ import {
   useDeleteInvoice,
   useSendInvoice,
   useDownloadInvoicePDF,
+  useTags,
 } from "@/lib/hooks";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +34,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket } from "lucide-react";
+import { TagFilter } from "@/components/ui/tag-filter";
+import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket, Check, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   MoneyIcon,
   AddIcon,
@@ -118,6 +122,7 @@ export function InvoicesList() {
 
   // TanStack Query hooks
   const { data: invoices = [], isLoading: loading } = useInvoices();
+  const { data: allTags = [] } = useTags("all");
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
   const sendInvoice = useSendInvoice();
@@ -131,19 +136,34 @@ export function InvoicesList() {
   const [sendingId, setSendingId] = useState(null);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewInvoice, setPreviewInvoice] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
 
   const handleStatusChange = (invoice, newStatus) => {
-    updateInvoice.mutate(
-      { id: invoice.id, status: newStatus },
-      {
-        onSuccess: () => {
-          toast.success(`Invoice marked as ${newStatus}`);
-        },
-        onError: () => {
-          toast.error("Failed to update invoice status");
-        },
-      }
-    );
+    // Validate state transitions
+    if (invoice.status === "draft" && newStatus === "paid") {
+      toast.error("Cannot mark draft invoice as paid. Send it first.");
+      return;
+    }
+
+    // Prepare update data based on status
+    const updateData = { id: invoice.id, status: newStatus };
+
+    // If marking as paid, include payment data
+    if (newStatus === "paid") {
+      updateData.amountPaid = invoice.total;
+      updateData.balanceDue = 0;
+      updateData.paidAt = new Date().toISOString();
+    }
+
+    updateInvoice.mutate(updateData, {
+      onSuccess: () => {
+        toast.success(`Invoice marked as ${newStatus}`);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to update invoice status");
+      },
+    });
   };
 
   const handleOpenPaymentDialog = (invoice) => {
@@ -252,8 +272,203 @@ export function InvoicesList() {
     };
   }, [invoices]);
 
+  // Tag helper functions
+  const hasTag = (invoice, tagName) => {
+    if (!invoice.tags) return false;
+    return invoice.tags.some((t) => t.tag.name.toLowerCase() === tagName.toLowerCase());
+  };
+
+  const hasAnyStatusTag = (invoice) => {
+    if (!invoice.tags) return false;
+    const statusTagNames = ["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"];
+    return invoice.tags.some((t) => statusTagNames.includes(t.tag.name));
+  };
+
+  // Filtered invoices based on status filter and tag filter
+  const filteredInvoices = useMemo(() => {
+    let result = invoices;
+
+    // Tag-based status filter (status pills)
+    if (statusFilter !== "all") {
+      if (statusFilter === "unclassified") {
+        result = result.filter((inv) => !hasAnyStatusTag(inv));
+      } else {
+        result = result.filter((inv) => hasTag(inv, statusFilter));
+      }
+    }
+
+    // Additional tag filter (non-status tags via TagFilter component)
+    if (selectedTagIds.length > 0) {
+      result = result.filter((invoice) =>
+        invoice.tags?.some((tagAssoc) => selectedTagIds.includes(tagAssoc.tag.id))
+      );
+    }
+
+    return result;
+  }, [invoices, statusFilter, selectedTagIds]);
+
+  // Count by status tags
+  const statusCounts = useMemo(() => {
+    return {
+      all: invoices.length,
+      draft: invoices.filter((i) => hasTag(i, "Draft")).length,
+      sent: invoices.filter((i) => hasTag(i, "Sent")).length,
+      viewed: invoices.filter((i) => hasTag(i, "Viewed")).length,
+      paid: invoices.filter((i) => hasTag(i, "Paid")).length,
+      overdue: invoices.filter((i) => hasTag(i, "Overdue")).length,
+      cancelled: invoices.filter((i) => hasTag(i, "Cancelled")).length,
+      unclassified: invoices.filter((i) => !hasAnyStatusTag(i)).length,
+    };
+  }, [invoices]);
+
+  // Bulk action handlers
+  const [selectedRows, setSelectedRows] = useState({});
+
+  const handleBulkMarkPaid = (selectedInvoices) => {
+    // Filter out draft invoices - they must be sent first
+    const validInvoices = selectedInvoices.filter(inv => inv.status !== "draft");
+    const skippedCount = selectedInvoices.length - validInvoices.length;
+
+    if (validInvoices.length === 0) {
+      toast.error("Cannot mark draft invoices as paid. Send them first.");
+      return;
+    }
+
+    const updates = validInvoices.map((invoice) =>
+      updateInvoice.mutateAsync({
+        id: invoice.id,
+        status: "paid",
+        amountPaid: invoice.total,
+        balanceDue: 0,
+        paidAt: new Date().toISOString(),
+      })
+    );
+
+    Promise.all(updates)
+      .then(() => {
+        const message = skippedCount > 0
+          ? `${validInvoices.length} invoice(s) marked as paid. ${skippedCount} draft invoice(s) skipped.`
+          : `${validInvoices.length} invoice(s) marked as paid`;
+        toast.success(message);
+        setSelectedRows({});
+      })
+      .catch((error) => {
+        toast.error(error.message || "Failed to update some invoices");
+      });
+  };
+
+  const handleBulkMarkUnpaid = (selectedInvoices) => {
+    const updates = selectedInvoices.map((invoice) =>
+      updateInvoice.mutateAsync({
+        id: invoice.id,
+        status: "sent",
+        amountPaid: 0,
+        balanceDue: invoice.total,
+        paidAt: null,
+        depositPaidAt: null,
+      })
+    );
+
+    Promise.all(updates)
+      .then(() => {
+        toast.success(`${selectedInvoices.length} invoice(s) marked as unpaid`);
+        setSelectedRows({});
+      })
+      .catch(() => {
+        toast.error("Failed to update some invoices");
+      });
+  };
+
+  const handleBulkDelete = (selectedInvoices) => {
+    const deletes = selectedInvoices.map((invoice) =>
+      deleteInvoice.mutateAsync(invoice.id)
+    );
+
+    Promise.all(deletes)
+      .then(() => {
+        toast.success(`${selectedInvoices.length} invoice(s) deleted`);
+        setSelectedRows({});
+      })
+      .catch(() => {
+        toast.error("Failed to delete some invoices");
+      });
+  };
+
+  // Bulk tag operations
+  const handleBulkAddTag = async (tagId, selectedInvoices) => {
+    if (selectedInvoices.length === 0 || !tagId) return;
+
+    try {
+      const addPromises = selectedInvoices.map(async (invoice) => {
+        const response = await fetch(`/api/invoices/${invoice.id}/tags`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tagId }),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          // Ignore "already exists" errors silently
+          if (!error.error?.includes("already added")) {
+            throw new Error(error.error || "Failed to add tag");
+          }
+        }
+      });
+      await Promise.all(addPromises);
+      toast.success(`Tag added to ${selectedInvoices.length} invoice(s)`);
+      setSelectedRows({});
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      toast.error("Failed to add tag to some invoices");
+    }
+  };
+
+  const handleBulkRemoveTag = async (tagId, selectedInvoices) => {
+    if (selectedInvoices.length === 0 || !tagId) return;
+
+    try {
+      const removePromises = selectedInvoices.map(async (invoice) => {
+        const response = await fetch(`/api/invoices/${invoice.id}/tags?tagId=${tagId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to remove tag");
+        }
+      });
+      await Promise.all(removePromises);
+      toast.success(`Tag removed from ${selectedInvoices.length} invoice(s)`);
+      setSelectedRows({});
+      // Refresh data
+      window.location.reload();
+    } catch (error) {
+      toast.error("Failed to remove tag from some invoices");
+    }
+  };
+
   // Define columns for DataTable
   const columns = [
+    {
+      id: "select",
+      size: 40,
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "invoiceNumber",
       header: ({ column }) => (
@@ -384,17 +599,178 @@ export function InvoicesList() {
               </Button>
             </div>
           ) : (
-            <DataTable
-              columns={columns}
-              data={invoices}
-              searchPlaceholder="Search invoices..."
-              pageSize={25}
-              onRowClick={(invoice) => {
-                setPreviewInvoice(invoice);
-                setPreviewSheetOpen(true);
+            <>
+              {/* Status Filter Pills */}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <Button variant={statusFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("all")}>
+                  All ({statusCounts.all})
+                </Button>
+                <Button
+                  variant={statusFilter === "draft" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("draft")}
+                  className={`${statusFilter === "draft" ? "bg-slate-500 hover:bg-slate-600" : ""}`}
+                >
+                  Draft ({statusCounts.draft})
+                </Button>
+                <Button
+                  variant={statusFilter === "sent" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("sent")}
+                  className={`${statusFilter === "sent" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
+                >
+                  Sent ({statusCounts.sent})
+                </Button>
+                <Button
+                  variant={statusFilter === "viewed" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("viewed")}
+                >
+                  Viewed ({statusCounts.viewed})
+                </Button>
+                <Button
+                  variant={statusFilter === "paid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("paid")}
+                  className={`${statusFilter === "paid" ? "bg-green-500 hover:bg-green-600" : ""}`}
+                >
+                  Paid ({statusCounts.paid})
+                </Button>
+                <Button
+                  variant={statusFilter === "overdue" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("overdue")}
+                  className={`${statusFilter === "overdue" ? "bg-red-500 hover:bg-red-600" : ""}`}
+                >
+                  Overdue ({statusCounts.overdue})
+                </Button>
+                <Button
+                  variant={statusFilter === "cancelled" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("cancelled")}
+                >
+                  Cancelled ({statusCounts.cancelled})
+                </Button>
+                <Button
+                  variant={statusFilter === "unclassified" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("unclassified")}
+                  className={`${statusFilter === "unclassified" ? "bg-slate-500 hover:bg-slate-600" : ""}`}
+                >
+                  Unclassified ({statusCounts.unclassified})
+                </Button>
+
+                {/* Additional Tag Filter */}
+                <div className="ml-auto">
+                  <TagFilter
+                    tags={allTags}
+                    selectedTagIds={selectedTagIds}
+                    onSelectionChange={setSelectedTagIds}
+                    type="invoice"
+                    excludeSystemTags={true}
+                    placeholder="Filter by tags"
+                  />
+                </div>
+              </div>
+
+              <DataTable
+                columns={columns}
+                data={filteredInvoices}
+                searchPlaceholder="Search invoices..."
+                pageSize={25}
+                onRowClick={(invoice) => {
+                  setPreviewInvoice(invoice);
+                  setPreviewSheetOpen(true);
+                }}
+                emptyMessage="No invoices found."
+              toolbar={({ table }) => {
+                const selectedInvoices = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
+                const hasSelection = selectedInvoices.length > 0;
+
+                if (!hasSelection) return null;
+
+                return (
+                  <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg border">
+                    <span className="text-sm font-medium">
+                      {selectedInvoices.length} selected
+                    </span>
+                    <div className="flex-1" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => handleBulkMarkPaid(selectedInvoices)}
+                      disabled={updateInvoice.isPending}
+                    >
+                      <Check className="h-4 w-4 mr-1 text-green-600" />
+                      Mark Paid
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => handleBulkMarkUnpaid(selectedInvoices)}
+                      disabled={updateInvoice.isPending}
+                    >
+                      <CreditCard className="h-4 w-4 mr-1 text-amber-600" />
+                      Mark Unpaid
+                    </Button>
+
+                    <Select onValueChange={(tagId) => handleBulkAddTag(tagId, selectedInvoices)}>
+                      <SelectTrigger className="h-8 w-32">
+                        <SelectValue placeholder="Add tag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allTags
+                          .filter((tag) => tag.type === "invoice" || tag.type === "general")
+                          .filter((tag) => !tag.isSystem)
+                          .map((tag) => (
+                            <SelectItem key={tag.id} value={tag.id}>
+                              {tag.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select onValueChange={(tagId) => handleBulkRemoveTag(tagId, selectedInvoices)}>
+                      <SelectTrigger className="h-8 w-32">
+                        <SelectValue placeholder="Remove tag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allTags
+                          .filter((tag) => tag.type === "invoice" || tag.type === "general")
+                          .filter((tag) => !tag.isSystem)
+                          .map((tag) => (
+                            <SelectItem key={tag.id} value={tag.id}>
+                              {tag.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-destructive hover:text-destructive"
+                      onClick={() => handleBulkDelete(selectedInvoices)}
+                      disabled={deleteInvoice.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8"
+                      onClick={() => table.resetRowSelection()}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
               }}
-              emptyMessage="No invoices found."
             />
+            </>
           )}
         </CardContent>
       </Card>
@@ -527,6 +903,7 @@ export function InvoicesList() {
           onOpenChange={setPreviewSheetOpen}
           title={previewInvoice?.invoiceNumber || "Invoice Preview"}
           scrollable
+          actionColumns={getSafeDepositPercent(previewInvoice.depositPercent) > 0 ? 6 : 5}
           header={
             <div className="flex items-center justify-between">
               <h3 className="hig-headline">{previewInvoice.invoiceNumber}</h3>
@@ -589,8 +966,37 @@ export function InvoicesList() {
                 <span className="hig-caption-2">PDF</span>
               </Button>
 
-              {/* Action 3: Mark Paid (if applicable) */}
-              {["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
+              {/* Action 3: Toggle Payment Status */}
+              {previewInvoice.status === "paid" ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-amber-600 hover:text-amber-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Reset to sent status and clear payment fields
+                    updateInvoice.mutate({
+                      id: previewInvoice.id,
+                      status: "sent",
+                      amountPaid: 0,
+                      balanceDue: previewInvoice.total,
+                      paidAt: null,
+                      depositPaidAt: null,
+                    }, {
+                      onSuccess: () => {
+                        toast.success("Invoice marked as unpaid");
+                        setPreviewSheetOpen(false);
+                      },
+                      onError: () => {
+                        toast.error("Failed to update invoice");
+                      },
+                    });
+                  }}
+                >
+                  <CreditCard className="h-5 w-5" />
+                  <span className="hig-caption-2">Unpaid</span>
+                </Button>
+              ) : ["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -611,7 +1017,58 @@ export function InvoicesList() {
                 </Button>
               )}
 
-              {/* Action 4: Edit */}
+              {/* Action 4: Toggle Deposit (if has deposit) */}
+              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
+                previewInvoice.depositPaidAt ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-blue-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateInvoice.mutate({
+                        id: previewInvoice.id,
+                        depositPaidAt: null,
+                      }, {
+                        onSuccess: () => {
+                          toast.success("Deposit marked as unpaid");
+                        },
+                        onError: () => {
+                          toast.error("Failed to update deposit status");
+                        },
+                      });
+                    }}
+                  >
+                    <Percent className="h-5 w-5" />
+                    <span className="hig-caption-2">Dep.Unpaid</span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-green-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateInvoice.mutate({
+                        id: previewInvoice.id,
+                        depositPaidAt: new Date().toISOString(),
+                      }, {
+                        onSuccess: () => {
+                          toast.success("Deposit marked as paid");
+                        },
+                        onError: () => {
+                          toast.error("Failed to update deposit status");
+                        },
+                      });
+                    }}
+                  >
+                    <Percent className="h-5 w-5" />
+                    <span className="hig-caption-2">Dep.Paid</span>
+                  </Button>
+                )
+              )}
+
+              {/* Action 5: Edit */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -626,7 +1083,7 @@ export function InvoicesList() {
                 <span className="hig-caption-2">Edit</span>
               </Button>
 
-              {/* Action 5: Delete */}
+              {/* Action 6: Delete */}
               <Button
                 variant="ghost"
                 size="sm"

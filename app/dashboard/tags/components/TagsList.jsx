@@ -33,6 +33,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   Plus,
   Pencil,
   Trash2,
@@ -43,9 +50,13 @@ import {
   Calendar,
   Layers,
   ChevronRight,
+  Upload,
+  Download,
+  Merge,
+  MoreVertical,
 } from "lucide-react";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from "@/lib/hooks";
+import { useTags, useCreateTag, useUpdateTag, useDeleteTag, useMergeTags, useImportTags, useExportTags } from "@/lib/hooks";
 import {
   useTanstackForm,
   TextField,
@@ -101,8 +112,13 @@ const getInitialFormState = (activeFilter) => ({
 export function TagsList() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState(null);
   const [tagToDelete, setTagToDelete] = useState(null);
+  const [tagToMerge, setTagToMerge] = useState(null);
+  const [mergeTarget, setMergeTarget] = useState("");
+  const [importFile, setImportFile] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const isMobile = useMediaQuery("(max-width: 639px)");
 
@@ -111,6 +127,9 @@ export function TagsList() {
   const createTagMutation = useCreateTag();
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
+  const mergeTagsMutation = useMergeTags();
+  const importTagsMutation = useImportTags();
+  const exportTagsMutation = useExportTags();
 
   // Save button state
   const saveButton = useSaveButton();
@@ -198,6 +217,53 @@ export function TagsList() {
     }
   };
 
+  const handleMerge = async () => {
+    if (!tagToMerge || !mergeTarget) return;
+
+    try {
+      await mergeTagsMutation.mutateAsync({
+        sourceTagId: tagToMerge.id,
+        targetTagId: mergeTarget,
+      });
+      toast.success(`"${tagToMerge.name}" merged successfully`);
+      setMergeDialogOpen(false);
+      setTagToMerge(null);
+      setMergeTarget("");
+    } catch (error) {
+      toast.error(error.message || "Failed to merge tags");
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importFile) return;
+
+    try {
+      const result = await importTagsMutation.mutateAsync(importFile);
+      toast.success(result.message || "Tags imported successfully");
+      setImportDialogOpen(false);
+      setImportFile(null);
+    } catch (error) {
+      toast.error(error.message || "Failed to import tags");
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const blob = await exportTagsMutation.mutateAsync();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tags-export-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Tags exported successfully");
+    } catch (error) {
+      toast.error(error.message || "Failed to export tags");
+    }
+  };
+
   return (
     <>
       {/* Filter Tabs */}
@@ -215,10 +281,20 @@ export function TagsList() {
             })}
           </TabsList>
         </Tabs>
-        <Button size="sm" onClick={() => handleOpenDialog()} className="h-8.5 sm:h-9 px-3 sm:px-4">
-          <Plus className="size-4.25 sm:size-4.5 mr-1.5" />
-          Create Tag
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setImportDialogOpen(true)} className="h-8.5 sm:h-9 px-3 sm:px-4">
+            <Upload className="size-4.25 sm:size-4.5 mr-1.5" />
+            <span className="hidden sm:inline">Import</span>
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleExport} className="h-8.5 sm:h-9 px-3 sm:px-4">
+            <Download className="size-4.25 sm:size-4.5 mr-1.5" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+          <Button size="sm" onClick={() => handleOpenDialog()} className="h-8.5 sm:h-9 px-3 sm:px-4">
+            <Plus className="size-4.25 sm:size-4.5 mr-1.5" />
+            Create Tag
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -258,19 +334,24 @@ export function TagsList() {
               return (
                 <div
                   key={tag.id}
-                  className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
-                  onClick={() => handleOpenDialog(tag)}
+                  className="flex items-center gap-3 pl-4"
                 >
                   {/* Color dot indicator */}
-                  <div className={cn("size-11 rounded-full flex items-center justify-center shrink-0", colorClasses.bg)}>
+                  <div
+                    className={cn("size-11 rounded-full flex items-center justify-center shrink-0", colorClasses.bg)}
+                    onClick={() => handleOpenDialog(tag)}
+                  >
                     <Tag className={cn("size-5.5", colorClasses.text)} />
                   </div>
 
                   {/* Content with iOS-style divider */}
-                  <div className={cn(
-                    "flex-1 min-w-0 flex items-center gap-2 py-3 pr-4",
-                    index < tags.length - 1 && "border-b border-border"
-                  )}>
+                  <div
+                    className={cn(
+                      "flex-1 min-w-0 flex items-center gap-2 py-3 pr-2 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors",
+                      index < tags.length - 1 && "border-b border-border"
+                    )}
+                    onClick={() => handleOpenDialog(tag)}
+                  >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold truncate">{tag.name}</span>
@@ -303,7 +384,46 @@ export function TagsList() {
                         )}
                       </div>
                     </div>
-                    <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
+                  </div>
+
+                  {/* Mobile Actions Menu */}
+                  <div className="pr-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenDialog(tag)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setTagToMerge(tag);
+                          setMergeDialogOpen(true);
+                        }}>
+                          <Merge className="h-4 w-4 mr-2" />
+                          Merge
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setTagToDelete(tag);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               );
@@ -332,27 +452,41 @@ export function TagsList() {
                         <span className="hig-caption2">{getTypeLabel(tag.type)}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDialog(tag)}
-                        className="h-7 w-7"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setTagToDelete(tag);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenDialog(tag)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setTagToMerge(tag);
+                          setMergeDialogOpen(true);
+                        }}>
+                          <Merge className="h-4 w-4 mr-2" />
+                          Merge
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setTagToDelete(tag);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3 pt-0">
@@ -558,6 +692,102 @@ export function TagsList() {
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Merge Dialog */}
+      <Dialog open={mergeDialogOpen} onOpenChange={setMergeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Merge Tag</DialogTitle>
+            <DialogDescription>
+              Merge "{tagToMerge?.name}" into another tag. All associations will be moved to the target tag, and "{tagToMerge?.name}" will be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Merge into</Label>
+              <Select value={mergeTarget} onValueChange={setMergeTarget}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target tag..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {tags
+                    .filter((tag) => tag.id !== tagToMerge?.id)
+                    .map((tag) => {
+                      const colorClasses = getColorClasses(tag.color);
+                      return (
+                        <SelectItem key={tag.id} value={tag.id}>
+                          <div className="flex items-center gap-2">
+                            <div className={cn("h-2 w-2 rounded-full", colorClasses.dot)} />
+                            {tag.name}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setMergeDialogOpen(false);
+              setMergeTarget("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleMerge} disabled={!mergeTarget}>
+              Merge Tags
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Tags</DialogTitle>
+            <DialogDescription>
+              Upload a CSV file to import tags. Expected format: Name, Color, Type, Description
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>CSV File</Label>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              {importFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {importFile.name}
+                </p>
+              )}
+            </div>
+            <div className="rounded-lg bg-muted p-4 text-sm">
+              <p className="font-medium mb-2">CSV Format Example:</p>
+              <pre className="text-xs">
+Name,Color,Type,Description
+VIP,purple,contact,"High value client"
+Paid,green,invoice,""
+Follow-up,blue,general,"Needs follow-up call"
+              </pre>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setImportDialogOpen(false);
+              setImportFile(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleImport} disabled={!importFile}>
+              Import Tags
             </Button>
           </DialogFooter>
         </DialogContent>

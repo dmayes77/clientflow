@@ -41,6 +41,10 @@ model Tenant {
   timezone            String    @default("America/New_York")
   slotInterval        Int       @default(30)
   breakDuration       Int       @default(60) // Daily break/lunch duration in minutes
+  breakStartTime      String?   // When break starts (e.g., "12:00")
+  breakEndTime        String?   // When break ends (e.g., "13:00")
+  bufferTime          Int       @default(0)  // Buffer time between appointments in minutes (0-60)
+  minAdvanceHours     Int       @default(24) // Minimum hours in advance required for bookings (0-168)
   defaultCalendarView String    @default("week")
   defaultTaxRate      Float     @default(0) // Default tax rate for invoices
 
@@ -78,6 +82,8 @@ model Tenant {
   serviceCategories   ServiceCategory[]
   contacts            Contact[]
   bookings            Booking[]
+  recurringBookings   RecurringBooking[]
+  bookingReminders    BookingReminder[]
   apiKeys             ApiKey[]
   availability        Availability[]
   availabilityOverrides AvailabilityOverride[]
@@ -89,6 +95,7 @@ model Tenant {
   tags                Tag[]
   workflows           Workflow[]
   emailTemplates      EmailTemplate[]
+  campaigns           Campaign[]
   terminalReaders     TerminalReader[]
   alerts              Alert[]
   pushSubscriptions   PushSubscription[]
@@ -198,11 +205,13 @@ model Contact {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bookings  Booking[]
-  invoices  Invoice[]
-  payments  Payment[]
-  tags      ContactTag[]
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings           Booking[]
+  invoices           Invoice[]
+  payments           Payment[]
+  tags               ContactTag[]
+  campaignRecipients CampaignRecipient[]
+  recurringBookings  RecurringBooking[]
 
   @@map("Client")
   @@index([tenantId])
@@ -216,7 +225,7 @@ model Tag {
   name        String
   color       String    @default("blue")
   description String?
-  type        String    @default("general") // general, contact, invoice, booking
+  type        String    @default("general") // general, contact, invoice, booking, payment
   isSystem    Boolean   @default(false) // System tags cannot be deleted
 
   createdAt   DateTime  @default(now())
@@ -226,6 +235,7 @@ model Tag {
   contacts    ContactTag[]
   invoices    InvoiceTag[]
   bookings    BookingTag[]
+  payments    PaymentTag[]
   workflows   Workflow[]
 
   @@unique([tenantId, name])
@@ -333,14 +343,90 @@ model EmailTemplate {
   description String?
   category    String?   // e.g., "welcome", "follow-up", "booking", "invoice"
 
+  // System template fields
+  isSystem    Boolean   @default(false)  // Can't be deleted if true
+  systemKey   String?   @unique          // e.g., "payment_reminder_gentle"
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaigns   Campaign[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
   @@index([category])
+  @@index([systemKey])
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  tenantId    String
+  templateId  String
+
+  name        String
+  description String?
+
+  // Filters for targeting contacts
+  filterTags  String[]  @default([])  // Tag IDs to include (OR logic)
+  filterExcludeTags String[]  @default([])  // Tag IDs to exclude
+  filterStatus String?   // Optional status filter
+
+  // Scheduling
+  status      String    @default("draft")  // "draft", "scheduled", "sending", "sent", "paused"
+  scheduledFor DateTime?  // null = send immediately
+  sentAt      DateTime?
+
+  // Stats
+  totalRecipients Int @default(0)
+  sentCount   Int @default(0)
+  deliveredCount Int @default(0)
+  openedCount Int @default(0)
+  clickedCount Int @default(0)
+  bouncedCount Int @default(0)
+  unsubscribedCount Int @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template    EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  recipients  CampaignRecipient[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+model CampaignRecipient {
+  id          String    @id @default(cuid())
+  campaignId  String
+  contactId   String
+
+  // Delivery status
+  status      String    @default("pending")  // "pending", "sent", "delivered", "opened", "clicked", "bounced", "failed", "unsubscribed"
+
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bouncedAt   DateTime?
+  failureReason String?
+
+  // Tracking
+  opens       Int @default(0)  // Count of opens (can be >1)
+  clicks      Int @default(0)  // Count of clicks
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId])
+  @@index([contactId])
+  @@index([status])
 }
 
 model Booking {
@@ -371,6 +457,7 @@ model Booking {
   tags            BookingTag[]
   services        BookingService[]
   packages        BookingPackage[]
+  reminders       BookingReminder[]
 
   @@index([tenantId])
   @@index([contactId])
@@ -408,6 +495,63 @@ model BookingPackage {
   @@unique([bookingId, packageId])
   @@index([bookingId])
   @@index([packageId])
+}
+
+model RecurringBooking {
+  id          String   @id @default(cuid())
+  tenantId    String
+  contactId   String
+
+  // Recurrence pattern (RRULE format)
+  rrule       String   // e.g., "FREQ=WEEKLY;BYDAY=MO,WE,FR;INTERVAL=1"
+  startDate   DateTime // First occurrence
+  endDate     DateTime? // Last occurrence (null = no end)
+
+  // Booking template
+  serviceIds  String[] @default([])
+  packageIds  String[] @default([])
+  duration    Int
+  totalPrice  Int
+  notes       String?
+
+  // Status
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([active])
+  @@index([startDate])
+}
+
+model BookingReminder {
+  id             String    @id @default(cuid())
+  bookingId      String
+  tenantId       String
+
+  // Reminder configuration
+  reminderType   String    // "email" or "sms"
+  sendAt         DateTime  // When to send the reminder
+  sentAt         DateTime? // When it was actually sent
+
+  // Status
+  status         String    @default("pending") // "pending", "sent", "failed"
+  error          String?   // Error message if failed
+
+  createdAt      DateTime  @default(now())
+
+  booking        Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([sendAt])
 }
 
 model ApiKey {
@@ -504,7 +648,7 @@ model WebhookDelivery {
 model Payment {
   id                    String    @id @default(cuid())
   tenantId              String
-  contactId             String?   // Links payment to Contact
+  contactId             String    // Required: Contact is the nucleus
   bookingId             String?
 
   // Stripe IDs
@@ -540,8 +684,10 @@ model Payment {
   metadata              String?   // JSON
 
   tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contact               Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  contact               Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   bookings              Booking[]
+  invoices              InvoicePayment[]
+  tags                  PaymentTag[]
 
   @@index([tenantId])
   @@index([contactId])
@@ -609,7 +755,7 @@ model Video {
 model Invoice {
   id              String    @id @default(cuid())
   tenantId        String
-  contactId       String?   @map("clientId")
+  contactId       String    @map("clientId")
   bookingId       String?   @unique
 
   invoiceNumber   String
@@ -653,10 +799,11 @@ model Invoice {
   updatedAt       DateTime  @updatedAt
 
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contact         Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  contact         Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   tags            InvoiceTag[]
   coupons         InvoiceCoupon[]
+  payments        InvoicePayment[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -724,6 +871,39 @@ model InvoiceCoupon {
   @@unique([invoiceId, couponId])
   @@index([invoiceId])
   @@index([couponId])
+}
+
+model InvoicePayment {
+  id              String    @id @default(cuid())
+  invoiceId       String
+  paymentId       String
+
+  // Amount of this payment applied to this invoice
+  amountApplied   Int       // cents
+
+  createdAt       DateTime  @default(now())
+
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  payment         Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, paymentId])
+  @@index([invoiceId])
+  @@index([paymentId])
+}
+
+model PaymentTag {
+  id        String   @id @default(cuid())
+  paymentId String
+  tagId     String
+
+  createdAt DateTime @default(now())
+
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentId, tagId])
+  @@index([paymentId])
+  @@index([tagId])
 }
 
 model FeatureRequest {

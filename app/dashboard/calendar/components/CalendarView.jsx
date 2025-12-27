@@ -48,6 +48,7 @@ import {
   Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 const statusConfig = {
   inquiry: { label: "Inquiry", color: "bg-yellow-500", textColor: "text-yellow-600", icon: AlertCircle },
@@ -61,6 +62,45 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const BUSINESS_HOURS_START = 6;
 const BUSINESS_HOURS_END = 22;
 const SLOT_HEIGHT = 48;
+
+// Helper function to render break time indicator
+const BreakTimeIndicator = ({ breakStartTime, breakEndTime }) => {
+  if (!breakStartTime || !breakEndTime) return null;
+
+  try {
+    const [startHour, startMin] = breakStartTime.split(':').map(Number);
+    const [endHour, endMin] = breakEndTime.split(':').map(Number);
+
+    // Only show if break is within business hours
+    if (startHour < BUSINESS_HOURS_START || endHour > BUSINESS_HOURS_END) {
+      return null;
+    }
+
+    // Calculate position and height
+    const startOffset = (startHour - BUSINESS_HOURS_START) * SLOT_HEIGHT + (startMin / 60) * SLOT_HEIGHT;
+    const durationMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+    const height = (durationMinutes / 60) * SLOT_HEIGHT;
+
+    return (
+      <div
+        className="absolute left-0 right-0 bg-amber-100/40 dark:bg-amber-950/40 border-y border-amber-300/50 dark:border-amber-700/50 pointer-events-none z-10"
+        style={{
+          top: `${startOffset}px`,
+          height: `${height}px`,
+        }}
+      >
+        <div className="flex items-center justify-center h-full">
+          <span className="text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/80 px-2 py-0.5 rounded">
+            Break
+          </span>
+        </div>
+      </div>
+    );
+  } catch (e) {
+    console.error('Error rendering break time indicator:', e);
+    return null;
+  }
+};
 
 export function CalendarView() {
   const router = useRouter();
@@ -438,6 +478,12 @@ export function CalendarView() {
 
           {weekDays.map((day) => (
             <div key={day.toISOString()} className="flex-1 border-r border-border relative">
+              {/* Break time indicator for this day */}
+              <BreakTimeIndicator
+                breakStartTime={tenant?.breakStartTime}
+                breakEndTime={tenant?.breakEndTime}
+              />
+
               {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => {
                 const hourBookings = getBookingsForHour(day, hour);
                 return (
@@ -449,12 +495,24 @@ export function CalendarView() {
                     {hourBookings.map((booking) => {
                       const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
                       const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
-                      const height = Math.min((booking.duration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 4);
+
+                      // Calculate break-aware end time
+                      const startTime = new Date(booking.scheduledAt);
+                      const adjustedEndTime = calculateAdjustedEndTime(
+                        startTime,
+                        booking.duration,
+                        tenant?.breakStartTime,
+                        tenant?.breakEndTime
+                      );
+
+                      // Calculate actual display duration in minutes (including break extension)
+                      const displayDuration = (adjustedEndTime - startTime) / 60000;
+                      const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 8);
 
                       return (
                         <div
                           key={booking.id}
-                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white hig-caption2 overflow-hidden", statusConfig[booking.status]?.color)}
+                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white hig-caption2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
                           style={{
                             top: `${topOffset}px`,
                             height: `${Math.max(height, 20)}px`,
@@ -509,6 +567,12 @@ export function CalendarView() {
           </div>
 
           <div className="flex-1 relative">
+            {/* Break time indicator */}
+            <BreakTimeIndicator
+              breakStartTime={tenant?.breakStartTime}
+              breakEndTime={tenant?.breakEndTime}
+            />
+
             {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => {
               const hourBookings = getBookingsForHour(currentDate, hour);
               return (
@@ -520,12 +584,24 @@ export function CalendarView() {
                   {hourBookings.map((booking) => {
                     const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
                     const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
-                    const height = Math.min((booking.duration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 4);
+
+                    // Calculate break-aware end time
+                    const startTime = new Date(booking.scheduledAt);
+                    const adjustedEndTime = calculateAdjustedEndTime(
+                      startTime,
+                      booking.duration,
+                      tenant?.breakStartTime,
+                      tenant?.breakEndTime
+                    );
+
+                    // Calculate actual display duration in minutes (including break extension)
+                    const displayDuration = (adjustedEndTime - startTime) / 60000;
+                    const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 8);
 
                     return (
                       <div
                         key={booking.id}
-                        className={cn("absolute left-1 right-1 rounded px-2 text-white hig-caption2 overflow-hidden", statusConfig[booking.status]?.color)}
+                        className={cn("absolute left-1 right-1 rounded px-2 text-white hig-caption2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
                         style={{
                           top: `${topOffset}px`,
                           height: `${Math.max(height, 28)}px`,
@@ -585,7 +661,7 @@ export function CalendarView() {
                         {height > 40 && (
                           <>
                             <div className="opacity-80">
-                              {formatTimeInTz(booking.scheduledAt, "h:mm a")} - {booking.duration}min
+                              {formatTimeInTz(booking.scheduledAt, "h:mm a")} - {formatTimeInTz(adjustedEndTime, "h:mm a")}
                             </div>
                             <div className="opacity-80 truncate">
                               {booking.services?.[0]?.service?.name ||
@@ -674,7 +750,14 @@ export function CalendarView() {
                 <ChevronRight className="size-4" />
               </Button>
             </div>
-            <h2>{getHeaderTitle()}</h2>
+            <div className="flex items-center gap-2">
+              <h2>{getHeaderTitle()}</h2>
+              {timezone && (
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                  {timezone.replace('_', ' ')}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

@@ -197,7 +197,7 @@ export function CouponsList() {
       accessorKey: "description",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
       cell: ({ row }) => (
-        <div className="max-w-[300px] truncate text-muted-foreground">
+        <div className="max-w-75 truncate text-muted-foreground">
           {row.original.description || "-"}
         </div>
       ),
@@ -356,7 +356,7 @@ export function CouponsList() {
 
       {/* Create/Edit Dialog */}
       <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-        <SheetContent className="w-full sm:max-w-[540px] overflow-hidden flex flex-col p-0">
+        <SheetContent className="w-full sm:max-w-135 overflow-hidden flex flex-col p-0">
           <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
             <SheetTitle>{editingCoupon ? "Edit Coupon" : "New Coupon"}</SheetTitle>
             <SheetDescription>
@@ -456,7 +456,7 @@ export function CouponsList() {
                           value={field.state.value}
                           onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
                           onBlur={field.handleBlur}
-                          className="max-w-[150px]"
+                          className="max-w-37.5"
                           required
                         />
                         {discountType === "percentage" && (
@@ -485,7 +485,7 @@ export function CouponsList() {
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
                       placeholder="No minimum"
-                      className="max-w-[150px]"
+                      className="max-w-37.5"
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -511,7 +511,7 @@ export function CouponsList() {
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
                       placeholder="No maximum"
-                      className="max-w-[150px]"
+                      className="max-w-37.5"
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -530,7 +530,7 @@ export function CouponsList() {
                     <div className="text-xs text-muted-foreground mb-2">
                       Leave empty to apply to all items
                     </div>
-                    <div className="space-y-2 max-h-[150px] overflow-y-auto border rounded-md p-3">
+                    <div className="space-y-2 max-h-37.5 overflow-y-auto border rounded-md p-3">
                       {services.map((service) => {
                         const isChecked = (field.state.value || []).includes(service.id);
                         return (
@@ -568,7 +568,7 @@ export function CouponsList() {
                 {(field) => (
                   <div className="space-y-2">
                     <Label>Applicable Packages (optional)</Label>
-                    <div className="space-y-2 max-h-[150px] overflow-y-auto border rounded-md p-3">
+                    <div className="space-y-2 max-h-37.5 overflow-y-auto border rounded-md p-3">
                       {packages.map((pkg) => {
                         const isChecked = (field.state.value || []).includes(pkg.id);
                         return (
@@ -613,7 +613,7 @@ export function CouponsList() {
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     placeholder="Unlimited"
-                    className="max-w-[150px]"
+                    className="max-w-37.5"
                   />
                   <p className="text-xs text-muted-foreground">
                     Leave empty for unlimited uses
@@ -633,7 +633,7 @@ export function CouponsList() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    className="max-w-[200px]"
+                    className="max-w-50"
                   />
                   <p className="text-xs text-muted-foreground">
                     Leave empty for no expiration

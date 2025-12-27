@@ -299,7 +299,7 @@ export function BookingForm({
 
   // Initialize booking data in edit mode
   useEffect(() => {
-    if (isEditMode && bookingData) {
+    if (isEditMode && bookingData?.booking) {
       setBooking(bookingData.booking);
 
       // Convert UTC to tenant's timezone for display in datetime-local input
@@ -870,6 +870,14 @@ export function BookingForm({
                     />
                   </>
                 )}
+                {timezone && (
+                  <div className="col-span-full">
+                    <p className="text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3 inline mr-1" />
+                      Appointment time is in <span className="font-medium">{timezone.replace('_', ' ')}</span> timezone
+                    </p>
+                  </div>
+                )}
                 <form.Field name="duration">
                   {(field) => (
                     <div className="space-y-2">
@@ -883,18 +891,6 @@ export function BookingForm({
                   )}
                 </form.Field>
               </div>
-              <SelectField
-                form={form}
-                name="status"
-                label="Status"
-                options={[
-                  { value: "inquiry", label: "Inquiry" },
-                  { value: "scheduled", label: "Scheduled" },
-                  { value: "confirmed", label: "Confirmed" },
-                  { value: "completed", label: "Completed" },
-                  { value: "cancelled", label: "Cancelled" },
-                ]}
-              />
             </CardContent>
           </Card>
 

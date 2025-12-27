@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 // GET /api/public/[slug]/availability - Get available time slots for a date
 export async function GET(request, { params }) {
@@ -25,6 +26,10 @@ export async function GET(request, { params }) {
         id: true,
         timezone: true,
         slotInterval: true,
+        breakStartTime: true,
+        breakEndTime: true,
+        bufferTime: true,
+        minAdvanceHours: true,
       },
     });
 
@@ -93,8 +98,21 @@ export async function GET(request, { params }) {
         closeTime: null,
         timezone: tenant.timezone,
         slotInterval: tenant.slotInterval,
+        minAdvanceHours: tenant.minAdvanceHours || 24,
       });
     }
+
+    // Check if requested date is too soon (within minimum advance hours)
+    const now = new Date();
+    const minAdvanceMs = (tenant.minAdvanceHours || 24) * 60 * 60 * 1000;
+    const earliestAllowedDate = new Date(now.getTime() + minAdvanceMs);
+
+    // Set to start of day for comparison
+    const requestedStartOfDay = new Date(requestedDate);
+    requestedStartOfDay.setHours(0, 0, 0, 0);
+
+    const earliestStartOfDay = new Date(earliestAllowedDate);
+    earliestStartOfDay.setHours(0, 0, 0, 0);
 
     // Get existing bookings for this date
     const startOfDay = new Date(dateParam);
@@ -120,10 +138,15 @@ export async function GET(request, { params }) {
       },
     });
 
-    // Convert bookings to occupied time slots
+    // Convert bookings to occupied time slots (with break-aware end times)
     const bookedSlots = bookings.map((booking) => {
       const start = new Date(booking.scheduledAt);
-      const end = new Date(start.getTime() + booking.duration * 60000);
+      const end = calculateAdjustedEndTime(
+        start,
+        booking.duration,
+        tenant.breakStartTime,
+        tenant.breakEndTime
+      );
 
       return {
         start: start.toISOString(),
@@ -138,8 +161,13 @@ export async function GET(request, { params }) {
       bookedSlots,
       openTime,
       closeTime,
+      breakStartTime: tenant.breakStartTime,
+      breakEndTime: tenant.breakEndTime,
+      bufferTime: tenant.bufferTime || 0,
       timezone: tenant.timezone,
       slotInterval: tenant.slotInterval,
+      minAdvanceHours: tenant.minAdvanceHours || 24,
+      earliestAllowedTime: earliestAllowedDate.toISOString(),
     });
   } catch (error) {
     console.error("Error fetching availability:", error);

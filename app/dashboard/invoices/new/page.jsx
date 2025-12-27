@@ -19,7 +19,7 @@ function NewInvoiceContent() {
 
 function LoadingFallback() {
   return (
-    <div className="flex items-center justify-center min-h-[400px]">
+    <div className="flex items-center justify-center min-h-100">
       <div className="text-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
         <p className="text-muted-foreground">Loading...</p>

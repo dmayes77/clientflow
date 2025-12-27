@@ -32,7 +32,7 @@ export function PreviewSheet({
   side = "right",
   className = "",
 }) {
-  const gridColsClass = actionColumns === 4 ? "grid-cols-4" : "grid-cols-5";
+  const gridColsClass = actionColumns === 4 ? "grid-cols-4" : actionColumns === 6 ? "grid-cols-6" : "grid-cols-5";
   const isRightSide = side === "right";
 
   return (
@@ -42,7 +42,7 @@ export function PreviewSheet({
         className={cn(
           "px-0 pb-0",
           isRightSide
-            ? "!w-full sm:!w-[450px] sm:!max-w-[450px] rounded-none h-full" // Side sheet: full height on desktop
+            ? "w-full! sm:w-112.5! sm:max-w-112.5! rounded-none h-full" // Side sheet: full height on desktop
             : "rounded-t-2xl", // Bottom sheet
           !isRightSide && (scrollable ? "h-[85vh] flex flex-col" : "h-auto max-h-[85vh]"), // Bottom sheet height
           isRightSide && scrollable && "flex flex-col", // Side sheet with scrollable content

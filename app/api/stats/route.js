@@ -25,8 +25,8 @@ export async function GET(request) {
       totalServices,
       thisMonthBookings,
       lastMonthBookings,
-      completedBookings,
-      completedBookingsLastMonth,
+      thisMonthPayments,
+      lastMonthPayments,
     ] = await Promise.all([
       prisma.booking.count({
         where: { tenantId: tenant.id },
@@ -57,37 +57,38 @@ export async function GET(request) {
         },
         select: { totalPrice: true, status: true },
       }),
-      prisma.booking.findMany({
+      // Calculate revenue from actual payments (more accurate)
+      prisma.payment.findMany({
         where: {
           tenantId: tenant.id,
-          status: "completed",
-          scheduledAt: {
+          status: "succeeded",
+          createdAt: {
             gte: thisMonthStart,
             lte: thisMonthEnd,
           },
         },
-        select: { totalPrice: true },
+        select: { amount: true },
       }),
-      prisma.booking.findMany({
+      prisma.payment.findMany({
         where: {
           tenantId: tenant.id,
-          status: "completed",
-          scheduledAt: {
+          status: "succeeded",
+          createdAt: {
             gte: lastMonthStart,
             lte: lastMonthEnd,
           },
         },
-        select: { totalPrice: true },
+        select: { amount: true },
       }),
     ]);
 
-    // Calculate revenue
-    const thisMonthRevenue = completedBookings.reduce(
-      (sum, b) => sum + (b.totalPrice || 0),
+    // Calculate revenue from actual payments (in cents)
+    const thisMonthRevenue = thisMonthPayments.reduce(
+      (sum, p) => sum + (p.amount || 0),
       0
     );
-    const lastMonthRevenue = completedBookingsLastMonth.reduce(
-      (sum, b) => sum + (b.totalPrice || 0),
+    const lastMonthRevenue = lastMonthPayments.reduce(
+      (sum, p) => sum + (p.amount || 0),
       0
     );
     const totalRevenue = thisMonthRevenue; // Could also calculate all-time

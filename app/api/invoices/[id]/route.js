@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { updateInvoiceSchema, validateRequest } from "@/lib/validations";
+import { sendPaymentConfirmation } from "@/lib/email";
 
 // GET /api/invoices/[id] - Get a single invoice
 export async function GET(request, { params }) {
@@ -76,26 +77,68 @@ export async function PATCH(request, { params }) {
     }
 
     const body = await request.json();
-    const { success, data, errors } = validateRequest(body, updateInvoiceSchema);
+    console.log("[PATCH /api/invoices/[id]] Request body:", JSON.stringify(body));
+
+    // Preprocess: convert empty strings to undefined for optional fields
+    const cleanedBody = Object.fromEntries(
+      Object.entries(body).map(([key, value]) => [key, value === "" ? undefined : value])
+    );
+
+    const { success, data, errors } = validateRequest(cleanedBody, updateInvoiceSchema);
 
     if (!success) {
+      console.error("[PATCH /api/invoices/[id]] Validation failed:", errors);
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
     console.log("[PATCH /api/invoices/[id]] Validated data:", JSON.stringify({
+      status: data.status,
       depositPercent: data.depositPercent,
       couponId: data.couponId,
       couponDiscountAmount: data.couponDiscountAmount
     }));
 
+    console.log("[PATCH /api/invoices/[id]] Existing invoice status:", existingInvoice.status);
+
     // Handle status transitions
     const statusUpdates = {};
     if (data.status && data.status !== existingInvoice.status) {
+      console.log("[PATCH /api/invoices/[id]] Status changing from", existingInvoice.status, "to", data.status);
+
+      // VALIDATION: Prevent invalid state transitions
+      // Draft can only go to sent, not directly to paid
+      if (existingInvoice.status === "draft" && data.status === "paid") {
+        return NextResponse.json(
+          { error: "Cannot mark draft invoice as paid. Invoice must be sent first." },
+          { status: 400 }
+        );
+      }
+
+      // Transitioning TO sent
       if (data.status === "sent" && !existingInvoice.sentAt) {
         statusUpdates.sentAt = new Date();
       }
+
+      // Transitioning TO paid
       if (data.status === "paid" && !existingInvoice.paidAt) {
+        console.log("[PATCH /api/invoices/[id]] Marking invoice as paid");
         statusUpdates.paidAt = new Date();
+        statusUpdates.amountPaid = existingInvoice.total; // Mark full amount as paid
+        statusUpdates.balanceDue = 0; // No balance remaining
+      }
+
+      // Transitioning AWAY FROM paid (back to draft or sent)
+      if (existingInvoice.status === "paid" && data.status !== "paid") {
+        console.log("[PATCH /api/invoices/[id]] Clearing paid status fields");
+        statusUpdates.paidAt = null;
+        statusUpdates.amountPaid = 0;
+        statusUpdates.balanceDue = existingInvoice.total; // Restore full balance
+      }
+
+      // Transitioning back to draft from sent
+      if (existingInvoice.status === "sent" && data.status === "draft") {
+        console.log("[PATCH /api/invoices/[id]] Clearing sent status");
+        statusUpdates.sentAt = null;
       }
     }
 
@@ -129,13 +172,22 @@ export async function PATCH(request, { params }) {
 
     console.log("[PATCH /api/invoices/[id]] Updating with:", JSON.stringify({
       depositPercent: safeDepositPercent,
-      depositAmount: depositAmount
+      depositAmount: depositAmount,
+      status: dataWithDeposit.status,
+      statusUpdates: statusUpdates
     }));
+
+    // Remove undefined values from dataWithDeposit to prevent Prisma issues
+    const cleanedData = Object.fromEntries(
+      Object.entries(dataWithDeposit).filter(([_, value]) => value !== undefined)
+    );
+
+    console.log("[PATCH /api/invoices/[id]] Cleaned data keys:", Object.keys(cleanedData));
 
     const invoice = await prisma.invoice.update({
       where: { id },
       data: {
-        ...dataWithDeposit,
+        ...cleanedData,
         ...statusUpdates,
         depositAmount,
       },
@@ -180,6 +232,33 @@ export async function PATCH(request, { params }) {
             data: { currentUses: { increment: 1 } },
           });
         }
+      }
+    }
+
+    // Send payment confirmation email if payment was recorded
+    const paymentRecorded =
+      (data.amountPaid !== undefined && data.amountPaid > (existingInvoice.amountPaid || 0)) ||
+      (data.status === "paid" && existingInvoice.status !== "paid") ||
+      (data.paidAt && !existingInvoice.paidAt);
+
+    if (paymentRecorded && invoice.contact?.email) {
+      try {
+        console.log(`[PATCH /api/invoices/[id]] Sending payment confirmation for invoice ${invoice.invoiceNumber}`);
+        await sendPaymentConfirmation({
+          to: invoice.contact.email,
+          contactName: invoice.contact.name || invoice.contact.email,
+          businessName: tenant.businessName || "Your Business",
+          invoiceNumber: invoice.invoiceNumber,
+          amountPaid: invoice.amountPaid || invoice.total,
+          balanceDue: invoice.balanceDue || 0,
+          currency: invoice.currency || "usd",
+          paidAt: invoice.paidAt || new Date(),
+          viewUrl: null, // TODO: Add public invoice view URL when customer portal is ready
+        });
+        console.log(`[PATCH /api/invoices/[id]] Payment confirmation sent successfully`);
+      } catch (emailError) {
+        // Log but don't fail the request if email fails
+        console.error("[PATCH /api/invoices/[id]] Failed to send payment confirmation:", emailError);
       }
     }
 
