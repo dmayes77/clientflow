@@ -11,7 +11,7 @@ const COLORS = ["blue", "cyan", "teal", "green", "lime", "yellow", "orange", "re
 const importTagSchema = z.object({
   name: z.string().min(2, "Tag name must be at least 2 characters").max(50),
   color: z.string().optional().default("blue"),
-  type: z.enum(TAG_TYPES as [string, ...string[]]).optional().default("general"),
+  type: z.enum(TAG_TYPES).optional().default("general"),
   description: z.string().max(500).optional().nullable(),
 });
 
