@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionContainer, FeatureSection } from "./components";
-import { HeroText, HeroCTA, HowItWorks, FAQSection, WhoItsFor } from "./(home)/components";
+import { HeroText, HeroCTA, HowItWorks, FAQSection, WhoItsFor } from "./components/home";
 import { Calendar, Users, Settings, Image, Code, CreditCard, Webhook, Shield, ChartLine, MessageCircleQuestion } from "lucide-react";
 
 // Note: Made this a client component to work around Next.js 16 client reference manifest bug
