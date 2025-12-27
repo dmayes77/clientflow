@@ -12,6 +12,16 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    // Force fresh client reference manifests on each build
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
+  // Suppress Sentry warnings when using Webpack (we're not using Turbopack)
+  env: {
+    SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: '1',
+  },
 };
 
 // Sentry webpack plugin options
