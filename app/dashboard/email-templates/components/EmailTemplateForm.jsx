@@ -644,7 +644,7 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
 
                         {/* Email Body */}
                         <div
-                          className="prose prose-sm max-w-none [&_p]:leading-relaxed [&_p]:mb-4 [&_h1]:mb-4 [&_h2]:mb-3 [&_h3]:mb-3 [&_ul]:mb-4 [&_ol]:mb-4 [&_li]:mb-1"
+                          className="prose prose-sm max-w-none [&_p]:leading-relaxed [&_p]:mb-4 [&_h1]:mb-4 [&_h2]:mb-3 [&_h3]:mb-3 [&_ul]:mb-4 [&_ol]:mb-4 [&_li]:mb-1 [&_a[style]]:text-inherit! [&_a[style]]:no-underline!"
                           dangerouslySetInnerHTML={{
                             __html: previewBody || '<p class="text-muted-foreground">Email content will appear here as you type...</p>',
                           }}
