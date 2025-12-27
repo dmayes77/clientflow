@@ -41,6 +41,8 @@ model Tenant {
   timezone            String    @default("America/New_York")
   slotInterval        Int       @default(30)
   breakDuration       Int       @default(60) // Daily break/lunch duration in minutes
+  breakStartTime      String?   // When break starts (e.g., "12:00")
+  breakEndTime        String?   // When break ends (e.g., "13:00")
   bufferTime          Int       @default(0)  // Buffer time between appointments in minutes (0-60)
   defaultCalendarView String    @default("week")
   defaultTaxRate      Float     @default(0) // Default tax rate for invoices
