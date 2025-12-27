@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCustomFields, useCreateCustomField, useUpdateCustomField, useDeleteCustomField } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,17 @@ export default function CustomFieldsPage() {
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingField, setEditingField] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
   const [formData, setFormData] = useState({
     name: "",
     key: "",
@@ -208,7 +219,7 @@ export default function CustomFieldsPage() {
       )}
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="flex flex-col">
+        <SheetContent side={isMobile ? "bottom" : "right"} className="flex flex-col">
           <SheetHeader>
             <SheetTitle>{editingField ? "Edit" : "Create"} Custom Field</SheetTitle>
             <SheetDescription>
