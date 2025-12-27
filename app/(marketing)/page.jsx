@@ -84,13 +84,13 @@ export default function MarketingHome() {
         <div className="absolute inset-0 bg-linear-to-b from-primary/5 via-primary/3 to-transparent" />
 
         {/* Primary gradient orb - top right */}
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-150 h-150 rounded-full bg-primary/10 blur-3xl" />
 
         {/* Secondary gradient orb - extends into How It Works */}
-        <div className="absolute top-1/2 -left-40 w-[500px] h-[500px] rounded-full bg-violet-500/8 blur-3xl" />
+        <div className="absolute top-1/2 -left-40 w-125 h-125 rounded-full bg-violet-500/8 blur-3xl" />
 
         {/* Third orb - bottom right of How It Works */}
-        <div className="absolute bottom-20 -right-40 w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-20 -right-40 w-100 h-100 rounded-full bg-primary/5 blur-3xl" />
 
         {/* Subtle grid pattern - extends across both sections */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-size-[60px_60px] mask-[radial-gradient(ellipse_at_top,black_30%,transparent_70%)]" />
@@ -211,7 +211,7 @@ export default function MarketingHome() {
       <section className="py-20 md:py-28 relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary/3 to-transparent" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 rounded-full bg-primary/5 blur-3xl" />
 
         <SectionContainer className="relative">
           {/* Big statement header */}

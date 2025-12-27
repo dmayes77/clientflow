@@ -76,7 +76,7 @@ export function DataTable({
                 placeholder={searchPlaceholder}
                 value={globalFilter ?? ""}
                 onChange={(event) => setGlobalFilter(event.target.value)}
-                className="pl-8 w-full sm:w-[250px]"
+                className="pl-8 w-full sm:w-62.5"
               />
             </div>
           )}

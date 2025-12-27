@@ -1010,7 +1010,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               {/* Action Buttons - anchored to bottom */}
               <div className="mt-auto pt-4 px-6 pb-6 shrink-0 border-t bg-muted/30">
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 min-w-[100px]">
+                  <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 min-w-25">
                     Cancel
                   </Button>
                   {mode === "edit" && (
@@ -1018,7 +1018,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="flex-1 min-w-[100px] text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                      className="flex-1 min-w-25 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                       onClick={() => setDeleteDialogOpen(true)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -1032,7 +1032,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       size="sm"
                       onClick={handleSend}
                       disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
-                      className="flex-1 min-w-[100px]"
+                      className="flex-1 min-w-25"
                     >
                       {sendInvoiceMutation.isPending ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1048,7 +1048,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                       variant="outline"
                       size="sm"
                       onClick={handleShare}
-                      className="flex-1 min-w-[100px]"
+                      className="flex-1 min-w-25"
                     >
                       <Share2 className="h-4 w-4 mr-2" />
                       Share
@@ -1059,7 +1059,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                     saveButton={saveButton}
                     variant="success"
                     size="sm"
-                    className="flex-1 min-w-[100px]"
+                    className="flex-1 min-w-25"
                   >
                     {mode === "edit" ? "Update" : "Create"}
                   </SaveButton>
