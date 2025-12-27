@@ -25,7 +25,7 @@ const SYSTEM_TEMPLATES = {
       <p>Just a friendly reminder that invoice <strong>{{invoice.number}}</strong> for <strong>{{invoice.amount}}</strong> is now due.</p>
       <p>We know things get busy! If you've already sent payment, please disregard this reminder.</p>
       <div style="margin: 32px 0;">
-        <a href="{{invoice.paymentUrl}}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Pay Invoice</a>
+        <a class="not-prose" href="{{invoice.paymentUrl}}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Pay Invoice</a>
       </div>
       <p>If you have any questions about this invoice, please don't hesitate to reach out.</p>
       <p>Best regards,<br>{{business.name}}</p>
@@ -50,7 +50,7 @@ const SYSTEM_TEMPLATES = {
       <p>Please submit payment as soon as possible to avoid any service interruptions.</p>
 
       <div style="margin: 32px 0;">
-        <a href="{{invoice.paymentUrl}}" style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Pay Now</a>
+        <a class="not-prose" href="{{invoice.paymentUrl}}" style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Pay Now</a>
       </div>
 
       <p>If you're experiencing difficulty with payment, please contact us to discuss options.</p>
@@ -81,7 +81,7 @@ const SYSTEM_TEMPLATES = {
       <p><strong>Immediate payment is required.</strong> If payment is not received within 48 hours, we may need to suspend services or take additional collection measures.</p>
 
       <div style="margin: 32px 0;">
-        <a href="{{invoice.paymentUrl}}" style="background-color: #dc2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Pay Immediately</a>
+        <a class="not-prose" href="{{invoice.paymentUrl}}" style="background-color: #dc2626; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Pay Immediately</a>
       </div>
 
       <p>If you have already sent payment or need to discuss payment arrangements, please contact us immediately at {{business.phone}}.</p>
@@ -112,8 +112,8 @@ const SYSTEM_TEMPLATES = {
       <p>We look forward to seeing you!</p>
 
       <div style="margin: 32px 0;">
-        <a href="{{booking.rescheduleUrl}}" style="color: #3b82f6; text-decoration: none; margin-right: 24px; font-weight: 500;">📅 Reschedule</a>
-        <a href="{{booking.cancelUrl}}" style="color: #ef4444; text-decoration: none; font-weight: 500;">❌ Cancel</a>
+        <a class="not-prose" href="{{booking.rescheduleUrl}}" style="color: #3b82f6; text-decoration: none; margin-right: 24px; font-weight: 500;">📅 Reschedule</a>
+        <a class="not-prose" href="{{booking.cancelUrl}}" style="color: #ef4444; text-decoration: none; font-weight: 500;">❌ Cancel</a>
       </div>
 
       <div style="background-color: #f0f9ff; padding: 16px; border-radius: 6px; margin-top: 24px;">
@@ -143,8 +143,8 @@ const SYSTEM_TEMPLATES = {
       <p>Please arrive 5-10 minutes early. If you need to reschedule or cancel, please let us know as soon as possible.</p>
 
       <div style="margin: 32px 0;">
-        <a href="{{booking.rescheduleUrl}}" style="color: #3b82f6; text-decoration: none; margin-right: 24px;">Reschedule</a>
-        <a href="{{booking.cancelUrl}}" style="color: #ef4444; text-decoration: none;">Cancel</a>
+        <a class="not-prose" href="{{booking.rescheduleUrl}}" style="color: #3b82f6; text-decoration: none; margin-right: 24px;">Reschedule</a>
+        <a class="not-prose" href="{{booking.cancelUrl}}" style="color: #ef4444; text-decoration: none;">Cancel</a>
       </div>
 
       <p>See you soon!</p>
@@ -175,7 +175,7 @@ const SYSTEM_TEMPLATES = {
       <p>A receipt has been sent to your email. You can also view your receipt online:</p>
 
       <div style="margin: 32px 0;">
-        <a href="{{payment.receiptUrl}}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">📄 View Receipt</a>
+        <a class="not-prose" href="{{payment.receiptUrl}}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">📄 View Receipt</a>
       </div>
 
       <p>Thank you for your business!</p>

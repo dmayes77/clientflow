@@ -101,7 +101,9 @@ function RichTextEditor({ content, onChange, placeholder }) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: false, // Exclude link from StarterKit to add it separately with custom config
+      }),
       Underline,
       Link.configure({
         openOnClick: false,
@@ -161,7 +163,7 @@ function RichTextEditor({ content, onChange, placeholder }) {
     if (!editor) return;
 
     const colorStyle = BUTTON_COLORS[buttonData.color];
-    const buttonHtml = `<div style="margin: 24px 0; text-align: center;"><a href="${buttonData.url}" style="background-color: ${colorStyle.bg}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${buttonData.text}</a></div>`;
+    const buttonHtml = `<div style="margin: 24px 0; text-align: center;"><a class="not-prose" href="${buttonData.url}" style="background-color: ${colorStyle.bg}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${buttonData.text}</a></div>`;
 
     editor.chain().focus().insertContent(buttonHtml).run();
     setIsButtonDialogOpen(false);
@@ -644,7 +646,7 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
 
                         {/* Email Body */}
                         <div
-                          className="prose prose-sm max-w-none [&_p]:leading-relaxed [&_p]:mb-4 [&_h1]:mb-4 [&_h2]:mb-3 [&_h3]:mb-3 [&_ul]:mb-4 [&_ol]:mb-4 [&_li]:mb-1 [&_a[style]]:text-inherit! [&_a[style]]:no-underline!"
+                          className="prose prose-sm max-w-none [&_p]:leading-relaxed [&_p]:mb-4 [&_h1]:mb-4 [&_h2]:mb-3 [&_h3]:mb-3 [&_ul]:mb-4 [&_ol]:mb-4 [&_li]:mb-1"
                           dangerouslySetInnerHTML={{
                             __html: previewBody || '<p class="text-muted-foreground">Email content will appear here as you type...</p>',
                           }}
