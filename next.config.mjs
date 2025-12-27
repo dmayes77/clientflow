@@ -24,27 +24,26 @@ const nextConfig = {
   },
 };
 
-// Sentry webpack plugin options
+// Sentry webpack plugin options - updated for Next.js 16 compatibility
 const sentryWebpackPluginOptions = {
-  // Suppresses source map uploading logs during build
   silent: true,
   org: "code-maze",
   project: "javascript-nextjs",
+  // Disable for development to avoid build issues
+  disableClientWebpackPlugin: process.env.NODE_ENV === 'development',
+  disableServerWebpackPlugin: process.env.NODE_ENV === 'development',
 };
 
 const sentryOptions = {
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
   widenClientFileUpload: true,
-  transpileClientSDK: true,
+  tunnelRoute: "/monitoring",
   hideSourceMaps: true,
   disableLogger: true,
+  automaticVercelMonitors: true,
 };
 
-// Temporarily disable Sentry to debug build issue
-export default nextConfig;
-
-// export default withSentryConfig(
-//   nextConfig,
-//   sentryWebpackPluginOptions,
-//   sentryOptions
-// );
+export default withSentryConfig(
+  nextConfig,
+  sentryWebpackPluginOptions,
+  sentryOptions
+);
