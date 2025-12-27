@@ -213,14 +213,48 @@ export function ContactCustomFields({ contactId }) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {customFields.map((field) => (
-            <div key={field.id} className="space-y-2">
-              <Label>
-                {field.name}
-                {field.required && <span className="text-destructive ml-1">*</span>}
-              </Label>
-              {renderField(field)}
+        <div className="space-y-6">
+          {/* Ungrouped fields */}
+          {customFields.filter((f) => !f.group).length > 0 && (
+            <div className="space-y-4">
+              {customFields
+                .filter((f) => !f.group)
+                .map((field) => (
+                  <div key={field.id} className="space-y-2">
+                    <Label>
+                      {field.name}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    {renderField(field)}
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Grouped fields */}
+          {Object.entries(
+            customFields
+              .filter((f) => f.group)
+              .reduce((acc, field) => {
+                const group = field.group;
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(field);
+                return acc;
+              }, {})
+          ).map(([groupName, fields]) => (
+            <div key={groupName} className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b">
+                <h4 className="font-semibold text-sm">{groupName}</h4>
+              </div>
+              {fields.map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label>
+                    {field.name}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {renderField(field)}
+                </div>
+              ))}
             </div>
           ))}
         </div>

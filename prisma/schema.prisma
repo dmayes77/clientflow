@@ -276,6 +276,7 @@ model CustomField {
 
   name        String    // Display name
   key         String    // Internal key (e.g., "pet_name")
+  group       String?   // Optional group name (e.g., "Vehicle Information")
   fieldType   String    // "text", "number", "date", "select", "multiselect", "boolean", "textarea"
   options     Json?     // For select/multiselect: ["Option 1", "Option 2"]
   required    Boolean   @default(false)

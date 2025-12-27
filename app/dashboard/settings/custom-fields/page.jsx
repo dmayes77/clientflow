@@ -24,6 +24,7 @@ export default function CustomFieldsPage() {
   const [formData, setFormData] = useState({
     name: "",
     key: "",
+    group: "",
     fieldType: "text",
     options: "",
     required: false,
@@ -36,6 +37,7 @@ export default function CustomFieldsPage() {
       setFormData({
         name: field.name,
         key: field.key,
+        group: field.group || "",
         fieldType: field.fieldType,
         options: field.options?.join(", ") || "",
         required: field.required,
@@ -46,6 +48,7 @@ export default function CustomFieldsPage() {
       setFormData({
         name: "",
         key: "",
+        group: "",
         fieldType: "text",
         options: "",
         required: false,
@@ -72,6 +75,7 @@ export default function CustomFieldsPage() {
       const data = {
         name: formData.name,
         key: formData.key,
+        group: formData.group || null,
         fieldType: formData.fieldType,
         required: formData.required,
         active: formData.active,
@@ -163,8 +167,9 @@ export default function CustomFieldsPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-lg">{field.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-2">
+                    <CardDescription className="flex items-center gap-2 flex-wrap">
                       <code className="text-xs bg-muted px-2 py-0.5 rounded">{field.key}</code>
+                      {field.group && <Badge variant="secondary">{field.group}</Badge>}
                       <Badge variant="outline">{fieldTypeLabels[field.fieldType]}</Badge>
                       {field.required && <Badge variant="destructive">Required</Badge>}
                       {!field.active && <Badge variant="secondary">Inactive</Badge>}
@@ -203,7 +208,7 @@ export default function CustomFieldsPage() {
       )}
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent>
+        <SheetContent className="flex flex-col">
           <SheetHeader>
             <SheetTitle>{editingField ? "Edit" : "Create"} Custom Field</SheetTitle>
             <SheetDescription>
@@ -213,7 +218,8 @@ export default function CustomFieldsPage() {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-4 mt-6">
+          <div className="flex-1 overflow-y-auto">
+            <div className="space-y-4 mt-6 pr-1">
             <div className="space-y-2">
               <Label htmlFor="name">Field Name *</Label>
               <Input
@@ -235,6 +241,19 @@ export default function CustomFieldsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 {editingField ? "Key cannot be changed after creation" : "Auto-generated from name"}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="group">Group (Optional)</Label>
+              <Input
+                id="group"
+                value={formData.group}
+                onChange={(e) => setFormData({ ...formData, group: e.target.value })}
+                placeholder="e.g., Vehicle Information, Emergency Contact"
+              />
+              <p className="text-xs text-muted-foreground">
+                Group related fields together for better organization
               </p>
             </div>
 
@@ -291,20 +310,21 @@ export default function CustomFieldsPage() {
               </Label>
             </div>
 
-            <div className="flex gap-2 pt-4">
-              <Button variant="outline" className="flex-1" onClick={() => setIsSheetOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={handleSave}
-                disabled={!formData.name || !formData.key || createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                {editingField ? "Update" : "Create"}
-              </Button>
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setIsSheetOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={!formData.name || !formData.key || createMutation.isPending || updateMutation.isPending}
+                >
+                  {createMutation.isPending || updateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : null}
+                  {editingField ? "Update" : "Create"}
+                </Button>
+              </div>
             </div>
           </div>
         </SheetContent>
