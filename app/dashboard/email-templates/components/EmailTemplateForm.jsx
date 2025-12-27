@@ -331,11 +331,6 @@ function RichTextEditor({ content, onChange, placeholder }) {
       editor.chain().focus().setEmailButton(attrs).run();
     }
 
-    // Log what actually got inserted
-    setTimeout(() => {
-      console.log("Editor HTML after insert/update:", editor.getHTML());
-    }, 100);
-
     setIsButtonDialogOpen(false);
     setIsEditingButton(false);
   }, [editor, buttonData, isEditingButton]);
@@ -701,8 +696,6 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
         previewBody = previewBody.replaceAll(variable, value);
       });
     });
-
-    console.log("Preview body HTML:", previewBody);
 
     return { previewSubject, previewBody };
   };
