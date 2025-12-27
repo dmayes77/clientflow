@@ -299,7 +299,7 @@ export function BookingForm({
 
   // Initialize booking data in edit mode
   useEffect(() => {
-    if (isEditMode && bookingData) {
+    if (isEditMode && bookingData?.booking) {
       setBooking(bookingData.booking);
 
       // Convert UTC to tenant's timezone for display in datetime-local input
