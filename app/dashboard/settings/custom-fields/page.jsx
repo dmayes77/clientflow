@@ -246,12 +246,12 @@ export default function CustomFieldsPage() {
               <Input
                 id="key"
                 value={formData.key}
-                onChange={(e) => setFormData({ ...formData, key: e.target.value })}
                 placeholder="e.g., pet_name, property_address"
-                disabled={!!editingField}
+                disabled
+                readOnly
               />
               <p className="text-xs text-muted-foreground">
-                {editingField ? "Key cannot be changed after creation" : "Auto-generated from name"}
+                {editingField ? "Key cannot be changed after creation" : "Auto-generated from field name"}
               </p>
             </div>
 
