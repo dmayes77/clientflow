@@ -652,11 +652,11 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               <div className="space-y-4 shrink-0">
                 {/* Contact Selection */}
                 <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Contact <span className="text-destructive">*</span>
-                </Label>
-                <Popover open={contactPopoverOpen} onOpenChange={setContactPopoverOpen}>
+                  <Label className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Contact <span className="text-destructive">*</span>
+                  </Label>
+                  <Popover open={contactPopoverOpen} onOpenChange={setContactPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" role="combobox" aria-expanded={contactPopoverOpen} className="w-full justify-between font-normal">
                       {selectedContact ? (
