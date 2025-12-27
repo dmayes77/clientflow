@@ -9,7 +9,7 @@ export function RoadmapItem({ status, title, description }) {
           {status === "completed" ? "Done" : status === "in-progress" ? "In Progress" : "Planned"}
         </Badge>
         <div>
-          <h3 className="font-semibold">{title}</h3>
+          <h3 className="font-semibold leading-relaxed">{title}</h3>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </CardContent>

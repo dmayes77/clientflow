@@ -112,6 +112,14 @@ const BREAK_DURATION_OPTIONS = [
   { value: "120", label: "2 hours" },
 ];
 
+const BUFFER_TIME_OPTIONS = [
+  { value: "0", label: "No buffer" },
+  { value: "15", label: "15 minutes" },
+  { value: "30", label: "30 minutes" },
+  { value: "45", label: "45 minutes" },
+  { value: "60", label: "1 hour" },
+];
+
 const CALENDAR_VIEW_OPTIONS = [
   { value: "month", label: "Month View" },
   { value: "week", label: "Week View" },
@@ -157,6 +165,7 @@ export function AvailabilitySettings() {
   const [timezone, setTimezone] = useState("America/New_York");
   const [slotInterval, setSlotInterval] = useState("30");
   const [breakDuration, setBreakDuration] = useState("60");
+  const [bufferTime, setBufferTime] = useState("0");
   const [defaultCalendarView, setDefaultCalendarView] = useState("week");
 
   // Update schedule when availability data is loaded
@@ -186,6 +195,7 @@ export function AvailabilitySettings() {
       if (tenantData.timezone) setTimezone(tenantData.timezone);
       if (tenantData.slotInterval) setSlotInterval(String(tenantData.slotInterval));
       if (tenantData.breakDuration !== undefined) setBreakDuration(String(tenantData.breakDuration));
+      if (tenantData.bufferTime !== undefined) setBufferTime(String(tenantData.bufferTime));
       if (tenantData.defaultCalendarView) setDefaultCalendarView(tenantData.defaultCalendarView);
     }
   }, [tenantData]);
@@ -224,6 +234,7 @@ export function AvailabilitySettings() {
           timezone,
           slotInterval: parseInt(slotInterval),
           breakDuration: parseInt(breakDuration),
+          bufferTime: parseInt(bufferTime),
           defaultCalendarView,
         }),
       ]);
@@ -616,6 +627,25 @@ export function AvailabilitySettings() {
                   </Select>
                   <p className="hig-caption2 text-muted-foreground">
                     Deducted from daily hours when calculating business days for service/booking durations
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Buffer Time Between Appointments</Label>
+                  <Select value={bufferTime} onValueChange={setBufferTime}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUFFER_TIME_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="hig-caption2 text-muted-foreground">
+                    Prevents back-to-back bookings by adding padding time for travel, setup, or cleanup
                   </p>
                 </div>
               </div>

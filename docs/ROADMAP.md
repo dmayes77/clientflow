@@ -90,6 +90,43 @@ Scheduled email reminders before appointments to reduce no-shows
 
 ---
 
+## 🎉 Recently Shipped - December 2024
+
+### Tag System Enhancements
+Advanced tag management features for better organization and data management
+
+**Shipped Features:**
+- ✅ Tag merging - Consolidate duplicate tags into one
+- ✅ Bulk tag operations - Server-side bulk assign/remove for performance
+- ✅ CSV import/export - Bulk import tags and export usage data
+- ✅ Send test email - Preview email templates before sending
+
+**Planned Enhancements:**
+- 🔜 Tag analytics dashboard with usage trends and insights
+- 🔜 Tag history and audit trail for accountability
+- 🔜 User-level tag permissions (admin-only tag creation)
+- 🔜 Tag visibility controls (private vs shared tags)
+- 🔜 Tag templates for new tenant onboarding
+- 🔜 Booking list view with tag filtering
+- 🔜 Campaign management UI (schema exists)
+
+### Calendar & Scheduling Enhancements
+Smart scheduling features for better appointment management
+
+**Shipped Features:**
+- ✅ Buffer time between appointments - Configurable padding (0-60 min) to prevent back-to-back bookings and allow for travel/setup/cleanup
+
+**Planned Enhancements:**
+- 🔜 Recurring bookings - Create repeating appointment series with RRULE patterns (weekly, bi-weekly, monthly)
+- 🔜 Drag-and-drop calendar rescheduling - Visual interface to quickly reschedule appointments
+- 🔜 Calendar export (iCal/ICS) - Export bookings and "Add to Calendar" buttons
+- 🔜 Automated booking confirmations - Email confirmations on booking creation
+- 🔜 Multi-day bookings - Appointments spanning multiple days
+- 🔜 No-show tracking - Track and report on no-shows
+- 🔜 Advanced calendar filters - Filter by tags, status, contact, service
+
+---
+
 ## 📋 Up Next
 
 ### Google Calendar Sync

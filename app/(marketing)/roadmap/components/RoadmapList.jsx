@@ -171,7 +171,7 @@ export function RoadmapList() {
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-semibold">{item.title}</h3>
+                            <h3 className="font-semibold leading-relaxed">{item.title}</h3>
                             {item.category && (
                               <Badge variant="outline" className="text-xs shrink-0">
                                 {item.category}

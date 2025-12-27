@@ -139,9 +139,14 @@ export async function POST(request, { params }) {
     const finalPrice = totalPrice || calculatedPrice;
     const finalDuration = totalDuration || calculatedDuration;
 
-    // Check for conflicting bookings
+    // Check for conflicting bookings (including buffer time)
+    const bufferTimeMs = (tenant.bufferTime || 0) * 60000; // Convert buffer minutes to milliseconds
     const appointmentStart = new Date(scheduledAt);
     const appointmentEnd = new Date(appointmentStart.getTime() + finalDuration * 60000);
+
+    // Include buffer time when checking conflicts
+    const checkStart = new Date(appointmentStart.getTime() - bufferTimeMs);
+    const checkEnd = new Date(appointmentEnd.getTime() + bufferTimeMs);
 
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
@@ -149,17 +154,17 @@ export async function POST(request, { params }) {
         status: { in: ["pending", "confirmed", "inquiry"] },
         AND: [
           {
-            scheduledAt: { lt: appointmentEnd },
+            scheduledAt: { lt: checkEnd },
           },
           {
             OR: [
               {
-                scheduledAt: { gte: appointmentStart },
+                scheduledAt: { gte: checkStart },
               },
               {
                 scheduledAt: {
-                  gte: new Date(appointmentStart.getTime() - 24 * 60 * 60000),
-                  lt: appointmentStart,
+                  gte: new Date(checkStart.getTime() - 24 * 60 * 60000),
+                  lt: checkStart,
                 },
               },
             ],
@@ -173,11 +178,17 @@ export async function POST(request, { params }) {
     });
 
     if (conflictingBooking) {
+      const existingStart = conflictingBooking.scheduledAt;
       const existingEnd = new Date(
         conflictingBooking.scheduledAt.getTime() + conflictingBooking.duration * 60000
       );
 
-      if (conflictingBooking.scheduledAt < appointmentEnd && existingEnd > appointmentStart) {
+      // Add buffer time to existing booking as well
+      const existingCheckStart = new Date(existingStart.getTime() - bufferTimeMs);
+      const existingCheckEnd = new Date(existingEnd.getTime() + bufferTimeMs);
+
+      // Check if appointments overlap (including buffer time on both sides)
+      if (checkStart < existingCheckEnd && checkEnd > existingCheckStart) {
         return NextResponse.json(
           { error: "This time slot is no longer available. Please choose a different time." },
           { status: 409 }

@@ -41,6 +41,7 @@ model Tenant {
   timezone            String    @default("America/New_York")
   slotInterval        Int       @default(30)
   breakDuration       Int       @default(60) // Daily break/lunch duration in minutes
+  bufferTime          Int       @default(0)  // Buffer time between appointments in minutes (0-60)
   defaultCalendarView String    @default("week")
   defaultTaxRate      Float     @default(0) // Default tax rate for invoices
 
@@ -78,6 +79,8 @@ model Tenant {
   serviceCategories   ServiceCategory[]
   contacts            Contact[]
   bookings            Booking[]
+  recurringBookings   RecurringBooking[]
+  bookingReminders    BookingReminder[]
   apiKeys             ApiKey[]
   availability        Availability[]
   availabilityOverrides AvailabilityOverride[]
@@ -199,12 +202,13 @@ model Contact {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bookings  Booking[]
-  invoices  Invoice[]
-  payments  Payment[]
-  tags      ContactTag[]
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookings           Booking[]
+  invoices           Invoice[]
+  payments           Payment[]
+  tags               ContactTag[]
   campaignRecipients CampaignRecipient[]
+  recurringBookings  RecurringBooking[]
 
   @@map("Client")
   @@index([tenantId])
@@ -450,6 +454,7 @@ model Booking {
   tags            BookingTag[]
   services        BookingService[]
   packages        BookingPackage[]
+  reminders       BookingReminder[]
 
   @@index([tenantId])
   @@index([contactId])
@@ -487,6 +492,63 @@ model BookingPackage {
   @@unique([bookingId, packageId])
   @@index([bookingId])
   @@index([packageId])
+}
+
+model RecurringBooking {
+  id          String   @id @default(cuid())
+  tenantId    String
+  contactId   String
+
+  // Recurrence pattern (RRULE format)
+  rrule       String   // e.g., "FREQ=WEEKLY;BYDAY=MO,WE,FR;INTERVAL=1"
+  startDate   DateTime // First occurrence
+  endDate     DateTime? // Last occurrence (null = no end)
+
+  // Booking template
+  serviceIds  String[] @default([])
+  packageIds  String[] @default([])
+  duration    Int
+  totalPrice  Int
+  notes       String?
+
+  // Status
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([contactId])
+  @@index([active])
+  @@index([startDate])
+}
+
+model BookingReminder {
+  id             String    @id @default(cuid())
+  bookingId      String
+  tenantId       String
+
+  // Reminder configuration
+  reminderType   String    // "email" or "sms"
+  sendAt         DateTime  // When to send the reminder
+  sentAt         DateTime? // When it was actually sent
+
+  // Status
+  status         String    @default("pending") // "pending", "sent", "failed"
+  error          String?   // Error message if failed
+
+  createdAt      DateTime  @default(now())
+
+  booking        Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([sendAt])
 }
 
 model ApiKey {
