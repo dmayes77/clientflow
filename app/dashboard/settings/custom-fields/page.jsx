@@ -218,7 +218,7 @@ export default function CustomFieldsPage() {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto px-1">
+          <div className="flex-1 overflow-y-auto px-4">
             <div className="space-y-4 mt-6">
             <div className="space-y-2">
               <Label htmlFor="name">Field Name *</Label>
