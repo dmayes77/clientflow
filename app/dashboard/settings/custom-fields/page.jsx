@@ -129,10 +129,10 @@ export default function CustomFieldsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Custom Fields</h1>
+          <h1 className="font-bold">Custom Fields</h1>
           <p className="text-muted-foreground">Create custom fields for your contacts</p>
         </div>
         <Button onClick={() => handleOpenSheet()}>
