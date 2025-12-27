@@ -883,18 +883,6 @@ export function BookingForm({
                   )}
                 </form.Field>
               </div>
-              <SelectField
-                form={form}
-                name="status"
-                label="Status"
-                options={[
-                  { value: "inquiry", label: "Inquiry" },
-                  { value: "scheduled", label: "Scheduled" },
-                  { value: "confirmed", label: "Confirmed" },
-                  { value: "completed", label: "Completed" },
-                  { value: "cancelled", label: "Cancelled" },
-                ]}
-              />
             </CardContent>
           </Card>
 

@@ -780,33 +780,6 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 </form.Field>
               </div>
 
-                {/* Status */}
-                <form.Field name="status">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select
-                        value={field.state.value || "draft"}
-                        onValueChange={(value) => {
-                          if (value && value !== "") {
-                            field.handleChange(value);
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="sent">Sent</SelectItem>
-                          <SelectItem value="paid">Paid</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-
               {/* Notes Section - fills remaining space */}
               <div className="flex-1 mt-4 flex flex-col min-h-0 overflow-hidden">
                 <Label className="mb-2 shrink-0">Notes</Label>
