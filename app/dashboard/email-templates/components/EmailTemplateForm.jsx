@@ -165,7 +165,14 @@ function RichTextEditor({ content, onChange, placeholder }) {
     const colorStyle = BUTTON_COLORS[buttonData.color];
     const buttonHtml = `<div style="margin: 24px 0; text-align: center;"><a class="not-prose" href="${buttonData.url}" style="background-color: ${colorStyle.bg}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 500;">${buttonData.text}</a></div>`;
 
+    console.log("Inserting button HTML:", buttonHtml);
     editor.chain().focus().insertContent(buttonHtml).run();
+
+    // Log what actually got inserted
+    setTimeout(() => {
+      console.log("Editor HTML after insert:", editor.getHTML());
+    }, 100);
+
     setIsButtonDialogOpen(false);
   }, [editor, buttonData]);
 
@@ -491,6 +498,8 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
         previewBody = previewBody.replaceAll(variable, value);
       });
     });
+
+    console.log("Preview body HTML:", previewBody);
 
     return { previewSubject, previewBody };
   };
