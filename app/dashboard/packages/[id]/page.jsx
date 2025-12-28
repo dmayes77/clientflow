@@ -304,22 +304,23 @@ export default function PackageEditPage({ params }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.push("/dashboard/services")}
+          className="self-start"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1>Edit Package</h1>
-          <p className="text-muted-foreground">Update your package details and services</p>
+          <h1 className="text-xl sm:text-2xl">Edit Package</h1>
+          <p className="text-muted-foreground text-sm">Update your package details and services</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="active" className={`font-medium ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Label htmlFor="active" className={`font-medium text-sm ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
             {formData.active ? "Active" : "Inactive"}
           </Label>
           <Switch
@@ -331,11 +332,11 @@ export default function PackageEditPage({ params }) {
       </div>
 
       <form onSubmit={handleSubmit} className="lg:h-[calc(100vh-12rem)]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:h-full">
           {/* Left Column - Package Info */}
           <Card className="lg:overflow-hidden lg:flex lg:flex-col">
-            <CardContent className="p-6 space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
-              <div className="space-y-4 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+            <CardContent className="space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+              <div className="space-y-3 sm:space-y-4 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
                 <div className="space-y-2">
                   <Label htmlFor="name">Package Name</Label>
                   <Input
@@ -350,27 +351,27 @@ export default function PackageEditPage({ params }) {
                 {/* Package Image */}
                 <div className="space-y-2">
                   <Label>Package Image (optional)</Label>
-                  <div className="flex gap-3">
-                    <div className="relative group h-24 w-24">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative group h-20 w-20 sm:h-24 sm:w-24 mx-auto sm:mx-0 shrink-0">
                       <Image
                         src={selectedImage?.url || "/default_img.webp"}
                         alt="Package"
                         fill
-                        sizes="96px"
+                        sizes="(max-width: 640px) 80px, 96px"
                         className="rounded-lg object-cover border"
                       />
                       {selectedImage && (
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, imageId: null })}
-                          className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          className="absolute -top-2 -right-2 h-5 w-5 sm:h-6 sm:w-6 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 tablet:opacity-100 transition-opacity z-10"
                         >
                           <X className="h-3 w-3" />
                         </button>
                       )}
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)}>
+                    <div className="flex flex-col gap-2 flex-1">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)} className="w-full">
                         <ImageIcon className="h-4 w-4 mr-2" />
                         Choose from Library
                       </Button>
@@ -458,9 +459,9 @@ export default function PackageEditPage({ params }) {
               </div>
 
               {/* Discount & Price Ending - Anchored to bottom */}
-              <div className="rounded-lg border p-4 space-y-4 lg:mt-4 lg:shrink-0">
+              <div className="rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4 lg:mt-4 lg:shrink-0">
                 <div className="space-y-2">
-                  <Label>Package Discount</Label>
+                  <Label className="text-sm">Package Discount</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {DISCOUNT_OPTIONS.map((option) => (
                       <Button
@@ -485,8 +486,8 @@ export default function PackageEditPage({ params }) {
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-2 border-t">
-                  <Label>Final Price Ending</Label>
+                <div className="space-y-2 pt-2 sm:pt-3 border-t">
+                  <Label className="text-sm">Final Price Ending</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {PRICE_ENDING_OPTIONS.map((option) => (
                       <Button
@@ -527,8 +528,8 @@ export default function PackageEditPage({ params }) {
 
           {/* Right Column - Service Selection */}
           <Card className="lg:overflow-hidden lg:flex lg:flex-col">
-            <CardContent className="p-6 space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
-              <div className="space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+            <CardContent className="space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+              <div className="space-y-2 sm:space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
                 <div className="flex items-center justify-between">
                   <Label>Select Services *</Label>
                   <span className="hig-caption2 text-muted-foreground">
@@ -538,7 +539,7 @@ export default function PackageEditPage({ params }) {
 
                 {/* Selected Services as Chips */}
                 {selectedServices.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-muted/30 rounded-md max-h-24 overflow-y-auto">
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-muted/30 rounded-md max-h-20 sm:max-h-24 overflow-y-auto">
                     {selectedServices.map((service) => (
                       <Badge
                         key={service.id}
@@ -579,7 +580,7 @@ export default function PackageEditPage({ params }) {
                 </div>
 
                 {/* Grouped Services */}
-                <div className="border rounded-md max-h-64 lg:max-h-72 overflow-y-auto">
+                <div className="border rounded-md max-h-48 sm:max-h-64 lg:max-h-72 overflow-y-auto">
                   {groupedServices.length === 0 ? (
                     <p className="p-3 text-muted-foreground text-center">
                       {serviceSearch ? "No services match your search" : "No active services available"}
@@ -631,8 +632,8 @@ export default function PackageEditPage({ params }) {
 
               {/* Price Preview - Anchored to bottom */}
               {pricePreview.serviceCount > 0 && (
-                <div className="rounded-lg border bg-muted/30 p-4 lg:mt-4 lg:shrink-0">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+                <div className="rounded-lg border bg-muted/30 p-3 sm:p-4 lg:mt-4 lg:shrink-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center">
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Services</p>
                       <p className="font-semibold">{pricePreview.serviceCount}</p>

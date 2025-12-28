@@ -388,22 +388,23 @@ Format the includes list so I can easily copy each item individually.`;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.push("/dashboard/services")}
+          className="self-start"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1>Edit Service</h1>
-          <p className="text-muted-foreground">Update your service details</p>
+          <h1 className="text-xl sm:text-2xl">Edit Service</h1>
+          <p className="text-muted-foreground text-sm">Update your service details</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="active" className={`font-medium ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Label htmlFor="active" className={`font-medium text-sm ${formData.active ? "text-green-600" : "text-muted-foreground"}`}>
             {formData.active ? "Active" : "Inactive"}
           </Label>
           <Switch
@@ -415,10 +416,10 @@ Format the includes list so I can easily copy each item individually.`;
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Left Column - Service Info */}
           <Card>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Service Name</Label>
                 <Input
@@ -533,26 +534,26 @@ Format the includes list so I can easily copy each item individually.`;
               <div className="space-y-2">
                 <Label>Service Image (optional)</Label>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative group h-32 w-32 mx-auto sm:mx-0 shrink-0">
+                  <div className="relative group h-24 w-24 sm:h-32 sm:w-32 mx-auto sm:mx-0 shrink-0">
                     <Image
                       src={selectedImage?.url || "/default_img.webp"}
                       alt="Service"
                       fill
-                      sizes="128px"
+                      sizes="(max-width: 640px) 96px, 128px"
                       className="rounded-lg object-cover border"
                     />
                     {selectedImage && (
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, imageId: null })}
-                        className="absolute -top-2 -right-2 h-7 w-7 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute -top-2 -right-2 h-6 w-6 sm:h-7 sm:w-7 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 tablet:opacity-100 transition-opacity z-10"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                     )}
                   </div>
                   <div className="flex flex-col gap-2 flex-1">
-                    <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)} className="w-full">
                       <ImageIcon className="h-4 w-4 mr-2" />
                       Choose from Library
                     </Button>
@@ -583,7 +584,7 @@ Format the includes list so I can easily copy each item individually.`;
 
           {/* Right Column - Includes */}
           <Card>
-            <CardContent className="p-6 space-y-3">
+            <CardContent className="space-y-3">
               <div className="flex items-center justify-between mb-1!">
                 <Label className="mb-0!">What's Included</Label>
                 <span className="hig-caption2 text-muted-foreground">{formData.includes.length}/20</span>
@@ -617,7 +618,7 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
 
               {/* Includes List */}
-              <div className="border rounded-lg max-h-64 lg:max-h-80 overflow-y-auto">
+              <div className="border rounded-lg max-h-48 sm:max-h-64 lg:max-h-80 overflow-y-auto">
                 {formData.includes.length === 0 ? (
                   <div className="p-6 text-center text-muted-foreground">
                     <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
@@ -660,11 +661,11 @@ Format the includes list so I can easily copy each item individually.`;
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")}>
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
+          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button type="submit" variant="success" disabled={updateServiceMutation.isPending}>
+          <Button type="submit" variant="success" disabled={updateServiceMutation.isPending} className="w-full sm:w-auto">
             {updateServiceMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
