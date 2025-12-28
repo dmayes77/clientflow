@@ -761,10 +761,6 @@ Format the includes list so I can easily copy each item individually.`;
 
         return { previousServices };
       },
-      onSuccess: () => {
-        // Refetch after successful mutation to sync with server
-        queryClient.invalidateQueries({ queryKey: ["services"] });
-      },
       onError: (error, _, context) => {
         // Rollback to previous value on error
         if (context?.previousServices) {
@@ -825,10 +821,6 @@ Format the includes list so I can easily copy each item individually.`;
         });
 
         return { previousCategories };
-      },
-      onSuccess: () => {
-        // Refetch after successful mutation to sync with server
-        queryClient.invalidateQueries({ queryKey: ["service-categories"] });
       },
       onError: (error, _, context) => {
         // Rollback to previous value on error
