@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/session";
-import prisma from "@/lib/prisma";
+import { getAuthenticatedTenant } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-export async function POST(req) {
+export async function POST(request) {
   try {
-    const user = await getCurrentUser();
-    if (!user?.tenantId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { tenant, error, status } = await getAuthenticatedTenant(request);
+
+    if (!tenant) {
+      return NextResponse.json({ error }, { status });
     }
 
-    const { updates } = await req.json();
+    const { updates } = await request.json();
 
     if (!Array.isArray(updates) || updates.length === 0) {
       return NextResponse.json(
@@ -23,7 +24,7 @@ export async function POST(req) {
     const services = await prisma.service.findMany({
       where: {
         id: { in: serviceIds },
-        tenantId: user.tenantId,
+        tenantId: tenant.id,
       },
       select: { id: true },
     });
