@@ -181,7 +181,7 @@ function SortableServiceCard({ service, onDuplicate, onDelete, formatDuration, f
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? transition : 'none',
     opacity: isDragging ? 0.5 : 1,
   };
 
@@ -278,7 +278,7 @@ function SortableCategoryHeader({ category, categoryServices, expandedCategories
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? transition : 'none',
     opacity: isDragging ? 0.5 : 1,
   };
 
@@ -317,7 +317,7 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? transition : 'none',
     opacity: isDragging ? 0.5 : 1,
   };
 
