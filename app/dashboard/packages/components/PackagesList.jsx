@@ -287,94 +287,93 @@ export function PackagesList() {
           ) : (
             <>
               {/* Mobile Card View */}
-              <div className="tablet:hidden space-y-2">
+              <div className="tablet:hidden space-y-3">
                 {packages.map((pkg) => (
                   <div
                     key={pkg.id}
-                    className="border rounded-lg p-3 cursor-pointer transition-colors hover:bg-accent/50"
+                    className="border rounded-lg p-4 cursor-pointer transition-colors hover:bg-accent/50"
                     onClick={() => handleOpenDialog(pkg)}
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Main Content */}
+                    {/* Header with Title and Status */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex-1 min-w-0">
-                        {/* Name */}
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium truncate">{pkg.name}</span>
-                        </div>
-
-                        {/* Description */}
+                        <h3 className="font-semibold text-base mb-1">{pkg.name}</h3>
                         {pkg.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-1 mb-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {pkg.description}
                           </p>
                         )}
-
-                        {/* Services */}
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {pkg.services?.length > 0 ? (
-                            <>
-                              {pkg.services.slice(0, 2).map((service) => (
-                                <Badge key={service.id} variant="outline" className="text-xs">
-                                  {service.name}
-                                </Badge>
-                              ))}
-                              {pkg.services.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{pkg.services.length - 2} more
-                                </Badge>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">No services</span>
-                          )}
-                        </div>
-
-                        {/* Details */}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="font-medium">{formatPrice(pkg.price)}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {pkg.bookingCount || 0} bookings
-                          </span>
-                        </div>
                       </div>
-
-                      {/* Status Badge */}
                       <Badge variant={pkg.active ? "default" : "secondary"} className="shrink-0">
                         {pkg.active ? "Active" : "Inactive"}
                       </Badge>
+                    </div>
 
-                      {/* Actions Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDialog(pkg);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPackageToDelete(pkg);
-                              setDeleteDialogOpen(true);
-                            }}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    {/* Services Included */}
+                    <div className="mb-3">
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5">Services Included:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pkg.services?.length > 0 ? (
+                          <>
+                            {pkg.services.slice(0, 3).map((service) => (
+                              <Badge key={service.id} variant="outline" className="text-xs">
+                                {service.name}
+                              </Badge>
+                            ))}
+                            {pkg.services.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{pkg.services.length - 3} more
+                              </Badge>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No services added</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Details */}
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-0.5">Price</p>
+                        <p className="font-semibold">{formatPrice(pkg.price)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-0.5">Bookings</p>
+                        <p className="font-semibold flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {pkg.bookingCount || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 pt-3 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDialog(pkg);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPackageToDelete(pkg);
+                          setDeleteDialogOpen(true);
+                        }}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 ))}

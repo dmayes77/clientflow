@@ -630,109 +630,123 @@ Format the includes list so I can easily copy each item individually.`;
           ) : (
             <>
               {/* Mobile Card View */}
-              <div className="tablet:hidden space-y-2">
+              <div className="tablet:hidden space-y-3">
                 {services.map((service) => (
                   <div
                     key={service.id}
-                    className="border rounded-lg p-3 cursor-pointer transition-colors hover:bg-accent/50"
+                    className="border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent/50"
                     onClick={() => router.push(`/dashboard/services/${service.id}`)}
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Service Image */}
-                      <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-muted shrink-0">
-                        <Image
-                          src={service.images?.[0]?.url || "/default_img.webp"}
-                          alt={service.name}
-                          fill
-                          sizes="48px"
-                          className="object-cover"
-                        />
+                    {/* Image Header */}
+                    <div className="relative h-32 w-full bg-muted">
+                      <Image
+                        src={service.images?.[0]?.url || "/default_img.webp"}
+                        alt={service.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 640px"
+                        className="object-cover"
+                      />
+                      {/* Status Badge Overlay */}
+                      <div className="absolute top-2 right-2">
+                        <Badge variant={service.active ? "success" : "secondary"}>
+                          {service.active ? "Active" : "Off"}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-3">
+                      {/* Title and Category */}
+                      <div className="mb-2">
+                        <h3 className="font-semibold text-base mb-1">{service.name}</h3>
+                        {service.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {service.category.name}
+                          </Badge>
+                        )}
                       </div>
 
-                      {/* Main Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Name and Category */}
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium truncate">{service.name}</span>
-                          {service.category && (
-                            <Badge variant="outline" className="text-xs shrink-0">
-                              {service.category.name}
-                            </Badge>
-                          )}
-                        </div>
+                      {/* Description */}
+                      {service.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {service.description}
+                        </p>
+                      )}
 
-                        {/* Details */}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDuration(service.duration)}
-                          </span>
-                          <span>•</span>
-                          <span className="font-medium">{formatPrice(service.price)}</span>
-                          {service.includes && service.includes.length > 0 && (
-                            <>
-                              <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <Check className="h-3 w-3 text-green-600" />
-                                {service.includes.length}
-                              </span>
-                            </>
-                          )}
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span>{formatDuration(service.duration)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm font-medium">
+                          <span className="text-muted-foreground">Price:</span>
+                          <span>{formatPrice(service.price)}</span>
                         </div>
                       </div>
 
-                      {/* Status Badge */}
-                      <Badge variant={service.active ? "success" : "secondary"} className="shrink-0">
-                        {service.active ? "Active" : "Off"}
-                      </Badge>
+                      {/* Includes */}
+                      {service.includes && service.includes.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+                          <Check className="h-4 w-4 text-green-600 shrink-0" />
+                          <span>Includes {service.includes.length} item{service.includes.length !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
 
-                      {/* Actions Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => {
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={(e) => {
                             e.stopPropagation();
                             router.push(`/dashboard/services/${service.id}`);
-                          }}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingService(null);
-                              form.setFieldValue("name", `${service.name} (Copy)`);
-                              form.setFieldValue("description", service.description || "");
-                              form.setFieldValue("duration", service.duration);
-                              form.setFieldValue("price", service.price / 100);
-                              form.setFieldValue("active", service.active);
-                              form.setFieldValue("categoryId", service.categoryId || "");
-                              form.setFieldValue("newCategoryName", "");
-                              form.setFieldValue("includes", service.includes || []);
-                              form.setFieldValue("imageId", service.images?.[0]?.id || null);
-                              setDialogOpen(true);
-                            }}
-                          >
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setServiceToDelete(service);
-                              setDeleteDialogOpen(true);
-                            }}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                          Edit
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingService(null);
+                                form.setFieldValue("name", `${service.name} (Copy)`);
+                                form.setFieldValue("description", service.description || "");
+                                form.setFieldValue("duration", service.duration);
+                                form.setFieldValue("price", service.price / 100);
+                                form.setFieldValue("active", service.active);
+                                form.setFieldValue("categoryId", service.categoryId || "");
+                                form.setFieldValue("newCategoryName", "");
+                                form.setFieldValue("includes", service.includes || []);
+                                form.setFieldValue("imageId", service.images?.[0]?.id || null);
+                                setDialogOpen(true);
+                              }}
+                            >
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setServiceToDelete(service);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 ))}
