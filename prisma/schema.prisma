@@ -110,53 +110,59 @@ model Tenant {
 }
 
 model ServiceCategory {
-  id          String    @id @default(cuid())
-  tenantId    String
+  id           String    @id @default(cuid())
+  tenantId     String
 
-  name        String
-  description String?
-  color       String?   @default("#6366f1") // Indigo default
+  name         String
+  description  String?
+  color        String?   @default("#6366f1") // Indigo default
+  icon         String?   // Lucide icon name or emoji
+  active       Boolean   @default(true)
+  displayOrder Int       @default(0)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  services    Service[]
-  packages    Package[]
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  services     Service[]
+  packages     Package[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
+  @@index([tenantId, displayOrder])
 }
 
 model Service {
-  id          String    @id @default(cuid())
-  tenantId    String
-  categoryId  String?
+  id           String    @id @default(cuid())
+  tenantId     String
+  categoryId   String?
 
-  name        String
-  description String?
-  duration    Int
-  price       Int
-  active      Boolean   @default(true)
-  includes    String[]  @default([])
+  name         String
+  description  String?
+  duration     Int
+  price        Int
+  active       Boolean   @default(true)
+  includes     String[]  @default([])
+  displayOrder Int       @default(0)
 
-  archived    Boolean   @default(false)
-  archivedAt  DateTime?
+  archived     Boolean   @default(false)
+  archivedAt   DateTime?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category    ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  bookings    Booking[]
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category     ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  bookings     Booking[]
   bookingServices BookingService[]
   packageServices PackageService[]
-  images      Image[]
+  images       Image[]
 
   @@index([tenantId])
   @@index([categoryId])
   @@index([archived])
   @@index([tenantId, archived])
+  @@index([tenantId, categoryId, displayOrder])
 }
 
 model Package {
@@ -169,6 +175,7 @@ model Package {
   price           Int       // Final price after discount (in cents)
   discountPercent Int       @default(15) // 5, 10, 15, or 20
   active          Boolean   @default(true)
+  displayOrder    Int       @default(0)
 
   archived        Boolean   @default(false)
   archivedAt      DateTime?
@@ -187,6 +194,7 @@ model Package {
   @@index([categoryId])
   @@index([archived])
   @@index([tenantId, archived])
+  @@index([tenantId, categoryId, displayOrder])
 }
 
 model PackageService {

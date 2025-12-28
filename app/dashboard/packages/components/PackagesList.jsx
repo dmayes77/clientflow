@@ -273,10 +273,15 @@ export function PackagesList() {
   };
 
   const toggleCategory = (categoryName) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryName]: !prev[categoryName]
-    }));
+    setExpandedCategories(prev => {
+      const isCurrentlyExpanded = prev[categoryName];
+      // If closing current category, just close it
+      if (isCurrentlyExpanded) {
+        return { [categoryName]: false };
+      }
+      // If opening a category, close all others and open this one
+      return { [categoryName]: true };
+    });
   };
 
   const packagesByCategory = groupedPackages();
@@ -476,19 +481,25 @@ export function PackagesList() {
                           aria-label={`${expandedCategories['uncategorized'] ? 'Collapse' : 'Expand'} uncategorized packages`}
                           aria-expanded={expandedCategories['uncategorized']}
                         >
-                          {expandedCategories['uncategorized'] ? (
-                            <ChevronDown className="h-4 w-4 shrink-0" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 shrink-0" />
-                          )}
+                          <ChevronRight
+                            className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                              expandedCategories['uncategorized'] ? 'rotate-90' : ''
+                            }`}
+                          />
                           <span className="font-medium">Uncategorized</span>
                           <Badge variant="secondary" className="ml-auto">
                             {packagesByCategory.uncategorized.length}
                           </Badge>
                         </button>
 
-                        {expandedCategories['uncategorized'] && (
-                          <div className="space-y-3 pl-6">
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            expandedCategories['uncategorized']
+                              ? 'max-h-[5000px] opacity-100'
+                              : 'max-h-0 opacity-0'
+                          }`}
+                        >
+                          <div className="space-y-3">
                             {packagesByCategory.uncategorized.map((pkg) => (
                               <PackageCard
                                 key={pkg.id}
@@ -497,7 +508,7 @@ export function PackagesList() {
                               />
                             ))}
                           </div>
-                        )}
+                        </div>
                       </div>
                       {Object.keys(packagesByCategory.categorized).length > 0 && (
                         <div className="h-px bg-border" />
@@ -517,19 +528,25 @@ export function PackagesList() {
                             aria-label={`${expandedCategories[categoryName] ? 'Collapse' : 'Expand'} ${categoryName} category`}
                             aria-expanded={expandedCategories[categoryName]}
                           >
-                            {expandedCategories[categoryName] ? (
-                              <ChevronDown className="h-4 w-4 shrink-0" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 shrink-0" />
-                            )}
+                            <ChevronRight
+                              className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                                expandedCategories[categoryName] ? 'rotate-90' : ''
+                              }`}
+                            />
                             <span className="font-medium">{categoryName}</span>
                             <Badge variant="secondary" className="ml-auto">
                               {categoryPackages.length}
                             </Badge>
                           </button>
 
-                          {expandedCategories[categoryName] && (
-                            <div className="space-y-3 pl-6">
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              expandedCategories[categoryName]
+                                ? 'max-h-[5000px] opacity-100'
+                                : 'max-h-0 opacity-0'
+                            }`}
+                          >
+                            <div className="space-y-3">
                               {categoryPackages.map((pkg) => (
                                 <PackageCard
                                   key={pkg.id}
@@ -538,7 +555,7 @@ export function PackagesList() {
                                 />
                               ))}
                             </div>
-                          )}
+                          </div>
                         </div>
                         {categoryIndex < array.length - 1 && (
                           <div className="h-px bg-border" />
