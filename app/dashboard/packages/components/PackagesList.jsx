@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTanstackForm } from "@/components/ui/tanstack-form";
 import { toast } from "sonner";
-import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useServices } from "@/lib/hooks";
+import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useReorderPackages, useServices } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar, Package, ChevronDown, ChevronRight, Search } from "lucide-react";
+import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar, Package, ChevronDown, ChevronRight, Search, GripVertical } from "lucide-react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const formatPrice = (cents) => {
   return new Intl.NumberFormat("en-US", {
@@ -147,6 +151,97 @@ function PackageCard({ package: pkg, onDelete }) {
   );
 }
 
+// Sortable Package Card Component (for drag-drop)
+function SortablePackageCard({ package: pkg, onDelete }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: pkg.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const router = useRouter();
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      {/* Drag Handle - Mobile First, always visible */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-2 top-2 z-10 touch-none cursor-grab active:cursor-grabbing bg-background/90 backdrop-blur-sm rounded-md p-1.5 border shadow-sm hover:bg-accent transition-colors"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Package Card */}
+      <div className="pl-8">
+        <PackageCard
+          package={pkg}
+          onDelete={onDelete}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Virtualized Package List Component
+function VirtualizedPackageList({ packages, onDelete }) {
+  const parentRef = useRef(null);
+
+  const virtualizer = useVirtualizer({
+    count: packages.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 280, // Estimated height of PackageCard
+    overscan: 2,
+  });
+
+  return (
+    <div
+      ref={parentRef}
+      className="space-y-3"
+      style={{ maxHeight: '600px', overflow: 'auto' }}
+    >
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const pkg = packages[virtualItem.index];
+          return (
+            <div
+              key={pkg.id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              <PackageCard
+                package={pkg}
+                onDelete={onDelete}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function PackagesList() {
   const router = useRouter();
 
@@ -156,8 +251,21 @@ export function PackagesList() {
   const createPackageMutation = useCreatePackage();
   const updatePackageMutation = useUpdatePackage();
   const deletePackageMutation = useDeletePackage();
+  const reorderPackages = useReorderPackages();
 
   const loading = packagesLoading || servicesLoading;
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Prevents accidental drags, mobile-friendly
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -238,6 +346,39 @@ export function PackagesList() {
   const handleDeletePackage = (pkg) => {
     setPackageToDelete(pkg);
     setDeleteDialogOpen(true);
+  };
+
+  const handleDragEnd = (event, categoryName) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    // Get the packages for this category
+    const categoryPackages = categoryName === 'uncategorized'
+      ? packagesByCategory.uncategorized
+      : packagesByCategory.categorized[categoryName];
+
+    const oldIndex = categoryPackages.findIndex((p) => p.id === active.id);
+    const newIndex = categoryPackages.findIndex((p) => p.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder the packages array
+    const reordered = arrayMove(categoryPackages, oldIndex, newIndex);
+
+    // Create updates array with new displayOrder values
+    const updates = reordered.map((pkg, index) => ({
+      id: pkg.id,
+      displayOrder: index,
+    }));
+
+    // Optimistically update the local state
+    // The query will be invalidated and refetched after mutation success
+    reorderPackages.mutate(updates, {
+      onError: (error) => {
+        toast.error(error.message || "Failed to reorder packages");
+      },
+    });
   };
 
   // Group packages by category
@@ -499,15 +640,35 @@ export function PackagesList() {
                               : 'max-h-0 opacity-0'
                           }`}
                         >
-                          <div className="space-y-3">
-                            {packagesByCategory.uncategorized.map((pkg) => (
-                              <PackageCard
-                                key={pkg.id}
-                                package={pkg}
+                          {expandedCategories['uncategorized'] && (
+                            packagesByCategory.uncategorized.length > 10 ? (
+                              <VirtualizedPackageList
+                                packages={packagesByCategory.uncategorized}
                                 onDelete={handleDeletePackage}
                               />
-                            ))}
-                          </div>
+                            ) : (
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={(event) => handleDragEnd(event, 'uncategorized')}
+                              >
+                                <SortableContext
+                                  items={packagesByCategory.uncategorized.map((p) => p.id)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <div className="space-y-3">
+                                    {packagesByCategory.uncategorized.map((pkg) => (
+                                      <SortablePackageCard
+                                        key={pkg.id}
+                                        package={pkg}
+                                        onDelete={handleDeletePackage}
+                                      />
+                                    ))}
+                                  </div>
+                                </SortableContext>
+                              </DndContext>
+                            )
+                          )}
                         </div>
                       </div>
                       {Object.keys(packagesByCategory.categorized).length > 0 && (
@@ -546,15 +707,35 @@ export function PackagesList() {
                                 : 'max-h-0 opacity-0'
                             }`}
                           >
-                            <div className="space-y-3">
-                              {categoryPackages.map((pkg) => (
-                                <PackageCard
-                                  key={pkg.id}
-                                  package={pkg}
+                            {expandedCategories[categoryName] && (
+                              categoryPackages.length > 10 ? (
+                                <VirtualizedPackageList
+                                  packages={categoryPackages}
                                   onDelete={handleDeletePackage}
                                 />
-                              ))}
-                            </div>
+                              ) : (
+                                <DndContext
+                                  sensors={sensors}
+                                  collisionDetection={closestCenter}
+                                  onDragEnd={(event) => handleDragEnd(event, categoryName)}
+                                >
+                                  <SortableContext
+                                    items={categoryPackages.map((p) => p.id)}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    <div className="space-y-3">
+                                      {categoryPackages.map((pkg) => (
+                                        <SortablePackageCard
+                                          key={pkg.id}
+                                          package={pkg}
+                                          onDelete={handleDeletePackage}
+                                        />
+                                      ))}
+                                    </div>
+                                  </SortableContext>
+                                </DndContext>
+                              )
+                            )}
                           </div>
                         </div>
                         {categoryIndex < array.length - 1 && (

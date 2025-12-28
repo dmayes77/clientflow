@@ -32,7 +32,10 @@ export async function GET(request) {
           orderBy: { createdAt: "desc" },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "desc" },
+      ],
     });
 
     return NextResponse.json(services);

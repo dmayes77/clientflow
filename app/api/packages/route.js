@@ -74,7 +74,10 @@ export async function GET(request) {
           select: { bookings: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "desc" },
+      ],
     });
 
     const transformedPackages = packages.map(transformPackage);

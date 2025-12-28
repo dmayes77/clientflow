@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, Fragment, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useServices, useCreateService, useUpdateService, useDeleteService } from "@/lib/hooks";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useServices, useCreateService, useUpdateService, useDeleteService, useReorderServices } from "@/lib/hooks";
 import { useServiceCategories } from "@/lib/hooks/use-service-categories";
 import { useImages, useUploadImage } from "@/lib/hooks/use-media";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -165,6 +166,103 @@ function ServiceCard({ service, onDuplicate, onDelete, formatDuration, formatPri
   );
 }
 
+// Sortable Service Card Component (for drag-drop)
+function SortableServiceCard({ service, onDuplicate, onDelete, formatDuration, formatPrice }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: service.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const router = useRouter();
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      {/* Drag Handle - Mobile First, always visible */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-2 top-2 z-10 touch-none cursor-grab active:cursor-grabbing bg-background/90 backdrop-blur-sm rounded-md p-1.5 border shadow-sm hover:bg-accent transition-colors"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Service Card */}
+      <div className="pl-8">
+        <ServiceCard
+          service={service}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
+          formatDuration={formatDuration}
+          formatPrice={formatPrice}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Virtualized Service List Component
+function VirtualizedServiceList({ services, onDuplicate, onDelete, formatDuration, formatPrice }) {
+  const parentRef = useRef(null);
+
+  const virtualizer = useVirtualizer({
+    count: services.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 280, // Estimated height of ServiceCard
+    overscan: 2,
+  });
+
+  return (
+    <div
+      ref={parentRef}
+      className="space-y-3"
+      style={{ maxHeight: '600px', overflow: 'auto' }}
+    >
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const service = services[virtualItem.index];
+          return (
+            <div
+              key={service.id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              <ServiceCard
+                service={service}
+                onDuplicate={onDuplicate}
+                onDelete={onDelete}
+                formatDuration={formatDuration}
+                formatPrice={formatPrice}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Sortable Include Item Component
 function SortableIncludeItem({ id, item, index, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -258,9 +356,22 @@ export function ServicesList() {
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
+  const reorderServices = useReorderServices();
   const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
   const { data: images = [], isLoading: imagesLoading } = useImages();
   const uploadImageMutation = useUploadImage();
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Prevents accidental drags, mobile-friendly
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -560,6 +671,39 @@ Format the includes list so I can easily copy each item individually.`;
   const handleDeleteService = (service) => {
     setServiceToDelete(service);
     setDeleteDialogOpen(true);
+  };
+
+  const handleDragEnd = (event, categoryName) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    // Get the services for this category
+    const categoryServices = categoryName === 'uncategorized'
+      ? servicesByCategory.uncategorized
+      : servicesByCategory.categorized[categoryName];
+
+    const oldIndex = categoryServices.findIndex((s) => s.id === active.id);
+    const newIndex = categoryServices.findIndex((s) => s.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder the services array
+    const reordered = arrayMove(categoryServices, oldIndex, newIndex);
+
+    // Create updates array with new displayOrder values
+    const updates = reordered.map((service, index) => ({
+      id: service.id,
+      displayOrder: index,
+    }));
+
+    // Optimistically update the local state
+    // The query will be invalidated and refetched after mutation success
+    reorderServices.mutate(updates, {
+      onError: (error) => {
+        toast.error(error.message || "Failed to reorder services");
+      },
+    });
   };
 
   const formatPrice = (cents) => {
@@ -864,18 +1008,41 @@ Format the includes list so I can easily copy each item individually.`;
                               : 'max-h-0 opacity-0'
                           }`}
                         >
-                          <div className="space-y-3">
-                            {servicesByCategory.uncategorized.map((service) => (
-                              <ServiceCard
-                                key={service.id}
-                                service={service}
+                          {expandedCategories['uncategorized'] && (
+                            servicesByCategory.uncategorized.length > 10 ? (
+                              <VirtualizedServiceList
+                                services={servicesByCategory.uncategorized}
                                 onDuplicate={handleDuplicateService}
                                 onDelete={handleDeleteService}
                                 formatDuration={formatDuration}
                                 formatPrice={formatPrice}
                               />
-                            ))}
-                          </div>
+                            ) : (
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={(event) => handleDragEnd(event, 'uncategorized')}
+                              >
+                                <SortableContext
+                                  items={servicesByCategory.uncategorized.map((s) => s.id)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <div className="space-y-3">
+                                    {servicesByCategory.uncategorized.map((service) => (
+                                      <SortableServiceCard
+                                        key={service.id}
+                                        service={service}
+                                        onDuplicate={handleDuplicateService}
+                                        onDelete={handleDeleteService}
+                                        formatDuration={formatDuration}
+                                        formatPrice={formatPrice}
+                                      />
+                                    ))}
+                                  </div>
+                                </SortableContext>
+                              </DndContext>
+                            )
+                          )}
                         </div>
                       </div>
                       {Object.keys(servicesByCategory.categorized).length > 0 && (
@@ -914,18 +1081,41 @@ Format the includes list so I can easily copy each item individually.`;
                                 : 'max-h-0 opacity-0'
                             }`}
                           >
-                            <div className="space-y-3">
-                              {categoryServices.map((service) => (
-                                <ServiceCard
-                                  key={service.id}
-                                  service={service}
+                            {expandedCategories[categoryName] && (
+                              categoryServices.length > 10 ? (
+                                <VirtualizedServiceList
+                                  services={categoryServices}
                                   onDuplicate={handleDuplicateService}
                                   onDelete={handleDeleteService}
                                   formatDuration={formatDuration}
                                   formatPrice={formatPrice}
                                 />
-                              ))}
-                            </div>
+                              ) : (
+                                <DndContext
+                                  sensors={sensors}
+                                  collisionDetection={closestCenter}
+                                  onDragEnd={(event) => handleDragEnd(event, categoryName)}
+                                >
+                                  <SortableContext
+                                    items={categoryServices.map((s) => s.id)}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    <div className="space-y-3">
+                                      {categoryServices.map((service) => (
+                                        <SortableServiceCard
+                                          key={service.id}
+                                          service={service}
+                                          onDuplicate={handleDuplicateService}
+                                          onDelete={handleDeleteService}
+                                          formatDuration={formatDuration}
+                                          formatPrice={formatPrice}
+                                        />
+                                      ))}
+                                    </div>
+                                  </SortableContext>
+                                </DndContext>
+                              )
+                            )}
                           </div>
                         </div>
                         {categoryIndex < array.length - 1 && (
