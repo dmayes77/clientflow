@@ -735,16 +735,17 @@ Format the includes list so I can easily copy each item individually.`;
     }));
 
     // Optimistic update with rollback on error
+    const servicesQueryKey = ["services", {}];
     reorderServices.mutate(updates, {
       onMutate: async () => {
         // Cancel outgoing refetches
-        await queryClient.cancelQueries({ queryKey: ["services"] });
+        await queryClient.cancelQueries({ queryKey: servicesQueryKey });
 
         // Snapshot the previous value
-        const previousServices = queryClient.getQueryData(["services"]);
+        const previousServices = queryClient.getQueryData(servicesQueryKey);
 
         // Optimistically update to the new value
-        queryClient.setQueryData(["services"], (old) => {
+        queryClient.setQueryData(servicesQueryKey, (old) => {
           if (!old) return old;
 
           // Create a map of updates for quick lookup
@@ -767,7 +768,7 @@ Format the includes list so I can easily copy each item individually.`;
       onError: (error, _, context) => {
         // Rollback to previous value on error
         if (context?.previousServices) {
-          queryClient.setQueryData(["services"], context.previousServices);
+          queryClient.setQueryData(servicesQueryKey, context.previousServices);
         }
         queryClient.invalidateQueries({ queryKey: ["services"] });
         toast.error(error.message || "Failed to reorder services");
