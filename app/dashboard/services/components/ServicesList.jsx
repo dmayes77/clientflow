@@ -294,13 +294,13 @@ function SortableCategoryHeader({ category, categoryServices, expandedCategories
             expandedCategories[category.name] ? 'rotate-90' : ''
           }`}
         />
-        <span className="font-medium flex-1">{category.name}</span>
+        <span className="font-medium">{category.name}</span>
 
         {/* Drag Handle - Mobile First, on the right */}
         <div
           {...attributes}
           {...listeners}
-          className="touch-none cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-muted rounded transition-colors"
+          className="ml-auto touch-none cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-muted rounded transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
