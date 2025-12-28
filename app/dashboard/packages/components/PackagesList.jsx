@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useServices } from "@/lib/hooks";
@@ -36,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar } from "lucide-react";
+import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar, Package, ChevronDown, ChevronRight, Search } from "lucide-react";
 
 const formatPrice = (cents) => {
   return new Intl.NumberFormat("en-US", {
@@ -45,7 +47,109 @@ const formatPrice = (cents) => {
   }).format(cents / 100);
 };
 
+// Package Card Component
+function PackageCard({ package: pkg, onDelete }) {
+  const router = useRouter();
+
+  return (
+    <div
+      className="border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent/50"
+      onClick={() => router.push(`/dashboard/packages/${pkg.id}`)}
+    >
+      {/* Image Header */}
+      <div className="relative h-32 w-full bg-muted">
+        <Image
+          src={pkg.images?.[0]?.url || "/default_img.webp"}
+          alt={pkg.name}
+          fill
+          sizes="(max-width: 640px) 100vw, 640px"
+          className="object-cover"
+        />
+        {/* Status Badge Overlay */}
+        <div className="absolute top-2 right-2">
+          <Badge variant={pkg.active ? "success" : "secondary"}>
+            {pkg.active ? "Active" : "Off"}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-3">
+        {/* Title */}
+        <div className="mb-2">
+          <h3 className="font-semibold text-base mb-1">{pkg.name}</h3>
+        </div>
+
+        {/* Description */}
+        {pkg.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {pkg.description}
+          </p>
+        )}
+
+        {/* Services Included */}
+        {pkg.services && pkg.services.length > 0 && (
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+            <Package className="h-4 w-4 text-blue-600 shrink-0" />
+            <span>{pkg.services.length} service{pkg.services.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <span className="text-muted-foreground">Price:</span>
+            <span>{formatPrice(pkg.price)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span>{pkg.bookingCount || 0} booking{pkg.bookingCount !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/dashboard/packages/${pkg.id}`);
+            }}
+            aria-label={`Edit ${pkg.name}`}
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            Edit
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="outline" size="sm" aria-label="More actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(pkg);
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PackagesList() {
+  const router = useRouter();
+
   // TanStack Query hooks
   const { data: packages = [], isLoading: packagesLoading } = usePackages();
   const { data: services = [], isLoading: servicesLoading } = useServices();
@@ -59,6 +163,8 @@ export function PackagesList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [packageToDelete, setPackageToDelete] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   // TanStack Form
   const form = useForm({
@@ -128,6 +234,54 @@ export function PackagesList() {
       },
     });
   };
+
+  const handleDeletePackage = (pkg) => {
+    setPackageToDelete(pkg);
+    setDeleteDialogOpen(true);
+  };
+
+  // Group packages by category
+  const groupedPackages = () => {
+    const filtered = packages.filter(pkg => {
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        pkg.name.toLowerCase().includes(query) ||
+        pkg.description?.toLowerCase().includes(query) ||
+        pkg.category?.name.toLowerCase().includes(query)
+      );
+    });
+
+    const groups = {
+      uncategorized: [],
+      categorized: {}
+    };
+
+    filtered.forEach(pkg => {
+      if (!pkg.category) {
+        groups.uncategorized.push(pkg);
+      } else {
+        const categoryName = pkg.category.name;
+        if (!groups.categorized[categoryName]) {
+          groups.categorized[categoryName] = [];
+        }
+        groups.categorized[categoryName].push(pkg);
+      }
+    });
+
+    return groups;
+  };
+
+  const toggleCategory = (categoryName) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryName]: !prev[categoryName]
+    }));
+  };
+
+  const packagesByCategory = groupedPackages();
+  const totalFilteredPackages = packagesByCategory.uncategorized.length +
+    Object.values(packagesByCategory.categorized).reduce((sum, pkgs) => sum + pkgs.length, 0);
 
   // Define columns for DataTable
   const columns = [
@@ -285,124 +439,113 @@ export function PackagesList() {
               </Button>
             </div>
           ) : (
-            <>
-              {/* Mobile Card View */}
-              <div className="tablet:hidden space-y-3">
-                {packages.map((pkg) => (
-                  <div
-                    key={pkg.id}
-                    className="border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent/50"
-                    onClick={() => router.push(`/dashboard/packages/${pkg.id}`)}
-                  >
-                    {/* Image Header */}
-                    <div className="relative h-32 w-full bg-muted">
-                      <Image
-                        src={pkg.images?.[0]?.url || "/default_img.webp"}
-                        alt={pkg.name}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 640px"
-                        className="object-cover"
-                      />
-                      {/* Status Badge Overlay */}
-                      <div className="absolute top-2 right-2">
-                        <Badge variant={pkg.active ? "success" : "secondary"}>
-                          {pkg.active ? "Active" : "Off"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-3">
-                      {/* Title and Category */}
-                      <div className="mb-2">
-                        <h3 className="font-semibold text-base mb-1">{pkg.name}</h3>
-                        {pkg.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {pkg.category.name}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Description */}
-                      {pkg.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {pkg.description}
-                        </p>
-                      )}
-
-                      {/* Services Included */}
-                      {pkg.services && pkg.services.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
-                          <Package className="h-4 w-4 text-blue-600 shrink-0" />
-                          <span>{pkg.services.length} service{pkg.services.length !== 1 ? 's' : ''}</span>
-                        </div>
-                      )}
-
-                      {/* Details Grid */}
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="flex items-center gap-1.5 text-sm font-medium">
-                          <span className="text-muted-foreground">Price:</span>
-                          <span>{formatPrice(pkg.price)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span>{pkg.bookingCount || 0} booking{pkg.bookingCount !== 1 ? 's' : ''}</span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 pt-2 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/dashboard/packages/${pkg.id}`);
-                          }}
-                          aria-label={`Edit ${pkg.name}`}
-                        >
-                          <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                          Edit
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="outline" size="sm" aria-label="More actions">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPackageToDelete(pkg);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop Table View */}
-              <div className="hidden tablet:block">
-                <DataTable
-                  columns={columns}
-                  data={packages}
-                  showSearch={true}
-                  searchPlaceholder="Search packages..."
-                  pageSize={10}
-                  emptyMessage="No packages found."
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search packages..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
                 />
               </div>
-            </>
+
+              {/* Results count */}
+              {searchQuery && (
+                <p className="text-sm text-muted-foreground">
+                  {totalFilteredPackages} result{totalFilteredPackages !== 1 ? 's' : ''} found
+                </p>
+              )}
+
+              {totalFilteredPackages === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Search className="h-12 w-12 text-muted-foreground mb-3 opacity-30" />
+                  <h3 className="text-zinc-900 mb-1">No packages found</h3>
+                  <p className="text-muted-foreground">Try adjusting your search</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Uncategorized Packages */}
+                  {packagesByCategory.uncategorized.length > 0 && (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => toggleCategory('uncategorized')}
+                        className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                        aria-label={`${expandedCategories['uncategorized'] ? 'Collapse' : 'Expand'} uncategorized packages`}
+                        aria-expanded={expandedCategories['uncategorized']}
+                      >
+                        {expandedCategories['uncategorized'] ? (
+                          <ChevronDown className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 shrink-0" />
+                        )}
+                        <span className="font-medium">Uncategorized</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {packagesByCategory.uncategorized.length}
+                        </Badge>
+                      </button>
+
+                      {expandedCategories['uncategorized'] && (
+                        <div className="space-y-2 pl-6">
+                          {packagesByCategory.uncategorized.map((pkg, index) => (
+                            <div key={pkg.id}>
+                              <PackageCard
+                                package={pkg}
+                                onDelete={handleDeletePackage}
+                              />
+                              {index < packagesByCategory.uncategorized.length - 1 && (
+                                <div className="h-px bg-border my-2" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Categorized Packages */}
+                  {Object.entries(packagesByCategory.categorized)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([categoryName, categoryPackages]) => (
+                      <div key={categoryName} className="space-y-2">
+                        <button
+                          onClick={() => toggleCategory(categoryName)}
+                          className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                          aria-label={`${expandedCategories[categoryName] ? 'Collapse' : 'Expand'} ${categoryName} category`}
+                          aria-expanded={expandedCategories[categoryName]}
+                        >
+                          {expandedCategories[categoryName] ? (
+                            <ChevronDown className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 shrink-0" />
+                          )}
+                          <span className="font-medium">{categoryName}</span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {categoryPackages.length}
+                          </Badge>
+                        </button>
+
+                        {expandedCategories[categoryName] && (
+                          <div className="space-y-2 pl-6">
+                            {categoryPackages.map((pkg, index) => (
+                              <div key={pkg.id}>
+                                <PackageCard
+                                  package={pkg}
+                                  onDelete={handleDeletePackage}
+                                />
+                                {index < categoryPackages.length - 1 && (
+                                  <div className="h-px bg-border my-2" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
