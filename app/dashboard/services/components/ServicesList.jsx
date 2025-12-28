@@ -852,16 +852,20 @@ Format the includes list so I can easily copy each item individually.`;
                       </button>
 
                       {expandedCategories['uncategorized'] && (
-                        <div className="space-y-3 pl-6">
-                          {servicesByCategory.uncategorized.map((service) => (
-                            <ServiceCard
-                              key={service.id}
-                              service={service}
-                              onDuplicate={handleDuplicateService}
-                              onDelete={handleDeleteService}
-                              formatDuration={formatDuration}
-                              formatPrice={formatPrice}
-                            />
+                        <div className="space-y-2 pl-6">
+                          {servicesByCategory.uncategorized.map((service, index) => (
+                            <div key={service.id}>
+                              <ServiceCard
+                                service={service}
+                                onDuplicate={handleDuplicateService}
+                                onDelete={handleDeleteService}
+                                formatDuration={formatDuration}
+                                formatPrice={formatPrice}
+                              />
+                              {index < servicesByCategory.uncategorized.length - 1 && (
+                                <div className="h-px bg-border my-2" />
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
@@ -891,16 +895,20 @@ Format the includes list so I can easily copy each item individually.`;
                         </button>
 
                         {expandedCategories[categoryName] && (
-                          <div className="space-y-3 pl-6">
-                            {categoryServices.map((service) => (
-                              <ServiceCard
-                                key={service.id}
-                                service={service}
-                                onDuplicate={handleDuplicateService}
-                                onDelete={handleDeleteService}
-                                formatDuration={formatDuration}
-                                formatPrice={formatPrice}
-                              />
+                          <div className="space-y-2 pl-6">
+                            {categoryServices.map((service, index) => (
+                              <div key={service.id}>
+                                <ServiceCard
+                                  service={service}
+                                  onDuplicate={handleDuplicateService}
+                                  onDelete={handleDeleteService}
+                                  formatDuration={formatDuration}
+                                  formatPrice={formatPrice}
+                                />
+                                {index < categoryServices.length - 1 && (
+                                  <div className="h-px bg-border my-2" />
+                                )}
+                              </div>
                             ))}
                           </div>
                         )}
