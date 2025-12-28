@@ -129,14 +129,19 @@ const initialFormState = {
   description: "",
   duration: 60,
   price: 0,
-  active: true,
   categoryId: "",
   newCategoryName: "",
   includes: [],
   imageId: null,
 };
 
-export function ServiceForm({ mode = "create", initialData = null, onSuccess }) {
+export function ServiceForm({
+  mode = "create",
+  initialData = null,
+  onSuccess,
+  active = true,
+  onActiveChange
+}) {
   const router = useRouter();
   const isEdit = mode === "edit";
 
@@ -171,7 +176,6 @@ export function ServiceForm({ mode = "create", initialData = null, onSuccess }) 
         description: initialData.description || "",
         duration: initialData.duration,
         price: initialData.price / 100,
-        active: initialData.active,
         categoryId: initialData.categoryId || "",
         newCategoryName: "",
         includes: initialData.includes || [],
@@ -406,7 +410,7 @@ Format the includes list so I can easily copy each item individually.`;
         description: formData.description,
         duration: formData.duration,
         price: Math.round(formData.price * 100),
-        active: formData.active,
+        active: active,
         includes: formData.includes,
         imageId: formData.imageId,
         ...(formData.categoryId &&
@@ -794,27 +798,6 @@ Format the includes list so I can easily copy each item individually.`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Active/Inactive Toggle */}
-      <div className="flex items-center justify-end gap-2">
-        <Label
-          htmlFor="active"
-          className={cn(
-            "font-medium text-sm",
-            formData.active ? "text-green-600" : "text-muted-foreground"
-          )}
-        >
-          {formData.active ? "Active" : "Inactive"}
-        </Label>
-        <Switch
-          id="active"
-          checked={formData.active}
-          onCheckedChange={(checked) => {
-            setFormData({ ...formData, active: checked });
-            setHasUnsavedChanges(true);
-          }}
-        />
-      </div>
-
       {/* Mobile Tabs (< 1024px) */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="lg:hidden">
         <TabsList className="grid w-full grid-cols-3 h-11 mb-4">

@@ -1,12 +1,14 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePackage } from "@/lib/hooks";
 import { PackageForm } from "../components/PackageForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 function PackageFormSkeleton() {
   return (
@@ -29,6 +31,14 @@ export default function EditPackagePage({ params }) {
   const { id } = use(params);
   const router = useRouter();
   const { data: pkg, isLoading, isError, error } = usePackage(id);
+  const [active, setActive] = useState(true);
+
+  // Initialize active state when package data loads
+  useEffect(() => {
+    if (pkg) {
+      setActive(pkg.active);
+    }
+  }, [pkg]);
 
   if (isLoading) {
     return (
@@ -45,6 +55,10 @@ export default function EditPackagePage({ params }) {
             <div className="flex-1">
               <Skeleton className="h-8 w-32 mb-2" />
               <Skeleton className="h-4 w-48" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-5 w-9" />
             </div>
           </div>
         </div>
@@ -68,6 +82,20 @@ export default function EditPackagePage({ params }) {
             <div className="flex-1">
               <h1 className="text-xl sm:text-2xl font-bold">Edit Package</h1>
               <p className="text-muted-foreground text-sm">Update package details</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="active"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Inactive
+              </Label>
+              <Switch
+                id="active"
+                checked={false}
+                disabled
+                className="scale-75"
+              />
             </div>
           </div>
         </div>
@@ -108,12 +136,30 @@ export default function EditPackagePage({ params }) {
             <h1 className="text-xl sm:text-2xl font-bold">Edit Package</h1>
             <p className="text-muted-foreground text-sm">Update package details and pricing</p>
           </div>
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="active"
+              className={`text-xs font-medium ${
+                active ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
+              {active ? "Active" : "Inactive"}
+            </Label>
+            <Switch
+              id="active"
+              checked={active}
+              onCheckedChange={setActive}
+              className="scale-75"
+            />
+          </div>
         </div>
       </div>
 
       <PackageForm
         mode="edit"
         initialData={pkg}
+        active={active}
+        onActiveChange={setActive}
         onSuccess={() => router.push("/dashboard/packages")}
       />
     </div>

@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ServiceForm } from "../components/ServiceForm";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function NewServicePage() {
   const router = useRouter();
+  const [active, setActive] = useState(true);
 
   return (
     <div className="space-y-4 pb-6 sm:pb-8">
@@ -25,10 +29,31 @@ export default function NewServicePage() {
               Add a new service to your catalog
             </p>
           </div>
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="active"
+              className={`text-xs font-medium ${
+                active ? "text-green-600" : "text-muted-foreground"
+              }`}
+            >
+              {active ? "Active" : "Inactive"}
+            </Label>
+            <Switch
+              id="active"
+              checked={active}
+              onCheckedChange={setActive}
+              className="scale-75"
+            />
+          </div>
         </div>
       </div>
 
-      <ServiceForm mode="create" onSuccess={() => router.push("/dashboard/services")} />
+      <ServiceForm
+        mode="create"
+        active={active}
+        onActiveChange={setActive}
+        onSuccess={() => router.push("/dashboard/services")}
+      />
     </div>
   );
 }

@@ -79,7 +79,6 @@ const initialFormState = {
   name: "",
   description: "",
   discountPercent: 15,
-  active: true,
   serviceIds: [],
   categoryId: null,
   newCategoryName: "",
@@ -88,7 +87,13 @@ const initialFormState = {
   imageId: null,
 };
 
-export function PackageForm({ mode = "create", initialData = null, onSuccess }) {
+export function PackageForm({
+  mode = "create",
+  initialData = null,
+  onSuccess,
+  active = true,
+  onActiveChange
+}) {
   const router = useRouter();
   const isEdit = mode === "edit";
   const { formatDuration } = useBusinessHours();
@@ -136,7 +141,6 @@ export function PackageForm({ mode = "create", initialData = null, onSuccess }) 
         name: initialData.name,
         description: initialData.description || "",
         discountPercent: initialData.discountPercent,
-        active: initialData.active,
         serviceIds: initialData.services.map((s) => s.id),
         categoryId: initialData.categoryId || null,
         newCategoryName: "",
@@ -305,7 +309,7 @@ export function PackageForm({ mode = "create", initialData = null, onSuccess }) 
         name: formData.name,
         description: formData.description || null,
         discountPercent: formData.discountPercent,
-        active: formData.active,
+        active: active,
         serviceIds: formData.serviceIds,
         imageId: formData.imageId,
         ...(isCreatingCategory && formData.newCategoryName
@@ -852,27 +856,6 @@ export function PackageForm({ mode = "create", initialData = null, onSuccess }) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Active/Inactive Toggle */}
-      <div className="flex items-center justify-end gap-2">
-        <Label
-          htmlFor="active"
-          className={cn(
-            "font-medium text-sm",
-            formData.active ? "text-green-600" : "text-muted-foreground"
-          )}
-        >
-          {formData.active ? "Active" : "Inactive"}
-        </Label>
-        <Switch
-          id="active"
-          checked={formData.active}
-          onCheckedChange={(checked) => {
-            setFormData({ ...formData, active: checked });
-            setHasUnsavedChanges(true);
-          }}
-        />
-      </div>
-
       {/* Mobile Tabs (< 1024px) */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="lg:hidden">
         <TabsList className="grid w-full grid-cols-2 h-11 mb-4">
