@@ -830,89 +830,91 @@ Format the includes list so I can easily copy each item individually.`;
                   <p className="text-muted-foreground">Try adjusting your search</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* Uncategorized Services */}
                   {servicesByCategory.uncategorized.length > 0 && (
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => toggleCategory('uncategorized')}
-                        className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                        aria-label={`${expandedCategories['uncategorized'] ? 'Collapse' : 'Expand'} uncategorized services`}
-                        aria-expanded={expandedCategories['uncategorized']}
-                      >
-                        {expandedCategories['uncategorized'] ? (
-                          <ChevronDown className="h-4 w-4 shrink-0" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 shrink-0" />
-                        )}
-                        <span className="font-medium">Uncategorized</span>
-                        <Badge variant="secondary" className="ml-auto">
-                          {servicesByCategory.uncategorized.length}
-                        </Badge>
-                      </button>
+                    <>
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => toggleCategory('uncategorized')}
+                          className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                          aria-label={`${expandedCategories['uncategorized'] ? 'Collapse' : 'Expand'} uncategorized services`}
+                          aria-expanded={expandedCategories['uncategorized']}
+                        >
+                          {expandedCategories['uncategorized'] ? (
+                            <ChevronDown className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 shrink-0" />
+                          )}
+                          <span className="font-medium">Uncategorized</span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {servicesByCategory.uncategorized.length}
+                          </Badge>
+                        </button>
 
-                      {expandedCategories['uncategorized'] && (
-                        <div className="space-y-2 pl-6">
-                          {servicesByCategory.uncategorized.map((service, index) => (
-                            <div key={service.id}>
+                        {expandedCategories['uncategorized'] && (
+                          <div className="space-y-3 pl-6">
+                            {servicesByCategory.uncategorized.map((service) => (
                               <ServiceCard
+                                key={service.id}
                                 service={service}
                                 onDuplicate={handleDuplicateService}
                                 onDelete={handleDeleteService}
                                 formatDuration={formatDuration}
                                 formatPrice={formatPrice}
                               />
-                              {index < servicesByCategory.uncategorized.length - 1 && (
-                                <div className="h-px bg-border my-2" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {Object.keys(servicesByCategory.categorized).length > 0 && (
+                        <div className="h-px bg-border" />
                       )}
-                    </div>
+                    </>
                   )}
 
                   {/* Categorized Services */}
                   {Object.entries(servicesByCategory.categorized)
                     .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([categoryName, categoryServices]) => (
-                      <div key={categoryName} className="space-y-2">
-                        <button
-                          onClick={() => toggleCategory(categoryName)}
-                          className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                          aria-label={`${expandedCategories[categoryName] ? 'Collapse' : 'Expand'} ${categoryName} category`}
-                          aria-expanded={expandedCategories[categoryName]}
-                        >
-                          {expandedCategories[categoryName] ? (
-                            <ChevronDown className="h-4 w-4 shrink-0" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 shrink-0" />
-                          )}
-                          <span className="font-medium">{categoryName}</span>
-                          <Badge variant="secondary" className="ml-auto">
-                            {categoryServices.length}
-                          </Badge>
-                        </button>
+                    .map(([categoryName, categoryServices], categoryIndex, array) => (
+                      <>
+                        <div key={categoryName} className="space-y-2">
+                          <button
+                            onClick={() => toggleCategory(categoryName)}
+                            className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                            aria-label={`${expandedCategories[categoryName] ? 'Collapse' : 'Expand'} ${categoryName} category`}
+                            aria-expanded={expandedCategories[categoryName]}
+                          >
+                            {expandedCategories[categoryName] ? (
+                              <ChevronDown className="h-4 w-4 shrink-0" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 shrink-0" />
+                            )}
+                            <span className="font-medium">{categoryName}</span>
+                            <Badge variant="secondary" className="ml-auto">
+                              {categoryServices.length}
+                            </Badge>
+                          </button>
 
-                        {expandedCategories[categoryName] && (
-                          <div className="space-y-2 pl-6">
-                            {categoryServices.map((service, index) => (
-                              <div key={service.id}>
+                          {expandedCategories[categoryName] && (
+                            <div className="space-y-3 pl-6">
+                              {categoryServices.map((service) => (
                                 <ServiceCard
+                                  key={service.id}
                                   service={service}
                                   onDuplicate={handleDuplicateService}
                                   onDelete={handleDeleteService}
                                   formatDuration={formatDuration}
                                   formatPrice={formatPrice}
                                 />
-                                {index < categoryServices.length - 1 && (
-                                  <div className="h-px bg-border my-2" />
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {categoryIndex < array.length - 1 && (
+                          <div className="h-px bg-border" />
                         )}
-                      </div>
+                      </>
                     ))}
                 </div>
               )}
