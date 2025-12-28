@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
@@ -745,45 +745,49 @@ export function ContactsList() {
     <TooltipProvider>
       <div className="space-y-4">
         {/* Page Header with Total Count */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
-            <p className="text-muted-foreground">
-              Manage your contacts and leads • {statusCounts.all} total
-              {statusCounts.archived > 0 && ` • ${statusCounts.archived} archived`}
-            </p>
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
+                <p className="text-muted-foreground">
+                  Manage your contacts and leads • {statusCounts.all} total
+                  {statusCounts.archived > 0 && ` • ${statusCounts.archived} archived`}
+                </p>
+              </div>
+            </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex flex-wrap gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Filter by:</span>
-          <Badge variant={showArchived ? "secondary" : "outline"} className="cursor-pointer" onClick={() => setShowArchived(!showArchived)}>
-            {showArchived ? (
-              <>
-                <ArchiveRestore className="h-3 w-3 mr-1" />
-                Showing Archived
-              </>
-            ) : (
-              `${statusFilter === "all" ? "All Contacts" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}`
-            )}
-          </Badge>
-          {smartFilter !== "all" && (
-            <Badge variant="secondary" className="cursor-pointer" onClick={() => setSmartFilter("all")}>
-              {smartFilter === "recent" && "Recently Added"}
-              {smartFilter === "high-value" && "High-Value Clients"}
-              {smartFilter === "never-booked" && "Never Booked"}
-              <CloseIcon className="h-3 w-3 ml-1" />
-            </Badge>
-          )}
-        </div>
+            {/* Status Filter Tabs */}
+            <div className="flex flex-wrap gap-2 pt-4">
+              <span className="text-sm font-medium text-muted-foreground">Filter by:</span>
+              <Badge variant={showArchived ? "secondary" : "outline"} className="cursor-pointer" onClick={() => setShowArchived(!showArchived)}>
+                {showArchived ? (
+                  <>
+                    <ArchiveRestore className="h-3 w-3 mr-1" />
+                    Showing Archived
+                  </>
+                ) : (
+                  `${statusFilter === "all" ? "All Contacts" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}`
+                )}
+              </Badge>
+              {smartFilter !== "all" && (
+                <Badge variant="secondary" className="cursor-pointer" onClick={() => setSmartFilter("all")}>
+                  {smartFilter === "recent" && "Recently Added"}
+                  {smartFilter === "high-value" && "High-Value Clients"}
+                  {smartFilter === "never-booked" && "Never Booked"}
+                  <CloseIcon className="h-3 w-3 ml-1" />
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+        </Card>
 
         <Card>
           <CardHeader className="pb-4">
             <div className="flex flex-col gap-4">
               {/* Search and Action Buttons */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="relative flex-1 max-w-md">
+              <div className="flex flex-col gap-3">
+                <div className="relative w-full">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search contacts..."
@@ -792,7 +796,40 @@ export function ContactsList() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Mobile Actions - Show only Add Contact and More menu */}
+                <div className="flex items-center gap-2 tablet:hidden">
+                  <Button className="flex-1" size="sm" variant="success" onClick={handleOpenAddDialog} aria-label="Add new contact">
+                    <AddIcon className="h-4 w-4 mr-1" />
+                    Add Contact
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline" aria-label="More actions">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuCheckboxItem onClick={() => setImportDialogOpen(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Import
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem onClick={() => handleExport(true)}>
+                        <DownloadIcon className="h-4 w-4 mr-2" />
+                        Export All
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem onClick={() => handleExport(false)} disabled={selectedIds.size === 0}>
+                        <DownloadIcon className="h-4 w-4 mr-2" />
+                        Export Selected ({selectedIds.size})
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Desktop Actions - Show all buttons */}
+                <div className="hidden tablet:flex items-center gap-2">
                   <Button size="sm" variant="outline" onClick={() => setImportDialogOpen(true)} aria-label="Import contacts from CSV">
                     <Upload className="h-4 w-4 mr-1" />
                     Import
@@ -858,105 +895,148 @@ export function ContactsList() {
                 </div>
               </div>
 
-              {/* Status Filter Pills */}
+              {/* Status Filter - Dropdown for all breakpoints */}
               {!showArchived && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button variant={statusFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("all")} aria-label="Show all contacts">
-                    <Users className="h-3 w-3 mr-1" />
-                    All ({statusCounts.all})
-                  </Button>
-                  <Button
-                    variant={statusFilter === "lead" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setStatusFilter("lead")}
-                    className={`${statusFilter === "lead" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                    aria-label="Show leads only"
-                  >
-                    <Flame className="h-3 w-3 mr-1" />
-                    Leads ({statusCounts.lead})
-                  </Button>
-                  <Button
-                    variant={statusFilter === "client" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setStatusFilter("client")}
-                    className={`${statusFilter === "client" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
-                    aria-label="Show clients only"
-                  >
-                    <UserCheck className="h-3 w-3 mr-1" />
-                    Clients ({statusCounts.client})
-                  </Button>
-                  <Button variant={statusFilter === "active" ? "success" : "outline"} size="sm" onClick={() => setStatusFilter("active")} aria-label="Show active contacts only">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Active ({statusCounts.active})
-                  </Button>
-                  <Button
-                    variant={statusFilter === "inactive" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setStatusFilter("inactive")}
-                    aria-label="Show inactive contacts only"
-                  >
-                    <UserX className="h-3 w-3 mr-1" />
-                    Inactive ({statusCounts.inactive})
-                  </Button>
-                  <Button
-                    variant={statusFilter === "unclassified" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setStatusFilter("unclassified")}
-                    className={`${statusFilter === "unclassified" ? "bg-slate-500 hover:bg-slate-600" : ""}`}
-                    aria-label="Show unclassified contacts only"
-                  >
-                    <HelpCircle className="h-3 w-3 mr-1" />
-                    Unclassified ({statusCounts.unclassified})
-                  </Button>
-
-                  <div className="h-4 w-px bg-border mx-1" />
-
-                  {/* Smart Filters */}
+                <div className="flex items-center gap-2">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Target className="h-3 w-3 mr-1" />
-                        Smart Filters
+                      <Button variant="outline" size="sm" className="tablet:min-w-50 justify-between">
+                        <span className="flex items-center gap-2 truncate">
+                          <Target className="h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            {statusFilter === "all" && smartFilter === "all" && "All Contacts"}
+                            {statusFilter === "lead" && "Leads"}
+                            {statusFilter === "client" && "Clients"}
+                            {statusFilter === "active" && "Active"}
+                            {statusFilter === "inactive" && "Inactive"}
+                            {statusFilter === "unclassified" && "Unclassified"}
+                            {smartFilter === "recent" && "Recently Added"}
+                            {smartFilter === "high-value" && "High-Value"}
+                            {smartFilter === "never-booked" && "Never Booked"}
+                          </span>
+                        </span>
+                        <span className="text-muted-foreground shrink-0 ml-2">
+                          ({statusFilter === "all" && smartFilter === "all" ? statusCounts.all :
+                            statusFilter === "lead" ? statusCounts.lead :
+                            statusFilter === "client" ? statusCounts.client :
+                            statusFilter === "active" ? statusCounts.active :
+                            statusFilter === "inactive" ? statusCounts.inactive :
+                            statusFilter === "unclassified" ? statusCounts.unclassified :
+                            smartFilter === "recent" ? smartCounts.recent :
+                            smartFilter === "high-value" ? smartCounts.highValue :
+                            smartFilter === "never-booked" ? smartCounts.neverBooked : 0})
+                        </span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuLabel>Quick Filters</DropdownMenuLabel>
+                    <DropdownMenuContent align="start" className="w-70">
+                      <DropdownMenuLabel>Status Filters</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuCheckboxItem
+                        checked={statusFilter === "all" && smartFilter === "all"}
+                        onCheckedChange={() => {
+                          setStatusFilter("all");
+                          setSmartFilter("all");
+                        }}
+                      >
+                        <Users className="h-3 w-3 mr-2" />
+                        All Contacts ({statusCounts.all})
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={statusFilter === "lead"}
+                        onCheckedChange={() => {
+                          setStatusFilter("lead");
+                          setSmartFilter("all");
+                        }}
+                      >
+                        <Flame className="h-3 w-3 mr-2" />
+                        Leads ({statusCounts.lead})
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={statusFilter === "client"}
+                        onCheckedChange={() => {
+                          setStatusFilter("client");
+                          setSmartFilter("all");
+                        }}
+                      >
+                        <UserCheck className="h-3 w-3 mr-2" />
+                        Clients ({statusCounts.client})
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={statusFilter === "active"}
+                        onCheckedChange={() => {
+                          setStatusFilter("active");
+                          setSmartFilter("all");
+                        }}
+                      >
+                        <CheckCircle2 className="h-3 w-3 mr-2" />
+                        Active ({statusCounts.active})
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={statusFilter === "inactive"}
+                        onCheckedChange={() => {
+                          setStatusFilter("inactive");
+                          setSmartFilter("all");
+                        }}
+                      >
+                        <UserX className="h-3 w-3 mr-2" />
+                        Inactive ({statusCounts.inactive})
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={statusFilter === "unclassified"}
+                        onCheckedChange={() => {
+                          setStatusFilter("unclassified");
+                          setSmartFilter("all");
+                        }}
+                      >
+                        <HelpCircle className="h-3 w-3 mr-2" />
+                        Unclassified ({statusCounts.unclassified})
+                      </DropdownMenuCheckboxItem>
+
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>Smart Filters</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuCheckboxItem
                         checked={smartFilter === "recent"}
-                        onCheckedChange={(checked) => setSmartFilter(checked ? "recent" : "all")}
+                        onCheckedChange={(checked) => {
+                          setSmartFilter(checked ? "recent" : "all");
+                          setStatusFilter("all");
+                        }}
                       >
                         <Calendar className="h-3 w-3 mr-2" />
                         Recently Added ({smartCounts.recent})
                       </DropdownMenuCheckboxItem>
                       <DropdownMenuCheckboxItem
                         checked={smartFilter === "high-value"}
-                        onCheckedChange={(checked) => setSmartFilter(checked ? "high-value" : "all")}
+                        onCheckedChange={(checked) => {
+                          setSmartFilter(checked ? "high-value" : "all");
+                          setStatusFilter("all");
+                        }}
                       >
                         <TrendingUp className="h-3 w-3 mr-2" />
                         High-Value Clients ({smartCounts.highValue})
                       </DropdownMenuCheckboxItem>
                       <DropdownMenuCheckboxItem
                         checked={smartFilter === "never-booked"}
-                        onCheckedChange={(checked) => setSmartFilter(checked ? "never-booked" : "all")}
+                        onCheckedChange={(checked) => {
+                          setSmartFilter(checked ? "never-booked" : "all");
+                          setStatusFilter("all");
+                        }}
                       >
-                        <Target className="h-3 w-3 mr-2" />
+                        <Clock className="h-3 w-3 mr-2" />
                         Never Booked ({smartCounts.neverBooked})
                       </DropdownMenuCheckboxItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Additional Tag Filter */}
-                  <div className="ml-auto">
-                    <TagFilter
-                      tags={allTags}
-                      selectedTagIds={selectedTagIds}
-                      onSelectionChange={setSelectedTagIds}
-                      type="contact"
-                      excludeSystemTags={true}
-                      placeholder="Filter by tags"
-                    />
-                  </div>
+                  <TagFilter
+                    tags={allTags}
+                    selectedTagIds={selectedTagIds}
+                    onSelectionChange={setSelectedTagIds}
+                    type="contact"
+                    excludeSystemTags={true}
+                    placeholder="Tags"
+                  />
                 </div>
               )}
             </div>
@@ -1057,28 +1137,155 @@ export function ContactsList() {
                 </Button>
               </div>
             ) : (
-              <DataTable
-                columns={columns}
-                data={filteredClients}
-                showSearch={false}
-                pageSize={25}
-                onRowClick={(client) => router.push(`/dashboard/contacts/${client.id}`)}
-                rowClassName={(client) => selectedIds.has(client.id) ? "bg-primary/5" : ""}
-                emptyMessage="No contacts found."
-              />
+              <>
+                {/* Mobile Card View - Hidden on tablet+ */}
+                <div className="tablet:hidden space-y-2">
+                  {filteredClients.map((client) => (
+                    <div
+                      key={client.id}
+                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                        selectedIds.has(client.id) ? "bg-primary/5 border-primary" : "hover:bg-accent/50"
+                      }`}
+                      onClick={() => router.push(`/dashboard/contacts/${client.id}`)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Checkbox */}
+                        <Checkbox
+                          checked={selectedIds.has(client.id)}
+                          onCheckedChange={() => toggleSelect(client.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select ${client.name}`}
+                          className="shrink-0"
+                        />
+
+                        {/* Main Content */}
+                        <div className="flex-1 min-w-0">
+                          {/* Name and Status */}
+                          <div className="flex items-center gap-2 mb-1">
+                            {hasTag(client, "lead") && <Flame className="h-4 w-4 text-orange-500 shrink-0" />}
+                            {hasTag(client, "vip") && <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />}
+                            <span className="font-medium truncate">{client.name}</span>
+                            {client.archived && <Badge variant="secondary" className="text-xs shrink-0">Archived</Badge>}
+                          </div>
+
+                          {/* Contact Info */}
+                          {client.email && (
+                            <div className="text-sm text-muted-foreground truncate">{client.email}</div>
+                          )}
+
+                          {/* Stats and Tags */}
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                            <span>{client.bookingCount || 0} bookings</span>
+                            {client.tags && client.tags.length > 0 && (
+                              <>
+                                <span>•</span>
+                                <span>{client.tags.length} tags</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions Menu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuCheckboxItem
+                              checked={false}
+                              onCheckedChange={() => router.push(`/dashboard/contacts/${client.id}`)}
+                            >
+                              <EditIcon className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                              checked={false}
+                              onCheckedChange={() => router.push(`/dashboard/invoices/new?clientId=${client.id}`)}
+                            >
+                              <InvoiceIcon className="h-4 w-4 mr-2" />
+                              Create Invoice
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem
+                              checked={false}
+                              onCheckedChange={() => router.push(`/dashboard/bookings/new?clientId=${client.id}`)}
+                            >
+                              <NewBookingIcon className="h-4 w-4 mr-2" />
+                              Create Booking
+                            </DropdownMenuCheckboxItem>
+                            {client.email && (
+                              <DropdownMenuCheckboxItem
+                                checked={false}
+                                onCheckedChange={() => window.location.href = `mailto:${client.email}`}
+                              >
+                                <MessageSquare className="h-4 w-4 mr-2" />
+                                Send Email
+                              </DropdownMenuCheckboxItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            {client.archived ? (
+                              <DropdownMenuCheckboxItem
+                                checked={false}
+                                onCheckedChange={async () => {
+                                  try {
+                                    await unarchiveContact.mutateAsync(client.id);
+                                    toast.success("Contact restored");
+                                  } catch (error) {
+                                    toast.error("Failed to restore contact");
+                                  }
+                                }}
+                                className="text-green-600"
+                              >
+                                <ArchiveRestore className="h-4 w-4 mr-2" />
+                                Restore
+                              </DropdownMenuCheckboxItem>
+                            ) : (
+                              <DropdownMenuCheckboxItem
+                                checked={false}
+                                onCheckedChange={() => {
+                                  setClientToDelete(client);
+                                  setDeleteDialogOpen(true);
+                                }}
+                                className="text-red-600"
+                              >
+                                <DeleteIcon className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuCheckboxItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View - Hidden on mobile */}
+                <div className="hidden tablet:block">
+                  <DataTable
+                    columns={columns}
+                    data={filteredClients}
+                    showSearch={false}
+                    pageSize={25}
+                    onRowClick={(client) => router.push(`/dashboard/contacts/${client.id}`)}
+                    rowClassName={(client) => selectedIds.has(client.id) ? "bg-primary/5" : ""}
+                    emptyMessage="No contacts found."
+                  />
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
 
-        {/* Add Contact Dialog */}
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add Contact</DialogTitle>
-              <DialogDescription>Add a new contact to your list. You can add more details after creating.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4 py-4">
+        {/* Add Contact Sheet - Bottom on mobile, Right on desktop */}
+        <Sheet open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <SheetContent responsive side="right">
+            <SheetHeader>
+              <SheetTitle>Add Contact</SheetTitle>
+              <SheetDescription>Add a new contact to your list. You can add more details after creating.</SheetDescription>
+            </SheetHeader>
+            <form onSubmit={handleSubmit} className="flex flex-col h-full">
+              <div className="space-y-4 flex-1 overflow-y-auto px-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -1125,18 +1332,18 @@ export function ContactsList() {
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleCloseAddDialog}>
+              <SheetFooter className="flex-row gap-2">
+                <Button type="button" variant="outline" onClick={handleCloseAddDialog} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createContact.isPending}>
+                <Button type="submit" disabled={createContact.isPending} className="flex-1">
                   {createContact.isPending && <LoadingIcon className="size-4 animate-spin mr-2" />}
                   Add Contact
                 </Button>
-              </DialogFooter>
+              </SheetFooter>
             </form>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
 
         {/* Import Dialog */}
         <ContactImport open={importDialogOpen} onOpenChange={setImportDialogOpen} />

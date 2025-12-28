@@ -6,6 +6,20 @@ import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// Hook to detect mobile breakpoint
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640); // sm breakpoint
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
 function Sheet({
   ...props
 }) {
@@ -55,8 +69,12 @@ function SheetContent({
   className,
   children,
   side = "right",
+  responsive = false,
   ...props
 }) {
+  const isMobile = useIsMobile();
+  const effectiveSide = responsive && isMobile ? "bottom" : side;
+
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -66,14 +84,14 @@ function SheetContent({
           "bg-popover text-popover-foreground fixed z-50 flex flex-col gap-4 shadow-lg",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:duration-500 data-[state=open]:duration-500",
-          side === "right" &&
+          effectiveSide === "right" &&
             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
-          side === "left" &&
+          effectiveSide === "left" &&
             "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
-          side === "top" &&
+          effectiveSide === "top" &&
             "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
-          side === "bottom" &&
-            "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
+          effectiveSide === "bottom" &&
+            "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto max-h-[90vh] border-t rounded-t-xl overflow-y-auto",
           className
         )}
         style={{
