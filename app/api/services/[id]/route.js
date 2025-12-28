@@ -197,10 +197,40 @@ export async function DELETE(request, { params }) {
         id,
         tenantId: tenant.id,
       },
+      include: {
+        _count: {
+          select: {
+            bookings: true,
+            bookingServices: true,
+            packageServices: true,
+          },
+        },
+      },
     });
 
     if (!existingService) {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    }
+
+    // Safety checks: prevent deletion if service is in use
+    if (existingService._count.bookings > 0 || existingService._count.bookingServices > 0) {
+      return NextResponse.json(
+        {
+          error: "Cannot delete service with existing bookings. Consider archiving it instead.",
+          canArchive: true,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (existingService._count.packageServices > 0) {
+      return NextResponse.json(
+        {
+          error: "Cannot delete service that is part of existing packages. Remove it from packages first, or archive it instead.",
+          canArchive: true,
+        },
+        { status: 400 }
+      );
     }
 
     await prisma.service.delete({

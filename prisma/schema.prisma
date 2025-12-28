@@ -140,6 +140,9 @@ model Service {
   active      Boolean   @default(true)
   includes    String[]  @default([])
 
+  archived    Boolean   @default(false)
+  archivedAt  DateTime?
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -152,6 +155,8 @@ model Service {
 
   @@index([tenantId])
   @@index([categoryId])
+  @@index([archived])
+  @@index([tenantId, archived])
 }
 
 model Package {
@@ -165,6 +170,9 @@ model Package {
   discountPercent Int       @default(15) // 5, 10, 15, or 20
   active          Boolean   @default(true)
 
+  archived        Boolean   @default(false)
+  archivedAt      DateTime?
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -177,6 +185,8 @@ model Package {
 
   @@index([tenantId])
   @@index([categoryId])
+  @@index([archived])
+  @@index([tenantId, archived])
 }
 
 model PackageService {

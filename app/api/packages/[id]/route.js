@@ -245,7 +245,10 @@ export async function DELETE(request, { params }) {
     // Check if package has bookings
     if (existingPackage._count.bookings > 0) {
       return NextResponse.json(
-        { error: "Cannot delete package with existing bookings. Consider deactivating it instead." },
+        {
+          error: "Cannot delete package with existing bookings. Consider archiving it instead.",
+          canArchive: true,
+        },
         { status: 400 }
       );
     }

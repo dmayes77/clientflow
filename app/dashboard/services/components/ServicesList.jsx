@@ -628,21 +628,135 @@ Format the includes list so I can easily copy each item individually.`;
               </Button>
             </div>
           ) : (
-            <DataTable
-              columns={columns}
-              data={services}
-              searchPlaceholder="Search services..."
-              pageSize={10}
-              onRowClick={(service) => router.push(`/dashboard/services/${service.id}`)}
-              emptyMessage="No services found."
-            />
+            <>
+              {/* Mobile Card View */}
+              <div className="tablet:hidden space-y-2">
+                {services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="border rounded-lg p-3 cursor-pointer transition-colors hover:bg-accent/50"
+                    onClick={() => router.push(`/dashboard/services/${service.id}`)}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Service Image */}
+                      <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                        <Image
+                          src={service.images?.[0]?.url || "/default_img.webp"}
+                          alt={service.name}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      </div>
+
+                      {/* Main Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Name and Category */}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium truncate">{service.name}</span>
+                          {service.category && (
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {service.category.name}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Details */}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatDuration(service.duration)}
+                          </span>
+                          <span>•</span>
+                          <span className="font-medium">{formatPrice(service.price)}</span>
+                          {service.includes && service.includes.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Check className="h-3 w-3 text-green-600" />
+                                {service.includes.length}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status Badge */}
+                      <Badge variant={service.active ? "success" : "secondary"} className="shrink-0">
+                        {service.active ? "Active" : "Off"}
+                      </Badge>
+
+                      {/* Actions Menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/services/${service.id}`);
+                          }}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingService(null);
+                              form.setFieldValue("name", `${service.name} (Copy)`);
+                              form.setFieldValue("description", service.description || "");
+                              form.setFieldValue("duration", service.duration);
+                              form.setFieldValue("price", service.price / 100);
+                              form.setFieldValue("active", service.active);
+                              form.setFieldValue("categoryId", service.categoryId || "");
+                              form.setFieldValue("newCategoryName", "");
+                              form.setFieldValue("includes", service.includes || []);
+                              form.setFieldValue("imageId", service.images?.[0]?.id || null);
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setServiceToDelete(service);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden tablet:block">
+                <DataTable
+                  columns={columns}
+                  data={services}
+                  searchPlaceholder="Search services..."
+                  pageSize={10}
+                  onRowClick={(service) => router.push(`/dashboard/services/${service.id}`)}
+                  emptyMessage="No services found."
+                />
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
       {/* Add/Edit Sheet */}
       <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-          <SheetContent className="sm:max-w-6xl overflow-hidden flex flex-col p-0">
+          <SheetContent responsive side="right" className="sm:max-w-6xl overflow-hidden flex flex-col p-0">
             <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
               <SheetTitle>{editingService ? "Edit Service" : "Create Service"}</SheetTitle>
               <div className="flex items-center justify-between gap-4">
