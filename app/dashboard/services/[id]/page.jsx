@@ -738,19 +738,19 @@ Format the includes list so I can easily copy each item individually.`;
 
       {/* AI Prompt Helper Dialog */}
       <Dialog open={aiPromptDialogOpen} onOpenChange={setAiPromptDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Sparkles className="h-5 w-5 text-violet-500" />
               Generate Description with ChatGPT
             </DialogTitle>
-            <DialogDescription>Copy this prompt and paste it into ChatGPT to generate compelling marketing copy for your service.</DialogDescription>
+            <DialogDescription className="text-sm">Copy this prompt and paste it into ChatGPT to generate compelling marketing copy for your service.</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+          <div className="space-y-3 sm:space-y-4 flex-1 overflow-hidden flex flex-col min-h-0">
             <Alert className="bg-violet-50 border-violet-200">
               <Lightbulb className="h-4 w-4 text-violet-600" />
-              <AlertDescription className="text-violet-800">
+              <AlertDescription className="text-violet-800 text-sm">
                 {formData.includes.length > 0 ? (
                   <>
                     <strong>Mode:</strong> Generating marketing description only (you already have includes added).
@@ -764,14 +764,14 @@ Format the includes list so I can easily copy each item individually.`;
               </AlertDescription>
             </Alert>
 
-            <div className="flex-1 overflow-hidden">
-              <Label className="font-medium mb-2 block">Your Customized Prompt:</Label>
-              <ScrollArea className="h-64 rounded-md border bg-muted/30">
-                <pre className="p-4 whitespace-pre-wrap font-mono text-muted-foreground">{generateAiPrompt()}</pre>
+            <div className="flex-1 overflow-hidden min-h-0">
+              <Label className="font-medium mb-2 block text-sm">Your Customized Prompt:</Label>
+              <ScrollArea className="h-48 sm:h-64 rounded-md border bg-muted/30">
+                <pre className="p-3 sm:p-4 whitespace-pre-wrap font-mono text-xs sm:text-sm text-muted-foreground">{generateAiPrompt()}</pre>
               </ScrollArea>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 pt-2">
               <Button type="button" variant={promptCopied ? "success" : "default"} onClick={copyPromptToClipboard} className="flex-1 transition-colors">
                 {promptCopied ? (
                   <>
@@ -785,16 +785,16 @@ Format the includes list so I can easily copy each item individually.`;
                   </>
                 )}
               </Button>
-              <Button type="button" variant="outline" onClick={() => window.open("https://chat.openai.com", "_blank")}>
+              <Button type="button" variant="outline" onClick={() => window.open("https://chat.openai.com", "_blank")} className="flex-1 sm:flex-none">
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Open ChatGPT
+                <span className="sm:inline">Open ChatGPT</span>
               </Button>
             </div>
           </div>
 
-          <DialogFooter className="border-t pt-4 mt-4">
-            <p className="hig-caption2 text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
-            <Button variant="outline" onClick={() => setAiPromptDialogOpen(false)}>
+          <DialogFooter className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4 flex-col sm:flex-row gap-2 sm:gap-0">
+            <p className="hig-caption2 text-muted-foreground flex-1 text-xs sm:text-sm">After getting your AI-generated description, paste it in the Description field above.</p>
+            <Button variant="outline" onClick={() => setAiPromptDialogOpen(false)} className="w-full sm:w-auto">
               Close
             </Button>
           </DialogFooter>
