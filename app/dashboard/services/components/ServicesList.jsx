@@ -770,11 +770,12 @@ Format the includes list so I can easily copy each item individually.`;
           const updatesMap = new Map(updates.map(u => [u.id, u.displayOrder]));
 
           // Update displayOrder for affected services
+          // Don't sort globally - services from different categories have independent displayOrder sequences
           const updated = old.map(service =>
             updatesMap.has(service.id)
               ? { ...service, displayOrder: updatesMap.get(service.id) }
               : service
-          ).sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+          );
 
           console.log('🎯 [MUTATE] Updated services count', updated.length);
           console.log('🎯 [MUTATE] Updated displayOrders',
