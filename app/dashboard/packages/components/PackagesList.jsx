@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useForm } from "@tanstack/react-form";
@@ -520,8 +520,8 @@ export function PackagesList() {
                   {Object.entries(packagesByCategory.categorized)
                     .sort(([a], [b]) => a.localeCompare(b))
                     .map(([categoryName, categoryPackages], categoryIndex, array) => (
-                      <>
-                        <div key={categoryName} className="space-y-2">
+                      <Fragment key={categoryName}>
+                        <div className="space-y-2">
                           <button
                             onClick={() => toggleCategory(categoryName)}
                             className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
@@ -560,7 +560,7 @@ export function PackagesList() {
                         {categoryIndex < array.length - 1 && (
                           <div className="h-px bg-border" />
                         )}
-                      </>
+                      </Fragment>
                     ))}
                 </div>
               )}

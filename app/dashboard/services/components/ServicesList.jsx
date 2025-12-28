@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -888,8 +888,8 @@ Format the includes list so I can easily copy each item individually.`;
                   {Object.entries(servicesByCategory.categorized)
                     .sort(([a], [b]) => a.localeCompare(b))
                     .map(([categoryName, categoryServices], categoryIndex, array) => (
-                      <>
-                        <div key={categoryName} className="space-y-2">
+                      <Fragment key={categoryName}>
+                        <div className="space-y-2">
                           <button
                             onClick={() => toggleCategory(categoryName)}
                             className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
@@ -931,7 +931,7 @@ Format the includes list so I can easily copy each item individually.`;
                         {categoryIndex < array.length - 1 && (
                           <div className="h-px bg-border" />
                         )}
-                      </>
+                      </Fragment>
                     ))}
                 </div>
               )}
