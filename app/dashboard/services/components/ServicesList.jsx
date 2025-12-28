@@ -745,65 +745,11 @@ Format the includes list so I can easily copy each item individually.`;
 
     console.log('🎯 [DRAG] Updates to send', updates);
 
-    // Optimistic update with rollback on error
-    const servicesQueryKey = ["services", {}];
+    // Mutation with optimistic update (handled in hook)
     reorderServices.mutate(updates, {
-      onMutate: async () => {
-        console.log('🎯 [MUTATE] onMutate starting');
-
-        // Cancel outgoing refetches
-        await queryClient.cancelQueries({ queryKey: servicesQueryKey });
-
-        // Snapshot the previous value
-        const previousServices = queryClient.getQueryData(servicesQueryKey);
-        console.log('🎯 [MUTATE] Previous services count', previousServices?.length);
-
-        // Optimistically update to the new value
-        queryClient.setQueryData(servicesQueryKey, (old) => {
-          if (!old) {
-            console.log('🎯 [MUTATE] No old data in cache!');
-            return old;
-          }
-
-          console.log('🎯 [MUTATE] Old services count', old.length);
-
-          // Create a map of updates for quick lookup
-          const updatesMap = new Map(updates.map(u => [u.id, u.displayOrder]));
-
-          // Update displayOrder for affected services
-          // Don't sort globally - services from different categories have independent displayOrder sequences
-          const updated = old.map(service =>
-            updatesMap.has(service.id)
-              ? { ...service, displayOrder: updatesMap.get(service.id) }
-              : service
-          );
-
-          console.log('🎯 [MUTATE] Updated services count', updated.length);
-          console.log('🎯 [MUTATE] Updated displayOrders',
-            updated.filter(s => updatesMap.has(s.id)).map(s => ({ id: s.id, displayOrder: s.displayOrder }))
-          );
-
-          return updated;
-        });
-
-        console.log('🎯 [MUTATE] onMutate complete');
-        return { previousServices };
-      },
-      onSuccess: (data) => {
-        console.log('🎯 [SUCCESS] Mutation succeeded', data);
-      },
-      onError: (error, _, context) => {
+      onError: (error) => {
         console.log('🎯 [ERROR] Mutation failed', error);
-
-        // Rollback to previous value on error
-        if (context?.previousServices) {
-          queryClient.setQueryData(servicesQueryKey, context.previousServices);
-        }
-        queryClient.invalidateQueries({ queryKey: ["services"] });
         toast.error(error.message || "Failed to reorder services");
-      },
-      onSettled: () => {
-        console.log('🎯 [SETTLED] Mutation settled');
       },
     });
   };
@@ -841,63 +787,11 @@ Format the includes list so I can easily copy each item individually.`;
 
     console.log('🎯 [CAT-DRAG] Updates to send', updates);
 
-    // Optimistic update with rollback on error
+    // Mutation with optimistic update (handled in hook)
     reorderCategories.mutate(updates, {
-      onMutate: async () => {
-        console.log('🎯 [CAT-MUTATE] onMutate starting');
-
-        // Cancel outgoing refetches
-        await queryClient.cancelQueries({ queryKey: ["service-categories"] });
-
-        // Snapshot the previous value
-        const previousCategories = queryClient.getQueryData(["service-categories"]);
-        console.log('🎯 [CAT-MUTATE] Previous categories count', previousCategories?.length);
-
-        // Optimistically update to the new value
-        queryClient.setQueryData(["service-categories"], (old) => {
-          if (!old) {
-            console.log('🎯 [CAT-MUTATE] No old data in cache!');
-            return old;
-          }
-
-          console.log('🎯 [CAT-MUTATE] Old categories count', old.length);
-
-          // Create a map of updates for quick lookup
-          const updatesMap = new Map(updates.map(u => [u.id, u.displayOrder]));
-
-          // Update displayOrder for affected categories
-          const updated = old.map(category =>
-            updatesMap.has(category.id)
-              ? { ...category, displayOrder: updatesMap.get(category.id) }
-              : category
-          ).sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
-
-          console.log('🎯 [CAT-MUTATE] Updated categories count', updated.length);
-          console.log('🎯 [CAT-MUTATE] Updated displayOrders',
-            updated.filter(c => updatesMap.has(c.id)).map(c => ({ id: c.id, name: c.name, displayOrder: c.displayOrder }))
-          );
-
-          return updated;
-        });
-
-        console.log('🎯 [CAT-MUTATE] onMutate complete');
-        return { previousCategories };
-      },
-      onSuccess: (data) => {
-        console.log('🎯 [CAT-SUCCESS] Mutation succeeded', data);
-      },
-      onError: (error, _, context) => {
+      onError: (error) => {
         console.log('🎯 [CAT-ERROR] Mutation failed', error);
-
-        // Rollback to previous value on error
-        if (context?.previousCategories) {
-          queryClient.setQueryData(["service-categories"], context.previousCategories);
-        }
-        queryClient.invalidateQueries({ queryKey: ["service-categories"] });
         toast.error(error.message || "Failed to reorder categories");
-      },
-      onSettled: () => {
-        console.log('🎯 [CAT-SETTLED] Mutation settled');
       },
     });
   };
