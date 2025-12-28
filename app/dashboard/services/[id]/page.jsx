@@ -419,8 +419,8 @@ Format the includes list so I can easily copy each item individually.`;
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
           {/* Left Column - Service Info */}
           <Card>
-            <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
-              <div className="space-y-1.5 sm:space-y-2">
+            <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-4">
+              <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm">Service Name</Label>
                 <Input
                   id="name"
@@ -431,7 +431,7 @@ Format the includes list so I can easily copy each item individually.`;
                 />
               </div>
 
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2">
                 <div>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="description" className="mb-0! text-sm">
@@ -460,7 +460,7 @@ Format the includes list so I can easily copy each item individually.`;
                 />
               </div>
 
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2">
                 <Label className="text-sm">Category (optional)</Label>
                 {isCreatingCategory ? (
                   <div className="flex gap-2">
@@ -507,8 +507,8 @@ Format the includes list so I can easily copy each item individually.`;
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-1.5 sm:space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="duration" className="text-sm">Duration</Label>
                   <DurationSelect
                     id="duration"
@@ -517,7 +517,7 @@ Format the includes list so I can easily copy each item individually.`;
                   />
                 </div>
 
-                <div className="space-y-1.5 sm:space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="price" className="text-sm">Price ($)</Label>
                   <Input
                     id="price"
@@ -532,9 +532,9 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
 
               {/* Service Image */}
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2">
                 <Label className="text-sm">Service Image (optional)</Label>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative group h-20 w-20 sm:h-32 sm:w-32 mx-auto sm:mx-0 shrink-0">
                     <Image
                       src={selectedImage?.url || "/default_img.webp"}
@@ -585,13 +585,13 @@ Format the includes list so I can easily copy each item individually.`;
 
           {/* Right Column - Includes */}
           <Card>
-            <CardContent className="p-3 sm:p-6 space-y-2 sm:space-y-3">
+            <CardContent className="p-4 sm:p-6 space-y-3">
               <div className="flex items-center justify-between mb-0! sm:mb-1!">
                 <Label className="mb-0! text-sm">What's Included</Label>
                 <span className="hig-caption2 text-muted-foreground">{formData.includes.length}/20</span>
               </div>
 
-              <Alert className="bg-amber-50 border-amber-200 py-2 sm:py-3">
+              <Alert className="bg-amber-50 border-amber-200 py-2.5 sm:py-3">
                 <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-600" />
                 <AlertDescription className="text-xs sm:hig-caption2 text-amber-800">
                   We recommend adding 6-8 items that describe what clients receive with this service.
@@ -646,7 +646,7 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
 
               {/* Delete Button */}
-              <div className="pt-2 sm:pt-4 border-t">
+              <div className="pt-3 sm:pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
@@ -663,7 +663,7 @@ Format the includes list so I can easily copy each item individually.`;
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-6">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
           <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/services")} className="w-full sm:w-auto h-9 sm:h-10">
             <span className="text-sm">Cancel</span>
           </Button>

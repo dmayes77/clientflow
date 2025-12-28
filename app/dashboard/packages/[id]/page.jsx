@@ -335,9 +335,9 @@ export default function PackageEditPage({ params }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 lg:h-full">
           {/* Left Column - Package Info */}
           <Card className="lg:overflow-hidden lg:flex lg:flex-col">
-            <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
-              <div className="space-y-2 sm:space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
-                <div className="space-y-1.5 sm:space-y-2">
+            <CardContent className="p-4 sm:p-6 space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+              <div className="space-y-3 sm:space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+                <div className="space-y-2">
                   <Label htmlFor="name" className="text-sm">Package Name</Label>
                   <Input
                     id="name"
@@ -349,9 +349,9 @@ export default function PackageEditPage({ params }) {
                 </div>
 
                 {/* Package Image */}
-                <div className="space-y-1.5 sm:space-y-2">
+                <div className="space-y-2">
                   <Label className="text-sm">Package Image (optional)</Label>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative group h-16 w-16 sm:h-24 sm:w-24 mx-auto sm:mx-0 shrink-0">
                       <Image
                         src={selectedImage?.url || "/default_img.webp"}
@@ -388,7 +388,7 @@ export default function PackageEditPage({ params }) {
                   </div>
                 </div>
 
-                <div className="space-y-1.5 sm:space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="description" className="text-sm">Description (optional)</Label>
                   <Textarea
                     id="description"
@@ -401,7 +401,7 @@ export default function PackageEditPage({ params }) {
                 </div>
 
                 {/* Category Selection */}
-                <div className="space-y-1.5 sm:space-y-2">
+                <div className="space-y-2">
                   <Label className="text-sm">Category (optional)</Label>
                   {isCreatingCategory ? (
                     <div className="flex gap-2">
@@ -460,8 +460,8 @@ export default function PackageEditPage({ params }) {
               </div>
 
               {/* Discount & Price Ending - Anchored to bottom */}
-              <div className="rounded-lg border p-2 sm:p-4 space-y-2 sm:space-y-4 lg:mt-4 lg:shrink-0">
-                <div className="space-y-1.5 sm:space-y-2">
+              <div className="rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4 lg:mt-4 lg:shrink-0">
+                <div className="space-y-2">
                   <Label className="text-xs sm:text-sm">Package Discount</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {DISCOUNT_OPTIONS.map((option) => (
@@ -487,7 +487,7 @@ export default function PackageEditPage({ params }) {
                   </div>
                 </div>
 
-                <div className="space-y-1.5 sm:space-y-2 pt-2 sm:pt-3 border-t">
+                <div className="space-y-2 pt-3 sm:pt-3 border-t">
                   <Label className="text-xs sm:text-sm">Final Price Ending</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {PRICE_ENDING_OPTIONS.map((option) => (
@@ -529,8 +529,8 @@ export default function PackageEditPage({ params }) {
 
           {/* Right Column - Service Selection */}
           <Card className="lg:overflow-hidden lg:flex lg:flex-col">
-            <CardContent className="p-3 sm:p-6 space-y-2 sm:space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
-              <div className="space-y-2 sm:space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+            <CardContent className="p-4 sm:p-6 space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+              <div className="space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm">Select Services *</Label>
                   <span className="hig-caption2 text-muted-foreground">
@@ -633,7 +633,7 @@ export default function PackageEditPage({ params }) {
 
               {/* Price Preview - Anchored to bottom */}
               {pricePreview.serviceCount > 0 && (
-                <div className="rounded-lg border bg-muted/30 p-2 sm:p-4 lg:mt-4 lg:shrink-0">
+                <div className="rounded-lg border bg-muted/30 p-3 sm:p-4 lg:mt-4 lg:shrink-0">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center text-xs sm:text-sm">
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Services</p>
