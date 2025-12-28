@@ -3,7 +3,7 @@
 import { useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useForm } from "@tanstack/react-form";
+import { useTanstackForm } from "@/components/ui/tanstack-form";
 import { toast } from "sonner";
 import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useServices } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -167,7 +167,7 @@ export function PackagesList() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // TanStack Form
-  const form = useForm({
+  const form = useTanstackForm({
     defaultValues: {
       name: "",
       description: "",
@@ -175,10 +175,10 @@ export function PackagesList() {
       active: true,
       serviceIds: [],
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: async (values) => {
       const payload = {
-        ...value,
-        price: Math.round(value.price * 100),
+        ...values.value,
+        price: Math.round(values.value.price * 100),
       };
 
       const mutation = editingPackage ? updatePackageMutation : createPackageMutation;
