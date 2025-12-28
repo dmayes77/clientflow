@@ -388,7 +388,7 @@ Format the includes list so I can easily copy each item individually.`;
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-6 sm:pb-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <Button
