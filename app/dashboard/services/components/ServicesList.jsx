@@ -760,16 +760,17 @@ Format the includes list so I can easily copy each item individually.`;
 
         return { previousServices };
       },
+      onSuccess: () => {
+        // Refetch after successful mutation to sync with server
+        queryClient.invalidateQueries({ queryKey: ["services"] });
+      },
       onError: (error, _, context) => {
         // Rollback to previous value on error
         if (context?.previousServices) {
           queryClient.setQueryData(["services"], context.previousServices);
         }
-        toast.error(error.message || "Failed to reorder services");
-      },
-      onSettled: () => {
-        // Always refetch after error or success
         queryClient.invalidateQueries({ queryKey: ["services"] });
+        toast.error(error.message || "Failed to reorder services");
       },
     });
   };
@@ -824,16 +825,17 @@ Format the includes list so I can easily copy each item individually.`;
 
         return { previousCategories };
       },
+      onSuccess: () => {
+        // Refetch after successful mutation to sync with server
+        queryClient.invalidateQueries({ queryKey: ["service-categories"] });
+      },
       onError: (error, _, context) => {
         // Rollback to previous value on error
         if (context?.previousCategories) {
           queryClient.setQueryData(["service-categories"], context.previousCategories);
         }
-        toast.error(error.message || "Failed to reorder categories");
-      },
-      onSettled: () => {
-        // Always refetch after error or success
         queryClient.invalidateQueries({ queryKey: ["service-categories"] });
+        toast.error(error.message || "Failed to reorder categories");
       },
     });
   };
