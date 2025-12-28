@@ -332,13 +332,13 @@ export default function PackageEditPage({ params }) {
       </div>
 
       <form onSubmit={handleSubmit} className="lg:h-[calc(100vh-12rem)]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 lg:h-full">
           {/* Left Column - Package Info */}
           <Card className="lg:overflow-hidden lg:flex lg:flex-col">
-            <CardContent className="space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
-              <div className="space-y-3 sm:space-y-4 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Package Name</Label>
+            <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+              <div className="space-y-2 sm:space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="name" className="text-sm">Package Name</Label>
                   <Input
                     id="name"
                     placeholder="e.g., Full Session Package, VIP Bundle"
@@ -349,15 +349,15 @@ export default function PackageEditPage({ params }) {
                 </div>
 
                 {/* Package Image */}
-                <div className="space-y-2">
-                  <Label>Package Image (optional)</Label>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative group h-20 w-20 sm:h-24 sm:w-24 mx-auto sm:mx-0 shrink-0">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-sm">Package Image (optional)</Label>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <div className="relative group h-16 w-16 sm:h-24 sm:w-24 mx-auto sm:mx-0 shrink-0">
                       <Image
                         src={selectedImage?.url || "/default_img.webp"}
                         alt="Package"
                         fill
-                        sizes="(max-width: 640px) 80px, 96px"
+                        sizes="(max-width: 640px) 64px, 96px"
                         className="rounded-lg object-cover border"
                       />
                       {selectedImage && (
@@ -388,20 +388,21 @@ export default function PackageEditPage({ params }) {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (optional)</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="description" className="text-sm">Description (optional)</Label>
                   <Textarea
                     id="description"
                     placeholder="Describe what's included in this package"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
+                    rows={2}
+                    className="text-sm"
                   />
                 </div>
 
                 {/* Category Selection */}
-                <div className="space-y-2">
-                  <Label>Category (optional)</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-sm">Category (optional)</Label>
                   {isCreatingCategory ? (
                     <div className="flex gap-2">
                       <Input
@@ -459,9 +460,9 @@ export default function PackageEditPage({ params }) {
               </div>
 
               {/* Discount & Price Ending - Anchored to bottom */}
-              <div className="rounded-lg border p-3 sm:p-4 space-y-3 sm:space-y-4 lg:mt-4 lg:shrink-0">
-                <div className="space-y-2">
-                  <Label className="text-sm">Package Discount</Label>
+              <div className="rounded-lg border p-2 sm:p-4 space-y-2 sm:space-y-4 lg:mt-4 lg:shrink-0">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm">Package Discount</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {DISCOUNT_OPTIONS.map((option) => (
                       <Button
@@ -469,7 +470,7 @@ export default function PackageEditPage({ params }) {
                         type="button"
                         variant={formData.discountPercent === option.value ? "default" : "outline"}
                         size="sm"
-                        className="relative h-auto py-2"
+                        className="relative h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
                         onClick={() => setFormData({ ...formData, discountPercent: option.value })}
                       >
                         {option.label}
@@ -486,8 +487,8 @@ export default function PackageEditPage({ params }) {
                   </div>
                 </div>
 
-                <div className="space-y-2 pt-2 sm:pt-3 border-t">
-                  <Label className="text-sm">Final Price Ending</Label>
+                <div className="space-y-1.5 sm:space-y-2 pt-2 sm:pt-3 border-t">
+                  <Label className="text-xs sm:text-sm">Final Price Ending</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {PRICE_ENDING_OPTIONS.map((option) => (
                       <Button
@@ -495,7 +496,7 @@ export default function PackageEditPage({ params }) {
                         type="button"
                         variant={formData.priceEnding === option.value ? "default" : "outline"}
                         size="sm"
-                        className="h-auto py-2 flex-col sm:flex-row"
+                        className="h-auto py-1.5 sm:py-2 flex-col sm:flex-row text-xs sm:text-sm"
                         onClick={() => setFormData({
                           ...formData,
                           priceEnding: option.value,
@@ -528,10 +529,10 @@ export default function PackageEditPage({ params }) {
 
           {/* Right Column - Service Selection */}
           <Card className="lg:overflow-hidden lg:flex lg:flex-col">
-            <CardContent className="space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
+            <CardContent className="p-3 sm:p-6 space-y-2 sm:space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:h-full">
               <div className="space-y-2 sm:space-y-3 lg:flex-1 lg:overflow-y-auto lg:min-h-0">
                 <div className="flex items-center justify-between">
-                  <Label>Select Services *</Label>
+                  <Label className="text-sm">Select Services *</Label>
                   <span className="hig-caption2 text-muted-foreground">
                     {formData.serviceIds.length} selected
                   </span>
@@ -580,7 +581,7 @@ export default function PackageEditPage({ params }) {
                 </div>
 
                 {/* Grouped Services */}
-                <div className="border rounded-md max-h-48 sm:max-h-64 lg:max-h-72 overflow-y-auto">
+                <div className="border rounded-md max-h-40 sm:max-h-64 lg:max-h-72 overflow-y-auto">
                   {groupedServices.length === 0 ? (
                     <p className="p-3 text-muted-foreground text-center">
                       {serviceSearch ? "No services match your search" : "No active services available"}
@@ -632,8 +633,8 @@ export default function PackageEditPage({ params }) {
 
               {/* Price Preview - Anchored to bottom */}
               {pricePreview.serviceCount > 0 && (
-                <div className="rounded-lg border bg-muted/30 p-3 sm:p-4 lg:mt-4 lg:shrink-0">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center">
+                <div className="rounded-lg border bg-muted/30 p-2 sm:p-4 lg:mt-4 lg:shrink-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center text-xs sm:text-sm">
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Services</p>
                       <p className="font-semibold">{pricePreview.serviceCount}</p>
@@ -657,22 +658,23 @@ export default function PackageEditPage({ params }) {
 
               {/* Action Buttons - Anchored to bottom */}
               <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-3 lg:mt-4 lg:shrink-0">
-                <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")} className="w-full sm:w-auto">
-                  Cancel
+                <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/services")} className="w-full sm:w-auto h-8 sm:h-10">
+                  <span className="text-sm">Cancel</span>
                 </Button>
                 <div className="flex gap-2 sm:gap-3">
                   <Button
                     type="button"
                     variant="outline"
-                    className="flex-1 sm:flex-none text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                    size="sm"
+                    className="flex-1 sm:flex-none text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 h-8 sm:h-10"
                     onClick={() => setDeleteDialogOpen(true)}
                   >
-                    <Trash2 className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Delete</span>
+                    <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
+                    <span className="hidden sm:inline text-sm">Delete</span>
                   </Button>
-                  <Button type="submit" disabled={updatePackageMutation.isPending || formData.serviceIds.length === 0} className="flex-1 sm:flex-none">
-                    {updatePackageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    Save Changes
+                  <Button type="submit" size="sm" disabled={updatePackageMutation.isPending || formData.serviceIds.length === 0} className="flex-1 sm:flex-none h-8 sm:h-10">
+                    {updatePackageMutation.isPending && <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2 animate-spin" />}
+                    <span className="text-sm">Save Changes</span>
                   </Button>
                 </div>
               </div>

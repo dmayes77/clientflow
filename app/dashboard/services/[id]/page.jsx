@@ -416,12 +416,12 @@ Format the includes list so I can easily copy each item individually.`;
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
           {/* Left Column - Service Info */}
           <Card>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Service Name</Label>
+            <CardContent className="p-3 sm:p-6 space-y-3 sm:space-y-4">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="name" className="text-sm">Service Name</Label>
                 <Input
                   id="name"
                   placeholder="e.g., Haircut, Consultation, Photo Session"
@@ -431,10 +431,10 @@ Format the includes list so I can easily copy each item individually.`;
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <div>
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="description" className="mb-0!">
+                    <Label htmlFor="description" className="mb-0! text-sm">
                       Description (optional)
                     </Label>
                     <button
@@ -446,7 +446,7 @@ Format the includes list so I can easily copy each item individually.`;
                       Need help? Use AI
                     </button>
                   </div>
-                  <p className="hig-caption2 text-muted-foreground mt-1">
+                  <p className="hig-caption2 text-muted-foreground mt-0.5 sm:mt-1 text-xs">
                     Marketing copy describing the end result your client will achieve
                   </p>
                 </div>
@@ -455,12 +455,13 @@ Format the includes list so I can easily copy each item individually.`;
                   placeholder="e.g., Walk away with a fresh, confident look that turns heads and lasts for weeks"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
+                  rows={2}
+                  className="text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Category (optional)</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-sm">Category (optional)</Label>
                 {isCreatingCategory ? (
                   <div className="flex gap-2">
                     <Input
@@ -506,9 +507,9 @@ Format the includes list so I can easily copy each item individually.`;
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="duration" className="text-sm">Duration</Label>
                   <DurationSelect
                     id="duration"
                     value={formData.duration}
@@ -516,8 +517,8 @@ Format the includes list so I can easily copy each item individually.`;
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price ($)</Label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <Label htmlFor="price" className="text-sm">Price ($)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -531,15 +532,15 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
 
               {/* Service Image */}
-              <div className="space-y-2">
-                <Label>Service Image (optional)</Label>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative group h-24 w-24 sm:h-32 sm:w-32 mx-auto sm:mx-0 shrink-0">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-sm">Service Image (optional)</Label>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <div className="relative group h-20 w-20 sm:h-32 sm:w-32 mx-auto sm:mx-0 shrink-0">
                     <Image
                       src={selectedImage?.url || "/default_img.webp"}
                       alt="Service"
                       fill
-                      sizes="(max-width: 640px) 96px, 128px"
+                      sizes="(max-width: 640px) 80px, 128px"
                       className="rounded-lg object-cover border"
                     />
                     {selectedImage && (
@@ -584,15 +585,15 @@ Format the includes list so I can easily copy each item individually.`;
 
           {/* Right Column - Includes */}
           <Card>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between mb-1!">
-                <Label className="mb-0!">What's Included</Label>
+            <CardContent className="p-3 sm:p-6 space-y-2 sm:space-y-3">
+              <div className="flex items-center justify-between mb-0! sm:mb-1!">
+                <Label className="mb-0! text-sm">What's Included</Label>
                 <span className="hig-caption2 text-muted-foreground">{formData.includes.length}/20</span>
               </div>
 
-              <Alert className="bg-amber-50 border-amber-200">
-                <Lightbulb className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="hig-caption2 text-amber-800">
+              <Alert className="bg-amber-50 border-amber-200 py-2 sm:py-3">
+                <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-600" />
+                <AlertDescription className="text-xs sm:hig-caption2 text-amber-800">
                   We recommend adding 6-8 items that describe what clients receive with this service.
                 </AlertDescription>
               </Alert>
@@ -618,9 +619,9 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
 
               {/* Includes List */}
-              <div className="border rounded-lg max-h-48 sm:max-h-64 lg:max-h-80 overflow-y-auto">
+              <div className="border rounded-lg max-h-40 sm:max-h-64 lg:max-h-80 overflow-y-auto">
                 {formData.includes.length === 0 ? (
-                  <div className="p-6 text-center text-muted-foreground">
+                  <div className="p-4 sm:p-6 text-center text-muted-foreground">
                     <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     <p>No items added yet</p>
                     <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
@@ -645,15 +646,16 @@ Format the includes list so I can easily copy each item individually.`;
               </div>
 
               {/* Delete Button */}
-              <div className="pt-4 border-t">
+              <div className="pt-2 sm:pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                  size="sm"
+                  className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 h-8 sm:h-10"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Service
+                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2" />
+                  <span className="text-sm">Delete Service</span>
                 </Button>
               </div>
             </CardContent>
@@ -661,13 +663,13 @@ Format the includes list so I can easily copy each item individually.`;
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4 sm:mt-6">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")} className="w-full sm:w-auto">
-            Cancel
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-3 sm:mt-6">
+          <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/services")} className="w-full sm:w-auto h-9 sm:h-10">
+            <span className="text-sm">Cancel</span>
           </Button>
-          <Button type="submit" variant="success" disabled={updateServiceMutation.isPending} className="w-full sm:w-auto">
-            {updateServiceMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Save Changes
+          <Button type="submit" variant="success" size="sm" disabled={updateServiceMutation.isPending} className="w-full sm:w-auto h-9 sm:h-10">
+            {updateServiceMutation.isPending && <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-2 animate-spin" />}
+            <span className="text-sm">Save Changes</span>
           </Button>
         </div>
       </form>
