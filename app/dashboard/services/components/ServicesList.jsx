@@ -56,6 +56,7 @@ import { useBusinessHours } from "@/lib/hooks/use-business-hours";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { useTanstackForm, TextField, TextareaField, NumberField, SwitchField } from "@/components/ui/tanstack-form";
 
 // Service Card Component
@@ -934,6 +935,12 @@ Format the includes list so I can easily copy each item individually.`;
   const totalFilteredServices = servicesByCategory.uncategorized.length +
     Object.values(servicesByCategory.categorized).reduce((sum, services) => sum + services.length, 0);
 
+  // Debug: log services data to track changes
+  console.log('🔄 [RENDER] Services data', {
+    totalServices: services.length,
+    servicesSample: services.slice(0, 3).map(s => ({ id: s.id, name: s.name, displayOrder: s.displayOrder, categoryId: s.categoryId }))
+  });
+
   // Define columns for DataTable
   const columns = [
     {
@@ -1190,6 +1197,7 @@ Format the includes list so I can easily copy each item individually.`;
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
                                 onDragEnd={(event) => handleDragEnd(event, 'uncategorized')}
+                                modifiers={[restrictToVerticalAxis]}
                               >
                                 <SortableContext
                                   items={servicesByCategory.uncategorized.map((s) => s.id)}
@@ -1231,6 +1239,7 @@ Format the includes list so I can easily copy each item individually.`;
                         sensors={sensors}
                         collisionDetection={closestCenter}
                         onDragEnd={handleCategoryDragEnd}
+                        modifiers={[restrictToVerticalAxis]}
                       >
                         <SortableContext
                           items={categoriesWithServices.map((c) => c.id)}
@@ -1271,6 +1280,7 @@ Format the includes list so I can easily copy each item individually.`;
                                           sensors={sensors}
                                           collisionDetection={closestCenter}
                                           onDragEnd={(event) => handleDragEnd(event, category.name)}
+                                          modifiers={[restrictToVerticalAxis]}
                                         >
                                           <SortableContext
                                             items={categoryServices.map((s) => s.id)}
@@ -1562,7 +1572,7 @@ Format the includes list so I can easily copy each item individually.`;
                                 <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
                               </div>
                             ) : (
-                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleIncludesDragEnd}>
+                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleIncludesDragEnd} modifiers={[restrictToVerticalAxis]}>
                                 <SortableContext items={includes.map((_, i) => `include-${i}`)} strategy={verticalListSortingStrategy}>
                                   <ul className="divide-y">
                                     {includes.map((item, index) => (
