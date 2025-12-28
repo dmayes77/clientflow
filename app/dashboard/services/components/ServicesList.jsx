@@ -473,7 +473,7 @@ export function ServicesList() {
     },
   });
 
-  const handleDragEnd = (event) => {
+  const handleIncludesDragEnd = (event) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
@@ -1465,7 +1465,7 @@ Format the includes list so I can easily copy each item individually.`;
                                 <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
                               </div>
                             ) : (
-                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleIncludesDragEnd}>
                                 <SortableContext items={includes.map((_, i) => `include-${i}`)} strategy={verticalListSortingStrategy}>
                                   <ul className="divide-y">
                                     {includes.map((item, index) => (
