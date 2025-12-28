@@ -874,6 +874,12 @@ Format the includes list so I can easily copy each item individually.`;
       }
     });
 
+    // Sort services within each group by displayOrder
+    groups.uncategorized.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+    Object.keys(groups.categorized).forEach(categoryName => {
+      groups.categorized[categoryName].sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+    });
+
     return groups;
   };
 
