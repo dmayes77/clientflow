@@ -715,6 +715,12 @@ Format the includes list so I can easily copy each item individually.`;
 
     if (!over || active.id === over.id) return;
 
+    console.log('🎯 [DRAG] Starting drag end handler', {
+      activeId: active.id,
+      overId: over.id,
+      categoryName
+    });
+
     // Get the services for this category
     const categoryServices = categoryName === 'uncategorized'
       ? servicesByCategory.uncategorized
@@ -722,6 +728,8 @@ Format the includes list so I can easily copy each item individually.`;
 
     const oldIndex = categoryServices.findIndex((s) => s.id === active.id);
     const newIndex = categoryServices.findIndex((s) => s.id === over.id);
+
+    console.log('🎯 [DRAG] Indices', { oldIndex, newIndex });
 
     if (oldIndex === -1 || newIndex === -1) return;
 
@@ -734,40 +742,66 @@ Format the includes list so I can easily copy each item individually.`;
       displayOrder: index,
     }));
 
+    console.log('🎯 [DRAG] Updates to send', updates);
+
     // Optimistic update with rollback on error
     const servicesQueryKey = ["services", {}];
     reorderServices.mutate(updates, {
       onMutate: async () => {
+        console.log('🎯 [MUTATE] onMutate starting');
+
         // Cancel outgoing refetches
         await queryClient.cancelQueries({ queryKey: servicesQueryKey });
 
         // Snapshot the previous value
         const previousServices = queryClient.getQueryData(servicesQueryKey);
+        console.log('🎯 [MUTATE] Previous services count', previousServices?.length);
 
         // Optimistically update to the new value
         queryClient.setQueryData(servicesQueryKey, (old) => {
-          if (!old) return old;
+          if (!old) {
+            console.log('🎯 [MUTATE] No old data in cache!');
+            return old;
+          }
+
+          console.log('🎯 [MUTATE] Old services count', old.length);
 
           // Create a map of updates for quick lookup
           const updatesMap = new Map(updates.map(u => [u.id, u.displayOrder]));
 
           // Update displayOrder for affected services
-          return old.map(service =>
+          const updated = old.map(service =>
             updatesMap.has(service.id)
               ? { ...service, displayOrder: updatesMap.get(service.id) }
               : service
           ).sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+
+          console.log('🎯 [MUTATE] Updated services count', updated.length);
+          console.log('🎯 [MUTATE] Updated displayOrders',
+            updated.filter(s => updatesMap.has(s.id)).map(s => ({ id: s.id, displayOrder: s.displayOrder }))
+          );
+
+          return updated;
         });
 
+        console.log('🎯 [MUTATE] onMutate complete');
         return { previousServices };
       },
+      onSuccess: (data) => {
+        console.log('🎯 [SUCCESS] Mutation succeeded', data);
+      },
       onError: (error, _, context) => {
+        console.log('🎯 [ERROR] Mutation failed', error);
+
         // Rollback to previous value on error
         if (context?.previousServices) {
           queryClient.setQueryData(servicesQueryKey, context.previousServices);
         }
         queryClient.invalidateQueries({ queryKey: ["services"] });
         toast.error(error.message || "Failed to reorder services");
+      },
+      onSettled: () => {
+        console.log('🎯 [SETTLED] Mutation settled');
       },
     });
   };
