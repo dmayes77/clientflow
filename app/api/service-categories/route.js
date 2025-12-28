@@ -28,7 +28,10 @@ export async function GET(request) {
           },
         },
       },
-      orderBy: { name: "asc" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { name: "asc" },
+      ],
     });
 
     const categoriesWithCounts = categories.map((cat) => ({

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useServices, useCreateService, useUpdateService, useDeleteService, useReorderServices } from "@/lib/hooks";
-import { useServiceCategories } from "@/lib/hooks/use-service-categories";
+import { useServiceCategories, useReorderServiceCategories } from "@/lib/hooks/use-service-categories";
 import { useImages, useUploadImage } from "@/lib/hooks/use-media";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -263,6 +263,55 @@ function VirtualizedServiceList({ services, onDuplicate, onDelete, formatDuratio
   );
 }
 
+// Sortable Category Header Component (for drag-drop)
+function SortableCategoryHeader({ category, categoryServices, expandedCategories, toggleCategory }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <button
+        onClick={() => toggleCategory(category.name)}
+        className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+        aria-label={`${expandedCategories[category.name] ? 'Collapse' : 'Expand'} ${category.name} category`}
+        aria-expanded={expandedCategories[category.name]}
+      >
+        {/* Drag Handle - Mobile First */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="touch-none cursor-grab active:cursor-grabbing p-1 -m-1 hover:bg-muted rounded transition-colors"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+
+        <ChevronRight
+          className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+            expandedCategories[category.name] ? 'rotate-90' : ''
+          }`}
+        />
+        <span className="font-medium">{category.name}</span>
+        <Badge variant="secondary" className="ml-auto">
+          {categoryServices.length}
+        </Badge>
+      </button>
+    </div>
+  );
+}
+
 // Sortable Include Item Component
 function SortableIncludeItem({ id, item, index, onRemove }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -358,6 +407,7 @@ export function ServicesList() {
   const deleteService = useDeleteService();
   const reorderServices = useReorderServices();
   const { data: categories = [], isLoading: categoriesLoading } = useServiceCategories();
+  const reorderCategories = useReorderServiceCategories();
   const { data: images = [], isLoading: imagesLoading } = useImages();
   const uploadImageMutation = useUploadImage();
 
@@ -702,6 +752,39 @@ Format the includes list so I can easily copy each item individually.`;
     reorderServices.mutate(updates, {
       onError: (error) => {
         toast.error(error.message || "Failed to reorder services");
+      },
+    });
+  };
+
+  const handleCategoryDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    // Get categories that have services
+    const categoriesWithServices = categories.filter(cat =>
+      services.some(service => service.categoryId === cat.id)
+    );
+
+    const oldIndex = categoriesWithServices.findIndex((c) => c.id === active.id);
+    const newIndex = categoriesWithServices.findIndex((c) => c.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder the categories array
+    const reordered = arrayMove(categoriesWithServices, oldIndex, newIndex);
+
+    // Create updates array with new displayOrder values
+    const updates = reordered.map((category, index) => ({
+      id: category.id,
+      displayOrder: index,
+    }));
+
+    // Optimistically update the local state
+    // The query will be invalidated and refetched after mutation success
+    reorderCategories.mutate(updates, {
+      onError: (error) => {
+        toast.error(error.message || "Failed to reorder categories");
       },
     });
   };
@@ -1052,77 +1135,90 @@ Format the includes list so I can easily copy each item individually.`;
                   )}
 
                   {/* Categorized Services */}
-                  {Object.entries(servicesByCategory.categorized)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([categoryName, categoryServices], categoryIndex, array) => (
-                      <Fragment key={categoryName}>
-                        <div className="space-y-2">
-                          <button
-                            onClick={() => toggleCategory(categoryName)}
-                            className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                            aria-label={`${expandedCategories[categoryName] ? 'Collapse' : 'Expand'} ${categoryName} category`}
-                            aria-expanded={expandedCategories[categoryName]}
-                          >
-                            <ChevronRight
-                              className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
-                                expandedCategories[categoryName] ? 'rotate-90' : ''
-                              }`}
-                            />
-                            <span className="font-medium">{categoryName}</span>
-                            <Badge variant="secondary" className="ml-auto">
-                              {categoryServices.length}
-                            </Badge>
-                          </button>
+                  {(() => {
+                    // Get categories that have services
+                    const categoriesWithServices = categories.filter(cat =>
+                      services.some(service => service.categoryId === cat.id)
+                    );
 
-                          <div
-                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                              expandedCategories[categoryName]
-                                ? 'max-h-[5000px] opacity-100'
-                                : 'max-h-0 opacity-0'
-                            }`}
-                          >
-                            {expandedCategories[categoryName] && (
-                              categoryServices.length > 10 ? (
-                                <VirtualizedServiceList
-                                  services={categoryServices}
-                                  onDuplicate={handleDuplicateService}
-                                  onDelete={handleDeleteService}
-                                  formatDuration={formatDuration}
-                                  formatPrice={formatPrice}
-                                />
-                              ) : (
-                                <DndContext
-                                  sensors={sensors}
-                                  collisionDetection={closestCenter}
-                                  onDragEnd={(event) => handleDragEnd(event, categoryName)}
-                                >
-                                  <SortableContext
-                                    items={categoryServices.map((s) => s.id)}
-                                    strategy={verticalListSortingStrategy}
+                    return categoriesWithServices.length > 0 && (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleCategoryDragEnd}
+                      >
+                        <SortableContext
+                          items={categoriesWithServices.map((c) => c.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {categoriesWithServices.map((category, categoryIndex, array) => {
+                            // Get services for this category
+                            const categoryServices = services.filter(s => s.categoryId === category.id);
+
+                            return (
+                              <Fragment key={category.id}>
+                                <div className="space-y-2">
+                                  <SortableCategoryHeader
+                                    category={category}
+                                    categoryServices={categoryServices}
+                                    expandedCategories={expandedCategories}
+                                    toggleCategory={toggleCategory}
+                                  />
+
+                                  <div
+                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                      expandedCategories[category.name]
+                                        ? 'max-h-[5000px] opacity-100'
+                                        : 'max-h-0 opacity-0'
+                                    }`}
                                   >
-                                    <div className="space-y-3">
-                                      {categoryServices.map((service) => (
-                                        <SortableServiceCard
-                                          key={service.id}
-                                          service={service}
+                                    {expandedCategories[category.name] && (
+                                      categoryServices.length > 10 ? (
+                                        <VirtualizedServiceList
+                                          services={categoryServices}
                                           onDuplicate={handleDuplicateService}
                                           onDelete={handleDeleteService}
                                           formatDuration={formatDuration}
                                           formatPrice={formatPrice}
                                         />
-                                      ))}
-                                    </div>
-                                  </SortableContext>
-                                </DndContext>
-                              )
-                            )}
-                          </div>
-                        </div>
-                        {categoryIndex < array.length - 1 && (
-                          <div className="h-px bg-border" />
-                        )}
-                      </Fragment>
-                    ))}
+                                      ) : (
+                                        <DndContext
+                                          sensors={sensors}
+                                          collisionDetection={closestCenter}
+                                          onDragEnd={(event) => handleDragEnd(event, category.name)}
+                                        >
+                                          <SortableContext
+                                            items={categoryServices.map((s) => s.id)}
+                                            strategy={verticalListSortingStrategy}
+                                          >
+                                            <div className="space-y-3">
+                                              {categoryServices.map((service) => (
+                                                <SortableServiceCard
+                                                  key={service.id}
+                                                  service={service}
+                                                  onDuplicate={handleDuplicateService}
+                                                  onDelete={handleDeleteService}
+                                                  formatDuration={formatDuration}
+                                                  formatPrice={formatPrice}
+                                                />
+                                              ))}
+                                            </div>
+                                          </SortableContext>
+                                        </DndContext>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                                {categoryIndex < array.length - 1 && (
+                                  <div className="h-px bg-border" />
+                                )}
+                              </Fragment>
+                            );
+                          })}
+                        </SortableContext>
+                      </DndContext>
+                    );
+                  })()}
                 </div>
               )}
             </div>
