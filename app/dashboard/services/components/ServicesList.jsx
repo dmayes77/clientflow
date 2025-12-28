@@ -44,6 +44,9 @@ import {
   Copy,
   ExternalLink,
   GripVertical,
+  ChevronDown,
+  ChevronRight,
+  Search,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DurationSelect } from "@/components/ui/duration-select";
@@ -52,6 +55,115 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTanstackForm, TextField, TextareaField, NumberField, SwitchField } from "@/components/ui/tanstack-form";
+
+// Service Card Component
+function ServiceCard({ service, onDuplicate, onDelete, formatDuration, formatPrice }) {
+  const router = useRouter();
+
+  return (
+    <div
+      className="border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent/50"
+      onClick={() => router.push(`/dashboard/services/${service.id}`)}
+    >
+      {/* Image Header */}
+      <div className="relative h-32 w-full bg-muted">
+        <Image
+          src={service.images?.[0]?.url || "/default_img.webp"}
+          alt={service.name}
+          fill
+          sizes="(max-width: 640px) 100vw, 640px"
+          className="object-cover"
+        />
+        {/* Status Badge Overlay */}
+        <div className="absolute top-2 right-2">
+          <Badge variant={service.active ? "success" : "secondary"}>
+            {service.active ? "Active" : "Off"}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-3">
+        {/* Title */}
+        <div className="mb-2">
+          <h3 className="font-semibold text-base mb-1">{service.name}</h3>
+        </div>
+
+        {/* Description */}
+        {service.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {service.description}
+          </p>
+        )}
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="flex items-center gap-1.5 text-sm">
+            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span>{formatDuration(service.duration)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <span className="text-muted-foreground">Price:</span>
+            <span>{formatPrice(service.price)}</span>
+          </div>
+        </div>
+
+        {/* Includes */}
+        {service.includes && service.includes.length > 0 && (
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+            <Check className="h-4 w-4 text-green-600 shrink-0" />
+            <span>Includes {service.includes.length} item{service.includes.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/dashboard/services/${service.id}`);
+            }}
+            aria-label={`Edit ${service.name}`}
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            Edit
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="outline" size="sm" aria-label="More actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate(service);
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(service);
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Sortable Include Item Component
 function SortableIncludeItem({ id, item, index, onRemove }) {
@@ -159,6 +271,8 @@ export function ServicesList() {
   const [newIncludeItem, setNewIncludeItem] = useState("");
   const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   // TanStack Form
   const form = useTanstackForm({
@@ -429,6 +543,25 @@ Format the includes list so I can easily copy each item individually.`;
     });
   };
 
+  const handleDuplicateService = (service) => {
+    setEditingService(null);
+    form.setFieldValue("name", `${service.name} (Copy)`);
+    form.setFieldValue("description", service.description || "");
+    form.setFieldValue("duration", service.duration);
+    form.setFieldValue("price", service.price / 100);
+    form.setFieldValue("active", service.active);
+    form.setFieldValue("categoryId", service.categoryId || "");
+    form.setFieldValue("newCategoryName", "");
+    form.setFieldValue("includes", service.includes || []);
+    form.setFieldValue("imageId", service.images?.[0]?.id || null);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteService = (service) => {
+    setServiceToDelete(service);
+    setDeleteDialogOpen(true);
+  };
+
   const formatPrice = (cents) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -440,6 +573,49 @@ Format the includes list so I can easily copy each item individually.`;
   const formatDuration = formatBusinessDuration;
 
   const selectedImage = images.find((img) => img.id === form.getFieldValue("imageId"));
+
+  // Group services by category
+  const groupedServices = () => {
+    const filtered = services.filter(service => {
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        service.name.toLowerCase().includes(query) ||
+        service.description?.toLowerCase().includes(query) ||
+        service.category?.name.toLowerCase().includes(query)
+      );
+    });
+
+    const groups = {
+      uncategorized: [],
+      categorized: {}
+    };
+
+    filtered.forEach(service => {
+      if (!service.category) {
+        groups.uncategorized.push(service);
+      } else {
+        const categoryName = service.category.name;
+        if (!groups.categorized[categoryName]) {
+          groups.categorized[categoryName] = [];
+        }
+        groups.categorized[categoryName].push(service);
+      }
+    });
+
+    return groups;
+  };
+
+  const toggleCategory = (categoryName) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryName]: !prev[categoryName]
+    }));
+  };
+
+  const servicesByCategory = groupedServices();
+  const totalFilteredServices = servicesByCategory.uncategorized.length +
+    Object.values(servicesByCategory.categorized).reduce((sum, services) => sum + services.length, 0);
 
   // Define columns for DataTable
   const columns = [
@@ -628,142 +804,111 @@ Format the includes list so I can easily copy each item individually.`;
               </Button>
             </div>
           ) : (
-            <>
-              {/* Mobile Card View */}
-              <div className="tablet:hidden space-y-3">
-                {services.map((service) => (
-                  <div
-                    key={service.id}
-                    className="border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent/50"
-                    onClick={() => router.push(`/dashboard/services/${service.id}`)}
-                  >
-                    {/* Image Header */}
-                    <div className="relative h-32 w-full bg-muted">
-                      <Image
-                        src={service.images?.[0]?.url || "/default_img.webp"}
-                        alt={service.name}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 640px"
-                        className="object-cover"
-                      />
-                      {/* Status Badge Overlay */}
-                      <div className="absolute top-2 right-2">
-                        <Badge variant={service.active ? "success" : "secondary"}>
-                          {service.active ? "Active" : "Off"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-3">
-                      {/* Title and Category */}
-                      <div className="mb-2">
-                        <h3 className="font-semibold text-base mb-1">{service.name}</h3>
-                        {service.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {service.category.name}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Description */}
-                      {service.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {service.description}
-                        </p>
-                      )}
-
-                      {/* Details Grid */}
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span>{formatDuration(service.duration)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-sm font-medium">
-                          <span className="text-muted-foreground">Price:</span>
-                          <span>{formatPrice(service.price)}</span>
-                        </div>
-                      </div>
-
-                      {/* Includes */}
-                      {service.includes && service.includes.length > 0 && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
-                          <Check className="h-4 w-4 text-green-600 shrink-0" />
-                          <span>Includes {service.includes.length} item{service.includes.length !== 1 ? 's' : ''}</span>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 pt-2 border-t">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/dashboard/services/${service.id}`);
-                          }}
-                        >
-                          <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                          Edit
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="outline" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingService(null);
-                                form.setFieldValue("name", `${service.name} (Copy)`);
-                                form.setFieldValue("description", service.description || "");
-                                form.setFieldValue("duration", service.duration);
-                                form.setFieldValue("price", service.price / 100);
-                                form.setFieldValue("active", service.active);
-                                form.setFieldValue("categoryId", service.categoryId || "");
-                                form.setFieldValue("newCategoryName", "");
-                                form.setFieldValue("includes", service.includes || []);
-                                form.setFieldValue("imageId", service.images?.[0]?.id || null);
-                                setDialogOpen(true);
-                              }}
-                            >
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setServiceToDelete(service);
-                                setDeleteDialogOpen(true);
-                              }}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop Table View */}
-              <div className="hidden tablet:block">
-                <DataTable
-                  columns={columns}
-                  data={services}
-                  searchPlaceholder="Search services..."
-                  pageSize={10}
-                  onRowClick={(service) => router.push(`/dashboard/services/${service.id}`)}
-                  emptyMessage="No services found."
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search services..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
                 />
               </div>
-            </>
+
+              {/* Results count */}
+              {searchQuery && (
+                <p className="text-sm text-muted-foreground">
+                  {totalFilteredServices} result{totalFilteredServices !== 1 ? 's' : ''} found
+                </p>
+              )}
+
+              {totalFilteredServices === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Search className="h-12 w-12 text-muted-foreground mb-3 opacity-30" />
+                  <h3 className="text-zinc-900 mb-1">No services found</h3>
+                  <p className="text-muted-foreground">Try adjusting your search</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Uncategorized Services */}
+                  {servicesByCategory.uncategorized.length > 0 && (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => toggleCategory('uncategorized')}
+                        className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                        aria-label={`${expandedCategories['uncategorized'] ? 'Collapse' : 'Expand'} uncategorized services`}
+                        aria-expanded={expandedCategories['uncategorized']}
+                      >
+                        {expandedCategories['uncategorized'] ? (
+                          <ChevronDown className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 shrink-0" />
+                        )}
+                        <span className="font-medium">Uncategorized</span>
+                        <Badge variant="secondary" className="ml-auto">
+                          {servicesByCategory.uncategorized.length}
+                        </Badge>
+                      </button>
+
+                      {expandedCategories['uncategorized'] && (
+                        <div className="space-y-3 pl-6">
+                          {servicesByCategory.uncategorized.map((service) => (
+                            <ServiceCard
+                              key={service.id}
+                              service={service}
+                              onDuplicate={handleDuplicateService}
+                              onDelete={handleDeleteService}
+                              formatDuration={formatDuration}
+                              formatPrice={formatPrice}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Categorized Services */}
+                  {Object.entries(servicesByCategory.categorized)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([categoryName, categoryServices]) => (
+                      <div key={categoryName} className="space-y-2">
+                        <button
+                          onClick={() => toggleCategory(categoryName)}
+                          className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                          aria-label={`${expandedCategories[categoryName] ? 'Collapse' : 'Expand'} ${categoryName} category`}
+                          aria-expanded={expandedCategories[categoryName]}
+                        >
+                          {expandedCategories[categoryName] ? (
+                            <ChevronDown className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 shrink-0" />
+                          )}
+                          <span className="font-medium">{categoryName}</span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {categoryServices.length}
+                          </Badge>
+                        </button>
+
+                        {expandedCategories[categoryName] && (
+                          <div className="space-y-3 pl-6">
+                            {categoryServices.map((service) => (
+                              <ServiceCard
+                                key={service.id}
+                                service={service}
+                                onDuplicate={handleDuplicateService}
+                                onDelete={handleDeleteService}
+                                formatDuration={formatDuration}
+                                formatPrice={formatPrice}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

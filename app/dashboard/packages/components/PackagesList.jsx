@@ -291,89 +291,101 @@ export function PackagesList() {
                 {packages.map((pkg) => (
                   <div
                     key={pkg.id}
-                    className="border rounded-lg p-4 cursor-pointer transition-colors hover:bg-accent/50"
-                    onClick={() => handleOpenDialog(pkg)}
+                    className="border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent/50"
+                    onClick={() => router.push(`/dashboard/packages/${pkg.id}`)}
                   >
-                    {/* Header with Title and Status */}
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex-1 min-w-0">
+                    {/* Image Header */}
+                    <div className="relative h-32 w-full bg-muted">
+                      <Image
+                        src={pkg.images?.[0]?.url || "/default_img.webp"}
+                        alt={pkg.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 640px"
+                        className="object-cover"
+                      />
+                      {/* Status Badge Overlay */}
+                      <div className="absolute top-2 right-2">
+                        <Badge variant={pkg.active ? "success" : "secondary"}>
+                          {pkg.active ? "Active" : "Off"}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-3">
+                      {/* Title and Category */}
+                      <div className="mb-2">
                         <h3 className="font-semibold text-base mb-1">{pkg.name}</h3>
-                        {pkg.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {pkg.description}
-                          </p>
+                        {pkg.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {pkg.category.name}
+                          </Badge>
                         )}
                       </div>
-                      <Badge variant={pkg.active ? "default" : "secondary"} className="shrink-0">
-                        {pkg.active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
 
-                    {/* Services Included */}
-                    <div className="mb-3">
-                      <p className="text-xs font-medium text-muted-foreground mb-1.5">Services Included:</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pkg.services?.length > 0 ? (
-                          <>
-                            {pkg.services.slice(0, 3).map((service) => (
-                              <Badge key={service.id} variant="outline" className="text-xs">
-                                {service.name}
-                              </Badge>
-                            ))}
-                            {pkg.services.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{pkg.services.length - 3} more
-                              </Badge>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">No services added</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Details */}
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-0.5">Price</p>
-                        <p className="font-semibold">{formatPrice(pkg.price)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-0.5">Bookings</p>
-                        <p className="font-semibold flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {pkg.bookingCount || 0}
+                      {/* Description */}
+                      {pkg.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {pkg.description}
                         </p>
-                      </div>
-                    </div>
+                      )}
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-3 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDialog(pkg);
-                        }}
-                      >
-                        <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPackageToDelete(pkg);
-                          setDeleteDialogOpen(true);
-                        }}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                        Delete
-                      </Button>
+                      {/* Services Included */}
+                      {pkg.services && pkg.services.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+                          <Package className="h-4 w-4 text-blue-600 shrink-0" />
+                          <span>{pkg.services.length} service{pkg.services.length !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="flex items-center gap-1.5 text-sm font-medium">
+                          <span className="text-muted-foreground">Price:</span>
+                          <span>{formatPrice(pkg.price)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span>{pkg.bookingCount || 0} booking{pkg.bookingCount !== 1 ? 's' : ''}</span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/packages/${pkg.id}`);
+                          }}
+                          aria-label={`Edit ${pkg.name}`}
+                        >
+                          <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                          Edit
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="outline" size="sm" aria-label="More actions">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPackageToDelete(pkg);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 ))}
