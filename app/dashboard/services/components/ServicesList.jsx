@@ -6,6 +6,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useQueryClient } from "@tanstack/react-query";
 import { useServices, useCreateService, useUpdateService, useDeleteService, useReorderServices } from "@/lib/hooks";
 import { useServiceCategories, useReorderServiceCategories } from "@/lib/hooks/use-service-categories";
 import { useImages, useUploadImage } from "@/lib/hooks/use-media";
@@ -288,7 +289,14 @@ function SortableCategoryHeader({ category, categoryServices, expandedCategories
         aria-label={`${expandedCategories[category.name] ? 'Collapse' : 'Expand'} ${category.name} category`}
         aria-expanded={expandedCategories[category.name]}
       >
-        {/* Drag Handle - Mobile First */}
+        <ChevronRight
+          className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+            expandedCategories[category.name] ? 'rotate-90' : ''
+          }`}
+        />
+        <span className="font-medium flex-1">{category.name}</span>
+
+        {/* Drag Handle - Mobile First, on the right */}
         <div
           {...attributes}
           {...listeners}
@@ -297,16 +305,6 @@ function SortableCategoryHeader({ category, categoryServices, expandedCategories
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </div>
-
-        <ChevronRight
-          className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
-            expandedCategories[category.name] ? 'rotate-90' : ''
-          }`}
-        />
-        <span className="font-medium">{category.name}</span>
-        <Badge variant="secondary" className="ml-auto">
-          {categoryServices.length}
-        </Badge>
       </button>
     </div>
   );
@@ -398,6 +396,7 @@ const initialFormState = {
 
 export function ServicesList() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { formatDuration: formatBusinessDuration } = useBusinessHours();
 
   // TanStack Query hooks
@@ -735,11 +734,42 @@ Format the includes list so I can easily copy each item individually.`;
       displayOrder: index,
     }));
 
-    // Optimistically update the local state
-    // The query will be invalidated and refetched after mutation success
+    // Optimistic update with rollback on error
     reorderServices.mutate(updates, {
-      onError: (error) => {
+      onMutate: async () => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ["services"] });
+
+        // Snapshot the previous value
+        const previousServices = queryClient.getQueryData(["services"]);
+
+        // Optimistically update to the new value
+        queryClient.setQueryData(["services"], (old) => {
+          if (!old) return old;
+
+          // Create a map of updates for quick lookup
+          const updatesMap = new Map(updates.map(u => [u.id, u.displayOrder]));
+
+          // Update displayOrder for affected services
+          return old.map(service =>
+            updatesMap.has(service.id)
+              ? { ...service, displayOrder: updatesMap.get(service.id) }
+              : service
+          ).sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+        });
+
+        return { previousServices };
+      },
+      onError: (error, _, context) => {
+        // Rollback to previous value on error
+        if (context?.previousServices) {
+          queryClient.setQueryData(["services"], context.previousServices);
+        }
         toast.error(error.message || "Failed to reorder services");
+      },
+      onSettled: () => {
+        // Always refetch after error or success
+        queryClient.invalidateQueries({ queryKey: ["services"] });
       },
     });
   };
@@ -768,11 +798,42 @@ Format the includes list so I can easily copy each item individually.`;
       displayOrder: index,
     }));
 
-    // Optimistically update the local state
-    // The query will be invalidated and refetched after mutation success
+    // Optimistic update with rollback on error
     reorderCategories.mutate(updates, {
-      onError: (error) => {
+      onMutate: async () => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ["service-categories"] });
+
+        // Snapshot the previous value
+        const previousCategories = queryClient.getQueryData(["service-categories"]);
+
+        // Optimistically update to the new value
+        queryClient.setQueryData(["service-categories"], (old) => {
+          if (!old) return old;
+
+          // Create a map of updates for quick lookup
+          const updatesMap = new Map(updates.map(u => [u.id, u.displayOrder]));
+
+          // Update displayOrder for affected categories
+          return old.map(category =>
+            updatesMap.has(category.id)
+              ? { ...category, displayOrder: updatesMap.get(category.id) }
+              : category
+          ).sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+        });
+
+        return { previousCategories };
+      },
+      onError: (error, _, context) => {
+        // Rollback to previous value on error
+        if (context?.previousCategories) {
+          queryClient.setQueryData(["service-categories"], context.previousCategories);
+        }
         toast.error(error.message || "Failed to reorder categories");
+      },
+      onSettled: () => {
+        // Always refetch after error or success
+        queryClient.invalidateQueries({ queryKey: ["service-categories"] });
       },
     });
   };
