@@ -1,1 +1,1 @@
-export { PackagesList } from "./PackagesList";
+export { PackageForm } from "./PackageForm";
