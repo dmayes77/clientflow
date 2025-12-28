@@ -468,14 +468,14 @@ export default function PackageEditPage({ params }) {
                         type="button"
                         variant={formData.discountPercent === option.value ? "default" : "outline"}
                         size="sm"
-                        className="relative"
+                        className="relative h-auto py-2"
                         onClick={() => setFormData({ ...formData, discountPercent: option.value })}
                       >
                         {option.label}
                         {option.recommended && (
                           <Badge
                             variant="secondary"
-                            className="absolute -top-2 -right-2 hig-caption2 px-1 py-0"
+                            className="absolute -top-1.5 -right-1.5 hig-caption2 px-1 py-0"
                           >
                             Best
                           </Badge>
@@ -494,14 +494,15 @@ export default function PackageEditPage({ params }) {
                         type="button"
                         variant={formData.priceEnding === option.value ? "default" : "outline"}
                         size="sm"
+                        className="h-auto py-2 flex-col sm:flex-row"
                         onClick={() => setFormData({
                           ...formData,
                           priceEnding: option.value,
                           customPrice: option.value === "custom" ? String(Math.round(pricePreview.discountedPrice / 100)) : ""
                         })}
                       >
-                        {option.label}
-                        <span className="ml-1 hig-caption2 opacity-60">{option.example}</span>
+                        <span>{option.label}</span>
+                        <span className="sm:ml-1 hig-caption2 opacity-60">{option.example}</span>
                       </Button>
                     ))}
                   </div>
@@ -631,22 +632,22 @@ export default function PackageEditPage({ params }) {
               {/* Price Preview - Anchored to bottom */}
               {pricePreview.serviceCount > 0 && (
                 <div className="rounded-lg border bg-muted/30 p-4 lg:mt-4 lg:shrink-0">
-                  <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Services</p>
                       <p className="font-semibold">{pricePreview.serviceCount}</p>
                     </div>
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Duration</p>
-                      <p className="font-semibold">{formatDuration(pricePreview.totalDuration)}</p>
+                      <p className="font-semibold text-sm sm:text-base">{formatDuration(pricePreview.totalDuration)}</p>
                     </div>
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Original</p>
-                      <p className="font-semibold line-through text-muted-foreground">{formatPrice(pricePreview.originalPrice)}</p>
+                      <p className="font-semibold line-through text-muted-foreground text-sm sm:text-base">{formatPrice(pricePreview.originalPrice)}</p>
                     </div>
                     <div>
                       <p className="hig-caption2 text-muted-foreground">Package Price</p>
-                      <p className="font-bold text-green-600">{formatPrice(pricePreview.finalPrice)}</p>
+                      <p className="font-bold text-green-600 text-sm sm:text-base">{formatPrice(pricePreview.finalPrice)}</p>
                       <p className="hig-caption2 text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
                     </div>
                   </div>
@@ -654,21 +655,21 @@ export default function PackageEditPage({ params }) {
               )}
 
               {/* Action Buttons - Anchored to bottom */}
-              <div className="flex justify-between gap-3 lg:mt-4 lg:shrink-0">
-                <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")}>
+              <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-3 lg:mt-4 lg:shrink-0">
+                <Button type="button" variant="outline" onClick={() => router.push("/dashboard/services")} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   <Button
                     type="button"
                     variant="outline"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                    className="flex-1 sm:flex-none text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
                     onClick={() => setDeleteDialogOpen(true)}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    <Trash2 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Delete</span>
                   </Button>
-                  <Button type="submit" disabled={updatePackageMutation.isPending || formData.serviceIds.length === 0}>
+                  <Button type="submit" disabled={updatePackageMutation.isPending || formData.serviceIds.length === 0} className="flex-1 sm:flex-none">
                     {updatePackageMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     Save Changes
                   </Button>
@@ -714,7 +715,7 @@ export default function PackageEditPage({ params }) {
                 <p>Upload an image to get started</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-3 p-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-1">
                 {images.map((img) => (
                   <button
                     key={img.id}
@@ -727,7 +728,7 @@ export default function PackageEditPage({ params }) {
                       setImageDialogOpen(false);
                     }}
                   >
-                    <Image src={img.url} alt={img.filename || "Image"} fill sizes="100px" className="object-cover" />
+                    <Image src={img.url} alt={img.filename || "Image"} fill sizes="(max-width: 640px) 150px, (max-width: 1024px) 120px, 100px" className="object-cover" />
                     {formData.imageId === img.id && (
                       <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                         <Check className="h-6 w-6 text-primary" />

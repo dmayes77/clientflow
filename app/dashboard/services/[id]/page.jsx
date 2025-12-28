@@ -51,14 +51,14 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
   };
 
   return (
-    <li ref={setNodeRef} style={style} className={`flex items-center gap-2 px-3 py-2 hover:bg-muted/50 group ${isDragging ? "bg-muted/70 z-10" : ""}`}>
+    <li ref={setNodeRef} style={style} className={`flex items-center gap-2 px-3 py-2.5 hover:bg-muted/50 group ${isDragging ? "bg-muted/70 z-10" : ""}`}>
       <button
         type="button"
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none p-1"
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="h-4 w-4" />
+        <GripVertical className="h-5 w-5" />
       </button>
       <Check className="h-4 w-4 text-green-600 shrink-0" />
       <span className="flex-1">{item}</span>
@@ -66,10 +66,10 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
         type="button"
         variant="ghost"
         size="icon"
-        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="h-8 w-8 opacity-0 group-hover:opacity-100 tablet:opacity-100 transition-opacity"
         onClick={() => onRemove(index)}
       >
-        <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+        <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
       </Button>
     </li>
   );
@@ -505,7 +505,7 @@ Format the includes list so I can easily copy each item individually.`;
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration</Label>
                   <DurationSelect
@@ -532,26 +532,26 @@ Format the includes list so I can easily copy each item individually.`;
               {/* Service Image */}
               <div className="space-y-2">
                 <Label>Service Image (optional)</Label>
-                <div className="flex gap-3">
-                  <div className="relative group h-24 w-24">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative group h-32 w-32 mx-auto sm:mx-0 shrink-0">
                     <Image
                       src={selectedImage?.url || "/default_img.webp"}
                       alt="Service"
                       fill
-                      sizes="96px"
+                      sizes="128px"
                       className="rounded-lg object-cover border"
                     />
                     {selectedImage && (
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, imageId: null })}
-                        className="absolute -top-2 -right-2 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute -top-2 -right-2 h-7 w-7 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-4 w-4" />
                       </button>
                     )}
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 flex-1">
                     <Button type="button" variant="outline" size="sm" onClick={() => setImageDialogOpen(true)}>
                       <ImageIcon className="h-4 w-4 mr-2" />
                       Choose from Library
@@ -686,7 +686,7 @@ Format the includes list so I can easily copy each item individually.`;
                 <p>Upload an image to get started</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-3 p-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-1">
                 {images.map((img) => (
                   <button
                     key={img.id}
@@ -699,7 +699,7 @@ Format the includes list so I can easily copy each item individually.`;
                       setImageDialogOpen(false);
                     }}
                   >
-                    <Image src={img.url} alt={img.filename || "Image"} fill sizes="100px" className="object-cover" />
+                    <Image src={img.url} alt={img.filename || "Image"} fill sizes="(max-width: 640px) 150px, (max-width: 1024px) 120px, 100px" className="object-cover" />
                     {formData.imageId === img.id && (
                       <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                         <Check className="h-6 w-6 text-primary" />
