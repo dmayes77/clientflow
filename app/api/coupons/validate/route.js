@@ -93,7 +93,6 @@ export async function POST(request) {
       });
     }
 
-    // Check if there are any eligible items
     if (eligibleItems.length === 0) {
       return NextResponse.json({
         valid: false,

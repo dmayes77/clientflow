@@ -93,6 +93,7 @@ export function SaveButton({
   className,
   variant = "default",
   loadingText = "Saving...",
+  formId,
 }) {
   const status = saveButton?.status || "idle";
 
@@ -101,6 +102,7 @@ export function SaveButton({
       {([canSubmit, isSubmitting]) => (
         <button
           type="submit"
+          form={formId}
           disabled={!canSubmit || isSubmitting || status === "success"}
           className={cn(
             "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all transition-smooth",

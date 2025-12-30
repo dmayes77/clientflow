@@ -147,6 +147,7 @@ export function InvoiceTemplate({
                   <tr key={index} className={item.isDiscount ? "text-red-600" : ""}>
                     <td className="py-3">
                       <p className="font-medium text-gray-900">{item.description || "—"}</p>
+                      {item.memo && <p className="text-xs text-gray-500">{item.memo}</p>}
                     </td>
                     <td className="py-3 text-center text-gray-700">{item.quantity}</td>
                     <td className="py-3 text-right text-gray-700">
@@ -203,6 +204,7 @@ export function InvoiceTemplate({
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{item.description || "Item"}</p>
+                      {item.memo && <p className="text-xs text-muted-foreground">{item.memo}</p>}
                       {item.quantity > 1 && (
                         <p className="text-xs text-muted-foreground">
                           {item.quantity} × {formatDollars(item.unitPrice)}
@@ -363,6 +365,7 @@ export function InvoiceLineItems({ items = [], compact = false }) {
           >
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{item.description || "Item"}</p>
+              {item.memo && <p className="text-xs text-muted-foreground">{item.memo}</p>}
               {item.quantity > 1 && (
                 <p className="text-xs text-muted-foreground">
                   {item.quantity} × {formatDollars(item.unitPrice)}
@@ -393,6 +396,7 @@ export function InvoiceLineItems({ items = [], compact = false }) {
           <tr key={index} className={item.isDiscount ? "text-red-600" : ""}>
             <td className="py-3">
               <p className="font-medium text-gray-900">{item.description || "—"}</p>
+              {item.memo && <p className="text-xs text-gray-500">{item.memo}</p>}
             </td>
             <td className="py-3 text-center text-gray-700">{item.quantity}</td>
             <td className="py-3 text-right text-gray-700">

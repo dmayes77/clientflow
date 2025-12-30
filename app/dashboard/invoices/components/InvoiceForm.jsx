@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSidebar } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
@@ -88,6 +89,7 @@ const initialFormState = {
 
 export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactId = null }) {
   const router = useRouter();
+  const { open: sidebarOpen } = useSidebar();
   const [servicePopoverOpen, setServicePopoverOpen] = useState({});
   const [contactPopoverOpen, setContactPopoverOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -104,6 +106,10 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   const [couponPopoverOpen, setCouponPopoverOpen] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
   const [validatedCoupon, setValidatedCoupon] = useState(null);
+
+  // Store line item metadata separately (serviceId, packageId, bookingId)
+  // This bypasses TanStack Form state which may not preserve all fields
+  const lineItemMetadataRef = useRef(new Map());
 
   // Save button state
   const saveButton = useSaveButton();
@@ -162,15 +168,20 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           contactAddress: value.contactAddress || null,
           dueDate: new Date(value.dueDate).toISOString(),
           status: value.status || "draft", // Always default to draft if empty
-          lineItems: value.lineItems.map((item) => ({
-            description: item.description,
-            quantity: parseInt(item.quantity) || 1,
-            unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
-            amount: Math.round(parseFloat(item.amount) * 100) || 0,
-            serviceId: item.serviceId || null,
-            packageId: item.packageId || null,
-            isDiscount: item.isDiscount || false,
-          })),
+          lineItems: value.lineItems.map((item, index) => {
+            // Use metadata from ref as primary source (form state may not preserve these fields)
+            const metadata = lineItemMetadataRef.current.get(index) || {};
+            return {
+              description: item.description,
+              quantity: parseInt(item.quantity) || 1,
+              unitPrice: Math.round(parseFloat(item.unitPrice) * 100) || 0,
+              amount: Math.round(parseFloat(item.amount) * 100) || 0,
+              serviceId: metadata.serviceId || item.serviceId || null,
+              packageId: metadata.packageId || item.packageId || null,
+              bookingId: metadata.bookingId || item.bookingId || null,
+              isDiscount: item.isDiscount || false,
+            };
+          }),
           subtotal: Math.round(subtotal * 100),
           // Coupon data (replaces manual discountCode and discountAmount)
           couponId: selectedCoupon?.id || null,
@@ -386,55 +397,104 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
     form.setFieldValue("bookingIds", newBookingIds);
 
-    // Auto-populate line items from all selected bookings
+    // Auto-populate line items from selected bookings
+    // Each booking becomes a single line item with its total amount
     const allLineItems = [];
     newBookingIds.forEach((id) => {
       const booking = bookings.find((b) => b.id === id);
       if (!booking) return;
 
-      // Add services from booking
-      if (booking.services && booking.services.length > 0) {
-        booking.services.forEach((bookingService) => {
-          const service = bookingService.service;
-          if (service) {
-            allLineItems.push({
-              description: service.name,
-              quantity: bookingService.quantity || 1,
-              unitPrice: (service.price || 0) / 100,
-              amount: ((service.price || 0) / 100) * (bookingService.quantity || 1),
-              serviceId: service.id,
-              packageId: null,
-              isDiscount: false,
-            });
-          }
-        });
+      // Create a description with service name + date
+      const bookingDate = format(new Date(booking.scheduledAt), "MMM d, yyyy");
+      let serviceName = "Booking";
+      let serviceId = null;
+      let packageId = null;
+
+      // Get service/package info from booking
+      // Check multi-service/package first (junction tables), then legacy single fields
+      if (booking.services?.length > 0 && booking.services[0]?.service?.name) {
+        serviceName = booking.services.map(s => s.service?.name).filter(Boolean).join(", ");
+        serviceId = booking.services[0]?.service?.id || booking.services[0]?.serviceId || null;
+      } else if (booking.packages?.length > 0 && booking.packages[0]?.package?.name) {
+        serviceName = booking.packages.map(p => p.package?.name).filter(Boolean).join(", ");
+        packageId = booking.packages[0]?.package?.id || booking.packages[0]?.packageId || null;
+      } else if (booking.service?.name) {
+        // Legacy single service - use relation ID or direct field
+        serviceName = booking.service.name;
+        serviceId = booking.service.id || booking.serviceId || null;
+      } else if (booking.package?.name) {
+        // Legacy single package - use relation ID or direct field
+        serviceName = booking.package.name;
+        packageId = booking.package.id || booking.packageId || null;
+      } else if (booking.serviceId) {
+        // Fallback: serviceId exists but service relation not populated
+        serviceName = "Service";
+        serviceId = booking.serviceId;
+      } else if (booking.packageId) {
+        // Fallback: packageId exists but package relation not populated
+        serviceName = "Package";
+        packageId = booking.packageId;
       }
 
-      // Add packages from booking
-      if (booking.packages && booking.packages.length > 0) {
-        booking.packages.forEach((bookingPackage) => {
-          const pkg = bookingPackage.package;
-          if (pkg) {
-            allLineItems.push({
-              description: pkg.name,
-              quantity: bookingPackage.quantity || 1,
-              unitPrice: (pkg.price || 0) / 100,
-              amount: ((pkg.price || 0) / 100) * (bookingPackage.quantity || 1),
-              serviceId: null,
-              packageId: pkg.id,
-              isDiscount: false,
-            });
-          }
-        });
-      }
+      // Booking reference for memo line
+      const bookingRef = booking.id.slice(-8).toUpperCase();
+
+      allLineItems.push({
+        description: `${serviceName} - ${bookingDate}`,
+        memo: `Booking #${bookingRef}`,
+        quantity: 1,
+        unitPrice: (booking.totalPrice || 0) / 100,
+        amount: (booking.totalPrice || 0) / 100,
+        serviceId,
+        packageId,
+        bookingId: booking.id,
+        isDiscount: false,
+      });
     });
 
     // Update line items (or reset to empty if no bookings selected)
     if (allLineItems.length > 0) {
       form.setFieldValue("lineItems", allLineItems);
-      toast.success(`${allLineItems.length} item${allLineItems.length > 1 ? "s" : ""} from ${newBookingIds.length} booking${newBookingIds.length > 1 ? "s" : ""}`);
+
+      // Store metadata in ref for coupon validation (bypasses form state issues)
+      lineItemMetadataRef.current.clear();
+      allLineItems.forEach((item, index) => {
+        lineItemMetadataRef.current.set(index, {
+          serviceId: item.serviceId,
+          packageId: item.packageId,
+          bookingId: item.bookingId,
+        });
+      });
+
+      toast.success(`${newBookingIds.length} booking${newBookingIds.length > 1 ? "s" : ""} added`);
     } else if (newBookingIds.length === 0) {
       form.setFieldValue("lineItems", initialFormState.lineItems);
+      lineItemMetadataRef.current.clear();
+    }
+
+    // Check if coupon should be removed when items change
+    if (!isSelected && validatedCoupon && selectedCoupon) {
+      const hasServiceRestriction = selectedCoupon.applicableServiceIds?.length > 0;
+      const hasPackageRestriction = selectedCoupon.applicablePackageIds?.length > 0;
+
+      if (hasServiceRestriction || hasPackageRestriction) {
+        // Check if any remaining items match the coupon's restrictions
+        const hasEligibleItem = allLineItems.some((item) => {
+          if (hasServiceRestriction && item.serviceId && selectedCoupon.applicableServiceIds.includes(item.serviceId)) {
+            return true;
+          }
+          if (hasPackageRestriction && item.packageId && selectedCoupon.applicablePackageIds.includes(item.packageId)) {
+            return true;
+          }
+          return false;
+        });
+
+        if (!hasEligibleItem) {
+          setSelectedCoupon(null);
+          setValidatedCoupon(null);
+          toast.info("Coupon removed - no eligible items remaining");
+        }
+      }
     }
   };
 
@@ -642,10 +702,22 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     const lineItems = form.state.values.lineItems || [];
 
     // Convert line items to cents for validation
-    const lineItemsInCents = lineItems.map((item) => ({
-      ...item,
-      amount: Math.round((item.amount || 0) * 100),
-    }));
+    // Use metadata from ref as primary source (form state may not preserve these fields)
+    const lineItemsInCents = lineItems.map((item, index) => {
+      const metadata = lineItemMetadataRef.current.get(index) || {};
+      return {
+        description: item.description,
+        memo: item.memo,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        amount: Math.round((item.amount || 0) * 100),
+        // Prefer metadata from ref, fall back to form state
+        serviceId: metadata.serviceId || item.serviceId || null,
+        packageId: metadata.packageId || item.packageId || null,
+        bookingId: metadata.bookingId || item.bookingId || null,
+        isDiscount: item.isDiscount || false,
+      };
+    });
 
     validateCouponMutation.mutate(
       { code, lineItems: lineItemsInCents },
@@ -1001,6 +1073,57 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                   </form.Subscribe>
                 </div>
 
+                {/* Coupon Selection */}
+                {coupons.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm flex items-center gap-2">
+                      <Ticket className="h-4 w-4" />
+                      Coupon
+                    </Label>
+                    <Popover open={couponPopoverOpen} onOpenChange={setCouponPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button type="button" variant="outline" className="w-full justify-start">
+                          {validatedCoupon ? (
+                            <span className="flex items-center gap-2 text-green-600">
+                              <Check className="h-4 w-4" />
+                              Applied {validatedCoupon.coupon?.code}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Select a coupon...</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-70 p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search coupons..." />
+                          <CommandList>
+                            <CommandEmpty>No coupons available.</CommandEmpty>
+                            {validatedCoupon && (
+                              <CommandGroup>
+                                <CommandItem onSelect={handleRemoveCoupon} className="text-red-600">
+                                  <X className="mr-2 h-4 w-4" />
+                                  Remove coupon
+                                </CommandItem>
+                              </CommandGroup>
+                            )}
+                            <CommandGroup heading="Available Coupons">
+                              {coupons.map((coupon) => (
+                                <CommandItem key={coupon.id} onSelect={() => handleCouponSelect(coupon.code)}>
+                                  <Ticket className="mr-2 h-4 w-4 text-green-600" />
+                                  <span className="flex-1">{coupon.code}</span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {coupon.discountType === "percent" ? `${coupon.discountValue}%` : `$${(coupon.discountValue / 100).toFixed(2)}`}
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+
                 {/* Tax & Deposit Settings */}
                 <div className="space-y-3">
                   {/* Tax Toggle */}
@@ -1068,57 +1191,6 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                     </form.Field>
                   </div>
                 </div>
-
-                {/* Coupon Selection */}
-                {coupons.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-sm flex items-center gap-2">
-                      <Ticket className="h-4 w-4" />
-                      Coupon
-                    </Label>
-                    <Popover open={couponPopoverOpen} onOpenChange={setCouponPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button type="button" variant="outline" className="w-full justify-start">
-                          {validatedCoupon ? (
-                            <span className="flex items-center gap-2 text-green-600">
-                              <Check className="h-4 w-4" />
-                              {validatedCoupon.code} applied
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">Select a coupon...</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-70 p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search coupons..." />
-                          <CommandList>
-                            <CommandEmpty>No coupons available.</CommandEmpty>
-                            {validatedCoupon && (
-                              <CommandGroup>
-                                <CommandItem onSelect={handleRemoveCoupon} className="text-red-600">
-                                  <X className="mr-2 h-4 w-4" />
-                                  Remove coupon
-                                </CommandItem>
-                              </CommandGroup>
-                            )}
-                            <CommandGroup heading="Available Coupons">
-                              {coupons.map((coupon) => (
-                                <CommandItem key={coupon.id} onSelect={() => handleCouponSelect(coupon.code)}>
-                                  <Ticket className="mr-2 h-4 w-4 text-green-600" />
-                                  <span className="flex-1">{coupon.code}</span>
-                                  <span className="text-muted-foreground text-xs">
-                                    {coupon.discountType === "percent" ? `${coupon.discountValue}%` : `$${(coupon.discountValue / 100).toFixed(2)}`}
-                                  </span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                )}
 
                 {/* Notes */}
                 <div className="space-y-2">
@@ -1392,9 +1464,11 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       </form>
 
       {/* Action Buttons - Fixed footer */}
-      <div className="fixed bottom-0 left-0 right-0 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] px-4 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 z-50">
-        <div className="flex flex-wrap gap-2 max-w-7xl mx-auto">
-          <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 min-w-20 sm:min-w-25">
+      <div
+        className={`fixed bottom-0 left-0 right-0 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] px-4 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 z-50 transition-[left] duration-200 ${sidebarOpen ? "md:left-64" : ""}`}
+      >
+        <div className="flex flex-wrap gap-2 md:gap-3 md:justify-end">
+          <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 md:flex-initial min-w-20">
             Cancel
           </Button>
           {mode === "edit" && (
@@ -1402,7 +1476,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               type="button"
               variant="outline"
               size="sm"
-              className="flex-1 min-w-20 sm:min-w-25 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              className="flex-1 md:flex-initial min-w-20 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
               onClick={() => setDeleteDialogOpen(true)}
             >
               <Trash2 className="h-4 w-4 sm:mr-2" />
@@ -1416,7 +1490,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               size="sm"
               onClick={handleSend}
               disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
-              className="flex-1 min-w-20 sm:min-w-25"
+              className="flex-1 md:flex-initial min-w-20"
             >
               {sendInvoiceMutation.isPending ? (
                 <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
@@ -1432,7 +1506,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
               variant="outline"
               size="sm"
               onClick={handleShare}
-              className="flex-1 min-w-20 sm:min-w-25"
+              className="flex-1 md:flex-initial min-w-20"
             >
               <Share2 className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Share</span>
@@ -1440,10 +1514,11 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           )}
           <SaveButton
             form={form}
+            formId="invoice-form"
             saveButton={saveButton}
             variant="success"
             size="sm"
-            className="flex-1 min-w-20 sm:min-w-25"
+            className="flex-1 md:flex-initial min-w-20"
           >
             {mode === "edit" ? "Update" : "Create"}
           </SaveButton>
