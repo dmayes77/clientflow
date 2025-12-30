@@ -310,6 +310,7 @@ export async function PATCH(request, { params }) {
           currency: invoice.currency || "usd",
           paidAt: invoice.paidAt || new Date(),
           viewUrl: null, // TODO: Add public invoice view URL when customer portal is ready
+          tenantId: tenant.id, // For template lookup
         });
         console.log(`[PATCH /api/invoices/[id]] Payment confirmation sent successfully`);
       } catch (emailError) {
