@@ -5,6 +5,7 @@ import { createBookingSchema, validateRequest } from "@/lib/validations";
 import { triggerWorkflows } from "@/lib/workflow-executor";
 import { checkBookingLimit } from "@/lib/plan-limits";
 import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
+import { applyBookingStatusTag } from "@/lib/system-tags";
 
 // GET /api/bookings - List all bookings
 export async function GET(request) {
@@ -209,8 +210,11 @@ export async function POST(request) {
       });
     });
 
-    // Auto-tag contact based on booking status
+    // Apply booking status tag
     const bookingStatus = data.status || "inquiry";
+    await applyBookingStatusTag(prisma, booking.id, tenant.id, bookingStatus);
+
+    // Auto-tag contact based on booking status
     if (bookingStatus === "inquiry" || bookingStatus === "scheduled") {
       const tagName = bookingStatus === "inquiry" ? "Lead" : "Client";
 

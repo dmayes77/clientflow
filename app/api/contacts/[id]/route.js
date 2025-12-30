@@ -26,6 +26,7 @@ export async function GET(request, { params }) {
             include: {
               service: { select: { name: true } },
               package: { select: { name: true } },
+              invoice: { select: { id: true } },
               services: {
                 include: {
                   service: { select: { name: true } },

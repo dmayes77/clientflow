@@ -434,6 +434,74 @@ Thanks,
 - `payment.*` - amount, date, method
 - `business.*` - name, email, phone, address
 
+## All Systems & Integrations
+
+### Core Systems
+
+**Contacts** — Client/lead management
+- Works with: Bookings, Invoices, Payments, Tags, Workflows, Templates
+- Status: Fully integrated
+
+**Bookings** — Appointment scheduling
+- Works with: Contacts, Services, Packages, Invoices, Calendar, Tags
+- Missing: Workflow triggers for cancel/complete, reminder emails via Templates
+
+**Invoices** — Billing and payment tracking
+- Works with: Contacts, Bookings, Payments (partial), Coupons
+- Missing: Auto-tagging on status change, workflow triggers, template-based emails
+
+**Payments** — Stripe payment processing
+- Works with: Contacts, Bookings (partial), Invoices (partial)
+- Missing: Workflow triggers, auto-tagging, receipt via Templates
+
+**Services** — Service offerings with pricing
+- Works with: Bookings, Packages, Invoices (line items), Media
+
+**Packages** — Service bundles with discounts
+- Works with: Services, Bookings, Invoices (line items), Media
+
+**Tags** — Categorization and status tracking
+- Works with: Contacts, Bookings, Invoices, Payments, Workflows (triggers)
+
+**Workflows** — Automation engine
+- Works with: Tags (triggers), Templates (send email action), Contacts
+- Missing: Payment triggers, invoice triggers, booking cancel/complete triggers
+
+**Templates** — Email templates with variables
+- Works with: Workflows (send email action)
+- Missing: Direct use by Invoices, Payments, Bookings
+
+**Calendar** — Schedule visualization
+- Works with: Bookings, Contacts
+- Status: Display only
+
+**Media** — Images and videos
+- Works with: Services, Packages
+
+### Supporting Systems
+
+**Availability** (`dashboard/availability/`) — Business hours, blocked slots
+**Coupons** (`dashboard/coupons/`) — Discount codes
+**Notifications** (`settings/notifications/`) — Push/email preferences
+**Webhooks** (`dashboard/webhooks/`) — External integrations
+**Custom Fields** (`settings/custom-fields/`) — Extra contact data
+
+### Planned Systems (Not Yet Built)
+
+**HIGH Priority:**
+- Reports/Analytics — Revenue dashboards, booking stats
+
+**MEDIUM Priority:**
+- Forms/Questionnaires — Pre-booking intake
+- Contracts — Digital contracts, e-signatures
+- Recurring Bookings — Subscription appointments
+- Client Portal — Self-service access
+
+**LOW Priority:**
+- Reviews — Collect testimonials
+- Waitlist — Queue when full
+- Staff/Team — Multi-user with roles
+
 ## Database Models (Key Relationships)
 
 - **Tenant** → has many Contacts, Bookings, Invoices, Services, Packages

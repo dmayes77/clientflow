@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { createInvoiceSchema, validateRequest } from "@/lib/validations";
+import { applyInvoiceStatusTag } from "@/lib/system-tags";
 
 // Generate invoice number
 async function generateInvoiceNumber(tenantId) {
@@ -277,6 +278,9 @@ export async function POST(request) {
         )
       );
     }
+
+    // Apply status tag
+    await applyInvoiceStatusTag(prisma, invoice.id, tenant.id, invoice.status);
 
     // Track coupon usage if a coupon was applied
     if (data.couponId && data.couponDiscountAmount) {

@@ -11,6 +11,7 @@ import { sendDisputeNotification, sendTrialEndingNotification } from "@/lib/emai
 import { triggerEventAlert, triggerEventAlertByStripeCustomer } from "@/lib/alert-runner";
 import { sendPaymentConfirmation } from "@/lib/send-system-email";
 import { allocateDepositToBookings } from "@/lib/payment-allocation";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -634,6 +635,15 @@ async function handleConnectChargeSucceeded(charge, accountId) {
       console.error("Error sending payment confirmation email:", err);
     });
   }
+
+  // Trigger payment_received workflow
+  triggerWorkflows("payment_received", {
+    tenant: updatedPayment.tenant,
+    payment: updatedPayment,
+    contact: updatedPayment.contact,
+  }).catch((err) => {
+    console.error("Error triggering payment_received workflow:", err);
+  });
 }
 
 // Handler: Connect Charge Refunded
@@ -861,6 +871,17 @@ async function handleConnectAsyncPaymentSucceeded(session, accountId) {
     status: payment.status,
     createdAt: payment.createdAt,
   }).catch(console.error);
+
+  // Trigger payment_received workflow
+  const tenant = await prisma.tenant.findUnique({ where: { id: metadata.tenantId } });
+  if (tenant) {
+    triggerWorkflows("payment_received", {
+      tenant,
+      payment,
+    }).catch((err) => {
+      console.error("Error triggering payment_received workflow:", err);
+    });
+  }
 }
 
 // Handler: Connect Async Payment Failed (for delayed payment methods)
@@ -890,6 +911,18 @@ async function handleConnectAsyncPaymentFailed(session, accountId) {
     contactEmail: session.customer_email,
     status: "failed",
   }).catch(console.error);
+
+  // Trigger payment_failed workflow
+  const tenant = await prisma.tenant.findUnique({ where: { id: metadata.tenantId } });
+  if (tenant) {
+    triggerWorkflows("payment_failed", {
+      tenant,
+      bookingId: metadata.bookingId,
+      amount: session.amount_total,
+    }).catch((err) => {
+      console.error("Error triggering payment_failed workflow:", err);
+    });
+  }
 }
 
 // Handler: Connect Payment Intent Succeeded (for Payment Link payments)
@@ -902,7 +935,7 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
   if (metadata?.type === "booking_balance" && metadata?.bookingId) {
     const booking = await prisma.booking.findUnique({
       where: { id: metadata.bookingId },
-      include: { invoice: true, contact: true },
+      include: { invoice: true, contact: true, tenant: true },
     });
 
     if (!booking) {
@@ -987,6 +1020,16 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       createdAt: payment.createdAt,
     }).catch(console.error);
 
+    // Trigger payment_received workflow
+    triggerWorkflows("payment_received", {
+      tenant: booking.tenant,
+      payment,
+      contact: booking.contact,
+      booking,
+    }).catch((err) => {
+      console.error("Error triggering payment_received workflow:", err);
+    });
+
     return;
   }
 
@@ -997,6 +1040,7 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       include: {
         bookings: true,
         contact: true,
+        tenant: true,
       },
     });
 
@@ -1081,6 +1125,16 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       createdAt: payment.createdAt,
     }).catch(console.error);
 
+    // Trigger payment_received workflow
+    triggerWorkflows("payment_received", {
+      tenant: invoice.tenant,
+      payment,
+      contact: invoice.contact,
+      invoice,
+    }).catch((err) => {
+      console.error("Error triggering payment_received workflow:", err);
+    });
+
     return;
   }
 
@@ -1093,6 +1147,8 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       },
       include: {
         bookings: true,
+        contact: true,
+        tenant: true,
       },
     });
 
@@ -1180,5 +1236,23 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       paidAt: new Date(),
       status: "paid",
     }).catch(console.error);
+
+    // Trigger payment_received and invoice_paid workflows
+    triggerWorkflows("payment_received", {
+      tenant: invoice.tenant,
+      payment,
+      contact: invoice.contact,
+      invoice,
+    }).catch((err) => {
+      console.error("Error triggering payment_received workflow:", err);
+    });
+
+    triggerWorkflows("invoice_paid", {
+      tenant: invoice.tenant,
+      invoice,
+      contact: invoice.contact,
+    }).catch((err) => {
+      console.error("Error triggering invoice_paid workflow:", err);
+    });
   }
 }

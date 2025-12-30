@@ -5,6 +5,8 @@ import { getAuthenticatedTenant } from "@/lib/auth";
 import { InvoiceDocument } from "@/lib/invoice-pdf";
 import { sendInvoiceEmail } from "@/lib/email";
 import { dispatchInvoiceSent } from "@/lib/webhooks";
+import { applyInvoiceStatusTag } from "@/lib/system-tags";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
 // POST /api/invoices/[id]/send - Send invoice via email
 export async function POST(request, { params }) {
@@ -101,6 +103,9 @@ export async function POST(request, { params }) {
       },
     });
 
+    // Apply status tag
+    await applyInvoiceStatusTag(prisma, invoice.id, tenant.id, updatedInvoice.status);
+
     // Dispatch webhook
     dispatchInvoiceSent(tenant.id, {
       id: invoice.id,
@@ -111,6 +116,15 @@ export async function POST(request, { params }) {
       dueDate: invoice.dueDate,
       status: updatedInvoice.status,
     }).catch((err) => console.error("Failed to dispatch invoice.sent webhook:", err));
+
+    // Trigger invoice_sent workflow
+    triggerWorkflows("invoice_sent", {
+      tenant,
+      invoice: updatedInvoice,
+      contact: updatedInvoice.client,
+    }).catch((err) => {
+      console.error("Error triggering invoice_sent workflow:", err);
+    });
 
     return NextResponse.json({
       success: true,

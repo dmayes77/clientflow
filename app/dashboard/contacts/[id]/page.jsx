@@ -923,6 +923,7 @@ export default function ClientDetailPage({ params }) {
         onOpenChange={setInvoiceDialogOpen}
         invoice={selectedInvoice}
         contacts={client ? [client] : []}
+        bookings={client?.bookings || []}
         services={services}
         packages={packages}
         onSave={handleInvoiceSave}

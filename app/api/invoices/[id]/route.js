@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { updateInvoiceSchema, validateRequest } from "@/lib/validations";
 import { sendPaymentConfirmation } from "@/lib/email";
+import { applyInvoiceStatusTag } from "@/lib/system-tags";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
 // GET /api/invoices/[id] - Get a single invoice
 export async function GET(request, { params }) {
@@ -259,6 +261,33 @@ export async function PATCH(request, { params }) {
             data: { currentUses: { increment: 1 } },
           });
         }
+      }
+    }
+
+    // Apply status tag and trigger workflows if status changed
+    if (data.status && data.status !== existingInvoice.status) {
+      await applyInvoiceStatusTag(prisma, invoice.id, tenant.id, invoice.status);
+
+      // Trigger invoice_sent workflow
+      if (invoice.status === "sent") {
+        triggerWorkflows("invoice_sent", {
+          tenant,
+          invoice,
+          contact: invoice.contact,
+        }).catch((err) => {
+          console.error("Error triggering invoice_sent workflow:", err);
+        });
+      }
+
+      // Trigger invoice_paid workflow
+      if (invoice.status === "paid") {
+        triggerWorkflows("invoice_paid", {
+          tenant,
+          invoice,
+          contact: invoice.contact,
+        }).catch((err) => {
+          console.error("Error triggering invoice_paid workflow:", err);
+        });
       }
     }
 
