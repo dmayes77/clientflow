@@ -111,25 +111,25 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       </div>
 
       {/* Status message */}
-      {error && <p className="hig-caption2 text-red-500">{error}</p>}
+      {error && <p className="hig-caption-2 text-red-500">{error}</p>}
       {!error && available === true && (
-        <p className="hig-caption2 text-green-600">This URL is available!</p>
+        <p className="hig-caption-2 text-green-600">This URL is available!</p>
       )}
       {!error && available === false && !checkSlugMutation.isPending && (
-        <p className="hig-caption2 text-red-500">This URL is already taken</p>
+        <p className="hig-caption-2 text-red-500">This URL is already taken</p>
       )}
 
       {/* Suggestions */}
       {suggestions.length > 0 && (
         <div className="space-y-1">
-          <p className="hig-caption2 text-gray-500">Try one of these:</p>
+          <p className="hig-caption-2 text-gray-500">Try one of these:</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="px-2 py-1 hig-caption2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+                className="px-2 py-1 hig-caption-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
               >
                 {suggestion}
               </button>
@@ -139,7 +139,7 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       )}
 
       {/* Helper text */}
-      <p className="hig-caption2 text-gray-400">
+      <p className="hig-caption-2 text-gray-400">
         This will be your booking page URL
       </p>
     </div>

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   useInvoices,
   useUpdateInvoice,
@@ -10,7 +11,12 @@ import {
   useSendInvoice,
   useDownloadInvoicePDF,
   useTags,
+  useAddInvoiceTag,
+  useRemoveInvoiceTag,
+  useExportInvoices,
+  useIsMobile,
 } from "@/lib/hooks";
+import { InvoiceMobileCardList } from "./InvoiceMobileCard";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatusFilterDropdown } from "@/components/ui/status-filter-dropdown";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +34,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   PreviewSheet,
   PreviewSheetContent,
   PreviewSheetSection,
@@ -34,8 +46,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { TagFilter } from "@/components/ui/tag-filter";
-import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket, Check, X } from "lucide-react";
+import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket, Check, X, CalendarDays, AlertCircle, Receipt, Loader2, RefreshCw, FileText, Eye, Ban, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   MoneyIcon,
@@ -50,15 +61,10 @@ import {
   CloseIcon,
   DownloadIcon,
 } from "@/lib/icons";
-
-const statusConfig = {
-  draft: { label: "Draft", variant: "secondary", icon: InvoiceIcon },
-  sent: { label: "Sent", variant: "info", icon: SendIcon },
-  viewed: { label: "Viewed", variant: "default", icon: ViewIcon },
-  paid: { label: "Paid", variant: "success", icon: CompleteIcon },
-  overdue: { label: "Overdue", variant: "destructive", icon: WarningIcon },
-  cancelled: { label: "Cancelled", variant: "secondary", icon: CloseIcon },
-};
+import { formatCurrency } from "@/lib/formatters";
+import { InvoiceStatusBadge } from "@/components/ui/status-badge";
+import { LoadingCard } from "@/components/ui/loading-card";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 // Safe deposit percent parser
 const getSafeDepositPercent = (value) => {
@@ -110,23 +116,64 @@ const getTagColorClass = (color) => {
   return colorMap[color] || colorMap.gray;
 };
 
-const formatPrice = (cents) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-};
+// Helper to format date range for display
+function formatDateRange(startDate, endDate) {
+  if (!startDate && !endDate) return null;
+  const formatDate = (d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (startDate && endDate) return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+  if (startDate) return `From ${formatDate(startDate)}`;
+  if (endDate) return `Until ${formatDate(endDate)}`;
+}
 
 export function InvoicesList() {
   const router = useRouter();
+  const isMobile = useIsMobile();
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+
+  // Mobile selection state
+  const [mobileSelectedIds, setMobileSelectedIds] = useState(new Set());
 
   // TanStack Query hooks
-  const { data: invoices = [], isLoading: loading } = useInvoices();
+  const { data, isLoading: loading, refetch } = useInvoices({
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  });
   const { data: allTags = [] } = useTags("all");
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
   const sendInvoice = useSendInvoice();
   const downloadInvoicePDF = useDownloadInvoicePDF();
+  const addInvoiceTag = useAddInvoiceTag();
+  const removeInvoiceTag = useRemoveInvoiceTag();
+  const exportMutation = useExportInvoices();
+
+  // Extract data from API response (new format)
+  const invoices = data?.invoices || data || [];
+  const stats = data?.stats || {
+    total: invoices.length,
+    paid: invoices.filter((i) => i.status === "paid").length,
+    pending: invoices.filter((i) => ["sent", "viewed"].includes(i.status)).length,
+    overdue: invoices.filter((i) => i.status === "overdue").length,
+    totalRevenue: invoices.filter((i) => i.status === "paid").reduce((sum, i) => sum + (i.total || 0), 0),
+    outstandingAmount: invoices.filter((i) => ["sent", "viewed", "overdue"].includes(i.status)).reduce((sum, i) => sum + (i.balanceDue || i.total || 0), 0),
+    statusCounts: {
+      all: invoices.length,
+      draft: invoices.filter((i) => i.status === "draft").length,
+      sent: invoices.filter((i) => i.status === "sent").length,
+      viewed: invoices.filter((i) => i.status === "viewed").length,
+      paid: invoices.filter((i) => i.status === "paid").length,
+      overdue: invoices.filter((i) => i.status === "overdue").length,
+      cancelled: invoices.filter((i) => i.status === "cancelled").length,
+    },
+  };
+  const statusCounts = stats.statusCounts;
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -136,8 +183,6 @@ export function InvoicesList() {
   const [sendingId, setSendingId] = useState(null);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const [previewInvoice, setPreviewInvoice] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedTagIds, setSelectedTagIds] = useState([]);
 
   const handleStatusChange = (invoice, newStatus) => {
     // Validate state transitions
@@ -187,10 +232,27 @@ export function InvoicesList() {
 
     const amountInCents = Math.round(paymentData.amount * 100);
     const currentAmountPaid = invoiceForPayment.amountPaid || 0;
-    const newAmountPaid = currentAmountPaid + amountInCents;
     const totalAmount = invoiceForPayment.total;
+    const currentBalanceDue = invoiceForPayment.balanceDue || totalAmount - currentAmountPaid;
+
+    // Prevent overpayment
+    if (amountInCents > currentBalanceDue) {
+      toast.error(`Payment amount exceeds balance due (${formatCurrency(currentBalanceDue)})`);
+      return;
+    }
+
+    const newAmountPaid = currentAmountPaid + amountInCents;
     const newBalanceDue = totalAmount - newAmountPaid;
     const isPaidInFull = newBalanceDue <= 0;
+
+    // Store previous state for undo
+    const previousState = {
+      amountPaid: currentAmountPaid,
+      balanceDue: currentBalanceDue,
+      status: invoiceForPayment.status,
+      depositPaidAt: invoiceForPayment.depositPaidAt,
+      paidAt: invoiceForPayment.paidAt,
+    };
 
     const updateData = {
       id: invoiceForPayment.id,
@@ -202,7 +264,30 @@ export function InvoicesList() {
 
     updateInvoice.mutate(updateData, {
       onSuccess: () => {
-        toast.success(paymentData.isDeposit ? "Deposit recorded" : isPaidInFull ? "Invoice marked as paid" : "Payment recorded");
+        const message = paymentData.isDeposit ? "Deposit recorded" : isPaidInFull ? "Invoice marked as paid" : "Payment recorded";
+        toast.success(message, {
+          action: {
+            label: "Undo",
+            onClick: () => {
+              // Revert to previous state
+              updateInvoice.mutate({
+                id: invoiceForPayment.id,
+                amountPaid: previousState.amountPaid,
+                balanceDue: previousState.balanceDue,
+                status: previousState.status,
+                depositPaidAt: paymentData.isDeposit ? previousState.depositPaidAt : undefined,
+                paidAt: isPaidInFull ? previousState.paidAt : undefined,
+              }, {
+                onSuccess: () => {
+                  toast.success("Payment undone");
+                },
+                onError: () => {
+                  toast.error("Failed to undo payment");
+                },
+              });
+            },
+          },
+        });
         setPaymentDialogOpen(false);
         setInvoiceForPayment(null);
       },
@@ -257,45 +342,45 @@ export function InvoicesList() {
     });
   };
 
-  const stats = useMemo(() => {
-    const paidInvoices = invoices.filter((i) => i.status === "paid");
-    const pendingInvoices = invoices.filter((i) => ["sent", "viewed"].includes(i.status));
-    const overdueInvoices = invoices.filter((i) => i.status === "overdue");
-
-    return {
-      total: invoices.length,
-      paid: paidInvoices.length,
-      pending: pendingInvoices.length,
-      overdue: overdueInvoices.length,
-      totalRevenue: paidInvoices.reduce((sum, i) => sum + i.total, 0),
-      outstandingAmount: [...pendingInvoices, ...overdueInvoices].reduce((sum, i) => sum + (i.balanceDue || i.total), 0),
-    };
-  }, [invoices]);
-
-  // Tag helper functions
-  const hasTag = (invoice, tagName) => {
-    if (!invoice.tags) return false;
-    return invoice.tags.some((t) => t.tag.name.toLowerCase() === tagName.toLowerCase());
+  // Date filter handlers
+  const handleApplyDateFilter = () => {
+    setDatePopoverOpen(false);
   };
 
-  const hasAnyStatusTag = (invoice) => {
-    if (!invoice.tags) return false;
-    const statusTagNames = ["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"];
-    return invoice.tags.some((t) => statusTagNames.includes(t.tag.name));
+  const handleClearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setDatePopoverOpen(false);
   };
 
-  // Filtered invoices based on status filter and tag filter
+  // Export handler
+  const handleExport = async () => {
+    try {
+      const blob = await exportMutation.mutateAsync({
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoices-export-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Invoices exported successfully");
+    } catch (error) {
+      toast.error(error.message || "Failed to export invoices");
+    }
+  };
+
+  const dateRangeLabel = formatDateRange(startDate, endDate);
+  const hasActiveFilters = statusFilter !== "all" || startDate || endDate || selectedTagIds.length > 0;
+
+  // Filtered invoices based on tag filter (status filtering is done server-side)
   const filteredInvoices = useMemo(() => {
     let result = invoices;
-
-    // Tag-based status filter (status pills)
-    if (statusFilter !== "all") {
-      if (statusFilter === "unclassified") {
-        result = result.filter((inv) => !hasAnyStatusTag(inv));
-      } else {
-        result = result.filter((inv) => hasTag(inv, statusFilter));
-      }
-    }
 
     // Additional tag filter (non-status tags via TagFilter component)
     if (selectedTagIds.length > 0) {
@@ -305,21 +390,7 @@ export function InvoicesList() {
     }
 
     return result;
-  }, [invoices, statusFilter, selectedTagIds]);
-
-  // Count by status tags
-  const statusCounts = useMemo(() => {
-    return {
-      all: invoices.length,
-      draft: invoices.filter((i) => hasTag(i, "Draft")).length,
-      sent: invoices.filter((i) => hasTag(i, "Sent")).length,
-      viewed: invoices.filter((i) => hasTag(i, "Viewed")).length,
-      paid: invoices.filter((i) => hasTag(i, "Paid")).length,
-      overdue: invoices.filter((i) => hasTag(i, "Overdue")).length,
-      cancelled: invoices.filter((i) => hasTag(i, "Cancelled")).length,
-      unclassified: invoices.filter((i) => !hasAnyStatusTag(i)).length,
-    };
-  }, [invoices]);
+  }, [invoices, selectedTagIds]);
 
   // Bulk action handlers
   const [selectedRows, setSelectedRows] = useState({});
@@ -399,25 +470,17 @@ export function InvoicesList() {
     if (selectedInvoices.length === 0 || !tagId) return;
 
     try {
-      const addPromises = selectedInvoices.map(async (invoice) => {
-        const response = await fetch(`/api/invoices/${invoice.id}/tags`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tagId }),
-        });
-        if (!response.ok) {
-          const error = await response.json();
+      const addPromises = selectedInvoices.map((invoice) =>
+        addInvoiceTag.mutateAsync({ invoiceId: invoice.id, tagId }).catch((error) => {
           // Ignore "already exists" errors silently
-          if (!error.error?.includes("already added")) {
-            throw new Error(error.error || "Failed to add tag");
+          if (!error.message?.includes("already added")) {
+            throw error;
           }
-        }
-      });
+        })
+      );
       await Promise.all(addPromises);
       toast.success(`Tag added to ${selectedInvoices.length} invoice(s)`);
       setSelectedRows({});
-      // Refresh data
-      window.location.reload();
     } catch (error) {
       toast.error("Failed to add tag to some invoices");
     }
@@ -427,20 +490,12 @@ export function InvoicesList() {
     if (selectedInvoices.length === 0 || !tagId) return;
 
     try {
-      const removePromises = selectedInvoices.map(async (invoice) => {
-        const response = await fetch(`/api/invoices/${invoice.id}/tags?tagId=${tagId}`, {
-          method: "DELETE",
-        });
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to remove tag");
-        }
-      });
+      const removePromises = selectedInvoices.map((invoice) =>
+        removeInvoiceTag.mutateAsync({ invoiceId: invoice.id, tagId })
+      );
       await Promise.all(removePromises);
       toast.success(`Tag removed from ${selectedInvoices.length} invoice(s)`);
       setSelectedRows({});
-      // Refresh data
-      window.location.reload();
     } catch (error) {
       toast.error("Failed to remove tag from some invoices");
     }
@@ -495,9 +550,27 @@ export function InvoicesList() {
       cell: ({ row }) => (
         <div>
           <p className="font-medium">{row.original.contactName}</p>
-          <p className="hig-caption2 text-muted-foreground">{row.original.contactEmail}</p>
+          <p className="hig-caption-2 text-muted-foreground">{row.original.contactEmail}</p>
         </div>
       ),
+    },
+    {
+      accessorKey: "booking",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Booking" />
+      ),
+      cell: ({ row }) => {
+        const booking = row.original.booking;
+        if (!booking) {
+          return <span className="text-muted-foreground text-sm">—</span>;
+        }
+        return (
+          <div className="flex items-center gap-1.5 text-sm">
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{format(new Date(booking.scheduledAt), "MMM d")}</span>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "dueDate",
@@ -517,7 +590,7 @@ export function InvoicesList() {
         <DataTableColumnHeader column={column} title="Amount" />
       ),
       cell: ({ row }) => (
-        <span className="font-medium">{formatPrice(row.original.total)}</span>
+        <span className="font-medium">{formatCurrency(row.original.total)}</span>
       ),
     },
     {
@@ -526,42 +599,46 @@ export function InvoicesList() {
         <DataTableColumnHeader column={column} title="Status" />
       ),
       cell: ({ row }) => (
-        <Badge variant={statusConfig[row.original.status]?.variant || "secondary"}>
-          {statusConfig[row.original.status]?.label || row.original.status}
-        </Badge>
+        <InvoiceStatusBadge status={row.original.status} />
       ),
     },
   ];
 
   if (loading) {
-    return (
-      <Card className="py-4">
-        <CardContent className="flex items-center justify-center py-12">
-          <LoadingIcon className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <LoadingCard message="Loading invoices..." />;
   }
 
   return (
     <>
       {/* Stats Cards */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4 mb-4 sm:mb-6">
-        <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Total Collected</p>
-          <div className="font-bold">{formatPrice(stats.totalRevenue)}</div>
+        <div className="rounded-lg border bg-card p-4 border-l-4 border-l-green-500">
+          <div className="flex items-center gap-2 mb-1">
+            <DollarSign className="size-4 text-green-600" />
+            <span className="hig-footnote text-muted-foreground">Total Collected</span>
+          </div>
+          <span className="block text-xl font-bold">{formatCurrency(stats.totalRevenue)}</span>
         </div>
-        <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Outstanding</p>
-          <div className="font-bold">{formatPrice(stats.outstandingAmount)}</div>
+        <div className="rounded-lg border bg-card p-4 border-l-4 border-l-amber-500">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="size-4 text-amber-600" />
+            <span className="hig-footnote text-muted-foreground">Outstanding</span>
+          </div>
+          <span className="block text-xl font-bold">{formatCurrency(stats.outstandingAmount)}</span>
         </div>
-        <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Paid Invoices</p>
-          <div className="font-bold">{stats.paid}</div>
+        <div className="rounded-lg border bg-card p-4 border-l-4 border-l-blue-500">
+          <div className="flex items-center gap-2 mb-1">
+            <Receipt className="size-4 text-blue-600" />
+            <span className="hig-footnote text-muted-foreground">Paid Invoices</span>
+          </div>
+          <span className="block text-xl font-bold">{stats.paid}</span>
         </div>
-        <div className="rounded-lg border bg-card p-3 sm:p-4">
-          <p className="hig-caption2 text-muted-foreground mb-1 sm:mb-2">Overdue</p>
-          <div className="font-bold text-destructive">{stats.overdue}</div>
+        <div className="rounded-lg border bg-card p-4 border-l-4 border-l-red-500">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertCircle className="size-4 text-red-600" />
+            <span className="hig-footnote text-muted-foreground">Overdue</span>
+          </div>
+          <span className="block text-xl font-bold text-destructive">{stats.overdue}</span>
         </div>
       </div>
 
@@ -576,12 +653,28 @@ export function InvoicesList() {
               {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
             </p>
           </div>
-          {invoices.length > 0 && (
-            <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")}>
-              <AddIcon className="h-4 w-4 mr-1" />
-              Create Invoice
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              disabled={exportMutation.isPending}
+              className="px-2 sm:px-3"
+            >
+              {exportMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Download className="size-4" />
+              )}
+              <span className="hidden sm:inline ml-1">Export</span>
             </Button>
-          )}
+            {invoices.length > 0 && (
+              <Button size="sm" onClick={() => router.push("/dashboard/invoices/new")} className="px-2 sm:px-3">
+                <AddIcon className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">Create Invoice</span>
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {invoices.length === 0 ? (
@@ -600,79 +693,127 @@ export function InvoicesList() {
             </div>
           ) : (
             <>
-              {/* Status Filter Pills */}
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <Button variant={statusFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setStatusFilter("all")}>
-                  All ({statusCounts.all})
-                </Button>
-                <Button
-                  variant={statusFilter === "draft" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("draft")}
-                  className={`${statusFilter === "draft" ? "bg-slate-500 hover:bg-slate-600" : ""}`}
-                >
-                  Draft ({statusCounts.draft})
-                </Button>
-                <Button
-                  variant={statusFilter === "sent" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("sent")}
-                  className={`${statusFilter === "sent" ? "bg-blue-500 hover:bg-blue-600" : ""}`}
-                >
-                  Sent ({statusCounts.sent})
-                </Button>
-                <Button
-                  variant={statusFilter === "viewed" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("viewed")}
-                >
-                  Viewed ({statusCounts.viewed})
-                </Button>
-                <Button
-                  variant={statusFilter === "paid" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("paid")}
-                  className={`${statusFilter === "paid" ? "bg-green-500 hover:bg-green-600" : ""}`}
-                >
-                  Paid ({statusCounts.paid})
-                </Button>
-                <Button
-                  variant={statusFilter === "overdue" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("overdue")}
-                  className={`${statusFilter === "overdue" ? "bg-red-500 hover:bg-red-600" : ""}`}
-                >
-                  Overdue ({statusCounts.overdue})
-                </Button>
-                <Button
-                  variant={statusFilter === "cancelled" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("cancelled")}
-                >
-                  Cancelled ({statusCounts.cancelled})
-                </Button>
-                <Button
-                  variant={statusFilter === "unclassified" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter("unclassified")}
-                  className={`${statusFilter === "unclassified" ? "bg-slate-500 hover:bg-slate-600" : ""}`}
-                >
-                  Unclassified ({statusCounts.unclassified})
-                </Button>
+              {/* Combined Filters Row */}
+              <div className="flex items-center gap-2 mb-3 overflow-x-auto scrollbar-none">
+                {/* Status + Tags Filter Dropdown */}
+                <StatusFilterDropdown
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  label="Filter by Status"
+                  placeholder="All Invoices"
+                  icon={Receipt}
+                  className="shrink-0"
+                  options={[
+                    { value: "all", label: "All Invoices", icon: Receipt, count: statusCounts.all },
+                    { value: "draft", label: "Draft", icon: FileText, count: statusCounts.draft },
+                    { value: "sent", label: "Sent", icon: Send, count: statusCounts.sent },
+                    { value: "viewed", label: "Viewed", icon: Eye, count: statusCounts.viewed },
+                    { value: "paid", label: "Paid", icon: Check, count: statusCounts.paid },
+                    { value: "overdue", label: "Overdue", icon: AlertCircle, count: statusCounts.overdue },
+                    { value: "cancelled", label: "Cancelled", icon: Ban, count: statusCounts.cancelled },
+                  ]}
+                  tags={allTags.filter((t) => t.type === "invoice" || t.type === "general")}
+                  selectedTagIds={selectedTagIds}
+                  onTagsChange={setSelectedTagIds}
+                />
 
-                {/* Additional Tag Filter */}
-                <div className="ml-auto">
-                  <TagFilter
-                    tags={allTags}
-                    selectedTagIds={selectedTagIds}
-                    onSelectionChange={setSelectedTagIds}
-                    type="invoice"
-                    excludeSystemTags={true}
-                    placeholder="Filter by tags"
-                  />
-                </div>
+                {/* Date Range Filter */}
+                <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={dateRangeLabel ? "secondary" : "outline"}
+                      size="sm"
+                      className={cn("shrink-0 justify-start", dateRangeLabel && "pr-2")}
+                    >
+                      <Calendar className="size-4 shrink-0" />
+                      <span className="hidden sm:inline ml-2 truncate">{dateRangeLabel || "Date Range"}</span>
+                      {dateRangeLabel && (
+                        <X
+                          className="size-4 ml-1 sm:ml-2 shrink-0 hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClearDateFilter();
+                          }}
+                        />
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72" align="start">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate">From</Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate">To</Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1" onClick={handleClearDateFilter}>
+                          Clear
+                        </Button>
+                        <Button size="sm" className="flex-1" onClick={handleApplyDateFilter}>
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Refresh Button */}
+                <Button variant="outline" size="icon" className="size-8 shrink-0" onClick={() => refetch()}>
+                  <RefreshCw className="size-4" />
+                </Button>
               </div>
 
+              {/* Mobile Card View */}
+              {isMobile ? (
+                <InvoiceMobileCardList
+                  invoices={filteredInvoices}
+                  selectedIds={mobileSelectedIds}
+                  onSelect={(id, checked) => {
+                    setMobileSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      if (checked) {
+                        next.add(id);
+                      } else {
+                        next.delete(id);
+                      }
+                      return next;
+                    });
+                  }}
+                  onSelectAll={(checked) => {
+                    if (checked) {
+                      setMobileSelectedIds(new Set(filteredInvoices.map((i) => i.id)));
+                    } else {
+                      setMobileSelectedIds(new Set());
+                    }
+                  }}
+                  onPreview={(invoice) => {
+                    setPreviewInvoice(invoice);
+                    setPreviewSheetOpen(true);
+                  }}
+                  onEdit={(invoice) => router.push(`/dashboard/invoices/${invoice.id}`)}
+                  onSend={handleSend}
+                  onPay={handleOpenPaymentDialog}
+                  onDownload={handleDownload}
+                  onDelete={(invoice) => {
+                    setInvoiceToDelete(invoice);
+                    setDeleteDialogOpen(true);
+                  }}
+                  sendingId={sendingId}
+                />
+              ) : (
               <DataTable
                 columns={columns}
                 data={filteredInvoices}
@@ -770,30 +911,20 @@ export function InvoicesList() {
                 );
               }}
             />
+              )}
             </>
           )}
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Invoice</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {invoiceToDelete?.invoiceNumber}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        itemType="invoice"
+        itemName={invoiceToDelete?.invoiceNumber}
+        onConfirm={handleDelete}
+        isPending={deleteInvoice.isPending}
+      />
 
       {/* Payment Dialog */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
@@ -812,17 +943,17 @@ export function InvoicesList() {
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Invoice Total</span>
-                  <span className="font-medium">{formatPrice(invoiceForPayment.total)}</span>
+                  <span className="font-medium">{formatCurrency(invoiceForPayment.total)}</span>
                 </div>
                 {(invoiceForPayment.amountPaid || 0) > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Amount Paid</span>
-                    <span>{formatPrice(invoiceForPayment.amountPaid || 0)}</span>
+                    <span>{formatCurrency(invoiceForPayment.amountPaid || 0)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-medium border-t pt-2">
                   <span>Balance Due</span>
-                  <span>{formatPrice(invoiceForPayment.balanceDue || invoiceForPayment.total - (invoiceForPayment.amountPaid || 0))}</span>
+                  <span>{formatCurrency(invoiceForPayment.balanceDue || invoiceForPayment.total - (invoiceForPayment.amountPaid || 0))}</span>
                 </div>
               </div>
 
@@ -877,8 +1008,8 @@ export function InvoicesList() {
                   />
                 </div>
                 {paymentData.isDeposit && (
-                  <p className="hig-caption2 text-muted-foreground">
-                    Deposit: {getSafeDepositPercent(invoiceForPayment.depositPercent)}% of {formatPrice(invoiceForPayment.total)}
+                  <p className="hig-caption-2 text-muted-foreground">
+                    Deposit: {getSafeDepositPercent(invoiceForPayment.depositPercent)}% of {formatCurrency(invoiceForPayment.total)}
                   </p>
                 )}
               </div>
@@ -907,9 +1038,7 @@ export function InvoicesList() {
           header={
             <div className="flex items-center justify-between">
               <h3 className="hig-headline">{previewInvoice.invoiceNumber}</h3>
-              <Badge variant={statusConfig[previewInvoice.status]?.variant || "secondary"}>
-                {statusConfig[previewInvoice.status]?.label || previewInvoice.status}
-              </Badge>
+              <InvoiceStatusBadge status={previewInvoice.status} />
             </div>
           }
           actions={
@@ -1116,6 +1245,29 @@ export function InvoicesList() {
               </div>
             </PreviewSheetSection>
 
+            {/* Linked Booking */}
+            {previewInvoice.booking && (
+              <>
+                <Separator />
+                <PreviewSheetSection className="flex items-center gap-3">
+                  <div className="size-10 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
+                    <CalendarDays className="size-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="hig-caption-2 text-muted-foreground">Linked Booking</p>
+                    <p className="hig-footnote font-medium">
+                      {format(new Date(previewInvoice.booking.scheduledAt), "EEEE, MMM d, yyyy")}
+                    </p>
+                    {(previewInvoice.booking.service?.name || previewInvoice.booking.package?.name) && (
+                      <p className="hig-caption-2 text-muted-foreground">
+                        {previewInvoice.booking.service?.name || previewInvoice.booking.package?.name}
+                      </p>
+                    )}
+                  </div>
+                </PreviewSheetSection>
+              </>
+            )}
+
             <Separator />
 
             {/* Dates */}
@@ -1168,12 +1320,12 @@ export function InvoicesList() {
                       <p className="font-medium truncate">{item.description || "Item"}</p>
                       {item.quantity > 1 && (
                         <p className="hig-caption-2 text-muted-foreground">
-                          {item.quantity} × {formatPrice(item.unitPrice)}
+                          {item.quantity} × {formatCurrency(item.unitPrice)}
                         </p>
                       )}
                     </div>
                     <span className="font-medium ml-2">
-                      {item.isDiscount ? "-" : ""}{formatPrice(Math.abs(item.amount))}
+                      {item.isDiscount ? "-" : ""}{formatCurrency(Math.abs(item.amount))}
                     </span>
                   </div>
                 ))}
@@ -1186,12 +1338,12 @@ export function InvoicesList() {
             <PreviewSheetSection className="space-y-2">
               <div className="flex justify-between hig-footnote">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatPrice(previewInvoice.subtotal)}</span>
+                <span>{formatCurrency(previewInvoice.subtotal)}</span>
               </div>
               {(previewInvoice.discountAmount || 0) > 0 && (
                 <div className="flex justify-between hig-footnote text-red-600">
                   <span>Discount {previewInvoice.discountCode ? `(${previewInvoice.discountCode})` : ""}</span>
-                  <span>-{formatPrice(previewInvoice.discountAmount)}</span>
+                  <span>-{formatCurrency(previewInvoice.discountAmount)}</span>
                 </div>
               )}
               {/* Coupons */}
@@ -1201,18 +1353,18 @@ export function InvoicesList() {
                     <Ticket className="h-3 w-3" />
                     Coupon ({invoiceCoupon.coupon?.code || "Applied"})
                   </span>
-                  <span>-{formatPrice(invoiceCoupon.calculatedAmount)}</span>
+                  <span>-{formatCurrency(invoiceCoupon.calculatedAmount)}</span>
                 </div>
               ))}
               {(previewInvoice.taxAmount || 0) > 0 && (
                 <div className="flex justify-between hig-footnote">
                   <span className="text-muted-foreground">Tax ({previewInvoice.taxRate}%)</span>
-                  <span>{formatPrice(previewInvoice.taxAmount)}</span>
+                  <span>{formatCurrency(previewInvoice.taxAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between hig-subheadline font-semibold pt-2 border-t">
                 <span>Total</span>
-                <span>{formatPrice(previewInvoice.total)}</span>
+                <span>{formatCurrency(previewInvoice.total)}</span>
               </div>
 
               {/* Deposit */}
@@ -1222,7 +1374,7 @@ export function InvoicesList() {
                     {previewInvoice.depositPaidAt ? "✓ Deposit Paid" : `Deposit Due (${getSafeDepositPercent(previewInvoice.depositPercent)}%)`}
                   </span>
                   <span className={previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}>
-                    {formatPrice(getSafeDepositAmount(previewInvoice))}
+                    {formatCurrency(getSafeDepositAmount(previewInvoice))}
                   </span>
                 </div>
               )}
@@ -1231,7 +1383,7 @@ export function InvoicesList() {
               {(previewInvoice.balanceDue || 0) > 0 && previewInvoice.status !== "paid" && (
                 <div className="flex justify-between hig-subheadline font-medium pt-2 border-t">
                   <span>Balance Due</span>
-                  <span>{formatPrice(previewInvoice.balanceDue)}</span>
+                  <span>{formatCurrency(previewInvoice.balanceDue)}</span>
                 </div>
               )}
             </PreviewSheetSection>

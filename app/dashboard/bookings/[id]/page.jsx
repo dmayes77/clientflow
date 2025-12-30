@@ -3,17 +3,7 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Loader2 } from "lucide-react";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { BookingForm } from "../components/BookingForm";
 import { useDeleteBooking } from "@/lib/hooks";
 
@@ -31,8 +21,7 @@ export default function BookingDetailPage({ params }) {
         setDeleteDialogOpen(false);
         router.push("/dashboard/calendar");
       },
-      onError: (error) => {
-        console.error("Error deleting booking:", error);
+      onError: () => {
         toast.error("Failed to delete booking");
         setDeleteDialogOpen(false);
       },
@@ -47,24 +36,13 @@ export default function BookingDetailPage({ params }) {
         onDelete={() => setDeleteDialogOpen(true)}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this booking? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleteMutation.isPending}>
-              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        itemType="booking"
+        onConfirm={handleDelete}
+        isPending={deleteMutation.isPending}
+      />
     </>
   );
 }

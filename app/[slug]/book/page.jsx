@@ -37,26 +37,13 @@ import {
   DollarSign,
   Percent,
 } from "lucide-react";
+import { formatCurrency, formatDuration } from "@/lib/formatters";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
-
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function formatDuration(minutes) {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-}
 
 function formatTime(time) {
   const [hours, minutes] = time.split(":");
@@ -231,7 +218,7 @@ function VerticalStepper({ currentStep, selectedItems, selectedDate, selectedTim
               <p className={`font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
                 {step.label}
               </p>
-              <p className={`hig-caption2 ${isComplete ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <p className={`hig-caption-2 ${isComplete ? 'text-green-600' : 'text-muted-foreground'}`}>
                 {step.description}
               </p>
             </div>
@@ -313,7 +300,7 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: category.color }}
           />
-          <span className="hig-caption2 text-muted-foreground">{category.name}</span>
+          <span className="hig-caption-2 text-muted-foreground">{category.name}</span>
         </div>
       )}
 
@@ -332,13 +319,13 @@ function ServiceCard({ item, type, isSelected, onToggle, category }) {
             {formatDuration(item.duration || item.totalDuration)}
           </span>
           {isPackage && item.services?.length > 0 && (
-            <span className="hig-caption2 ml-1">
+            <span className="hig-caption-2 ml-1">
               • {item.services.length} services
             </span>
           )}
         </div>
         <span className={`font-bold ${isPackage ? 'text-violet-600' : 'text-green-600'}`}>
-          {formatPrice(item.price)}
+          {formatCurrency(item.price)}
         </span>
       </div>
     </div>
@@ -426,7 +413,7 @@ function CartSummary({ items, total, duration, onContinue, onClear }) {
         </span>
         <button
           onClick={onClear}
-          className="hig-caption2 text-destructive hover:underline"
+          className="hig-caption-2 text-destructive hover:underline"
         >
           Clear
         </button>
@@ -436,14 +423,14 @@ function CartSummary({ items, total, duration, onContinue, onClear }) {
         {items.map((item) => (
           <div key={`${item.type}-${item.id}`} className="flex justify-between">
             <span className="truncate pr-2">{item.name}</span>
-            <span className="text-green-600 font-medium shrink-0">{formatPrice(item.price)}</span>
+            <span className="text-green-600 font-medium shrink-0">{formatCurrency(item.price)}</span>
           </div>
         ))}
       </div>
 
       <div className="flex justify-between items-center pt-2 border-t">
         <span className="font-semibold">Total</span>
-        <span className="font-bold text-green-600">{formatPrice(total)}</span>
+        <span className="font-bold text-green-600">{formatCurrency(total)}</span>
       </div>
 
       <Button onClick={onContinue} className="w-full" size="lg">
@@ -472,7 +459,7 @@ function MobileCartButton({ items, total, onClick }) {
             </div>
             <span>Continue</span>
           </div>
-          <span className="font-bold">{formatPrice(total)}</span>
+          <span className="font-bold">{formatCurrency(total)}</span>
         </div>
       </Button>
     </div>
@@ -505,7 +492,7 @@ function BookingCalendar({ currentMonth, calendarDays, selectedDate, onDateSelec
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {DAYS.map((day) => (
-          <div key={day} className="text-center hig-caption2 text-muted-foreground font-medium py-2">
+          <div key={day} className="text-center hig-caption-2 text-muted-foreground font-medium py-2">
             {day}
           </div>
         ))}
@@ -599,7 +586,7 @@ function TimeSlotGrid({ slots, selectedTime, onTimeSelect, selectedDate, loading
 
         return (
           <div key={key}>
-            <p className="hig-caption2 font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <p className="hig-caption-2 font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
               <span>{icon}</span> {label}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -702,7 +689,7 @@ function TenantBookingPageContent({ params }) {
     if (paymentSettings.type === "deposit" && paymentSettings.deposit) {
       if (paymentSettings.deposit.type === "fixed") {
         depositAmount = Math.min(paymentSettings.deposit.value || 0, selectedTotal);
-        depositLabel = formatPrice(depositAmount);
+        depositLabel = formatCurrency(depositAmount);
       } else {
         // percentage
         const depositPercent = paymentSettings.deposit.value || 50;
@@ -1046,7 +1033,7 @@ function TenantBookingPageContent({ params }) {
                 </div>
                 <div className="flex justify-between pt-2 border-t">
                   <span className="font-semibold">Total</span>
-                  <span className="font-bold text-green-600">{formatPrice(selectedTotal)}</span>
+                  <span className="font-bold text-green-600">{formatCurrency(selectedTotal)}</span>
                 </div>
               </div>
 
@@ -1082,7 +1069,7 @@ function TenantBookingPageContent({ params }) {
             </Link>
             <div>
               <h1>{business?.name}</h1>
-              <p className="hig-caption2 text-muted-foreground">Book an appointment</p>
+              <p className="hig-caption-2 text-muted-foreground">Book an appointment</p>
             </div>
           </div>
           <MobileProgressDots currentStep={step} paymentEnabled={paymentSettings?.enabled && selectedTotal > 0} />
@@ -1144,7 +1131,7 @@ function TenantBookingPageContent({ params }) {
           {business && (
             <div className="p-6 border-t space-y-2">
               {(business.address?.street || business.address?.city) && (
-                <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>
                     {[
@@ -1156,13 +1143,13 @@ function TenantBookingPageContent({ params }) {
                 </div>
               )}
               {business.phone && (
-                <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
                   <Phone className="w-3.5 h-3.5" />
                   <span>{business.phone}</span>
                 </div>
               )}
               {business.email && (
-                <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
                   <Mail className="w-3.5 h-3.5" />
                   <span>{business.email}</span>
                 </div>
@@ -1388,10 +1375,10 @@ function TenantBookingPageContent({ params }) {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-green-600">{formatPrice(selectedTotal)}</p>
+                          <p className="font-bold text-green-600">{formatCurrency(selectedTotal)}</p>
                           <button
                             onClick={() => handleBack("date")}
-                            className="hig-caption2 text-primary hover:underline"
+                            className="hig-caption-2 text-primary hover:underline"
                           >
                             Change
                           </button>
@@ -1551,12 +1538,12 @@ function TenantBookingPageContent({ params }) {
                         {selectedItems.map((item) => (
                           <div key={`${item.type}-${item.id}`} className="flex justify-between hig-body">
                             <span className="truncate pr-2">{item.name}</span>
-                            <span className="text-green-600 font-medium shrink-0">{formatPrice(item.price)}</span>
+                            <span className="text-green-600 font-medium shrink-0">{formatCurrency(item.price)}</span>
                           </div>
                         ))}
                         <div className="flex justify-between pt-2 border-t">
                           <span className="font-semibold">Total</span>
-                          <span className="font-bold text-green-600">{formatPrice(selectedTotal)}</span>
+                          <span className="font-bold text-green-600">{formatCurrency(selectedTotal)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -1602,11 +1589,11 @@ function TenantBookingPageContent({ params }) {
                           </p>
                           <div className="flex items-baseline gap-2">
                             <span className="font-bold text-green-600">
-                              {formatPrice(paymentAmounts.discountedAmount)}
+                              {formatCurrency(paymentAmounts.discountedAmount)}
                             </span>
                             {paymentAmounts.discount > 0 && (
                               <span className="text-muted-foreground line-through">
-                                {formatPrice(paymentAmounts.fullAmount)}
+                                {formatCurrency(paymentAmounts.fullAmount)}
                               </span>
                             )}
                           </div>
@@ -1635,7 +1622,7 @@ function TenantBookingPageContent({ params }) {
                           <div className="pr-8">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium">Pay Deposit</span>
-                              <Badge variant="outline" className="hig-caption2">
+                              <Badge variant="outline" className="hig-caption-2">
                                 {paymentAmounts.depositLabel}
                               </Badge>
                             </div>
@@ -1645,12 +1632,12 @@ function TenantBookingPageContent({ params }) {
                             <div className="space-y-1">
                               <div className="flex items-baseline gap-2">
                                 <span className="hig-title-1 font-bold text-green-600">
-                                  {formatPrice(paymentAmounts.depositAmount)}
+                                  {formatCurrency(paymentAmounts.depositAmount)}
                                 </span>
                                 <span className="text-muted-foreground">due now</span>
                               </div>
                               <p className="hig-body text-muted-foreground">
-                                + {formatPrice(selectedTotal - paymentAmounts.depositAmount)} remaining balance
+                                + {formatCurrency(selectedTotal - paymentAmounts.depositAmount)} remaining balance
                               </p>
                             </div>
                           </div>
@@ -1658,7 +1645,7 @@ function TenantBookingPageContent({ params }) {
                       )}
 
                       {/* Secure payment note */}
-                      <div className="flex items-center gap-2 hig-caption2 text-muted-foreground pt-2">
+                      <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground pt-2">
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -1691,7 +1678,7 @@ function TenantBookingPageContent({ params }) {
                           ) : (
                             <>
                               <CreditCard className="w-4 h-4 mr-2" />
-                              Pay {formatPrice(paymentOption === "deposit" ? paymentAmounts.depositAmount : paymentAmounts.discountedAmount)}
+                              Pay {formatCurrency(paymentOption === "deposit" ? paymentAmounts.depositAmount : paymentAmounts.discountedAmount)}
                             </>
                           )}
                         </Button>

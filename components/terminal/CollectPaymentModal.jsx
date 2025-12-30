@@ -31,6 +31,8 @@ import {
   DollarSign,
 } from "lucide-react";
 
+import { formatCurrency } from "@/lib/formatters";
+
 function formatDeviceType(type) {
   const deviceNames = {
     stripe_s700: "Stripe Reader S700",
@@ -40,13 +42,6 @@ function formatDeviceType(type) {
     stripe_m2: "Stripe Reader M2",
   };
   return deviceNames[type] || type || "Card Reader";
-}
-
-function formatCurrency(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
 }
 
 export function CollectPaymentModal({

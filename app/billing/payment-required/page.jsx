@@ -86,7 +86,7 @@ export default function PaymentRequiredPage() {
               </p>
 
               {subscriptionInfo?.currentPeriodEnd && (
-                <p className="hig-caption2 text-muted-foreground">
+                <p className="hig-caption-2 text-muted-foreground">
                   {subscriptionInfo.subscriptionStatus === "past_due" && (
                     <>Access will be suspended soon if payment is not received.</>
                   )}
@@ -136,7 +136,7 @@ export default function PaymentRequiredPage() {
         <div className="mt-5 text-center">
           <a
             href="mailto:support@getclientflow.app"
-            className="inline-flex items-center gap-1.5 hig-caption2 text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1.5 hig-caption-2 text-muted-foreground hover:text-foreground"
           >
             <HelpCircle className="w-3.5 h-3.5" />
             Need help? Contact support

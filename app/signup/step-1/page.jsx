@@ -270,7 +270,7 @@ export default function Step1Page() {
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-gray-300" />
-        <span className="text-gray-400 hig-caption2">or</span>
+        <span className="text-gray-400 hig-caption-2">or</span>
         <div className="flex-1 h-px bg-gray-300" />
       </div>
 
@@ -367,7 +367,7 @@ export default function Step1Page() {
         </button>
       </form>
 
-      <p className="hig-caption2 text-center text-gray-400">
+      <p className="hig-caption-2 text-center text-gray-400">
         By signing up, you agree to our{" "}
         <a href="/legal/terms" className="text-blue-500 hover:underline">
           Terms of Service

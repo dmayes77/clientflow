@@ -15,15 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getSignupState } from "@/lib/signup-state";
 import { usePlans, useCreateCheckoutSession } from "@/lib/hooks";
-
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
-}
+import { formatWholeDollars } from "@/lib/formatters";
 
 export default function Step3Page() {
   const router = useRouter();
@@ -152,12 +144,12 @@ export default function Step3Page() {
               </div>
               <div className="text-right">
                 <div className="hig-title-1 font-bold text-gray-900">
-                  {formatPrice(plan.priceMonthly)}
+                  {formatWholeDollars(plan.priceMonthly)}
                   <span className="hig-caption1 font-normal text-gray-500">/mo</span>
                 </div>
                 {plan.priceYearly && (
-                  <div className="hig-caption2 text-gray-500">
-                    or {formatPrice(plan.priceYearly)}/yr
+                  <div className="hig-caption-2 text-gray-500">
+                    or {formatWholeDollars(plan.priceYearly)}/yr
                   </div>
                 )}
               </div>
@@ -168,7 +160,7 @@ export default function Step3Page() {
                 {plan.features.map((feature, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-1.5 hig-caption2 text-gray-600"
+                    className="flex items-center gap-1.5 hig-caption-2 text-gray-600"
                   >
                     <Check
                       className={cn(
@@ -211,12 +203,12 @@ export default function Step3Page() {
 
       {/* Trust badges */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-        <div className="flex items-center gap-1.5 hig-caption2 text-gray-500">
+        <div className="flex items-center gap-1.5 hig-caption-2 text-gray-500">
           <Shield className="w-3.5 h-3.5" />
           <span>Secure checkout</span>
         </div>
-        <div className="hig-caption2 text-gray-500">30-day free trial</div>
-        <div className="hig-caption2 text-gray-500">Cancel anytime</div>
+        <div className="hig-caption-2 text-gray-500">30-day free trial</div>
+        <div className="hig-caption-2 text-gray-500">Cancel anytime</div>
       </div>
 
       {/* Back button */}

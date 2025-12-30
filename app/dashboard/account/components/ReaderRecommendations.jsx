@@ -105,31 +105,31 @@ export function ReaderRecommendations() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-medium">{reader.name}</h4>
-                    <Badge variant="outline" className="hig-caption2">
+                    <Badge variant="outline" className="hig-caption-2">
                       {reader.type}
                     </Badge>
                     {reader.usOnly && (
-                      <Badge variant="secondary" className="hig-caption2">
+                      <Badge variant="secondary" className="hig-caption-2">
                         US Only
                       </Badge>
                     )}
                   </div>
-                  <p className="hig-caption2 text-muted-foreground mt-0.5">
+                  <p className="hig-caption-2 text-muted-foreground mt-0.5">
                     {reader.bestFor}
                   </p>
                   <div className="mt-2 space-y-1">
-                    <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                    <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
                       <Wifi className="h-3 w-3" />
                       <span>{reader.connectivity}</span>
                     </div>
-                    <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                    <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
                       <Battery className="h-3 w-3" />
                       <span>{reader.display}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {reader.features.map((feature) => (
-                      <Badge key={feature} variant="secondary" className="hig-caption2 font-normal">
+                      <Badge key={feature} variant="secondary" className="hig-caption-2 font-normal">
                         {feature}
                       </Badge>
                     ))}
@@ -173,7 +173,7 @@ export function ReaderRecommendations() {
           </Button>
         </div>
 
-        <p className="hig-caption2 text-muted-foreground text-center">
+        <p className="hig-caption-2 text-muted-foreground text-center">
           Readers are shipped directly from Stripe. Processing fees are the same as online payments.
         </p>
       </CardContent>

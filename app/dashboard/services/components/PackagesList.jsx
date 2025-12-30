@@ -66,6 +66,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useBusinessHours } from "@/lib/hooks/use-business-hours";
+import { formatCurrency } from "@/lib/formatters";
 
 const DISCOUNT_OPTIONS = [
   { value: 5, label: "5% off" },
@@ -247,7 +248,8 @@ export function PackagesList() {
       setFormData(initialFormState);
     }
     setIsCreatingCategory(false);
-    setServiceSearch("");
+    // Preserve search state when reopening dialog
+    // setServiceSearch("");
     setExpandedCategories({});
     setDialogOpen(true);
   };
@@ -263,10 +265,10 @@ export function PackagesList() {
 
   const handleDuplicate = () => {
     // Copy current form data with "(Copy)" appended to name
-    setFormData({
-      ...formData,
-      name: `${formData.name} (Copy)`,
-    });
+    setFormData(prev => ({
+      ...prev,
+      name: `${prev.name} (Copy)`,
+    }));
     // Clear editing state so it creates a new package
     setEditingPackage(null);
   };
@@ -344,13 +346,6 @@ export function PackagesList() {
     });
   };
 
-  const formatPrice = (cents) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
-  };
-
   // Define columns for DataTable
   const columns = [
     {
@@ -364,7 +359,7 @@ export function PackagesList() {
           <div className="flex items-center gap-3">
             <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-muted shrink-0">
               <Image
-                src="/default_img.webp"
+                src={pkg.images?.[0]?.url || "/default_img.webp"}
                 alt={pkg.name}
                 fill
                 sizes="40px"
@@ -374,7 +369,7 @@ export function PackagesList() {
             <div className="min-w-0">
               <p className="font-medium truncate">{pkg.name}</p>
               {pkg.category && (
-                <p className="text-muted-foreground truncate hig-caption2">{pkg.category.name}</p>
+                <p className="text-muted-foreground truncate hig-caption-2">{pkg.category.name}</p>
               )}
             </div>
           </div>
@@ -421,7 +416,7 @@ export function PackagesList() {
         <DataTableColumnHeader column={column} title="Price" />
       ),
       cell: ({ row }) => (
-        <span className="font-medium">{formatPrice(row.original.price)}</span>
+        <span className="font-medium">{formatCurrency(row.original.price)}</span>
       ),
     },
     {
@@ -574,7 +569,7 @@ export function PackagesList() {
                 <Label className={`font-medium ${formData.active ? "text-[#16a34a]" : "text-muted-foreground"}`}>
                   {formData.active ? "Active" : "Inactive"}
                 </Label>
-                <Switch checked={formData.active} onCheckedChange={(checked) => setFormData({ ...formData, active: checked })} />
+                <Switch checked={formData.active} onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))} />
               </div>
               {/* Package Name */}
               <div className="space-y-2">
@@ -582,8 +577,9 @@ export function PackagesList() {
                 <Input
                   placeholder="e.g., VIP Bundle"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
+                  autoFocus
                 />
               </div>
 
@@ -597,7 +593,7 @@ export function PackagesList() {
                       type="button"
                       variant={formData.discountPercent === option.value ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setFormData({ ...formData, discountPercent: option.value })}
+                      onClick={() => setFormData(prev => ({ ...prev, discountPercent: option.value }))}
                     >
                       {option.label}
                     </Button>
@@ -609,7 +605,7 @@ export function PackagesList() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Select Services</Label>
-                  <span className="hig-caption2 text-muted-foreground">{formData.serviceIds.length} selected</span>
+                  <span className="hig-caption-2 text-muted-foreground">{formData.serviceIds.length} selected</span>
                 </div>
                 <div className="border rounded-md max-h-48 overflow-y-auto">
                   {services.filter(s => s.active).map((service) => (
@@ -630,7 +626,7 @@ export function PackagesList() {
                       />
                       <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                         <span className="truncate">{service.name}</span>
-                        <span className="hig-caption2 text-muted-foreground">{formatPrice(service.price)}</span>
+                        <span className="hig-caption-2 text-muted-foreground">{formatCurrency(service.price)}</span>
                       </div>
                     </label>
                   ))}
@@ -642,7 +638,7 @@ export function PackagesList() {
                 <div className="rounded-lg border bg-muted/30 p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">{pricePreview.serviceCount} services</span>
-                    <span className="font-bold text-green-600">{formatPrice(pricePreview.finalPrice)}</span>
+                    <span className="font-bold text-green-600">{formatCurrency(pricePreview.finalPrice)}</span>
                   </div>
                 </div>
               )}
@@ -672,7 +668,7 @@ export function PackagesList() {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Package
                   </Button>
-                  <p className="hig-caption2 text-muted-foreground text-center mt-2">Delete action cannot be undone</p>
+                  <p className="hig-caption-2 text-muted-foreground text-center mt-2">Delete action cannot be undone</p>
                 </div>
               )}
 
@@ -709,7 +705,7 @@ export function PackagesList() {
                   <Switch
                     id="active"
                     checked={formData.active}
-                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
                   />
                 </div>
               </div>
@@ -727,8 +723,9 @@ export function PackagesList() {
                         id="name"
                         placeholder="e.g., Full Session Package, VIP Bundle"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                         required
+                        autoFocus
                       />
                     </div>
 
@@ -738,7 +735,7 @@ export function PackagesList() {
                         id="description"
                         placeholder="Describe what's included in this package"
                         value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                         rows={3}
                       />
                     </div>
@@ -751,7 +748,7 @@ export function PackagesList() {
                           <Input
                             placeholder="New category name"
                             value={formData.newCategoryName}
-                            onChange={(e) => setFormData({ ...formData, newCategoryName: e.target.value })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, newCategoryName: e.target.value }))}
                           />
                           <Button
                             type="button"
@@ -759,7 +756,7 @@ export function PackagesList() {
                             size="sm"
                             onClick={() => {
                               setIsCreatingCategory(false);
-                              setFormData({ ...formData, newCategoryName: "" });
+                              setFormData(prev => ({ ...prev, newCategoryName: "" }));
                             }}
                           >
                             Cancel
@@ -770,7 +767,7 @@ export function PackagesList() {
                           <Select
                             value={formData.categoryId || "none"}
                             onValueChange={(value) =>
-                              setFormData({ ...formData, categoryId: value === "none" ? null : value })
+                              setFormData(prev => ({ ...prev, categoryId: value === "none" ? null : value }))
                             }
                           >
                             <SelectTrigger className="flex-1">
@@ -809,13 +806,13 @@ export function PackagesList() {
                               variant={formData.discountPercent === option.value ? "default" : "outline"}
                               size="sm"
                               className="relative"
-                              onClick={() => setFormData({ ...formData, discountPercent: option.value })}
+                              onClick={() => setFormData(prev => ({ ...prev, discountPercent: option.value }))}
                             >
                               {option.label}
                               {option.recommended && (
                                 <Badge
                                   variant="secondary"
-                                  className="absolute -top-2 -right-2 hig-caption2 px-1 py-0"
+                                  className="absolute -top-2 -right-2 hig-caption-2 px-1 py-0"
                                 >
                                   Best
                                 </Badge>
@@ -834,11 +831,11 @@ export function PackagesList() {
                               type="button"
                               variant={formData.priceEnding === option.value ? "default" : "outline"}
                               size="sm"
-                              onClick={() => setFormData({
-                                ...formData,
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
                                 priceEnding: option.value,
                                 customPrice: option.value === "custom" ? String(Math.round(pricePreview.discountedPrice / 100)) : ""
-                              })}
+                              }))}
                             >
                               {option.label}
                               <span className="ml-1 opacity-60">{option.example}</span>
@@ -854,7 +851,7 @@ export function PackagesList() {
                               min="0"
                               placeholder="Enter price"
                               value={formData.customPrice}
-                              onChange={(e) => setFormData({ ...formData, customPrice: e.target.value })}
+                              onChange={(e) => setFormData(prev => ({ ...prev, customPrice: e.target.value }))}
                               className="w-32 h-8"
                             />
                           </div>
@@ -867,7 +864,7 @@ export function PackagesList() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>Select Services *</Label>
-                      <span className="hig-caption2 text-muted-foreground">
+                      <span className="hig-caption-2 text-muted-foreground">
                         {formData.serviceIds.length} selected
                       </span>
                     </div>
@@ -884,7 +881,7 @@ export function PackagesList() {
                           >
                             {service.name}
                             <span className="text-muted-foreground ml-1">
-                              {formatPrice(service.price)}
+                              {formatCurrency(service.price)}
                             </span>
                             <X className="h-3 w-3 ml-0.5 hover:text-destructive" />
                           </Badge>
@@ -935,7 +932,7 @@ export function PackagesList() {
                               />
                               <Tag className="h-3.5 w-3.5 text-muted-foreground" />
                               {group.name}
-                              <span className="hig-caption2 text-muted-foreground ml-auto mr-1">
+                              <span className="hig-caption-2 text-muted-foreground ml-auto mr-1">
                                 {group.services.filter((s) => formData.serviceIds.includes(s.id)).length}/
                                 {group.services.length}
                               </span>
@@ -952,8 +949,8 @@ export function PackagesList() {
                                   />
                                   <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                                     <span className="truncate">{service.name}</span>
-                                    <span className="hig-caption2 text-muted-foreground whitespace-nowrap">
-                                      {formatDuration(service.duration)} • {formatPrice(service.price)}
+                                    <span className="hig-caption-2 text-muted-foreground whitespace-nowrap">
+                                      {formatDuration(service.duration)} • {formatCurrency(service.price)}
                                     </span>
                                   </div>
                                 </label>
@@ -971,21 +968,21 @@ export function PackagesList() {
                   <div className="rounded-lg border bg-muted/30 p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                       <div>
-                        <p className="hig-caption2 text-muted-foreground">Services</p>
+                        <p className="hig-caption-2 text-muted-foreground">Services</p>
                         <p className="font-semibold">{pricePreview.serviceCount}</p>
                       </div>
                       <div>
-                        <p className="hig-caption2 text-muted-foreground">Duration</p>
+                        <p className="hig-caption-2 text-muted-foreground">Duration</p>
                         <p className="font-semibold">{formatDuration(pricePreview.totalDuration)}</p>
                       </div>
                       <div>
-                        <p className="hig-caption2 text-muted-foreground">Original</p>
-                        <p className="font-semibold line-through text-muted-foreground">{formatPrice(pricePreview.originalPrice)}</p>
+                        <p className="hig-caption-2 text-muted-foreground">Original</p>
+                        <p className="font-semibold line-through text-muted-foreground">{formatCurrency(pricePreview.originalPrice)}</p>
                       </div>
                       <div>
-                        <p className="hig-caption2 text-muted-foreground">Package Price</p>
-                        <p className="font-bold text-green-600">{formatPrice(pricePreview.finalPrice)}</p>
-                        <p className="hig-caption2 text-green-600">Save {formatPrice(pricePreview.discountAmount)}</p>
+                        <p className="hig-caption-2 text-muted-foreground">Package Price</p>
+                        <p className="font-bold text-green-600">{formatCurrency(pricePreview.finalPrice)}</p>
+                        <p className="hig-caption-2 text-green-600">Save {formatCurrency(pricePreview.discountAmount)}</p>
                       </div>
                     </div>
                   </div>

@@ -135,8 +135,8 @@ export function WhoItsFor() {
     <section className="min-h-screen py-20 md:py-28 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-linear-to-b from-muted/50 via-background to-muted/30" />
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-violet-500/5 blur-3xl" />
+      <div className="absolute top-0 left-1/4 w-150 h-150 rounded-full bg-primary/5 blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-125 h-125 rounded-full bg-violet-500/5 blur-3xl" />
 
       <div className="container max-w-7xl mx-auto px-4 relative">
         {/* Header */}

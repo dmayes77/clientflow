@@ -1,28 +1,19 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedTenant } from "@/lib/auth";
 
 // GET /api/payments - List all payments for tenant
 export async function GET(request) {
   try {
-    const { orgId } = await auth();
-
-    if (!orgId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const tenant = await prisma.tenant.findUnique({
-      where: { clerkOrgId: orgId },
-      select: { id: true },
-    });
+    const { tenant, error, status: authStatus } = await getAuthenticatedTenant(request);
 
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+      return NextResponse.json({ error }, { status: authStatus });
     }
 
     // Parse query params
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
+    const statusFilter = searchParams.get("status");
     const search = searchParams.get("search");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
@@ -34,8 +25,8 @@ export async function GET(request) {
       tenantId: tenant.id,
     };
 
-    if (status && status !== "all") {
-      where.status = status;
+    if (statusFilter && statusFilter !== "all") {
+      where.status = statusFilter;
     }
 
     if (search) {

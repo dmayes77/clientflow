@@ -120,7 +120,7 @@ export function TagFilter({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-75 p-0" align="start">
         <Command>
           <CommandInput placeholder="Search tags..." />
           <CommandList>

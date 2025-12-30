@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,7 +33,11 @@ import {
   useWebShare,
   useCoupons,
   useValidateCoupon,
+  useUnsavedChanges,
+  useAutosave,
+  normalizeInvoiceData,
 } from "@/lib/hooks";
+import { InvoiceTemplate } from "@/components/invoice/InvoiceTemplate";
 import {
   useTanstackForm,
   TextField,
@@ -66,7 +71,7 @@ const DEPOSIT_OPTIONS = [
 
 const initialFormState = {
   contactId: "",
-  bookingId: null,
+  bookingIds: [], // Multiple bookings can be linked to one invoice
   contactName: "",
   contactEmail: "",
   contactAddress: "",
@@ -102,6 +107,15 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
   // Save button state
   const saveButton = useSaveButton();
+
+  // Track form dirty state
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Unsaved changes warning
+  const { safeBack } = useUnsavedChanges(
+    isDirty,
+    "You have unsaved changes. Are you sure you want to leave?"
+  );
 
   // Fetch data using TanStack Query hooks
   const { data: contacts = [], isLoading: contactsLoading } = useContacts();
@@ -140,16 +154,9 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       try {
         const { subtotal, taxAmount, total } = calculateTotals(value);
 
-        console.log("[InvoiceForm] Form values before payload:", JSON.stringify({
-          status: value.status,
-          depositPercent: value.depositPercent,
-          depositPercentType: typeof value.depositPercent,
-          depositPercentRaw: value.depositPercent,
-        }));
-
         const payload = {
           contactId: value.contactId,
-          bookingId: value.bookingId || null,
+          bookingIds: value.bookingIds || [],
           contactName: value.contactName,
           contactEmail: value.contactEmail,
           contactAddress: value.contactAddress || null,
@@ -176,12 +183,6 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
           notes: value.notes || null,
           terms: value.terms || null,
         };
-
-        console.log("[InvoiceForm] Payload being sent:", JSON.stringify({
-          depositPercent: payload.depositPercent,
-          couponId: payload.couponId,
-          couponDiscountAmount: payload.couponDiscountAmount,
-        }));
 
         // Minimum 2 second delay for loading state visibility
         const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
@@ -217,13 +218,6 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   // Initialize form data when invoice or tenant data loads
   useEffect(() => {
     if (mode === "edit" && invoice) {
-      console.log("[InvoiceForm] Loading invoice for edit:", JSON.stringify({
-        depositPercent: invoice.depositPercent,
-        depositAmount: invoice.depositAmount,
-        hasCoupons: invoice.coupons?.length > 0,
-        couponData: invoice.coupons?.[0]
-      }));
-
       const convertedLineItems = getSafeLineItems(invoice.lineItems).map((item) => {
         const quantity = parseInt(item.quantity) || 1;
         const unitPrice = (parseFloat(item.unitPrice) || 0) / 100;
@@ -242,29 +236,23 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       });
 
       let safeDepositPercent = null;
-      console.log("[InvoiceForm] Invoice depositPercent from API:", invoice.depositPercent, "type:", typeof invoice.depositPercent);
 
       if (invoice.depositPercent !== null && invoice.depositPercent !== undefined) {
         const parsed = parseInt(invoice.depositPercent, 10);
-        console.log("[InvoiceForm] Parsed depositPercent:", parsed, "isNaN:", isNaN(parsed));
         if (!isNaN(parsed) && isFinite(parsed) && parsed > 0) {
           safeDepositPercent = parsed;
         }
       }
 
-      console.log("[InvoiceForm] Final safeDepositPercent to set:", safeDepositPercent);
-
-      // Only set values if we have a valid deposit percent (not NaN)
-      console.log("[InvoiceForm] About to set form values, safeDepositPercent:", safeDepositPercent, "type:", typeof safeDepositPercent);
-
       form.setFieldValue("contactId", invoice.contactId || "");
-      form.setFieldValue("bookingId", invoice.bookingId || null);
+      // Extract booking IDs from the bookings array
+      const linkedBookingIds = (invoice.bookings || []).map((b) => b.id);
+      form.setFieldValue("bookingIds", linkedBookingIds);
       form.setFieldValue("contactName", invoice.contactName || "");
       form.setFieldValue("contactEmail", invoice.contactEmail || "");
       form.setFieldValue("contactAddress", invoice.contactAddress || "");
       form.setFieldValue("dueDate", format(new Date(invoice.dueDate), "yyyy-MM-dd"));
       form.setFieldValue("status", invoice.status || "draft");
-      console.log("[InvoiceForm] Set status to:", invoice.status || "draft");
       form.setFieldValue("lineItems", convertedLineItems.length > 0 ? convertedLineItems : initialFormState.lineItems);
       form.setFieldValue("discountCode", invoice.discountCode || "");
       form.setFieldValue("discountAmount", (parseFloat(invoice.discountAmount) || 0) / 100);
@@ -274,7 +262,6 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
       const depositValueToSet = (typeof safeDepositPercent === 'number' && !isNaN(safeDepositPercent))
         ? safeDepositPercent
         : null;
-      console.log("[InvoiceForm] Setting depositPercent to:", depositValueToSet);
       form.setFieldValue("depositPercent", depositValueToSet);
 
       form.setFieldValue("notes", invoice.notes || "");
@@ -319,6 +306,14 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
     }
   }, [mode, defaultContactId, contacts]);
 
+  // Track form dirty state
+  useEffect(() => {
+    const formValues = form.state.values;
+    const hasValues = formValues.contactId ||
+      formValues.lineItems?.some(item => item.description || item.unitPrice > 0);
+    setIsDirty(hasValues && !saveButton.saveState);
+  }, [form.state.values, saveButton.saveState]);
+
   // Combined services/packages for selection
   const serviceOptions = useMemo(() => {
     const activeServices = services
@@ -351,27 +346,95 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
   const availableBookings = useMemo(() => {
     const contactId = form.state.values.contactId;
-    const bookingId = form.state.values.bookingId;
+    const currentBookingIds = form.state.values.bookingIds || [];
     if (!contactId) return [];
-    return bookings.filter((b) => b.contactId === contactId && !b.invoice && b.id !== bookingId);
-  }, [form.state.values.contactId, form.state.values.bookingId, bookings]);
+
+    // Show bookings that either:
+    // 1. Don't have an invoice linked yet (invoice is null or has no id), OR
+    // 2. Are currently linked to this invoice (for editing)
+    return bookings.filter((b) => {
+      if (b.contactId !== contactId) return false;
+      // If this is a currently linked booking, always show it
+      if (currentBookingIds.includes(b.id)) return true;
+      // Otherwise only show if no invoice is linked
+      return !b.invoice || !b.invoice.id;
+    });
+  }, [form.state.values.contactId, form.state.values.bookingIds, bookings]);
 
   const handleContactSelect = (contactId) => {
     const selected = contacts.find((c) => c.id === contactId);
     if (selected) {
       form.setFieldValue("contactId", contactId);
-      form.setFieldValue("bookingId", null);
+      form.setFieldValue("bookingIds", []);
       form.setFieldValue("contactName", selected.name);
       form.setFieldValue("contactEmail", selected.email || "");
     }
     setContactPopoverOpen(false);
   };
 
-  const handleBookingSelect = (bookingId) => {
-    if (bookingId === "none") {
-      form.setFieldValue("bookingId", null);
+  const handleBookingToggle = (bookingId, isSelected) => {
+    const currentBookingIds = form.state.values.bookingIds || [];
+
+    let newBookingIds;
+    if (isSelected) {
+      // Add booking
+      newBookingIds = [...currentBookingIds, bookingId];
     } else {
-      form.setFieldValue("bookingId", bookingId);
+      // Remove booking
+      newBookingIds = currentBookingIds.filter((id) => id !== bookingId);
+    }
+
+    form.setFieldValue("bookingIds", newBookingIds);
+
+    // Auto-populate line items from all selected bookings
+    const allLineItems = [];
+    newBookingIds.forEach((id) => {
+      const booking = bookings.find((b) => b.id === id);
+      if (!booking) return;
+
+      // Add services from booking
+      if (booking.services && booking.services.length > 0) {
+        booking.services.forEach((bookingService) => {
+          const service = bookingService.service;
+          if (service) {
+            allLineItems.push({
+              description: service.name,
+              quantity: bookingService.quantity || 1,
+              unitPrice: (service.price || 0) / 100,
+              amount: ((service.price || 0) / 100) * (bookingService.quantity || 1),
+              serviceId: service.id,
+              packageId: null,
+              isDiscount: false,
+            });
+          }
+        });
+      }
+
+      // Add packages from booking
+      if (booking.packages && booking.packages.length > 0) {
+        booking.packages.forEach((bookingPackage) => {
+          const pkg = bookingPackage.package;
+          if (pkg) {
+            allLineItems.push({
+              description: pkg.name,
+              quantity: bookingPackage.quantity || 1,
+              unitPrice: (pkg.price || 0) / 100,
+              amount: ((pkg.price || 0) / 100) * (bookingPackage.quantity || 1),
+              serviceId: null,
+              packageId: pkg.id,
+              isDiscount: false,
+            });
+          }
+        });
+      }
+    });
+
+    // Update line items (or reset to empty if no bookings selected)
+    if (allLineItems.length > 0) {
+      form.setFieldValue("lineItems", allLineItems);
+      toast.success(`${allLineItems.length} item${allLineItems.length > 1 ? "s" : ""} from ${newBookingIds.length} booking${newBookingIds.length > 1 ? "s" : ""}`);
+    } else if (newBookingIds.length === 0) {
+      form.setFieldValue("lineItems", initialFormState.lineItems);
     }
   };
 
@@ -629,13 +692,13 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
   const dueDate = form.state.values.dueDate;
   const status = form.state.values.status;
   const depositPercent = form.state.values.depositPercent;
-  const bookingId = form.state.values.bookingId;
+  const bookingIds = form.state.values.bookingIds || [];
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-start gap-3 shrink-0 mb-4">
-        <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={safeBack}>
           <ArrowLeft className="size-6" />
         </Button>
         <div className="flex-1 min-w-0">
@@ -644,11 +707,11 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
         </div>
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="flex-1 min-h-0">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+      <form id="invoice-form" onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }} className="flex-1 min-h-0 pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           {/* Left Column - Invoice Details */}
-          <Card className="h-full overflow-hidden">
-            <CardContent className="p-6 flex flex-col h-full overflow-hidden">
+          <Card>
+            <CardContent className="p-4 sm:p-6 flex flex-col">
               <div className="space-y-4 shrink-0">
                 {/* Contact Selection */}
                 <div className="space-y-2">
@@ -724,27 +787,59 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 </Popover>
               </div>
 
-              {/* Booking Selection (optional) */}
-              {contactId && availableBookings.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Link to Booking
-                  </Label>
-                  <Select value={bookingId || "none"} onValueChange={(value) => handleBookingSelect(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="No booking linked" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No booking linked</SelectItem>
-                      {availableBookings.map((b) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {format(new Date(b.scheduledAt), "MMM d, yyyy")} - ${(b.totalPrice / 100).toFixed(2)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Booking Selection (multi-select) */}
+              {contactId && (
+                <form.Subscribe selector={(state) => state.values.bookingIds}>
+                  {(bookingIds) => {
+                    const selectedBookingIds = bookingIds || [];
+                    return (
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Link to Bookings
+                          <span className="text-xs text-muted-foreground font-normal">(select multiple)</span>
+                        </Label>
+                        {availableBookings.length > 0 ? (
+                          <div className="border rounded-md divide-y max-h-40 overflow-auto">
+                            {availableBookings.map((b) => {
+                              const isSelected = selectedBookingIds.includes(b.id);
+                              return (
+                                <div
+                                  key={b.id}
+                                  className={`flex items-center gap-3 p-2 cursor-pointer hover:bg-muted/50 ${isSelected ? "bg-primary/5" : ""}`}
+                                  onClick={() => handleBookingToggle(b.id, !isSelected)}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => handleBookingToggle(b.id, checked)}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">
+                                      {format(new Date(b.scheduledAt), "MMM d, yyyy")} - ${(b.totalPrice / 100).toFixed(2)}
+                                    </p>
+                                    {b.services?.length > 0 && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {b.services.length} service{b.services.length > 1 ? "s" : ""}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground py-2">No bookings available for this contact</p>
+                        )}
+                        {selectedBookingIds.length > 0 && (
+                          <p className="text-xs text-primary">
+                            {selectedBookingIds.length} booking{selectedBookingIds.length > 1 ? "s" : ""} selected
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }}
+                </form.Subscribe>
               )}
 
               {/* Contact Info */}
@@ -779,30 +874,340 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                   )}
                 </form.Field>
               </div>
-
-              {/* Notes Section - fills remaining space */}
-              <div className="flex-1 mt-4 flex flex-col min-h-0 overflow-hidden">
-                <Label className="mb-2 shrink-0">Notes</Label>
-                <form.Field name="notes">
-                  {(field) => (
-                    <Textarea
-                      placeholder="Add any additional notes or information..."
-                      className="flex-1 resize-none overflow-auto"
-                      value={field.state.value || ""}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                    />
-                  )}
-                </form.Field>
               </div>
+
+              {/* Line Items Section */}
+              <div className="flex-1 mt-4 min-h-0 overflow-auto space-y-4">
+                <div className="space-y-3">
+                  <Label className="flex items-center justify-between">
+                    <span>Line Items</span>
+                    <div className="flex gap-1">
+                      <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Item
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={addDiscountLine} className="text-red-600 hover:text-red-700">
+                        <Percent className="h-3 w-3 mr-1" />
+                        Discount
+                      </Button>
+                    </div>
+                  </Label>
+
+                  <form.Subscribe selector={(state) => state.values.lineItems}>
+                    {(lineItems) => (
+                      <div className="space-y-2">
+                        {(lineItems || []).map((item, index) => (
+                          <div key={index} className={`rounded-lg border p-3 space-y-2 ${item.isDiscount ? "bg-red-50/50 border-red-200" : ""}`}>
+                            <div className="flex gap-2">
+                              {!item.isDiscount ? (
+                                <Popover
+                                  open={servicePopoverOpen[index]}
+                                  onOpenChange={(open) => setServicePopoverOpen({ ...servicePopoverOpen, [index]: open })}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0">
+                                      {item.serviceId ? <Wrench className="h-4 w-4" /> : item.packageId ? <Package className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-70 p-0" align="start">
+                                    <Command>
+                                      <CommandInput placeholder="Search..." />
+                                      <CommandList>
+                                        <CommandEmpty>No results.</CommandEmpty>
+                                        <CommandGroup heading="Custom">
+                                          <CommandItem onSelect={() => handleServiceSelect(index, null)}>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Custom Item
+                                          </CommandItem>
+                                        </CommandGroup>
+                                        {serviceOptions.filter(o => o.type === "service").length > 0 && (
+                                          <CommandGroup heading="Services">
+                                            {serviceOptions.filter(o => o.type === "service").slice(0, 5).map((option) => (
+                                              <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
+                                                <Wrench className="mr-2 h-4 w-4 text-muted-foreground" />
+                                                <span className="flex-1 truncate">{option.name}</span>
+                                                <span className="text-muted-foreground text-xs">${option.price.toFixed(2)}</span>
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        )}
+                                        {serviceOptions.filter(o => o.type === "package").length > 0 && (
+                                          <CommandGroup heading="Packages">
+                                            {serviceOptions.filter(o => o.type === "package").slice(0, 5).map((option) => (
+                                              <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
+                                                <Package className="mr-2 h-4 w-4 text-violet-500" />
+                                                <span className="flex-1 truncate">{option.name}</span>
+                                                <span className="text-muted-foreground text-xs">${option.price.toFixed(2)}</span>
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        )}
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                              ) : (
+                                <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-md border bg-red-100">
+                                  <Percent className="h-4 w-4 text-red-600" />
+                                </div>
+                              )}
+                              <Input
+                                placeholder={item.isDiscount ? "Discount" : "Description"}
+                                value={item.description}
+                                onChange={(e) => handleLineItemChange(index, "description", e.target.value)}
+                                className="flex-1"
+                              />
+                              {(lineItems || []).length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeLineItem(index)}>
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                            <div className="flex gap-2 items-center">
+                              <div className="flex-1">
+                                <Label className="text-xs text-muted-foreground">Qty</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) => handleLineItemChange(index, "quantity", parseInt(e.target.value) || 1)}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <Label className="text-xs text-muted-foreground">{item.isDiscount ? "Discount" : "Price"}</Label>
+                                <div className="flex items-center">
+                                  {item.isDiscount && <Minus className="h-3 w-3 mr-1 text-red-600" />}
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={item.unitPrice}
+                                    onChange={(e) => handleLineItemChange(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                    className={item.isDiscount ? "text-red-600" : ""}
+                                  />
+                                </div>
+                              </div>
+                              <div className="w-20 text-right">
+                                <Label className="text-xs text-muted-foreground">Amount</Label>
+                                <p className={`font-medium py-2 ${item.isDiscount ? "text-red-600" : ""}`}>
+                                  {item.isDiscount ? "-" : ""}${Math.abs(item.amount || 0).toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </form.Subscribe>
+                </div>
+
+                {/* Tax & Deposit Settings */}
+                <div className="space-y-3">
+                  {/* Tax Toggle */}
+                  <form.Field name="taxRate">
+                    {(field) => {
+                      const taxEnabled = field.state.value > 0;
+                      const defaultRate = tenant?.defaultTaxRate || 8;
+
+                      return (
+                        <div className="flex items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <Label className="text-sm font-medium">Apply Tax</Label>
+                            {taxEnabled && (
+                              <p className="text-xs text-muted-foreground">
+                                {field.state.value}% tax rate
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {taxEnabled && (
+                              <Input
+                                type="number"
+                                min="0.1"
+                                max="100"
+                                step="0.1"
+                                value={field.state.value}
+                                onChange={(e) => field.handleChange(parseFloat(e.target.value) || defaultRate)}
+                                className="w-16 h-8 text-sm text-center"
+                              />
+                            )}
+                            <Switch
+                              checked={taxEnabled}
+                              onCheckedChange={(checked) => {
+                                field.handleChange(checked ? defaultRate : 0);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    }}
+                  </form.Field>
+
+                  {/* Deposit Dropdown */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Deposit Required</Label>
+                    <form.Field name="depositPercent">
+                      {(field) => (
+                        <Select
+                          value={field.state.value?.toString() || "none"}
+                          onValueChange={(value) => field.handleChange(value === "none" ? null : parseInt(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="No deposit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No deposit</SelectItem>
+                            {DEPOSIT_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value.toString()}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </form.Field>
+                  </div>
+                </div>
+
+                {/* Coupon Selection */}
+                {coupons.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm flex items-center gap-2">
+                      <Ticket className="h-4 w-4" />
+                      Coupon
+                    </Label>
+                    <Popover open={couponPopoverOpen} onOpenChange={setCouponPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button type="button" variant="outline" className="w-full justify-start">
+                          {validatedCoupon ? (
+                            <span className="flex items-center gap-2 text-green-600">
+                              <Check className="h-4 w-4" />
+                              {validatedCoupon.code} applied
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Select a coupon...</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-70 p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search coupons..." />
+                          <CommandList>
+                            <CommandEmpty>No coupons available.</CommandEmpty>
+                            {validatedCoupon && (
+                              <CommandGroup>
+                                <CommandItem onSelect={handleRemoveCoupon} className="text-red-600">
+                                  <X className="mr-2 h-4 w-4" />
+                                  Remove coupon
+                                </CommandItem>
+                              </CommandGroup>
+                            )}
+                            <CommandGroup heading="Available Coupons">
+                              {coupons.map((coupon) => (
+                                <CommandItem key={coupon.id} onSelect={() => handleCouponSelect(coupon.code)}>
+                                  <Ticket className="mr-2 h-4 w-4 text-green-600" />
+                                  <span className="flex-1">{coupon.code}</span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {coupon.discountType === "percent" ? `${coupon.discountValue}%` : `$${(coupon.discountValue / 100).toFixed(2)}`}
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Notes</Label>
+                  <form.Field name="notes">
+                    {(field) => (
+                      <Textarea
+                        placeholder="Add any additional notes..."
+                        className="min-h-20 resize-none"
+                        value={field.state.value || ""}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                      />
+                    )}
+                  </form.Field>
+                </div>
+
+                {/* Terms */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Terms & Conditions</Label>
+                  <form.Field name="terms">
+                    {(field) => (
+                      <Textarea
+                        placeholder="Payment terms, conditions..."
+                        className="min-h-20 resize-none"
+                        value={field.state.value || ""}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                      />
+                    )}
+                  </form.Field>
+                </div>
+
+                {/* Totals Summary */}
+                <form.Subscribe selector={(state) => ({
+                  lineItems: state.values.lineItems,
+                  taxRate: state.values.taxRate,
+                  depositPercent: state.values.depositPercent,
+                })}>
+                  {({ lineItems, taxRate, depositPercent }) => {
+                    const { subtotal, lineDiscounts, couponDiscount, taxAmount, total } = calculateTotals({ lineItems, taxRate });
+                    const safeDepositPercent = depositPercent && !isNaN(depositPercent) && depositPercent > 0 ? depositPercent : 0;
+                    const depositAmount = total * (safeDepositPercent / 100);
+
+                    return (
+                      <div className="rounded-lg border bg-muted/30 p-4 space-y-2 mb-20">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="font-medium">${subtotal.toFixed(2)}</span>
+                        </div>
+                        {lineDiscounts > 0 && (
+                          <div className="flex justify-between text-sm text-red-600">
+                            <span>Line Discounts</span>
+                            <span>-${lineDiscounts.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {couponDiscount > 0 && (
+                          <div className="flex justify-between text-sm text-green-600">
+                            <span>Coupon Discount</span>
+                            <span>-${couponDiscount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {taxRate > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Tax ({taxRate}%)</span>
+                            <span className="font-medium">${taxAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between pt-2 border-t text-base font-bold">
+                          <span>Total</span>
+                          <span>${total.toFixed(2)}</span>
+                        </div>
+                        {safeDepositPercent > 0 && (
+                          <div className="flex justify-between text-sm text-blue-600 pt-1">
+                            <span>Deposit Required ({safeDepositPercent}%)</span>
+                            <span>${depositAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }}
+                </form.Subscribe>
               </div>
             </CardContent>
           </Card>
 
-          {/* Right Column - Invoice Preview */}
-          <Card className="h-full overflow-hidden bg-white">
+          {/* Right Column - Invoice Preview (hidden on mobile) */}
+          <Card className="hidden lg:block lg:h-full lg:overflow-hidden bg-white">
             <CardContent className="p-0 flex flex-col h-full overflow-hidden">
               {/* Invoice Preview - scrollable section */}
-              <div className="flex-1 overflow-auto min-h-0">
+              <div className="flex-1 overflow-auto min-h-0 pb-20">
                 <form.Subscribe selector={(state) => ({
                   lineItems: state.values.lineItems,
                   contactName: state.values.contactName,
@@ -981,68 +1386,69 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
                 </form.Subscribe>
               </div>
 
-              {/* Action Buttons - anchored to bottom */}
-              <div className="mt-auto pt-4 px-6 pb-6 shrink-0 border-t bg-muted/30">
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 min-w-25">
-                    Cancel
-                  </Button>
-                  {mode === "edit" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 min-w-25 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                      onClick={() => setDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  )}
-                  {mode === "edit" && contactEmail && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSend}
-                      disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
-                      className="flex-1 min-w-25"
-                    >
-                      {sendInvoiceMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4 mr-2" />
-                      )}
-                      Send
-                    </Button>
-                  )}
-                  {mode === "edit" && invoice && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleShare}
-                      className="flex-1 min-w-25"
-                    >
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
-                  )}
-                  <SaveButton
-                    form={form}
-                    saveButton={saveButton}
-                    variant="success"
-                    size="sm"
-                    className="flex-1 min-w-25"
-                  >
-                    {mode === "edit" ? "Update" : "Create"}
-                  </SaveButton>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
       </form>
+
+      {/* Action Buttons - Fixed footer */}
+      <div className="fixed bottom-0 left-0 right-0 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] px-4 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 z-50">
+        <div className="flex flex-wrap gap-2 max-w-7xl mx-auto">
+          <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/invoices")} className="flex-1 min-w-20 sm:min-w-25">
+            Cancel
+          </Button>
+          {mode === "edit" && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 min-w-20 sm:min-w-25 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Delete</span>
+            </Button>
+          )}
+          {mode === "edit" && contactEmail && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSend}
+              disabled={sendInvoiceMutation.isPending || createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
+              className="flex-1 min-w-20 sm:min-w-25"
+            >
+              {sendInvoiceMutation.isPending ? (
+                <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 sm:mr-2" />
+              )}
+              <span className="hidden sm:inline">Send</span>
+            </Button>
+          )}
+          {mode === "edit" && invoice && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleShare}
+              className="flex-1 min-w-20 sm:min-w-25"
+            >
+              <Share2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Share</span>
+            </Button>
+          )}
+          <SaveButton
+            form={form}
+            saveButton={saveButton}
+            variant="success"
+            size="sm"
+            className="flex-1 min-w-20 sm:min-w-25"
+          >
+            {mode === "edit" ? "Update" : "Create"}
+          </SaveButton>
+        </div>
+      </div>
 
       {/* New Contact Dialog */}
       <Dialog open={newContactDialogOpen} onOpenChange={setNewContactDialogOpen}>

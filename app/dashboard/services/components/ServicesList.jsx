@@ -49,6 +49,7 @@ import {
   ChevronDown,
   ChevronRight,
   Search,
+  FolderKanban,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DurationSelect } from "@/components/ui/duration-select";
@@ -58,9 +59,14 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { useTanstackForm, TextField, TextareaField, NumberField, SwitchField } from "@/components/ui/tanstack-form";
+import { CategoryManagementSheet } from "./CategoryManagementSheet";
+import { formatCurrency } from "@/lib/formatters";
+import { LoadingCard } from "@/components/ui/loading-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 // Service Card Component
-function ServiceCard({ service, onDuplicate, onDelete, formatDuration, formatPrice }) {
+function ServiceCard({ service, onDuplicate, onDelete, formatDuration }) {
   const router = useRouter();
 
   return (
@@ -107,7 +113,7 @@ function ServiceCard({ service, onDuplicate, onDelete, formatDuration, formatPri
           </div>
           <div className="flex items-center gap-1.5 text-sm font-medium">
             <span className="text-muted-foreground">Price:</span>
-            <span>{formatPrice(service.price)}</span>
+            <span>{formatCurrency(service.price)}</span>
           </div>
         </div>
 
@@ -193,21 +199,20 @@ function SortableServiceCard({ service, onDuplicate, onDelete, formatDuration, f
       <div
         {...attributes}
         {...listeners}
-        className="absolute left-2 top-2 z-10 touch-none cursor-grab active:cursor-grabbing bg-background/90 backdrop-blur-sm rounded-md p-1.5 border shadow-sm hover:bg-accent transition-colors"
+        className="absolute left-2 top-2 z-1 touch-none cursor-grab active:cursor-grabbing bg-background/90 backdrop-blur-sm rounded-md p-1.5 border shadow-sm hover:bg-accent transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
 
       {/* Service Card */}
-      <div className="pl-8">
+      <div>
         <ServiceCard
           service={service}
           onDuplicate={onDuplicate}
           onDelete={onDelete}
           formatDuration={formatDuration}
-          formatPrice={formatPrice}
-        />
+                  />
       </div>
     </div>
   );
@@ -255,8 +260,7 @@ function VirtualizedServiceList({ services, onDuplicate, onDelete, formatDuratio
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
                 formatDuration={formatDuration}
-                formatPrice={formatPrice}
-              />
+                              />
             </div>
           );
         })}
@@ -362,7 +366,7 @@ function DurationSelectField({ form, name, label, required, className, validator
             onValueChange={field.handleChange}
           />
           {field.state.meta.isTouched && field.state.meta.errors[0] && (
-            <p className="hig-caption2 text-destructive mt-1">{field.state.meta.errors[0]}</p>
+            <p className="hig-caption-2 text-destructive mt-1">{field.state.meta.errors[0]}</p>
           )}
         </div>
       )}
@@ -411,11 +415,23 @@ export function ServicesList() {
   const { data: images = [], isLoading: imagesLoading } = useImages();
   const uploadImageMutation = useUploadImage();
 
-  // Drag and drop sensors
-  const sensors = useSensors(
+  // Drag and drop sensors for categories
+  const categorySensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Prevents accidental drags, mobile-friendly
+        distance: 10, // Slightly higher threshold for categories
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Drag and drop sensors for services (lower threshold to activate first)
+  const serviceSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Lower threshold so services activate before categories
       },
     }),
     useSensor(KeyboardSensor, {
@@ -426,6 +442,7 @@ export function ServicesList() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [categoryManagementOpen, setCategoryManagementOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [serviceToDelete, setServiceToDelete] = useState(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
@@ -472,6 +489,29 @@ export function ServicesList() {
       onChange: serviceFormSchema,
     },
   });
+
+  // Reset form when dialog opens or editingService changes
+  useEffect(() => {
+    if (dialogOpen) {
+      if (editingService) {
+        // Editing existing service - populate form
+        form.reset({
+          name: editingService.name || "",
+          description: editingService.description || "",
+          duration: editingService.duration || 60,
+          price: editingService.price ? editingService.price / 100 : 0,
+          active: editingService.active ?? true,
+          categoryId: editingService.categoryId || "",
+          newCategoryName: "",
+          includes: editingService.includes || [],
+          imageId: editingService.images?.[0]?.id || null,
+        });
+      } else {
+        // Creating new service - reset to initial state
+        form.reset(initialFormState);
+      }
+    }
+  }, [dialogOpen, editingService]);
 
   const handleIncludesDragEnd = (event) => {
     const { active, over } = event;
@@ -659,6 +699,39 @@ Format the includes list so I can easily copy each item individually.`;
     }
   };
 
+  const handlePasteIncludes = (e) => {
+    const pastedText = e.clipboardData.getData('text');
+
+    // Check if the pasted text contains commas
+    if (pastedText.includes(',')) {
+      e.preventDefault();
+
+      const currentIncludes = form.getFieldValue("includes") || [];
+
+      // Split by comma, trim whitespace, filter out empty strings
+      const newItems = pastedText
+        .split(',')
+        .map(item => item.trim())
+        .filter(item => item.length > 0 && item.length <= 200);
+
+      // Add items up to the limit of 20
+      const availableSlots = 20 - currentIncludes.length;
+      const itemsToAdd = newItems.slice(0, availableSlots);
+
+      if (itemsToAdd.length > 0) {
+        form.setFieldValue("includes", [...currentIncludes, ...itemsToAdd]);
+        setNewIncludeItem("");
+
+        // Show toast if some items were truncated
+        if (newItems.length > availableSlots) {
+          toast.info(`Added ${itemsToAdd.length} items. ${newItems.length - availableSlots} items skipped (limit: 20 total).`);
+        } else {
+          toast.success(`Added ${itemsToAdd.length} item${itemsToAdd.length > 1 ? 's' : ''}`);
+        }
+      }
+    }
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -711,44 +784,44 @@ Format the includes list so I can easily copy each item individually.`;
     setDeleteDialogOpen(true);
   };
 
-  const handleDragEnd = (event, categoryName) => {
+  const handleDragEnd = (event, categoryIdentifier) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
 
-    console.log('🎯 [DRAG] Starting drag end handler', {
-      activeId: active.id,
-      overId: over.id,
-      categoryName
-    });
+    // Get the services for this category from the original services array
+    let categoryServices;
+    if (categoryIdentifier === 'uncategorized') {
+      categoryServices = services.filter(s => !s.categoryId);
+    } else {
+      // categoryIdentifier is the category ID
+      categoryServices = services.filter(s => s.categoryId === categoryIdentifier);
+    }
 
-    // Get the services for this category
-    const categoryServices = categoryName === 'uncategorized'
-      ? servicesByCategory.uncategorized
-      : servicesByCategory.categorized[categoryName];
+    // Check if this drag is actually for a service in this category
+    const isServiceDrag = categoryServices.some((s) => s.id === active.id);
+    if (!isServiceDrag) return; // Ignore category drags in service context
+
+    // Sort by current displayOrder to get the correct order
+    categoryServices.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
 
     const oldIndex = categoryServices.findIndex((s) => s.id === active.id);
     const newIndex = categoryServices.findIndex((s) => s.id === over.id);
-
-    console.log('🎯 [DRAG] Indices', { oldIndex, newIndex });
 
     if (oldIndex === -1 || newIndex === -1) return;
 
     // Reorder the services array
     const reordered = arrayMove(categoryServices, oldIndex, newIndex);
 
-    // Create updates array with new displayOrder values
+    // Create updates array with normalized displayOrder values (0, 1, 2, 3...)
     const updates = reordered.map((service, index) => ({
       id: service.id,
       displayOrder: index,
     }));
 
-    console.log('🎯 [DRAG] Updates to send', updates);
-
     // Mutation with optimistic update (handled in hook)
     reorderServices.mutate(updates, {
       onError: (error) => {
-        console.log('🎯 [ERROR] Mutation failed', error);
         toast.error(error.message || "Failed to reorder services");
       },
     });
@@ -759,20 +832,17 @@ Format the includes list so I can easily copy each item individually.`;
 
     if (!over || active.id === over.id) return;
 
-    console.log('🎯 [CAT-DRAG] Starting category drag end handler', {
-      activeId: active.id,
-      overId: over.id,
-    });
-
     // Get categories that have services
     const categoriesWithServices = categories.filter(cat =>
       services.some(service => service.categoryId === cat.id)
     );
 
+    // Check if this drag is actually for a category (not a service)
+    const isCategoryDrag = categoriesWithServices.some((c) => c.id === active.id);
+    if (!isCategoryDrag) return; // Ignore service drags in category context
+
     const oldIndex = categoriesWithServices.findIndex((c) => c.id === active.id);
     const newIndex = categoriesWithServices.findIndex((c) => c.id === over.id);
-
-    console.log('🎯 [CAT-DRAG] Indices', { oldIndex, newIndex });
 
     if (oldIndex === -1 || newIndex === -1) return;
 
@@ -785,22 +855,12 @@ Format the includes list so I can easily copy each item individually.`;
       displayOrder: index,
     }));
 
-    console.log('🎯 [CAT-DRAG] Updates to send', updates);
-
     // Mutation with optimistic update (handled in hook)
     reorderCategories.mutate(updates, {
       onError: (error) => {
-        console.log('🎯 [CAT-ERROR] Mutation failed', error);
         toast.error(error.message || "Failed to reorder categories");
       },
     });
-  };
-
-  const formatPrice = (cents) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
   };
 
   // Use business hours hook for duration formatting
@@ -862,12 +922,6 @@ Format the includes list so I can easily copy each item individually.`;
   const totalFilteredServices = servicesByCategory.uncategorized.length +
     Object.values(servicesByCategory.categorized).reduce((sum, services) => sum + services.length, 0);
 
-  // Debug: log services data to track changes
-  console.log('🔄 [RENDER] Services data', {
-    totalServices: services.length,
-    servicesSample: services.slice(0, 3).map(s => ({ id: s.id, name: s.name, displayOrder: s.displayOrder, categoryId: s.categoryId }))
-  });
-
   // Define columns for DataTable
   const columns = [
     {
@@ -891,7 +945,7 @@ Format the includes list so I can easily copy each item individually.`;
             <div className="min-w-0">
               <p className="font-medium truncate">{service.name}</p>
               {service.category && (
-                <p className="text-muted-foreground truncate hig-caption2">{service.category.name}</p>
+                <p className="text-muted-foreground truncate hig-caption-2">{service.category.name}</p>
               )}
             </div>
           </div>
@@ -927,7 +981,7 @@ Format the includes list so I can easily copy each item individually.`;
         <DataTableColumnHeader column={column} title="Price" />
       ),
       cell: ({ row }) => (
-        <span className="font-medium">{formatPrice(row.original.price)}</span>
+        <span className="font-medium">{formatCurrency(row.original.price)}</span>
       ),
     },
     {
@@ -1014,46 +1068,55 @@ Format the includes list so I can easily copy each item individually.`;
   ];
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <LoadingCard message="Loading services..." />;
   }
 
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div>
-            <CardTitle className="flex items-center gap-2 font-semibold">
-              <Wrench className="h-5 w-5 text-amber-500" />
-              Services
-            </CardTitle>
-            <p className="text-muted-foreground mt-1">
-              {services.length} service{services.length !== 1 ? "s" : ""}
-            </p>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 font-semibold">
+                <Wrench className="h-5 w-5 text-amber-500" />
+                Services
+              </CardTitle>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {services.length} service{services.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCategoryManagementOpen(true)}
+                className="flex-1 sm:flex-none"
+              >
+                <FolderKanban className="h-4 w-4 mr-1" />
+                Categories
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => router.push("/dashboard/services/new")}
+                className="flex-1 sm:flex-none"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Service
+              </Button>
+            </div>
           </div>
-          <Button size="sm" onClick={() => router.push("/dashboard/services/new")}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add Service
-          </Button>
         </CardHeader>
         <CardContent>
           {services.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center mb-4">
-                <Wrench className="h-6 w-6 text-amber-600" />
-              </div>
-              <h3 className="text-zinc-900 mb-1">No services yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first service to start booking</p>
-              <Button size="sm" onClick={() => router.push("/dashboard/services/new")}>
-                <Plus className="h-4 w-4 mr-1" />
-                Create Service
-              </Button>
-            </div>
+            <EmptyState
+              icon={Wrench}
+              iconColor="amber"
+              title="No services yet"
+              description="Create your first service to start booking"
+              actionLabel="Create Service"
+              actionIcon={<Plus className="h-4 w-4 mr-1" />}
+              onAction={() => router.push("/dashboard/services/new")}
+            />
           ) : (
             <div className="space-y-4">
               {/* Search Bar */}
@@ -1106,7 +1169,7 @@ Format the includes list so I can easily copy each item individually.`;
                         <div
                           className={`overflow-hidden transition-all duration-300 ease-in-out ${
                             expandedCategories['uncategorized']
-                              ? 'max-h-[5000px] opacity-100'
+                              ? 'max-h-1250 opacity-100'
                               : 'max-h-0 opacity-0'
                           }`}
                         >
@@ -1117,11 +1180,11 @@ Format the includes list so I can easily copy each item individually.`;
                                 onDuplicate={handleDuplicateService}
                                 onDelete={handleDeleteService}
                                 formatDuration={formatDuration}
-                                formatPrice={formatPrice}
-                              />
+                                                              />
                             ) : (
                               <DndContext
-                                sensors={sensors}
+                                id="uncategorized-dnd-context"
+                                sensors={serviceSensors}
                                 collisionDetection={closestCenter}
                                 onDragEnd={(event) => handleDragEnd(event, 'uncategorized')}
                                 modifiers={[restrictToVerticalAxis]}
@@ -1138,8 +1201,7 @@ Format the includes list so I can easily copy each item individually.`;
                                         onDuplicate={handleDuplicateService}
                                         onDelete={handleDeleteService}
                                         formatDuration={formatDuration}
-                                        formatPrice={formatPrice}
-                                      />
+                                                                              />
                                     ))}
                                   </div>
                                 </SortableContext>
@@ -1163,7 +1225,8 @@ Format the includes list so I can easily copy each item individually.`;
 
                     return categoriesWithServices.length > 0 && (
                       <DndContext
-                        sensors={sensors}
+                        id="category-dnd-context"
+                        sensors={categorySensors}
                         collisionDetection={closestCenter}
                         onDragEnd={handleCategoryDragEnd}
                         modifiers={[restrictToVerticalAxis]}
@@ -1172,71 +1235,73 @@ Format the includes list so I can easily copy each item individually.`;
                           items={categoriesWithServices.map((c) => c.id)}
                           strategy={verticalListSortingStrategy}
                         >
-                          {categoriesWithServices.map((category, categoryIndex, array) => {
-                            // Get services for this category
-                            const categoryServices = services.filter(s => s.categoryId === category.id);
+                          <div className="space-y-4">
+                            {categoriesWithServices.map((category, categoryIndex, array) => {
+                              // Get services for this category
+                              const categoryServices = services.filter(s => s.categoryId === category.id);
 
-                            return (
-                              <Fragment key={category.id}>
-                                <div className="space-y-2">
-                                  <SortableCategoryHeader
-                                    category={category}
-                                    categoryServices={categoryServices}
-                                    expandedCategories={expandedCategories}
-                                    toggleCategory={toggleCategory}
-                                  />
+                              return (
+                                <Fragment key={category.id}>
+                                  <div className="space-y-2">
+                                    <SortableCategoryHeader
+                                      category={category}
+                                      categoryServices={categoryServices}
+                                      expandedCategories={expandedCategories}
+                                      toggleCategory={toggleCategory}
+                                    />
 
-                                  <div
-                                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                                      expandedCategories[category.name]
-                                        ? 'max-h-[5000px] opacity-100'
-                                        : 'max-h-0 opacity-0'
-                                    }`}
-                                  >
-                                    {expandedCategories[category.name] && (
-                                      categoryServices.length > 10 ? (
-                                        <VirtualizedServiceList
-                                          services={categoryServices}
-                                          onDuplicate={handleDuplicateService}
-                                          onDelete={handleDeleteService}
-                                          formatDuration={formatDuration}
-                                          formatPrice={formatPrice}
-                                        />
-                                      ) : (
-                                        <DndContext
-                                          sensors={sensors}
-                                          collisionDetection={closestCenter}
-                                          onDragEnd={(event) => handleDragEnd(event, category.name)}
-                                          modifiers={[restrictToVerticalAxis]}
-                                        >
-                                          <SortableContext
-                                            items={categoryServices.map((s) => s.id)}
-                                            strategy={verticalListSortingStrategy}
+                                    {/* Services - in nested DndContext */}
+                                    <div
+                                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                        expandedCategories[category.name]
+                                          ? 'max-h-500 opacity-100'
+                                          : 'max-h-0 opacity-0'
+                                      }`}
+                                    >
+                                      {expandedCategories[category.name] && (
+                                        categoryServices.length > 10 ? (
+                                          <VirtualizedServiceList
+                                            services={categoryServices}
+                                            onDuplicate={handleDuplicateService}
+                                            onDelete={handleDeleteService}
+                                            formatDuration={formatDuration}
+                                                                                      />
+                                        ) : (
+                                          <DndContext
+                                            id={`service-dnd-context-${category.id}`}
+                                            sensors={serviceSensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={(event) => handleDragEnd(event, category.id)}
+                                            modifiers={[restrictToVerticalAxis]}
                                           >
-                                            <div className="space-y-3">
-                                              {categoryServices.map((service) => (
-                                                <SortableServiceCard
-                                                  key={service.id}
-                                                  service={service}
-                                                  onDuplicate={handleDuplicateService}
-                                                  onDelete={handleDeleteService}
-                                                  formatDuration={formatDuration}
-                                                  formatPrice={formatPrice}
-                                                />
-                                              ))}
-                                            </div>
-                                          </SortableContext>
-                                        </DndContext>
-                                      )
-                                    )}
+                                            <SortableContext
+                                              items={categoryServices.map((s) => s.id)}
+                                              strategy={verticalListSortingStrategy}
+                                            >
+                                              <div className="space-y-3">
+                                                {categoryServices.map((service) => (
+                                                  <SortableServiceCard
+                                                    key={service.id}
+                                                    service={service}
+                                                    onDuplicate={handleDuplicateService}
+                                                    onDelete={handleDeleteService}
+                                                    formatDuration={formatDuration}
+                                                                                                      />
+                                                ))}
+                                              </div>
+                                            </SortableContext>
+                                          </DndContext>
+                                        )
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                                {categoryIndex < array.length - 1 && (
-                                  <div className="h-px bg-border" />
-                                )}
-                              </Fragment>
-                            );
-                          })}
+                                  {categoryIndex < array.length - 1 && (
+                                    <div className="h-px bg-border" />
+                                  )}
+                                </Fragment>
+                              );
+                            })}
+                          </div>
                         </SortableContext>
                       </DndContext>
                     );
@@ -1302,14 +1367,14 @@ Format the includes list so I can easily copy each item individually.`;
                           </Label>
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1.5 hig-caption2 text-blue-600 hover:text-blue-700 hover:underline"
+                            className="inline-flex items-center gap-1.5 hig-caption-2 text-blue-600 hover:text-blue-700 hover:underline"
                             onClick={() => setAiPromptDialogOpen(true)}
                           >
                             <Sparkles className="h-3.5 w-3.5" />
                             Need help? Use AI
                           </button>
                         </div>
-                        <p className="hig-caption2 text-muted-foreground mt-1">
+                        <p className="hig-caption-2 text-muted-foreground mt-1">
                           Marketing copy describing the end result your client will achieve
                         </p>
                       </div>
@@ -1460,34 +1525,40 @@ Format the includes list so I can easily copy each item individually.`;
                         <div className="space-y-3">
                           <div className="flex items-center justify-between mb-1!">
                             <Label className="mb-0!">What's Included</Label>
-                            <span className="hig-caption2 text-muted-foreground">{includes.length}/20</span>
+                            <span className="hig-caption-2 text-muted-foreground">{includes.length}/20</span>
                           </div>
 
                           <Alert className="bg-amber-50 border-amber-200">
                             <Lightbulb className="h-4 w-4 text-amber-600" />
-                            <AlertDescription className="hig-caption2 text-amber-800">
+                            <AlertDescription className="hig-caption-2 text-amber-800">
                               We recommend adding 6-8 items that describe what clients receive with this service.
                             </AlertDescription>
                           </Alert>
 
                           {/* Add Include Input */}
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="e.g., 30-minute consultation call"
-                              value={newIncludeItem}
-                              onChange={(e) => setNewIncludeItem(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              maxLength={200}
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={handleAddInclude}
-                              disabled={!newIncludeItem.trim() || includes.length >= 20}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="e.g., 30-minute consultation call"
+                                value={newIncludeItem}
+                                onChange={(e) => setNewIncludeItem(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onPaste={handlePasteIncludes}
+                                maxLength={200}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={handleAddInclude}
+                                disabled={!newIncludeItem.trim() || includes.length >= 20}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Paste a comma-separated list to add multiple items at once
+                            </p>
                           </div>
 
                           {/* Includes List */}
@@ -1496,10 +1567,10 @@ Format the includes list so I can easily copy each item individually.`;
                               <div className="p-6 text-center text-muted-foreground">
                                 <Check className="h-8 w-8 mx-auto mb-2 opacity-30" />
                                 <p>No items added yet</p>
-                                <p className="hig-caption2 mt-1">Add items that describe what's included in this service</p>
+                                <p className="hig-caption-2 mt-1">Add items that describe what's included in this service</p>
                               </div>
                             ) : (
-                              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleIncludesDragEnd} modifiers={[restrictToVerticalAxis]}>
+                              <DndContext sensors={serviceSensors} collisionDetection={closestCenter} onDragEnd={handleIncludesDragEnd} modifiers={[restrictToVerticalAxis]}>
                                 <SortableContext items={includes.map((_, i) => `include-${i}`)} strategy={verticalListSortingStrategy}>
                                   <ul className="divide-y">
                                     {includes.map((item, index) => (
@@ -1584,23 +1655,14 @@ Format the includes list so I can easily copy each item individually.`;
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Service</DialogTitle>
-            <DialogDescription>Are you sure you want to delete "{serviceToDelete?.name}"? This action cannot be undone.</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        itemType="service"
+        itemName={serviceToDelete?.name}
+        onConfirm={handleDelete}
+        isPending={deleteService.isPending}
+      />
 
       {/* AI Prompt Helper Dialog */}
       <Dialog open={aiPromptDialogOpen} onOpenChange={setAiPromptDialogOpen}>
@@ -1659,13 +1721,19 @@ Format the includes list so I can easily copy each item individually.`;
           </div>
 
           <DialogFooter className="border-t pt-4 mt-4">
-            <p className="hig-caption2 text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
+            <p className="hig-caption-2 text-muted-foreground flex-1">After getting your AI-generated description, paste it in the Description field above.</p>
             <Button variant="outline" onClick={() => setAiPromptDialogOpen(false)}>
               Close
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Category Management Sheet */}
+      <CategoryManagementSheet
+        open={categoryManagementOpen}
+        onOpenChange={setCategoryManagementOpen}
+      />
 
     </>
   );

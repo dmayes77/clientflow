@@ -51,7 +51,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Calendar, Send } from "lucide-react";
+import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Calendar, Send, CreditCard, CheckCircle } from "lucide-react";
 import {
   AddIcon,
   LoadingIcon,
@@ -756,7 +756,7 @@ export function InvoiceDialog({
                                   <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
                                     <Wrench className="mr-2 h-4 w-4 text-muted-foreground" />
                                     <span className="flex-1 truncate">{option.name}</span>
-                                    <span className="text-muted-foreground hig-caption2">${option.price.toFixed(2)}</span>
+                                    <span className="text-muted-foreground hig-caption-2">${option.price.toFixed(2)}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -767,7 +767,7 @@ export function InvoiceDialog({
                                   <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
                                     <Package className="mr-2 h-4 w-4 text-violet-500" />
                                     <span className="flex-1 truncate">{option.name}</span>
-                                    <span className="text-muted-foreground hig-caption2">${option.price.toFixed(2)}</span>
+                                    <span className="text-muted-foreground hig-caption-2">${option.price.toFixed(2)}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -795,7 +795,7 @@ export function InvoiceDialog({
                 </div>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1">
-                    <Label className="hig-caption2 text-muted-foreground">Qty</Label>
+                    <Label className="hig-caption-2 text-muted-foreground">Qty</Label>
                     <Input
                       type="number"
                       min="1"
@@ -804,7 +804,7 @@ export function InvoiceDialog({
                     />
                   </div>
                   <div className="flex-1">
-                    <Label className="hig-caption2 text-muted-foreground">{item.isDiscount ? "Discount" : "Price"}</Label>
+                    <Label className="hig-caption-2 text-muted-foreground">{item.isDiscount ? "Discount" : "Price"}</Label>
                     <div className="flex items-center">
                       {item.isDiscount && <Minus className="h-3 w-3 mr-1 text-red-600" />}
                       <Input
@@ -818,7 +818,7 @@ export function InvoiceDialog({
                     </div>
                   </div>
                   <div className="w-20 text-right">
-                    <Label className="hig-caption2 text-muted-foreground">Amount</Label>
+                    <Label className="hig-caption-2 text-muted-foreground">Amount</Label>
                     <p className={`font-medium py-2 ${item.isDiscount ? "text-red-600" : ""}`}>
                       {item.isDiscount ? "-" : ""}${Math.abs(item.amount || 0).toFixed(2)}
                     </p>
@@ -1081,6 +1081,58 @@ export function InvoiceDialog({
             </>
           )}
         </div>
+
+        {/* Bookings Breakdown - for multi-booking invoices */}
+        {invoice?.bookings && invoice.bookings.length > 1 && (
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Bookings Breakdown
+            </Label>
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              {invoice.bookings.map((bk) => {
+                const balanceDue = bk.bookingBalanceDue ?? (bk.totalPrice - (bk.bookingAmountPaid || 0));
+                const isPaid = bk.paymentStatus === "paid" || balanceDue <= 0;
+                const depositPaid = (bk.depositAllocated || 0) > 0;
+
+                return (
+                  <div key={bk.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">
+                          {bk.scheduledAt ? format(new Date(bk.scheduledAt), "MMM d, yyyy") : "Booking"}
+                        </span>
+                        {isPaid ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                            <CheckCircle className="h-3 w-3" />
+                            Paid
+                          </span>
+                        ) : depositPaid ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                            <CreditCard className="h-3 w-3" />
+                            Deposit
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                            Unpaid
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Total: ${(bk.totalPrice / 100).toFixed(2)}
+                        {!isPaid && balanceDue > 0 && (
+                          <span className="ml-2 text-orange-600">
+                            Due: ${(balanceDue / 100).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Status */}
         <SelectField

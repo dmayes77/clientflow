@@ -9,6 +9,8 @@ import {
 } from "@/lib/webhooks";
 import { sendDisputeNotification, sendTrialEndingNotification } from "@/lib/email";
 import { triggerEventAlert, triggerEventAlertByStripeCustomer } from "@/lib/alert-runner";
+import { sendPaymentConfirmation } from "@/lib/send-system-email";
+import { allocateDepositToBookings } from "@/lib/payment-allocation";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -611,7 +613,7 @@ async function handleConnectChargeSucceeded(charge, accountId) {
   // Update payment with card details for chargeback evidence
   const cardDetails = charge.payment_method_details?.card;
 
-  await prisma.payment.update({
+  const updatedPayment = await prisma.payment.update({
     where: { id: payment.id },
     data: {
       stripeChargeId: charge.id,
@@ -620,8 +622,18 @@ async function handleConnectChargeSucceeded(charge, accountId) {
       cardLast4: cardDetails?.last4 || null,
       capturedAt: charge.captured ? new Date() : null,
     },
+    include: {
+      contact: true,
+      tenant: true,
+    },
   });
 
+  // Send payment confirmation email (async, don't wait)
+  if (updatedPayment.contact?.email) {
+    sendPaymentConfirmation(updatedPayment).catch((err) => {
+      console.error("Error sending payment confirmation email:", err);
+    });
+  }
 }
 
 // Handler: Connect Charge Refunded
@@ -884,16 +896,107 @@ async function handleConnectAsyncPaymentFailed(session, accountId) {
 async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
 
   const { metadata, charges } = paymentIntent;
+  const charge = charges?.data?.[0];
 
-  // Check if this is a balance payment (from Payment Link)
-  if (metadata?.type === "balance_payment" && metadata?.invoiceNumber) {
-    // Find the invoice by invoice number
-    const invoice = await prisma.invoice.findFirst({
-      where: {
-        invoiceNumber: metadata.invoiceNumber,
+  // Handle per-booking balance payment
+  if (metadata?.type === "booking_balance" && metadata?.bookingId) {
+    const booking = await prisma.booking.findUnique({
+      where: { id: metadata.bookingId },
+      include: { invoice: true, contact: true },
+    });
+
+    if (!booking) {
+      return;
+    }
+
+    const paymentAmount = paymentIntent.amount;
+
+    // Create payment record
+    const payment = await prisma.payment.create({
+      data: {
+        tenantId: booking.tenantId,
+        contactId: booking.contactId || null,
+        bookingId: booking.id,
+        invoiceId: booking.invoiceId || null,
+        stripePaymentIntentId: paymentIntent.id,
+        stripeChargeId: charge?.id || null,
+        stripeAccountId: accountId,
+        stripeReceiptUrl: charge?.receipt_url || null,
+        amount: paymentAmount,
+        currency: paymentIntent.currency || "usd",
+        clientEmail: booking.contact?.email || "",
+        clientName: booking.contact?.name || "",
+        cardBrand: charge?.payment_method_details?.card?.brand || null,
+        cardLast4: charge?.payment_method_details?.card?.last4 || null,
+        status: "succeeded",
+        capturedAt: new Date(),
+        metadata: JSON.stringify(metadata),
       },
       include: {
-        booking: true,
+        contact: true,
+        tenant: true,
+      },
+    });
+
+    // Send payment confirmation email
+    if (payment.contact?.email) {
+      sendPaymentConfirmation(payment).catch((err) => {
+        console.error("Error sending payment confirmation email:", err);
+      });
+    }
+
+    // Update booking payment tracking
+    const newAmountPaid = (booking.bookingAmountPaid || 0) + paymentAmount;
+    const newBalanceDue = Math.max(0, booking.totalPrice - newAmountPaid);
+
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        bookingAmountPaid: newAmountPaid,
+        bookingBalanceDue: newBalanceDue,
+        paymentStatus: newAmountPaid >= booking.totalPrice ? "paid" : "deposit_paid",
+        paymentId: payment.id,
+      },
+    });
+
+    // Update linked invoice if exists
+    if (booking.invoiceId && booking.invoice) {
+      const newInvoiceAmountPaid = (booking.invoice.amountPaid || 0) + paymentAmount;
+      const newInvoiceBalanceDue = booking.invoice.total - newInvoiceAmountPaid;
+
+      await prisma.invoice.update({
+        where: { id: booking.invoiceId },
+        data: {
+          amountPaid: newInvoiceAmountPaid,
+          balanceDue: newInvoiceBalanceDue,
+          status: newInvoiceBalanceDue <= 0 ? "paid" : booking.invoice.status,
+          paidAt: newInvoiceBalanceDue <= 0 ? new Date() : booking.invoice.paidAt,
+        },
+      });
+    }
+
+    // Dispatch webhook
+    dispatchPaymentReceived(booking.tenantId, {
+      id: payment.id,
+      amount: payment.amount,
+      currency: payment.currency,
+      contactName: payment.clientName,
+      contactEmail: payment.clientEmail,
+      bookingId: booking.id,
+      status: payment.status,
+      createdAt: payment.createdAt,
+    }).catch(console.error);
+
+    return;
+  }
+
+  // Handle deposit payment for invoice with multiple bookings
+  if (metadata?.type === "deposit_payment" && metadata?.invoiceId) {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: metadata.invoiceId },
+      include: {
+        bookings: true,
+        contact: true,
       },
     });
 
@@ -901,8 +1004,101 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       return;
     }
 
-    // Get charge details
-    const charge = charges?.data?.[0];
+    const depositAmount = paymentIntent.amount;
+
+    // Create payment record
+    const payment = await prisma.payment.create({
+      data: {
+        tenantId: invoice.tenantId,
+        contactId: invoice.contactId || null,
+        invoiceId: invoice.id,
+        stripePaymentIntentId: paymentIntent.id,
+        stripeChargeId: charge?.id || null,
+        stripeAccountId: accountId,
+        stripeReceiptUrl: charge?.receipt_url || null,
+        amount: depositAmount,
+        depositAmount: depositAmount,
+        currency: paymentIntent.currency || "usd",
+        clientEmail: invoice.contactEmail || "",
+        clientName: invoice.contactName || "",
+        cardBrand: charge?.payment_method_details?.card?.brand || null,
+        cardLast4: charge?.payment_method_details?.card?.last4 || null,
+        status: "succeeded",
+        capturedAt: new Date(),
+        metadata: JSON.stringify(metadata),
+      },
+      include: {
+        contact: true,
+        tenant: true,
+      },
+    });
+
+    // Send payment confirmation email
+    if (payment.contact?.email) {
+      sendPaymentConfirmation(payment).catch((err) => {
+        console.error("Error sending payment confirmation email:", err);
+      });
+    }
+
+    // Allocate deposit proportionally to bookings
+    if (invoice.bookings && invoice.bookings.length > 0) {
+      const bookingUpdates = allocateDepositToBookings(invoice, invoice.bookings);
+
+      // Update each booking with allocated deposit
+      await Promise.all(
+        bookingUpdates.map(({ bookingId, updateData }) =>
+          prisma.booking.update({
+            where: { id: bookingId },
+            data: updateData,
+          })
+        )
+      );
+    }
+
+    // Update invoice
+    const newAmountPaid = (invoice.amountPaid || 0) + depositAmount;
+    const newBalanceDue = invoice.total - newAmountPaid;
+
+    await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: {
+        status: newBalanceDue <= 0 ? "paid" : "deposit_paid",
+        amountPaid: newAmountPaid,
+        balanceDue: newBalanceDue,
+        paidAt: newBalanceDue <= 0 ? new Date() : null,
+      },
+    });
+
+    // Dispatch webhook
+    dispatchPaymentReceived(invoice.tenantId, {
+      id: payment.id,
+      amount: payment.amount,
+      currency: payment.currency,
+      contactName: payment.clientName,
+      contactEmail: payment.clientEmail,
+      invoiceId: invoice.id,
+      status: payment.status,
+      createdAt: payment.createdAt,
+    }).catch(console.error);
+
+    return;
+  }
+
+  // Check if this is a balance payment (from Payment Link) - full invoice balance
+  if (metadata?.type === "balance_payment" && metadata?.invoiceNumber) {
+    // Find the invoice by invoice number
+    const invoice = await prisma.invoice.findFirst({
+      where: {
+        invoiceNumber: metadata.invoiceNumber,
+      },
+      include: {
+        bookings: true,
+      },
+    });
+
+    if (!invoice) {
+      return;
+    }
 
     // Create payment record for balance payment
     const payment = await prisma.payment.create({
@@ -910,6 +1106,7 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
         tenantId: invoice.tenantId,
         contactId: invoice.contactId || null,
         bookingId: invoice.bookingId || null,
+        invoiceId: invoice.id,
         stripePaymentIntentId: paymentIntent.id,
         stripeChargeId: charge?.id || null,
         stripeAccountId: accountId,
@@ -924,7 +1121,18 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
         capturedAt: new Date(),
         metadata: JSON.stringify(metadata),
       },
+      include: {
+        contact: true,
+        tenant: true,
+      },
     });
+
+    // Send payment confirmation email (async, don't wait)
+    if (payment.contact?.email) {
+      sendPaymentConfirmation(payment).catch((err) => {
+        console.error("Error sending payment confirmation email:", err);
+      });
+    }
 
     // Update invoice as paid
     await prisma.invoice.update({
@@ -933,11 +1141,26 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
         status: "paid",
         amountPaid: invoice.total,
         balanceDue: 0,
+        paidAt: new Date(),
       },
     });
 
-    // Update booking to fully paid
-    if (invoice.bookingId) {
+    // Update all linked bookings to fully paid
+    if (invoice.bookings && invoice.bookings.length > 0) {
+      await Promise.all(
+        invoice.bookings.map((booking) =>
+          prisma.booking.update({
+            where: { id: booking.id },
+            data: {
+              paymentStatus: "paid",
+              bookingAmountPaid: booking.totalPrice,
+              bookingBalanceDue: 0,
+            },
+          })
+        )
+      );
+    } else if (invoice.bookingId) {
+      // Fallback for single booking
       await prisma.booking.update({
         where: { id: invoice.bookingId },
         data: {

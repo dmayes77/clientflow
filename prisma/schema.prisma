@@ -176,6 +176,7 @@ model Package {
   discountPercent Int       @default(15) // 5, 10, 15, or 20
   active          Boolean   @default(true)
   displayOrder    Int       @default(0)
+  includes        String[]  @default([])  // What's included in this package
 
   archived        Boolean   @default(false)
   archivedAt      DateTime?
@@ -520,6 +521,7 @@ model Booking {
   contactId       String    @map("clientId")
   serviceId       String?   // Legacy - kept for backwards compat
   packageId       String?   // Legacy - kept for backwards compat
+  invoiceId       String?   // Many bookings can link to one invoice
 
   scheduledAt     DateTime
   status          String    @default("inquiry")
@@ -530,6 +532,11 @@ model Booking {
   paymentStatus   String?   @default("unpaid")
   paymentId       String?
 
+  // Payment allocation tracking (for multi-booking invoices)
+  depositAllocated  Int       @default(0)  // cents - deposit allocated to this booking
+  bookingAmountPaid Int       @default(0)  // cents - total paid toward this booking
+  bookingBalanceDue Int?                   // cents - totalPrice - bookingAmountPaid
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -538,7 +545,7 @@ model Booking {
   service         Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   package         Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
   payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  invoice         Invoice?
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   tags            BookingTag[]
   services        BookingService[]
   packages        BookingPackage[]
@@ -548,6 +555,7 @@ model Booking {
   @@index([contactId])
   @@index([status])
   @@index([scheduledAt])
+  @@index([invoiceId])
 }
 
 model BookingService {
@@ -841,7 +849,6 @@ model Invoice {
   id              String    @id @default(cuid())
   tenantId        String
   contactId       String    @map("clientId")
-  bookingId       String?   @unique
 
   invoiceNumber   String
   status          String    @default("draft")
@@ -885,7 +892,7 @@ model Invoice {
 
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact         Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  bookings        Booking[] // Multiple bookings can be linked to one invoice
   tags            InvoiceTag[]
   coupons         InvoiceCoupon[]
   payments        InvoicePayment[]

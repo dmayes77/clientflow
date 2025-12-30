@@ -238,22 +238,7 @@ export function AvailabilitySettings() {
   };
 
   const handleSave = async () => {
-    console.log("=== SAVE BUTTON CLICKED ===");
-    console.log("Schedule:", schedule);
-    console.log("Tenant settings:", {
-      timezone,
-      slotInterval: parseInt(slotInterval),
-      breakDuration: parseInt(breakDuration),
-      breakStartTime: breakDuration !== "0" ? breakStartTime : null,
-      breakEndTime: breakDuration !== "0" ? breakEndTime : null,
-      bufferTime: parseInt(bufferTime),
-      minAdvanceHours: parseInt(minAdvanceHours),
-      defaultCalendarView,
-    });
-
     try {
-      console.log("Starting mutations...");
-
       const availabilityPromise = updateAvailabilityMutation.mutateAsync({
         slots: schedule.map((day) => ({
           dayOfWeek: day.dayOfWeek,
@@ -274,17 +259,10 @@ export function AvailabilitySettings() {
         defaultCalendarView,
       });
 
-      console.log("Waiting for promises...");
-      const results = await Promise.all([availabilityPromise, tenantPromise]);
-      console.log("Save results:", results);
+      await Promise.all([availabilityPromise, tenantPromise]);
 
       toast.success("Availability saved successfully");
-      console.log("=== SAVE COMPLETED ===");
     } catch (error) {
-      console.error("=== SAVE ERROR ===");
-      console.error("Error object:", error);
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
       toast.error(error.message || "Failed to save availability");
     }
   };
@@ -461,7 +439,7 @@ export function AvailabilitySettings() {
             <CardContent className="space-y-2">
               {schedule.map((day) => (
                 <div key={day.dayOfWeek} className="flex flex-col gap-2 py-3 border-b last:border-0 tablet:flex-row tablet:items-center tablet:gap-4">
-                  <div className="flex items-center gap-3 min-w-[100px]">
+                  <div className="flex items-center gap-3 min-w-25">
                     <Switch checked={day.active} onCheckedChange={() => handleToggleDay(day.dayOfWeek)} />
                     <span className={`font-medium hig-footnote ${!day.active ? "text-muted-foreground line-through" : ""}`}>
                       {day.dayName}
@@ -474,7 +452,7 @@ export function AvailabilitySettings() {
                         value={day.startTime}
                         onValueChange={(value) => handleTimeChange(day.dayOfWeek, "startTime", value)}
                       >
-                        <SelectTrigger className="w-[115px]">
+                        <SelectTrigger className="w-28.75">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -490,7 +468,7 @@ export function AvailabilitySettings() {
                         value={day.endTime}
                         onValueChange={(value) => handleTimeChange(day.dayOfWeek, "endTime", value)}
                       >
-                        <SelectTrigger className="w-[115px]">
+                        <SelectTrigger className="w-28.75">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -636,7 +614,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="hig-caption2 text-muted-foreground">All appointments will be scheduled in this timezone</p>
+                  <p className="hig-caption-2 text-muted-foreground">All appointments will be scheduled in this timezone</p>
                 </div>
 
                 <div className="space-y-2">
@@ -653,7 +631,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="hig-caption2 text-muted-foreground">How often booking slots are offered to clients</p>
+                  <p className="hig-caption-2 text-muted-foreground">How often booking slots are offered to clients</p>
                 </div>
 
                 <div className="space-y-2">
@@ -670,7 +648,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="hig-caption2 text-muted-foreground">
+                  <p className="hig-caption-2 text-muted-foreground">
                     Deducted from daily hours when calculating business days for service/booking durations
                   </p>
                 </div>
@@ -708,7 +686,7 @@ export function AvailabilitySettings() {
                         </Select>
                       </div>
                     </div>
-                    <p className="hig-caption2 text-muted-foreground">
+                    <p className="hig-caption-2 text-muted-foreground">
                       Blocks this time slot from bookings (e.g., 12:00 PM - 1:00 PM for lunch)
                     </p>
                   </div>
@@ -728,7 +706,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="hig-caption2 text-muted-foreground">
+                  <p className="hig-caption-2 text-muted-foreground">
                     Prevents back-to-back bookings by adding padding time for travel, setup, or cleanup
                   </p>
                 </div>
@@ -747,7 +725,7 @@ export function AvailabilitySettings() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="hig-caption2 text-muted-foreground">
+                  <p className="hig-caption-2 text-muted-foreground">
                     Require clients to book at least this far in advance (prevents last-minute bookings)
                   </p>
                 </div>
@@ -767,7 +745,7 @@ export function AvailabilitySettings() {
               <div className="space-y-2">
                 <Label>Default Calendar View</Label>
                 <Select value={defaultCalendarView} onValueChange={setDefaultCalendarView}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -778,7 +756,7 @@ export function AvailabilitySettings() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="hig-caption2 text-muted-foreground">
+                <p className="hig-caption-2 text-muted-foreground">
                   The calendar will open to this view by default
                 </p>
               </div>

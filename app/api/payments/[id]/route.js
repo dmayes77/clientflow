@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedTenant } from "@/lib/auth";
 
 // GET /api/payments/[id] - Get payment details
 export async function GET(request, { params }) {
   try {
-    const { orgId } = await auth();
+    const { tenant, error, status } = await getAuthenticatedTenant(request);
     const { id } = await params;
 
-    if (!orgId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const tenant = await prisma.tenant.findUnique({
-      where: { clerkOrgId: orgId },
-      select: { id: true },
-    });
-
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+      return NextResponse.json({ error }, { status });
     }
 
     const payment = await prisma.payment.findFirst({

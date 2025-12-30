@@ -17,13 +17,7 @@ import {
   ArrowUpRight,
   ChevronRight,
 } from "lucide-react";
-
-function formatCurrency(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 function formatNumber(num) {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -36,7 +30,7 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
     <Card>
       <CardContent className="p-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="hig-caption2 font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="hig-caption-2 font-medium text-muted-foreground uppercase tracking-wide">
             {title}
           </span>
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -47,7 +41,7 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
           <>
             <div className="font-bold">{value}</div>
             {subtitle && (
-              <span className="hig-caption2 text-muted-foreground">{subtitle}</span>
+              <span className="hig-caption-2 text-muted-foreground">{subtitle}</span>
             )}
           </>
         )}
@@ -81,7 +75,7 @@ function MiniBarChart({ data, loading }) {
             }}
             title={`${d.label}: ${d.count}`}
           />
-          <span className="hig-caption2 text-muted-foreground mt-1 truncate w-full text-center">{d.label}</span>
+          <span className="hig-caption-2 text-muted-foreground mt-1 truncate w-full text-center">{d.label}</span>
         </div>
       ))}
     </div>
@@ -113,7 +107,7 @@ function TopTenantsList({ title, tenants, metric, loading }) {
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="hig-caption2 text-muted-foreground">No data yet</p>
+          <p className="hig-caption-2 text-muted-foreground">No data yet</p>
         </CardContent>
       </Card>
     );
@@ -133,15 +127,15 @@ function TopTenantsList({ title, tenants, metric, loading }) {
               className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="hig-caption2 font-medium text-muted-foreground w-4">
+                <span className="hig-caption-2 font-medium text-muted-foreground w-4">
                   {i + 1}
                 </span>
-                <span className="hig-caption2 font-medium truncate">
+                <span className="hig-caption-2 font-medium truncate">
                   {tenant.businessName || tenant.name}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="hig-caption2 font-bold">{tenant._count[metric]}</span>
+                <span className="hig-caption-2 font-bold">{tenant._count[metric]}</span>
                 <ChevronRight className="h-3 w-3 text-muted-foreground" />
               </div>
             </Link>
@@ -177,7 +171,7 @@ function RecentSignupsList({ signups, loading }) {
           <CardTitle>Recent Signups (7 days)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="hig-caption2 text-muted-foreground">No recent signups</p>
+          <p className="hig-caption-2 text-muted-foreground">No recent signups</p>
         </CardContent>
       </Card>
     );
@@ -188,7 +182,7 @@ function RecentSignupsList({ signups, loading }) {
       <CardHeader className="pb-2">
         <CardTitle className="hig-body flex items-center gap-2">
           Recent Signups
-          <Badge variant="secondary" className="hig-caption2">
+          <Badge variant="secondary" className="hig-caption-2">
             {signups.length} this week
           </Badge>
         </CardTitle>
@@ -202,17 +196,17 @@ function RecentSignupsList({ signups, loading }) {
               className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="min-w-0">
-                <div className="hig-caption2 font-medium truncate">
+                <div className="hig-caption-2 font-medium truncate">
                   {tenant.businessName || tenant.name}
                 </div>
-                <div className="hig-caption2 text-muted-foreground truncate">
+                <div className="hig-caption-2 text-muted-foreground truncate">
                   {tenant.email}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className="hig-caption2 shrink-0"
+                  className="hig-caption-2 shrink-0"
                 >
                   {tenant.subscriptionStatus === "trialing" ? "Trial" : tenant.subscriptionStatus}
                 </Badge>
@@ -260,7 +254,7 @@ function PlanDistribution({ planBreakdown, loading }) {
           <CardTitle>Plan Distribution</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="hig-caption2 text-muted-foreground">No active subscriptions</p>
+          <p className="hig-caption-2 text-muted-foreground">No active subscriptions</p>
         </CardContent>
       </Card>
     );
@@ -289,10 +283,10 @@ function PlanDistribution({ planBreakdown, loading }) {
           {plans.map(([plan, count]) => (
             <div key={plan} className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${colors[plan] || "bg-gray-400"}`} />
-              <span className="hig-caption2 text-muted-foreground">
+              <span className="hig-caption-2 text-muted-foreground">
                 {labels[plan] || plan}
               </span>
-              <span className="hig-caption2 font-medium ml-auto">{count}</span>
+              <span className="hig-caption-2 font-medium ml-auto">{count}</span>
             </div>
           ))}
         </div>
@@ -335,13 +329,13 @@ export default function AnalyticsPage() {
                 <div className="font-bold text-primary">
                   {formatCurrency(overview.currentMrr || 0)}
                 </div>
-                <p className="hig-caption2 text-muted-foreground">MRR (Monthly)</p>
+                <p className="hig-caption-2 text-muted-foreground">MRR (Monthly)</p>
               </div>
               <div>
                 <div className="font-bold">
                   {formatCurrency(overview.currentArr || 0)}
                 </div>
-                <p className="hig-caption2 text-muted-foreground">ARR (Annual)</p>
+                <p className="hig-caption-2 text-muted-foreground">ARR (Annual)</p>
               </div>
             </div>
           )}
@@ -447,7 +441,7 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Tenant GMV (All Time)</CardTitle>
-          <p className="hig-caption2 text-muted-foreground">
+          <p className="hig-caption-2 text-muted-foreground">
             Total payments processed by tenants via Stripe Connect
           </p>
         </CardHeader>
@@ -460,13 +454,13 @@ export default function AnalyticsPage() {
                 <div className="font-bold">
                   {formatCurrency(overview.tenantGmv || 0)}
                 </div>
-                <p className="hig-caption2 text-muted-foreground">Total processed</p>
+                <p className="hig-caption-2 text-muted-foreground">Total processed</p>
               </div>
               <div>
                 <div className="font-bold">
                   {formatNumber(overview.tenantPaymentCount || 0)}
                 </div>
-                <p className="hig-caption2 text-muted-foreground">Payments</p>
+                <p className="hig-caption-2 text-muted-foreground">Payments</p>
               </div>
             </div>
           )}

@@ -54,6 +54,17 @@
   --shadow-xl: 0 10px 20px 0 rgb(0 0 0 / 0.15);
 
   /* ============================================
+     Animation Tokens
+     Single source of truth for all UI animations
+     ============================================ */
+  --animation-duration: 500ms;
+  --animation-timing: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Tailwind v4 theme variables */
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-smooth: 500ms;
+
+  /* ============================================
      Typography Tokens (HIG Compact Scale)
      Single source of truth for all components
      ============================================ */
@@ -236,7 +247,164 @@
   --size-icon-xl: 1.5rem;
 }
 
+@layer base {
+  /* ========================================
+     CUSTOM KEYFRAME ANIMATIONS
+     Using our timing variables
+     ======================================== */
+
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-out-to-right {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-out-to-left {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes slide-in-from-top {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-out-to-top {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-100%);
+    }
+  }
+
+  @keyframes slide-in-from-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-out-to-bottom {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
 @layer utilities {
+  /* ========================================
+     ANIMATION UTILITIES
+     Apply consistent animation timing globally
+     ======================================== */
+
+  /* Override Tailwind's default animation durations */
+  [data-state="open"],
+  [data-state="closed"] {
+    animation-duration: var(--duration-smooth) !important;
+    animation-timing-function: var(--ease-smooth) !important;
+  }
+
+  /* Consistent transition timing utility */
+  .transition-smooth {
+    transition-duration: var(--duration-smooth);
+    transition-timing-function: var(--ease-smooth);
+  }
+
+  /* Sheet/Overlay animations */
+  [data-slot="sheet-overlay"][data-state="open"] {
+    animation: fade-in var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-overlay"][data-state="closed"] {
+    animation: fade-out var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  /* Sheet content animations by side */
+  [data-slot="sheet-content"][data-side="right"][data-state="open"] {
+    animation: slide-in-from-right var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="right"][data-state="closed"] {
+    animation: slide-out-to-right var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="left"][data-state="open"] {
+    animation: slide-in-from-left var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="left"][data-state="closed"] {
+    animation: slide-out-to-left var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="top"][data-state="open"] {
+    animation: slide-in-from-top var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="top"][data-state="closed"] {
+    animation: slide-out-to-top var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="bottom"][data-state="open"] {
+    animation: slide-in-from-bottom var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="bottom"][data-state="closed"] {
+    animation: slide-out-to-bottom var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
   /* ========================================
      COMPACT HIG-STYLE UTILITIES
      References :root typography tokens

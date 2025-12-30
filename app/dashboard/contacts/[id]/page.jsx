@@ -8,6 +8,7 @@ import { useContact, useUpdateContact, useAddContactTag, useRemoveContactTag } f
 import { useServices } from "@/lib/hooks/use-services";
 import { usePackages } from "@/lib/hooks/use-packages";
 import { useTags, useCreateTag } from "@/lib/hooks/use-tags";
+import { useDeleteBooking } from "@/lib/hooks/use-bookings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,31 +59,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
 import { getTagColor, isLeadTag, isVIPTag } from "@/lib/utils/tag-colors";
-
-function formatCurrency(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatDateTime(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatters";
+import { BookingStatusBadge, InvoiceStatusBadge } from "@/components/ui/status-badge";
+import { LoadingCard } from "@/components/ui/loading-card";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 function formatFullDateTime(dateString) {
   return (
@@ -102,32 +82,6 @@ function formatFullDateTime(dateString) {
   );
 }
 
-function BookingStatusBadge({ status }) {
-  const variantMap = {
-    inquiry: "info",
-    confirmed: "info",
-    scheduled: "info",
-    in_progress: "warning",
-    completed: "success",
-    cancelled: "destructive",
-  };
-
-  return <Badge variant={variantMap[status] || "secondary"}>{status.replace("_", " ").charAt(0).toUpperCase() + status.replace("_", " ").slice(1)}</Badge>;
-}
-
-function InvoiceStatusBadge({ status }) {
-  const variantMap = {
-    draft: "secondary",
-    sent: "info",
-    viewed: "info",
-    paid: "success",
-    overdue: "destructive",
-    cancelled: "secondary",
-  };
-
-  return <Badge variant={variantMap[status] || "secondary"}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
-}
-
 export default function ClientDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
@@ -142,6 +96,7 @@ export default function ClientDetailPage({ params }) {
   const createTagMutation = useCreateTag();
   const addContactTagMutation = useAddContactTag();
   const removeContactTagMutation = useRemoveContactTag();
+  const deleteBookingMutation = useDeleteBooking();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
@@ -149,7 +104,6 @@ export default function ClientDetailPage({ params }) {
   const [hasChanges, setHasChanges] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
-  const [deletingBooking, setDeletingBooking] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [formData, setFormData] = useState({
@@ -309,8 +263,6 @@ export default function ClientDetailPage({ params }) {
       setHasChanges(false);
       toast.success("Contact saved successfully");
     } catch (error) {
-      console.error("Error updating contact:", error);
-
       // Handle specific error cases
       if (error.message?.includes("already exists")) {
         // Duplicate error - highlight the field
@@ -341,7 +293,6 @@ export default function ClientDetailPage({ params }) {
       setTagPopoverOpen(false);
       toast.success(`Tag "${tag?.name || 'Tag'}" added`);
     } catch (error) {
-      console.error("Error adding tag:", error);
       toast.error(error.message || "Failed to add tag");
     }
   };
@@ -351,7 +302,6 @@ export default function ClientDetailPage({ params }) {
       await removeContactTagMutation.mutateAsync({ contactId: id, tagId });
       toast.success("Tag removed");
     } catch (error) {
-      console.error("Error removing tag:", error);
       toast.error(error.message || "Failed to remove tag");
     }
   };
@@ -376,32 +326,20 @@ export default function ClientDetailPage({ params }) {
       setTagPopoverOpen(false);
       toast.success(`Tag "${newTag.name}" created and added`);
     } catch (error) {
-      console.error("Error creating tag:", error);
       toast.error(error.message || "Failed to create tag");
     }
   };
 
   const handleDeleteBooking = async () => {
     try {
-      setDeletingBooking(true);
-      const response = await fetch(`/api/bookings/${bookingToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete booking");
-      }
-
+      await deleteBookingMutation.mutateAsync(bookingToDelete.id);
       // Invalidate contact query to refetch with updated bookings
       queryClient.invalidateQueries({ queryKey: ["contacts", id] });
       setDeleteBookingDialogOpen(false);
       setBookingToDelete(null);
       toast.success("Booking deleted");
     } catch (error) {
-      console.error("Error deleting booking:", error);
       toast.error("Failed to delete booking");
-    } finally {
-      setDeletingBooking(false);
     }
   };
 
@@ -455,12 +393,7 @@ export default function ClientDetailPage({ params }) {
   const availableTags = allTags.filter((tag) => !clientTags.some((ct) => ct.id === tag.id));
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <LoadingIcon className="size-8 animate-spin text-muted-foreground" />
-        <p className="text-muted-foreground mt-2">Loading contact details...</p>
-      </div>
-    );
+    return <LoadingCard message="Loading contact details..." size="lg" card={false} className="min-h-100" />;
   }
 
   if (!client) {
@@ -814,9 +747,9 @@ export default function ClientDetailPage({ params }) {
                     <span className="font-medium truncate">
                       {booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name || "—"}
                     </span>
-                    <span className="hig-caption2 font-semibold">{formatCurrency(booking.totalPrice)}</span>
+                    <span className="hig-caption-2 font-semibold">{formatCurrency(booking.totalPrice)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 hig-caption2 text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 hig-caption-2 text-muted-foreground">
                     <span>{formatDateTime(booking.scheduledAt)}</span>
                     <BookingStatusBadge status={booking.status} />
                   </div>
@@ -836,7 +769,7 @@ export default function ClientDetailPage({ params }) {
                     <TableHead>Service/Package</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Price</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-25">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -916,9 +849,9 @@ export default function ClientDetailPage({ params }) {
                     >
                       {invoice.invoiceNumber}
                     </button>
-                    <span className="hig-caption2 font-semibold">{formatCurrency(invoice.total)}</span>
+                    <span className="hig-caption-2 font-semibold">{formatCurrency(invoice.total)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 hig-caption2 text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 hig-caption-2 text-muted-foreground">
                     <span>Due {formatDate(invoice.dueDate)}</span>
                     <InvoiceStatusBadge status={invoice.status} />
                   </div>
@@ -975,26 +908,14 @@ export default function ClientDetailPage({ params }) {
         onOpenChange={setDeleteDialogOpen}
       />
 
-      {/* Delete Booking Confirmation Dialog */}
-      <AlertDialog open={deleteBookingDialogOpen} onOpenChange={setDeleteBookingDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this booking
-              {bookingToDelete && ` for ${bookingToDelete.service?.name || bookingToDelete.package?.name || "this service"}`}?
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteBooking} disabled={deletingBooking}>
-              {deletingBooking && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteBookingDialogOpen}
+        onOpenChange={setDeleteBookingDialogOpen}
+        itemType="booking"
+        itemName={bookingToDelete?.service?.name || bookingToDelete?.package?.name}
+        onConfirm={handleDeleteBooking}
+        isPending={deleteBookingMutation.isPending}
+      />
 
       {/* Invoice Dialog */}
       <InvoiceDialog

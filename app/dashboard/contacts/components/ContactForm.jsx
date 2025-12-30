@@ -31,6 +31,7 @@ import {
   SaveButton,
   useSaveButton,
 } from "@/components/ui/tanstack-form";
+import { formatCurrency } from "@/lib/formatters";
 
 const SOURCE_OPTIONS = [
   { value: "none", label: "--" },
@@ -260,13 +261,6 @@ export function ContactForm({ mode = "create", contactId = null }) {
     return colorMap[color] || colorMap.blue;
   };
 
-  const formatCurrency = (cents) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-100">
@@ -390,7 +384,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
                     {clientTags.map((tag) => (
                       <span
                         key={tag.id}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full hig-caption2 font-medium border ${getTagColorClass(tag.color)}`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full hig-caption-2 font-medium border ${getTagColorClass(tag.color)}`}
                       >
                         {tag.name}
                         <button type="button" onClick={() => handleRemoveTag(tag.id)} className="hover:opacity-70 transition-opacity">

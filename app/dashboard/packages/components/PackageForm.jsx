@@ -59,7 +59,27 @@ import {
   DollarSign,
   CheckSquare,
   Square,
+  GripVertical,
+  Eye,
 } from "lucide-react";
+import { PackagePreviewDialog } from "./PackagePreviewDialog";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { formatCurrency } from "@/lib/formatters";
 
 const DISCOUNT_OPTIONS = [
   { value: 5, label: "5% off" },
@@ -85,7 +105,59 @@ const initialFormState = {
   priceEnding: "9",
   customPrice: "",
   imageId: null,
+  includes: [],
 };
+
+// Sortable include item component
+function SortableIncludeItem({ id, item, onRemove }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-3 p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors group",
+        isDragging && "bg-muted/70 z-10"
+      )}
+    >
+      {/* Drag handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="shrink-0 touch-none cursor-grab active:cursor-grabbing p-1 -m-1"
+        aria-label="Drag to reorder"
+        role="button"
+        tabIndex={0}
+      >
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <Check className="h-4 w-4 text-green-600 shrink-0" />
+      <span className="flex-1 text-sm">{item}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+        onClick={() => onRemove(item)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 export function PackageForm({
   mode = "create",
@@ -113,13 +185,23 @@ export function PackageForm({
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [newIncludeItem, setNewIncludeItem] = useState("");
 
   // Dialog state
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   // UX state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // DnD sensors for includes reordering
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Initialize form data when initialData loads
   useEffect(() => {
@@ -147,6 +229,7 @@ export function PackageForm({
         priceEnding,
         customPrice,
         imageId: initialData.images?.[0]?.id || null,
+        includes: initialData.includes || [],
       });
     }
   }, [initialData]);
@@ -288,7 +371,7 @@ export function PackageForm({
 
     try {
       const newImage = await uploadImageMutation.mutateAsync(formDataUpload);
-      setFormData({ ...formData, imageId: newImage.id });
+      setFormData(prev => ({ ...prev, imageId: newImage.id }));
       setHasUnsavedChanges(true);
       toast.success("Image uploaded");
     } catch (error) {
@@ -312,6 +395,7 @@ export function PackageForm({
         active: active,
         serviceIds: formData.serviceIds,
         imageId: formData.imageId,
+        includes: formData.includes,
         ...(isCreatingCategory && formData.newCategoryName
           ? { newCategoryName: formData.newCategoryName }
           : { categoryId: formData.categoryId }),
@@ -348,11 +432,100 @@ export function PackageForm({
     }
   };
 
-  const formatPrice = (cents) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
+  const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm(
+        "You have unsaved changes. Are you sure you want to leave?"
+      );
+      if (!confirmed) return;
+    }
+    router.back();
+  };
+
+  // Include handlers
+  const handleAddInclude = () => {
+    if (!newIncludeItem.trim()) return;
+    if (formData.includes.length >= 20) {
+      toast.error("Maximum 20 items allowed");
+      return;
+    }
+    if (formData.includes.includes(newIncludeItem.trim())) {
+      toast.error("This item already exists");
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      includes: [...prev.includes, newIncludeItem.trim()],
+    }));
+    setNewIncludeItem("");
+    setHasUnsavedChanges(true);
+  };
+
+  const handleRemoveInclude = (item) => {
+    setFormData(prev => ({
+      ...prev,
+      includes: prev.includes.filter((i) => i !== item),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleIncludeReorder = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = formData.includes.findIndex((item) => item === active.id);
+    const newIndex = formData.includes.findIndex((item) => item === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      setFormData(prev => ({
+        ...prev,
+        includes: arrayMove(prev.includes, oldIndex, newIndex),
+      }));
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const handlePasteIncludes = (e) => {
+    const pastedText = e.clipboardData.getData("text");
+
+    if (pastedText.includes(",")) {
+      e.preventDefault();
+
+      const currentIncludes = formData.includes || [];
+      const newItems = pastedText
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0 && item.length <= 200);
+
+      const availableSlots = 20 - currentIncludes.length;
+      const itemsToAdd = newItems
+        .filter((item) => !currentIncludes.includes(item))
+        .slice(0, availableSlots);
+
+      if (itemsToAdd.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          includes: [...currentIncludes, ...itemsToAdd],
+        }));
+        setNewIncludeItem("");
+        setHasUnsavedChanges(true);
+
+        if (newItems.length > availableSlots) {
+          toast.info(
+            `Added ${itemsToAdd.length} items. ${newItems.length - availableSlots} items skipped (limit: 20 total).`
+          );
+        } else {
+          toast.success(`Added ${itemsToAdd.length} item${itemsToAdd.length > 1 ? "s" : ""}`);
+        }
+      }
+    }
+  };
+
+  const handleIncludeKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddInclude();
+    }
   };
 
   const selectedImage = images.find((img) => img.id === formData.imageId);
@@ -378,11 +551,12 @@ export function PackageForm({
               placeholder="e.g., Complete Makeover, Wedding Package"
               value={formData.name}
               onChange={(e) => {
-                setFormData({ ...formData, name: e.target.value });
+                setFormData(prev => ({ ...prev, name: e.target.value }));
                 setHasUnsavedChanges(true);
               }}
               className="h-11"
               required
+              autoFocus
             />
           </div>
 
@@ -396,7 +570,7 @@ export function PackageForm({
               placeholder="Describe what makes this package special..."
               value={formData.description}
               onChange={(e) => {
-                setFormData({ ...formData, description: e.target.value });
+                setFormData(prev => ({ ...prev, description: e.target.value }));
                 setHasUnsavedChanges(true);
               }}
               rows={2}
@@ -413,7 +587,7 @@ export function PackageForm({
                   placeholder="New category name"
                   value={formData.newCategoryName}
                   onChange={(e) => {
-                    setFormData({ ...formData, newCategoryName: e.target.value });
+                    setFormData(prev => ({ ...prev, newCategoryName: e.target.value }));
                     setHasUnsavedChanges(true);
                   }}
                   autoFocus
@@ -425,7 +599,7 @@ export function PackageForm({
                   size="sm"
                   onClick={() => {
                     setIsCreatingCategory(false);
-                    setFormData({ ...formData, newCategoryName: "" });
+                    setFormData(prev => ({ ...prev, newCategoryName: "" }));
                   }}
                   className="h-11"
                 >
@@ -437,7 +611,7 @@ export function PackageForm({
                 <Select
                   value={formData.categoryId || "none"}
                   onValueChange={(value) => {
-                    setFormData({ ...formData, categoryId: value === "none" ? null : value });
+                    setFormData(prev => ({ ...prev, categoryId: value === "none" ? null : value }));
                     setHasUnsavedChanges(true);
                   }}
                 >
@@ -483,7 +657,7 @@ export function PackageForm({
                   <button
                     type="button"
                     onClick={() => {
-                      setFormData({ ...formData, imageId: null });
+                      setFormData(prev => ({ ...prev, imageId: null }));
                       setHasUnsavedChanges(true);
                     }}
                     className="absolute -top-2 -right-2 h-6 w-6 sm:h-7 sm:w-7 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 tablet:opacity-100 transition-opacity z-10"
@@ -553,7 +727,7 @@ export function PackageForm({
                   size="sm"
                   className="relative h-auto py-2 text-sm"
                   onClick={() => {
-                    setFormData({ ...formData, discountPercent: option.value });
+                    setFormData(prev => ({ ...prev, discountPercent: option.value }));
                     setHasUnsavedChanges(true);
                   }}
                 >
@@ -583,14 +757,14 @@ export function PackageForm({
                   size="sm"
                   className="h-auto py-2 flex-col text-sm"
                   onClick={() => {
-                    setFormData({
-                      ...formData,
+                    setFormData(prev => ({
+                      ...prev,
                       priceEnding: option.value,
                       customPrice:
                         option.value === "custom"
                           ? String(Math.round(pricePreview.discountedPrice / 100))
                           : "",
-                    });
+                    }));
                     setHasUnsavedChanges(true);
                   }}
                 >
@@ -609,7 +783,7 @@ export function PackageForm({
                   placeholder="Enter price"
                   value={formData.customPrice}
                   onChange={(e) => {
-                    setFormData({ ...formData, customPrice: e.target.value });
+                    setFormData(prev => ({ ...prev, customPrice: e.target.value }));
                     setHasUnsavedChanges(true);
                   }}
                   className="w-32 h-9"
@@ -622,7 +796,7 @@ export function PackageForm({
 
       {/* Price Preview Card */}
       {pricePreview.serviceCount > 0 && (
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+        <Card className="border-2 border-primary/20 bg-linear-to-br from-primary/5 to-primary/10">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 text-primary">
               <DollarSign className="h-4 w-4" />
@@ -633,26 +807,26 @@ export function PackageForm({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Services Total:</span>
-                <span className="font-medium">{formatPrice(pricePreview.originalPrice)}</span>
+                <span className="font-medium">{formatCurrency(pricePreview.originalPrice)}</span>
               </div>
 
               {pricePreview.discountAmount > 0 && (
                 <>
                   <div className="flex justify-between text-destructive">
                     <span>Discount ({formData.discountPercent}%):</span>
-                    <span>-{formatPrice(pricePreview.discountAmount)}</span>
+                    <span>-{formatCurrency(pricePreview.discountAmount)}</span>
                   </div>
 
                   <div className="flex justify-between pt-2 border-t">
                     <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-medium">{formatPrice(pricePreview.discountedPrice)}</span>
+                    <span className="font-medium">{formatCurrency(pricePreview.discountedPrice)}</span>
                   </div>
                 </>
               )}
 
               <div className="flex justify-between pt-2 border-t font-semibold">
                 <span>Final Package Price:</span>
-                <span className="text-lg text-primary">{formatPrice(pricePreview.finalPrice)}</span>
+                <span className="text-lg text-primary">{formatCurrency(pricePreview.finalPrice)}</span>
               </div>
 
               <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t">
@@ -664,6 +838,88 @@ export function PackageForm({
         </Card>
       )}
     </div>
+  );
+
+  // Includes Content (What's Included)
+  const IncludesContent = () => (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Check className="h-4 w-4" />
+          What's Included
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Add package-specific benefits beyond the included services
+        </p>
+
+        {/* Add Item Input */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              placeholder="e.g., Priority booking, Free rescheduling"
+              value={newIncludeItem}
+              onChange={(e) => setNewIncludeItem(e.target.value)}
+              onKeyDown={handleIncludeKeyDown}
+              onPaste={handlePasteIncludes}
+              maxLength={200}
+              className="h-10"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Paste a comma-separated list to add multiple items at once
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={handleAddInclude}
+            disabled={!newIncludeItem.trim() || formData.includes.length >= 20}
+            className="h-10 w-10 shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Includes List with Drag and Drop */}
+        {formData.includes.length > 0 ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleIncludeReorder}
+          >
+            <SortableContext
+              items={formData.includes}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {formData.includes.map((item) => (
+                  <SortableIncludeItem
+                    key={item}
+                    id={item}
+                    item={item}
+                    onRemove={handleRemoveInclude}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="text-center py-6 text-muted-foreground">
+            <Check className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No items added yet</p>
+            <p className="text-xs">Add benefits that make this package special</p>
+          </div>
+        )}
+
+        {formData.includes.length > 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            {formData.includes.length}/20 items • Drag to reorder
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 
   // Services Tab Content
@@ -691,7 +947,7 @@ export function PackageForm({
               >
                 {service.name}
                 <span className="text-muted-foreground text-xs">
-                  {formatPrice(service.price)}
+                  {formatCurrency(service.price)}
                 </span>
                 <X className="h-3 w-3 ml-0.5 hover:text-destructive" />
               </Badge>
@@ -816,7 +1072,7 @@ export function PackageForm({
                               {service.name}
                             </span>
                             <span className="text-sm font-semibold text-primary whitespace-nowrap">
-                              {formatPrice(service.price)}
+                              {formatCurrency(service.price)}
                             </span>
                           </div>
 
@@ -848,7 +1104,7 @@ export function PackageForm({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -858,7 +1114,7 @@ export function PackageForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Mobile Tabs (< 1024px) */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="lg:hidden">
-        <TabsList className="grid w-full grid-cols-2 h-11 mb-4">
+        <TabsList className="grid w-full grid-cols-3 h-11 mb-4">
           <TabsTrigger value="details" className="h-9 gap-1.5">
             <PackageIcon className="h-4 w-4" />
             <span className="hidden xs:inline">Details</span>
@@ -867,8 +1123,17 @@ export function PackageForm({
             <Wrench className="h-4 w-4" />
             <span className="hidden xs:inline">Services</span>
             {formData.serviceIds.length > 0 && (
-              <Badge variant="secondary" className="ml-1.5 h-5 min-w-[20px] px-1.5 text-xs">
+              <Badge variant="secondary" className="ml-1.5 h-5 min-w-5 px-1.5 text-xs">
                 {formData.serviceIds.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="includes" className="h-9 gap-1.5">
+            <Check className="h-4 w-4" />
+            <span className="hidden xs:inline">Includes</span>
+            {formData.includes.length > 0 && (
+              <Badge variant="secondary" className="ml-1.5 h-5 min-w-5 px-1.5 text-xs">
+                {formData.includes.length}
               </Badge>
             )}
           </TabsTrigger>
@@ -881,11 +1146,18 @@ export function PackageForm({
         <TabsContent value="services" className="mt-0">
           <ServicesContent />
         </TabsContent>
+
+        <TabsContent value="includes" className="mt-0">
+          <IncludesContent />
+        </TabsContent>
       </Tabs>
 
       {/* Desktop Two-Column (≥ 1024px) */}
       <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6">
-        <DetailsContent />
+        <div className="space-y-6">
+          <DetailsContent />
+          <IncludesContent />
+        </div>
         <ServicesContent />
       </div>
 
@@ -907,16 +1179,26 @@ export function PackageForm({
         {/* Spacer for create mode */}
         {!isEdit && <div className="hidden sm:block" />}
 
-        {/* Save/Cancel buttons */}
+        {/* Preview/Save/Cancel buttons */}
         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 order-1 sm:order-2">
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.back()}
+            onClick={handleCancel}
             disabled={mutation.isPending}
             className="h-11"
           >
             Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setPreviewDialogOpen(true)}
+            disabled={!formData.name || formData.serviceIds.length === 0}
+            className="h-11"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
           </Button>
           <Button type="submit" disabled={mutation.isPending} className="h-11">
             {mutation.isPending ? (
@@ -961,7 +1243,7 @@ export function PackageForm({
                         : "border-transparent hover:border-muted-foreground/30"
                     )}
                     onClick={() => {
-                      setFormData({ ...formData, imageId: img.id });
+                      setFormData(prev => ({ ...prev, imageId: img.id }));
                       setHasUnsavedChanges(true);
                       setImageDialogOpen(false);
                     }}
@@ -1012,6 +1294,23 @@ export function PackageForm({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Package Preview Dialog */}
+      <PackagePreviewDialog
+        pkg={{
+          name: formData.name,
+          description: formData.description,
+          price: pricePreview.finalPrice,
+          originalPrice: pricePreview.originalPrice,
+          savings: pricePreview.discountAmount,
+          discountPercent: formData.discountPercent,
+          totalDuration: pricePreview.totalDuration,
+          includes: formData.includes,
+          services: selectedServices,
+        }}
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+      />
     </form>
   );
 }

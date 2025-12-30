@@ -2,21 +2,20 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useTags, useUnarchiveContact } from "@/lib/hooks";
+import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useTags, useUnarchiveContact, useAddContactTag, useRemoveContactTag } from "@/lib/hooks";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { BulkDeleteDialog } from "@/components/ui/bulk-delete-dialog";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TagFilter } from "@/components/ui/tag-filter";
+import { StatusFilterDropdown } from "@/components/ui/status-filter-dropdown";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,6 +33,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DeleteContactDialog } from "./DeleteContactDialog";
 import { ContactImport } from "./ContactImport";
 import { getTagColor, isLeadTag, isVIPTag } from "@/lib/utils/tag-colors";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingCard } from "@/components/ui/loading-card";
 
 const initialFormState = {
   name: "",
@@ -63,7 +64,6 @@ function formatDate(dateString) {
 export function ContactsList() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
 
   // TanStack Query hooks
   const { data: clients = [], isLoading: loading } = useContacts();
@@ -72,6 +72,8 @@ export function ContactsList() {
   const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
   const unarchiveContact = useUnarchiveContact();
+  const addContactTag = useAddContactTag();
+  const removeContactTag = useRemoveContactTag();
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -379,25 +381,17 @@ export function ContactsList() {
 
     setBulkUpdating(true);
     try {
-      const addPromises = Array.from(selectedIds).map(async (contactId) => {
-        const response = await fetch(`/api/contacts/${contactId}/tags`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tagId }),
-        });
-        if (!response.ok) {
-          const error = await response.json();
+      const addPromises = Array.from(selectedIds).map((contactId) =>
+        addContactTag.mutateAsync({ contactId, tagId }).catch((error) => {
           // Ignore "already exists" errors silently
-          if (!error.error?.includes("already added")) {
-            throw new Error(error.error || "Failed to add tag");
+          if (!error.message?.includes("already added")) {
+            throw error;
           }
-        }
-      });
+        })
+      );
       await Promise.all(addPromises);
       toast.success(`Tag added to ${selectedIds.size} contact(s)`);
       clearSelection();
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
     } catch (error) {
       toast.error("Failed to add tag to some contacts");
     } finally {
@@ -410,20 +404,12 @@ export function ContactsList() {
 
     setBulkUpdating(true);
     try {
-      const removePromises = Array.from(selectedIds).map(async (contactId) => {
-        const response = await fetch(`/api/contacts/${contactId}/tags?tagId=${tagId}`, {
-          method: "DELETE",
-        });
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to remove tag");
-        }
-      });
+      const removePromises = Array.from(selectedIds).map((contactId) =>
+        removeContactTag.mutateAsync({ contactId, tagId })
+      );
       await Promise.all(removePromises);
       toast.success(`Tag removed from ${selectedIds.size} contact(s)`);
       clearSelection();
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
     } catch (error) {
       toast.error("Failed to remove tag from some contacts");
     } finally {
@@ -511,7 +497,7 @@ export function ContactsList() {
                 </a>
               )}
             </div>
-            <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+            <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
               <Calendar className="h-3 w-3" />
               {formatDate(client.createdAt)}
             </div>
@@ -535,7 +521,7 @@ export function ContactsList() {
               <span className="font-medium">Bookings:</span> <span className="text-muted-foreground">{client.bookingCount || 0}</span>
             </div>
             {client.company && <div className="font-medium text-sm">{client.company}</div>}
-            {client.notes && <div className="hig-caption2 text-muted-foreground line-clamp-1">{client.notes}</div>}
+            {client.notes && <div className="hig-caption-2 text-muted-foreground line-clamp-1">{client.notes}</div>}
           </div>
         );
       },
@@ -731,13 +717,7 @@ export function ContactsList() {
   ];
 
   if (loading) {
-    return (
-      <div className="rounded-lg border bg-card p-6">
-        <div className="flex items-center justify-center">
-          <LoadingIcon className="size-5 animate-spin text-muted-foreground" />
-        </div>
-      </div>
-    );
+    return <LoadingCard message="Loading contacts..." />;
   }
 
   // Contacts View
@@ -898,144 +878,45 @@ export function ContactsList() {
               {/* Status Filter - Dropdown for all breakpoints */}
               {!showArchived && (
                 <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="tablet:min-w-50 justify-between">
-                        <span className="flex items-center gap-2 truncate">
-                          <Target className="h-3 w-3 shrink-0" />
-                          <span className="truncate">
-                            {statusFilter === "all" && smartFilter === "all" && "All Contacts"}
-                            {statusFilter === "lead" && "Leads"}
-                            {statusFilter === "client" && "Clients"}
-                            {statusFilter === "active" && "Active"}
-                            {statusFilter === "inactive" && "Inactive"}
-                            {statusFilter === "unclassified" && "Unclassified"}
-                            {smartFilter === "recent" && "Recently Added"}
-                            {smartFilter === "high-value" && "High-Value"}
-                            {smartFilter === "never-booked" && "Never Booked"}
-                          </span>
-                        </span>
-                        <span className="text-muted-foreground shrink-0 ml-2">
-                          ({statusFilter === "all" && smartFilter === "all" ? statusCounts.all :
-                            statusFilter === "lead" ? statusCounts.lead :
-                            statusFilter === "client" ? statusCounts.client :
-                            statusFilter === "active" ? statusCounts.active :
-                            statusFilter === "inactive" ? statusCounts.inactive :
-                            statusFilter === "unclassified" ? statusCounts.unclassified :
-                            smartFilter === "recent" ? smartCounts.recent :
-                            smartFilter === "high-value" ? smartCounts.highValue :
-                            smartFilter === "never-booked" ? smartCounts.neverBooked : 0})
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-70">
-                      <DropdownMenuLabel>Status Filters</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuCheckboxItem
-                        checked={statusFilter === "all" && smartFilter === "all"}
-                        onCheckedChange={() => {
-                          setStatusFilter("all");
-                          setSmartFilter("all");
-                        }}
-                      >
-                        <Users className="h-3 w-3 mr-2" />
-                        All Contacts ({statusCounts.all})
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={statusFilter === "lead"}
-                        onCheckedChange={() => {
-                          setStatusFilter("lead");
-                          setSmartFilter("all");
-                        }}
-                      >
-                        <Flame className="h-3 w-3 mr-2" />
-                        Leads ({statusCounts.lead})
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={statusFilter === "client"}
-                        onCheckedChange={() => {
-                          setStatusFilter("client");
-                          setSmartFilter("all");
-                        }}
-                      >
-                        <UserCheck className="h-3 w-3 mr-2" />
-                        Clients ({statusCounts.client})
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={statusFilter === "active"}
-                        onCheckedChange={() => {
-                          setStatusFilter("active");
-                          setSmartFilter("all");
-                        }}
-                      >
-                        <CheckCircle2 className="h-3 w-3 mr-2" />
-                        Active ({statusCounts.active})
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={statusFilter === "inactive"}
-                        onCheckedChange={() => {
-                          setStatusFilter("inactive");
-                          setSmartFilter("all");
-                        }}
-                      >
-                        <UserX className="h-3 w-3 mr-2" />
-                        Inactive ({statusCounts.inactive})
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={statusFilter === "unclassified"}
-                        onCheckedChange={() => {
-                          setStatusFilter("unclassified");
-                          setSmartFilter("all");
-                        }}
-                      >
-                        <HelpCircle className="h-3 w-3 mr-2" />
-                        Unclassified ({statusCounts.unclassified})
-                      </DropdownMenuCheckboxItem>
-
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel>Smart Filters</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-
-                      <DropdownMenuCheckboxItem
-                        checked={smartFilter === "recent"}
-                        onCheckedChange={(checked) => {
-                          setSmartFilter(checked ? "recent" : "all");
-                          setStatusFilter("all");
-                        }}
-                      >
-                        <Calendar className="h-3 w-3 mr-2" />
-                        Recently Added ({smartCounts.recent})
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={smartFilter === "high-value"}
-                        onCheckedChange={(checked) => {
-                          setSmartFilter(checked ? "high-value" : "all");
-                          setStatusFilter("all");
-                        }}
-                      >
-                        <TrendingUp className="h-3 w-3 mr-2" />
-                        High-Value Clients ({smartCounts.highValue})
-                      </DropdownMenuCheckboxItem>
-                      <DropdownMenuCheckboxItem
-                        checked={smartFilter === "never-booked"}
-                        onCheckedChange={(checked) => {
-                          setSmartFilter(checked ? "never-booked" : "all");
-                          setStatusFilter("all");
-                        }}
-                      >
-                        <Clock className="h-3 w-3 mr-2" />
-                        Never Booked ({smartCounts.neverBooked})
-                      </DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <TagFilter
-                    tags={allTags}
+                  <StatusFilterDropdown
+                    value={smartFilter !== "all" ? `smart:${smartFilter}` : statusFilter}
+                    onChange={(val) => {
+                      if (val.startsWith("smart:")) {
+                        setSmartFilter(val.replace("smart:", ""));
+                        setStatusFilter("all");
+                      } else {
+                        setStatusFilter(val);
+                        setSmartFilter("all");
+                      }
+                    }}
+                    icon={Target}
+                    placeholder="All Contacts"
+                    className="tablet:min-w-50"
+                    width="w-70"
+                    optionGroups={[
+                      {
+                        label: "Status Filters",
+                        options: [
+                          { value: "all", label: "All Contacts", icon: Users, count: statusCounts.all },
+                          { value: "lead", label: "Leads", icon: Flame, count: statusCounts.lead },
+                          { value: "client", label: "Clients", icon: UserCheck, count: statusCounts.client },
+                          { value: "active", label: "Active", icon: CheckCircle2, count: statusCounts.active },
+                          { value: "inactive", label: "Inactive", icon: UserX, count: statusCounts.inactive },
+                          { value: "unclassified", label: "Unclassified", icon: HelpCircle, count: statusCounts.unclassified },
+                        ],
+                      },
+                      {
+                        label: "Smart Filters",
+                        options: [
+                          { value: "smart:recent", label: "Recently Added", icon: Calendar, count: smartCounts.recent },
+                          { value: "smart:high-value", label: "High-Value Clients", icon: TrendingUp, count: smartCounts.highValue },
+                          { value: "smart:never-booked", label: "Never Booked", icon: Clock, count: smartCounts.neverBooked },
+                        ],
+                      },
+                    ]}
+                    tags={allTags.filter((t) => t.type === "contact" || t.type === "general")}
                     selectedTagIds={selectedTagIds}
-                    onSelectionChange={setSelectedTagIds}
-                    type="contact"
-                    excludeSystemTags={true}
-                    placeholder="Tags"
+                    onTagsChange={setSelectedTagIds}
                   />
                 </div>
               )}
@@ -1109,17 +990,14 @@ export function ContactsList() {
             )}
 
             {clients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                  <Users className="size-6 text-muted-foreground" />
-                </div>
-                <div className="font-medium mb-1">No contacts yet</div>
-                <div className="text-muted-foreground mb-4">Add your first client or lead to get started</div>
-                <Button size="sm" onClick={handleOpenAddDialog}>
-                  <AddIcon className="size-4 mr-1" />
-                  Add Contact
-                </Button>
-              </div>
+              <EmptyState
+                icon={Users}
+                title="No contacts yet"
+                description="Add your first client or lead to get started"
+                actionLabel="Add Contact"
+                actionIcon={<AddIcon className="size-4 mr-1" />}
+                onAction={handleOpenAddDialog}
+              />
             ) : filteredClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="text-muted-foreground mb-3">No contacts match your filters</div>
@@ -1356,30 +1234,14 @@ export function ContactsList() {
         />
 
         {/* Bulk Delete Confirmation Dialog */}
-        <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-destructive">Delete {selectedIds.size} Contact{selectedIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
-            </AlertDialogHeader>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2">
-                <p>
-                  Are you sure you want to delete {selectedIds.size} contact{selectedIds.size !== 1 ? 's' : ''}?
-                </p>
-                <p className="font-medium text-destructive">
-                  This action cannot be undone.
-                </p>
-              </div>
-            </AlertDialogDescription>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleting}>
-                {bulkDeleting && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <BulkDeleteDialog
+          open={bulkDeleteDialogOpen}
+          onOpenChange={setBulkDeleteDialogOpen}
+          count={selectedIds.size}
+          itemType="contact"
+          onConfirm={handleBulkDelete}
+          isPending={bulkDeleting}
+        />
       </div>
     </TooltipProvider>
   );

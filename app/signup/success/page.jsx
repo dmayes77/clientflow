@@ -106,7 +106,7 @@ function SuccessContent() {
       <p className="hig-caption1 text-gray-500 mb-1">
         Your account is set up and ready to go.
       </p>
-      <p className="hig-caption2 text-gray-400 mb-5">
+      <p className="hig-caption-2 text-gray-400 mb-5">
         Your 30-day free trial has started
       </p>
 
@@ -117,15 +117,15 @@ function SuccessContent() {
         </p>
         <ul className="space-y-1.5 hig-caption1 text-gray-600">
           <li className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption2 flex items-center justify-center font-medium">1</span>
+            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption-2 flex items-center justify-center font-medium">1</span>
             Add your business profile
           </li>
           <li className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption2 flex items-center justify-center font-medium">2</span>
+            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption-2 flex items-center justify-center font-medium">2</span>
             Set your availability
           </li>
           <li className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption2 flex items-center justify-center font-medium">3</span>
+            <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 hig-caption-2 flex items-center justify-center font-medium">3</span>
             Create your first service
           </li>
         </ul>

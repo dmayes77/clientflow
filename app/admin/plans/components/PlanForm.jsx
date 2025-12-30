@@ -149,13 +149,13 @@ export function PlanForm({ plan }) {
                 {(field) => (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="hig-caption2">Yearly Price (USD)</label>
+                      <label className="hig-caption-2">Yearly Price (USD)</label>
                       <form.Subscribe selector={(state) => state.values.priceMonthly}>
                         {(priceMonthly) =>
                           priceMonthly && !field.state.value ? (
                             <button
                               type="button"
-                              className="hig-caption2 text-primary hover:underline"
+                              className="hig-caption-2 text-primary hover:underline"
                               onClick={() => field.handleChange(priceMonthly * 10)}
                             >
                               Use ${(priceMonthly * 10).toFixed(0)} (2mo free)
@@ -184,7 +184,7 @@ export function PlanForm({ plan }) {
                           const monthsFree = Math.round(savings / monthly);
                           if (savings > 0) {
                             return (
-                              <p className="hig-caption2 text-muted-foreground">
+                              <p className="hig-caption-2 text-muted-foreground">
                                 Saves ${savings.toFixed(0)}/yr ({monthsFree}mo free)
                               </p>
                             );
@@ -240,7 +240,7 @@ export function PlanForm({ plan }) {
             />
 
             {error && (
-              <div className="flex items-center gap-2 hig-caption2 text-red-500 bg-red-50 p-2.5 rounded-lg">
+              <div className="flex items-center gap-2 hig-caption-2 text-red-500 bg-red-50 p-2.5 rounded-lg">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 {error}
               </div>

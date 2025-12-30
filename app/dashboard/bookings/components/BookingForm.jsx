@@ -16,16 +16,19 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Calendar, DollarSign, Loader2, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle, Share2 } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, Loader2, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle, Share2, CreditCard, CheckCircle } from "lucide-react";
 import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
 import { CameraCapture } from "@/components/camera";
-import { useBooking, useCreateBooking, useUpdateBooking, useAddBookingTag, useRemoveBookingTag, useAddBookingService, useRemoveBookingService, useAddBookingPackage, useRemoveBookingPackage } from "@/lib/hooks";
+import { CollectPaymentModal } from "@/components/terminal/CollectPaymentModal";
+import { useBooking, useCreateBooking, useUpdateBooking, useAddBookingTag, useRemoveBookingTag, useAddBookingService, useRemoveBookingService, useAddBookingPackage, useRemoveBookingPackage, usePayBookingBalance } from "@/lib/hooks";
 import { useContacts, useCreateContact } from "@/lib/hooks";
 import { useServices } from "@/lib/hooks";
 import { usePackages } from "@/lib/hooks";
 import { useTags, useCreateTag } from "@/lib/hooks";
 import { useTenant, useWebShare, useUploadImage } from "@/lib/hooks";
 import { useTanstackForm, TextField, TextareaField, NumberField, SelectField, SaveButton, useSaveButton } from "@/components/ui/tanstack-form";
+import { formatCurrency, formatDate } from "@/lib/formatters";
+import { BookingStatusBadge, InvoiceStatusBadge } from "@/components/ui/status-badge";
 
 const TAG_COLORS = {
   blue: { bg: "bg-blue-100", text: "text-blue-700" },
@@ -45,48 +48,6 @@ const TAG_COLORS = {
 
 function getTagColors(color) {
   return TAG_COLORS[color] || TAG_COLORS.blue;
-}
-
-function formatCurrency(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function BookingStatusBadge({ status }) {
-  const variantMap = {
-    inquiry: "info",
-    confirmed: "info",
-    scheduled: "info",
-    in_progress: "warning",
-    completed: "success",
-    cancelled: "destructive",
-  };
-
-  return <Badge variant={variantMap[status] || "secondary"}>{status.replace("_", " ").charAt(0).toUpperCase() + status.replace("_", " ").slice(1)}</Badge>;
-}
-
-function InvoiceStatusBadge({ status }) {
-  const variantMap = {
-    draft: "secondary",
-    sent: "info",
-    viewed: "info",
-    paid: "success",
-    overdue: "destructive",
-    cancelled: "secondary",
-  };
-
-  return <Badge variant={variantMap[status] || "secondary"}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
 }
 
 /**
@@ -145,6 +106,7 @@ export function BookingForm({
   const [packagePopoverOpen, setPackagePopoverOpen] = useState(false);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [collectPaymentOpen, setCollectPaymentOpen] = useState(false);
 
   // New contact dialog state
   const [newContactDialogOpen, setNewContactDialogOpen] = useState(false);
@@ -240,28 +202,25 @@ export function BookingForm({
 
           // Add services
           for (const service of selectedServices) {
-            await fetch(`/api/bookings/${newBookingId}/services`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ serviceId: service.id }),
+            await addBookingServiceMutation.mutateAsync({
+              bookingId: newBookingId,
+              serviceId: service.id,
             });
           }
 
           // Add packages
           for (const pkg of selectedPackages) {
-            await fetch(`/api/bookings/${newBookingId}/packages`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ packageId: pkg.id }),
+            await addBookingPackageMutation.mutateAsync({
+              bookingId: newBookingId,
+              packageId: pkg.id,
             });
           }
 
           // Add tags
           for (const tag of selectedTags) {
-            await fetch(`/api/bookings/${newBookingId}/tags`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ tagId: tag.id }),
+            await addBookingTagMutation.mutateAsync({
+              bookingId: newBookingId,
+              tagId: tag.id,
             });
           }
 
@@ -290,7 +249,6 @@ export function BookingForm({
 
         await new Promise(resolve => setTimeout(resolve, remainingTime));
 
-        console.error("Error saving booking:", error);
         toast.error(error.message || "Failed to save booking");
         saveButton.handleError();
       }
@@ -743,7 +701,7 @@ export function BookingForm({
               <h1 className="mb-0!">{isEditMode ? booking?.contact?.name || "Booking Details" : "New Booking"}</h1>
               {isEditMode && <BookingStatusBadge status={form.state.values.status} />}
             </div>
-            <p className="hig-caption2 text-muted-foreground">
+            <p className="hig-caption-2 text-muted-foreground">
               {isEditMode ? `Booking #${booking?.id.slice(-6).toUpperCase()} · Created ${formatDate(booking?.createdAt)}` : "Create a new booking for a contact"}
             </p>
           </div>
@@ -922,7 +880,7 @@ export function BookingForm({
                           .map((service) => (
                             <CommandItem key={service.id} value={service.name} onSelect={() => handleAddService(service.id)} className="flex justify-between">
                               <span>{service.name}</span>
-                              <span className="text-muted-foreground hig-caption2">
+                              <span className="text-muted-foreground hig-caption-2">
                                 {formatCurrency(service.price)} · {service.duration}min
                               </span>
                             </CommandItem>
@@ -940,7 +898,7 @@ export function BookingForm({
                     <div key={service.id} className="flex items-center justify-between px-2 py-1.5 bg-background rounded border">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium truncate mb-0">{service.name}</p>
-                        <p className="hig-caption2 text-muted-foreground mb-0">
+                        <p className="hig-caption-2 text-muted-foreground mb-0">
                           {formatCurrency(service.price)} · {service.duration}min
                         </p>
                       </div>
@@ -955,7 +913,7 @@ export function BookingForm({
                   ))}
                 </div>
               ) : (
-                <p className="hig-caption2 text-muted-foreground text-center py-3">No services selected</p>
+                <p className="hig-caption-2 text-muted-foreground text-center py-3">No services selected</p>
               )}
             </div>
           </Card>
@@ -988,7 +946,7 @@ export function BookingForm({
                           .map((pkg) => (
                             <CommandItem key={pkg.id} value={pkg.name} onSelect={() => handleAddPackage(pkg.id)} className="flex justify-between">
                               <span>{pkg.name}</span>
-                              <span className="text-muted-foreground hig-caption2">{formatCurrency(pkg.price)}</span>
+                              <span className="text-muted-foreground hig-caption-2">{formatCurrency(pkg.price)}</span>
                             </CommandItem>
                           ))}
                       </CommandGroup>
@@ -1004,7 +962,7 @@ export function BookingForm({
                     <div key={pkg.id} className="flex items-center justify-between px-2 py-1.5 bg-background rounded border">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium truncate mb-0">{pkg.name}</p>
-                        <p className="hig-caption2 text-muted-foreground mb-0">{formatCurrency(pkg.price)}</p>
+                        <p className="hig-caption-2 text-muted-foreground mb-0">{formatCurrency(pkg.price)}</p>
                       </div>
                       <button
                         type="button"
@@ -1017,7 +975,7 @@ export function BookingForm({
                   ))}
                 </div>
               ) : (
-                <p className="hig-caption2 text-muted-foreground text-center py-3">No packages selected</p>
+                <p className="hig-caption-2 text-muted-foreground text-center py-3">No packages selected</p>
               )}
             </div>
           </Card>
@@ -1121,7 +1079,7 @@ export function BookingForm({
                         >
                           {booking.invoice.invoiceNumber}
                         </button>
-                        <p className="hig-caption2 text-muted-foreground">{formatCurrency(booking.invoice.total)}</p>
+                        <p className="hig-caption-2 text-muted-foreground">{formatCurrency(booking.invoice.total)}</p>
                       </div>
                       <InvoiceStatusBadge status={booking.invoice.status} />
                     </div>
@@ -1135,6 +1093,68 @@ export function BookingForm({
                     </Button>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Payment Status (edit mode only, when booking has an invoice) */}
+          {isEditMode && booking?.invoice && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="size-4" />
+                  Payment Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {/* Payment breakdown */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-medium">{formatCurrency(booking.totalPrice)}</span>
+                    </div>
+                    {(booking.depositAllocated > 0) && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Deposit Allocated</span>
+                        <span className="text-green-600">{formatCurrency(booking.depositAllocated)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Amount Paid</span>
+                      <span className="text-green-600">{formatCurrency(booking.bookingAmountPaid || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm border-t pt-2">
+                      <span className="font-medium">Balance Due</span>
+                      <span className={cn(
+                        "font-medium",
+                        (booking.bookingBalanceDue ?? (booking.totalPrice - (booking.bookingAmountPaid || 0))) > 0
+                          ? "text-orange-600"
+                          : "text-green-600"
+                      )}>
+                        {formatCurrency(booking.bookingBalanceDue ?? (booking.totalPrice - (booking.bookingAmountPaid || 0)))}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Status indicator */}
+                  {booking.paymentStatus === "paid" ? (
+                    <div className="flex items-center gap-2 text-green-600 bg-green-50 p-2 rounded-md">
+                      <CheckCircle className="size-4" />
+                      <span className="text-sm font-medium">Fully Paid</span>
+                    </div>
+                  ) : (booking.bookingBalanceDue ?? (booking.totalPrice - (booking.bookingAmountPaid || 0))) > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setCollectPaymentOpen(true)}
+                    >
+                      <CreditCard className="size-3 mr-2" />
+                      Collect Balance
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -1395,6 +1415,24 @@ export function BookingForm({
           services={allServices}
           packages={allPackages}
           onSave={handleInvoiceSave}
+        />
+      )}
+
+      {/* Collect Balance Payment Modal */}
+      {isEditMode && booking && (
+        <CollectPaymentModal
+          open={collectPaymentOpen}
+          onOpenChange={setCollectPaymentOpen}
+          amount={booking.bookingBalanceDue ?? (booking.totalPrice - (booking.bookingAmountPaid || 0))}
+          bookingId={bookingId}
+          invoiceId={booking.invoiceId}
+          contactId={booking.contactId}
+          description={`Balance payment for booking ${booking.id?.slice(-6).toUpperCase()}`}
+          onSuccess={() => {
+            // Refresh booking data after successful payment
+            setCollectPaymentOpen(false);
+            router.refresh();
+          }}
         />
       )}
       </div>

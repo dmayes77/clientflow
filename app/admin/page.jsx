@@ -22,13 +22,7 @@ import {
   ChevronUp,
   Lightbulb,
 } from "lucide-react";
-
-function formatCurrency(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 function StatCard({ title, value, description, icon: Icon, trend, loading }) {
   return (
@@ -46,7 +40,7 @@ function StatCard({ title, value, description, icon: Icon, trend, loading }) {
           <>
             <div className="font-bold">{value}</div>
             {description && (
-              <p className="text-muted-foreground mt-0.5 flex items-center gap-1 hig-caption2">
+              <p className="text-muted-foreground mt-0.5 flex items-center gap-1 hig-caption-2">
                 {trend !== undefined && (
                   <>
                     {trend > 0 ? (

@@ -51,6 +51,7 @@ import {
   useDeleteVideo,
 } from "@/lib/hooks";
 import { CameraCapture } from "@/components/camera";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const IMAGE_TYPES = [
   { value: "logo", label: "Logo" },
@@ -343,7 +344,7 @@ export function MediaLibrary() {
                 <Video className="h-8 w-8 text-white drop-shadow-lg" />
               </div>
               {item.duration && (
-                <span className="absolute bottom-1 right-1 bg-black/70 text-white hig-caption2 px-1.5 py-0.5 rounded">
+                <span className="absolute bottom-1 right-1 bg-black/70 text-white hig-caption-2 px-1.5 py-0.5 rounded">
                   {Math.floor(item.duration / 60)}:{String(Math.floor(item.duration % 60)).padStart(2, "0")}
                 </span>
               )}
@@ -375,8 +376,8 @@ export function MediaLibrary() {
         </div>
 
         <div className="p-1.5 sm:p-2 bg-card">
-          <p className="hig-caption2 font-medium truncate">{item.name}</p>
-          <p className="hig-caption2 text-muted-foreground truncate">{formatFileSize(item.size)}</p>
+          <p className="hig-caption-2 font-medium truncate">{item.name}</p>
+          <p className="hig-caption-2 text-muted-foreground truncate">{formatFileSize(item.size)}</p>
         </div>
       </div>
     );
@@ -391,11 +392,11 @@ export function MediaLibrary() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <TabsList className="h-8">
-                <TabsTrigger value="images" className="h-7 gap-1.5 px-3 hig-caption2">
+                <TabsTrigger value="images" className="h-7 gap-1.5 px-3 hig-caption-2">
                   <FileImage className="h-3.5 w-3.5" />
                   Images ({images.length})
                 </TabsTrigger>
-                <TabsTrigger value="videos" className="h-7 gap-1.5 px-3 hig-caption2">
+                <TabsTrigger value="videos" className="h-7 gap-1.5 px-3 hig-caption-2">
                   <FileVideo className="h-3.5 w-3.5" />
                   Videos ({videos.length})
                 </TabsTrigger>
@@ -416,11 +417,11 @@ export function MediaLibrary() {
                 )}
 
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger size="sm" className="h-8 px-2 hig-caption2 gap-1">
+                  <SelectTrigger size="sm" className="h-8 px-2 hig-caption-2 gap-1">
                     <Filter className="h-3 w-3 shrink-0" />
                     <SelectValue placeholder="Filter" />
                   </SelectTrigger>
-                  <SelectContent className="h-8 px-2 hig-caption2 gap-1-content">
+                  <SelectContent className="h-8 px-2 hig-caption-2 gap-1-content">
                     <SelectItem value="all">All Types</SelectItem>
                     {currentTypes.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
@@ -467,7 +468,7 @@ export function MediaLibrary() {
                   browse
                 </button>
               </p>
-              <p className="mt-1 hig-caption2 text-muted-foreground/70">
+              <p className="mt-1 hig-caption-2 text-muted-foreground/70">
                 {activeTab === "images" ? "Supports: JPG, PNG, GIF, WebP • Max 10MB" : "Supports: MP4, MOV, WebM • Max 100MB"}
               </p>
             </div>
@@ -480,10 +481,11 @@ export function MediaLibrary() {
               <>
                 <TabsContent value="images" className="mt-0">
                   {images.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <FileImage className="mx-auto h-12 w-12 text-muted-foreground" />
-                      <p className="mt-2 text-muted-foreground">No images uploaded yet</p>
-                    </div>
+                    <EmptyState
+                      icon={FileImage}
+                      title="No images uploaded yet"
+                      description="Upload images to use in your services and packages"
+                    />
                   ) : viewMode === "grid" ? (
                     <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
                       {images.map((image) => (
@@ -528,10 +530,11 @@ export function MediaLibrary() {
 
                 <TabsContent value="videos" className="mt-0">
                   {videos.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <FileVideo className="mx-auto h-12 w-12 text-muted-foreground" />
-                      <p className="mt-2 text-muted-foreground">No videos uploaded yet</p>
-                    </div>
+                    <EmptyState
+                      icon={FileVideo}
+                      title="No videos uploaded yet"
+                      description="Upload videos to showcase your work"
+                    />
                   ) : viewMode === "grid" ? (
                     <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
                       {videos.map((video) => (
@@ -605,7 +608,7 @@ export function MediaLibrary() {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{uploadForm.file.name}</p>
-                  <p className="hig-caption2 text-muted-foreground">{formatFileSize(uploadForm.file.size)}</p>
+                  <p className="hig-caption-2 text-muted-foreground">{formatFileSize(uploadForm.file.size)}</p>
                 </div>
                 <Button
                   variant="ghost"

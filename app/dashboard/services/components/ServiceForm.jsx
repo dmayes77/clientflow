@@ -56,7 +56,9 @@ import {
   Copy,
   ExternalLink,
   Plus,
+  Eye,
 } from "lucide-react";
+import { ServicePreviewDialog } from "./ServicePreviewDialog";
 import {
   DndContext,
   closestCenter,
@@ -104,7 +106,10 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
       <div
         {...attributes}
         {...listeners}
-        className="flex-shrink-0 touch-none cursor-grab active:cursor-grabbing p-1 -m-1"
+        className="shrink-0 touch-none cursor-grab active:cursor-grabbing p-1 -m-1"
+        aria-label="Drag to reorder"
+        role="button"
+        tabIndex={0}
       >
         <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
@@ -115,7 +120,7 @@ function SortableIncludeItem({ id, item, index, onRemove }) {
         variant="ghost"
         size="sm"
         onClick={() => onRemove(index)}
-        className="h-9 w-9 p-0 flex-shrink-0 opacity-0 group-hover:opacity-100 tablet:opacity-100 transition-opacity"
+        className="h-9 w-9 p-0 shrink-0 opacity-0 group-hover:opacity-100 tablet:opacity-100 transition-opacity"
       >
         <X className="h-4 w-4" />
         <span className="sr-only">Remove item</span>
@@ -164,6 +169,7 @@ export function ServiceForm({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [aiPromptDialogOpen, setAiPromptDialogOpen] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   // UX state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -342,20 +348,20 @@ Format the includes list so I can easily copy each item individually.`;
 
   const handleAddInclude = () => {
     if (newIncludeItem.trim() && formData.includes.length < 20) {
-      setFormData({
-        ...formData,
-        includes: [...formData.includes, newIncludeItem.trim()],
-      });
+      setFormData(prev => ({
+        ...prev,
+        includes: [...prev.includes, newIncludeItem.trim()],
+      }));
       setNewIncludeItem("");
       setHasUnsavedChanges(true);
     }
   };
 
   const handleRemoveInclude = (index) => {
-    setFormData({
-      ...formData,
-      includes: formData.includes.filter((_, i) => i !== index),
-    });
+    setFormData(prev => ({
+      ...prev,
+      includes: prev.includes.filter((_, i) => i !== index),
+    }));
     setHasUnsavedChanges(true);
   };
 
@@ -363,6 +369,43 @@ Format the includes list so I can easily copy each item individually.`;
     if (e.key === "Enter") {
       e.preventDefault();
       handleAddInclude();
+    }
+  };
+
+  const handlePasteIncludes = (e) => {
+    const pastedText = e.clipboardData.getData('text');
+
+    // Check if the pasted text contains commas
+    if (pastedText.includes(',')) {
+      e.preventDefault();
+
+      const currentIncludes = formData.includes || [];
+
+      // Split by comma, trim whitespace, filter out empty strings
+      const newItems = pastedText
+        .split(',')
+        .map(item => item.trim())
+        .filter(item => item.length > 0 && item.length <= 200);
+
+      // Add items up to the limit of 20
+      const availableSlots = 20 - currentIncludes.length;
+      const itemsToAdd = newItems.slice(0, availableSlots);
+
+      if (itemsToAdd.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          includes: [...currentIncludes, ...itemsToAdd],
+        }));
+        setNewIncludeItem("");
+        setHasUnsavedChanges(true);
+
+        // Show toast if some items were truncated
+        if (newItems.length > availableSlots) {
+          toast.info(`Added ${itemsToAdd.length} items. ${newItems.length - availableSlots} items skipped (limit: 20 total).`);
+        } else {
+          toast.success(`Added ${itemsToAdd.length} item${itemsToAdd.length > 1 ? 's' : ''}`);
+        }
+      }
     }
   };
 
@@ -375,7 +418,7 @@ Format the includes list so I can easily copy each item individually.`;
 
     try {
       const newImage = await uploadImageMutation.mutateAsync(formDataUpload);
-      setFormData({ ...formData, imageId: newImage.id });
+      setFormData(prev => ({ ...prev, imageId: newImage.id }));
       setHasUnsavedChanges(true);
       toast.success("Image uploaded");
     } catch (error) {
@@ -452,6 +495,16 @@ Format the includes list so I can easily copy each item individually.`;
     }
   };
 
+  const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm(
+        "You have unsaved changes. Are you sure you want to leave?"
+      );
+      if (!confirmed) return;
+    }
+    router.back();
+  };
+
   const selectedImage = images.find((img) => img.id === formData?.imageId);
   const loading = categoriesLoading || imagesLoading;
 
@@ -474,11 +527,12 @@ Format the includes list so I can easily copy each item individually.`;
             placeholder="e.g., Haircut, Consultation, Photo Session"
             value={formData.name}
             onChange={(e) => {
-              setFormData({ ...formData, name: e.target.value });
+              setFormData(prev => ({ ...prev, name: e.target.value }));
               setHasUnsavedChanges(true);
             }}
             className="h-11"
             required
+            autoFocus
           />
         </div>
 
@@ -507,7 +561,7 @@ Format the includes list so I can easily copy each item individually.`;
             placeholder="e.g., Walk away with a fresh, confident look that turns heads and lasts for weeks"
             value={formData.description}
             onChange={(e) => {
-              setFormData({ ...formData, description: e.target.value });
+              setFormData(prev => ({ ...prev, description: e.target.value }));
               setHasUnsavedChanges(true);
             }}
             rows={2}
@@ -524,7 +578,7 @@ Format the includes list so I can easily copy each item individually.`;
                 placeholder="New category name"
                 value={formData.newCategoryName}
                 onChange={(e) => {
-                  setFormData({ ...formData, newCategoryName: e.target.value });
+                  setFormData(prev => ({ ...prev, newCategoryName: e.target.value }));
                   setHasUnsavedChanges(true);
                 }}
                 autoFocus
@@ -536,7 +590,7 @@ Format the includes list so I can easily copy each item individually.`;
                 size="sm"
                 onClick={() => {
                   setIsCreatingCategory(false);
-                  setFormData({ ...formData, newCategoryName: "" });
+                  setFormData(prev => ({ ...prev, newCategoryName: "" }));
                 }}
                 className="h-11"
               >
@@ -548,7 +602,7 @@ Format the includes list so I can easily copy each item individually.`;
               <Select
                 value={formData.categoryId || "none"}
                 onValueChange={(value) => {
-                  setFormData({ ...formData, categoryId: value === "none" ? "" : value });
+                  setFormData(prev => ({ ...prev, categoryId: value === "none" ? "" : value }));
                   setHasUnsavedChanges(true);
                 }}
               >
@@ -588,7 +642,7 @@ Format the includes list so I can easily copy each item individually.`;
               id="duration"
               value={formData.duration}
               onValueChange={(value) => {
-                setFormData({ ...formData, duration: value });
+                setFormData(prev => ({ ...prev, duration: value }));
                 setHasUnsavedChanges(true);
               }}
             />
@@ -605,7 +659,7 @@ Format the includes list so I can easily copy each item individually.`;
               step="0.01"
               value={formData.price}
               onChange={(e) => {
-                setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
+                setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }));
                 setHasUnsavedChanges(true);
               }}
               className="h-11"
@@ -643,25 +697,31 @@ Format the includes list so I can easily copy each item individually.`;
         </Alert>
 
         {/* Add Include Input */}
-        <div className="flex gap-2">
-          <Input
-            placeholder="e.g., 30-minute consultation call"
-            value={newIncludeItem}
-            onChange={(e) => setNewIncludeItem(e.target.value)}
-            onKeyDown={handleKeyDown}
-            maxLength={200}
-            className="h-11"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={handleAddInclude}
-            disabled={!newIncludeItem.trim() || formData.includes.length >= 20}
-            className="h-11 w-11"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder="e.g., 30-minute consultation call"
+              value={newIncludeItem}
+              onChange={(e) => setNewIncludeItem(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePasteIncludes}
+              maxLength={200}
+              className="h-11"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleAddInclude}
+              disabled={!newIncludeItem.trim() || formData.includes.length >= 20}
+              className="h-11 w-11"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Paste a comma-separated list to add multiple items at once
+          </p>
         </div>
 
         {/* Includes List */}
@@ -724,7 +784,7 @@ Format the includes list so I can easily copy each item individually.`;
               <button
                 type="button"
                 onClick={() => {
-                  setFormData({ ...formData, imageId: null });
+                  setFormData(prev => ({ ...prev, imageId: null }));
                   setHasUnsavedChanges(true);
                 }}
                 className="absolute -top-2 -right-2 h-6 w-6 sm:h-7 sm:w-7 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 tablet:opacity-100 transition-opacity z-10"
@@ -770,18 +830,16 @@ Format the includes list so I can easily copy each item individually.`;
                 </span>
               </Button>
             </label>
-            {isEdit && (
-              <CameraCapture
-                onCapture={handleCameraCapture}
-                buttonText="Take Photo"
-                buttonVariant="outline"
-                facingMode="environment"
-                showPreview={true}
-                title="Capture Service Photo"
-                description="Take a photo to showcase this service"
-                className="w-full h-11"
-              />
-            )}
+            <CameraCapture
+              onCapture={handleCameraCapture}
+              buttonText="Take Photo"
+              buttonVariant="outline"
+              facingMode="environment"
+              showPreview={true}
+              title="Capture Service Photo"
+              description="Take a photo to showcase this service"
+              className="w-full h-11"
+            />
           </div>
         </div>
       </CardContent>
@@ -790,7 +848,7 @@ Format the includes list so I can easily copy each item individually.`;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -856,16 +914,26 @@ Format the includes list so I can easily copy each item individually.`;
         {/* Spacer for create mode */}
         {!isEdit && <div className="hidden sm:block" />}
 
-        {/* Save/Cancel buttons */}
+        {/* Preview/Save/Cancel buttons */}
         <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 order-1 sm:order-2">
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.back()}
+            onClick={handleCancel}
             disabled={mutation.isPending}
             className="h-11"
           >
             Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setPreviewDialogOpen(true)}
+            disabled={!formData.name}
+            className="h-11"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
           </Button>
           <Button type="submit" disabled={mutation.isPending} className="h-11">
             {mutation.isPending ? (
@@ -910,7 +978,7 @@ Format the includes list so I can easily copy each item individually.`;
                         : "border-transparent hover:border-muted-foreground/30"
                     )}
                     onClick={() => {
-                      setFormData({ ...formData, imageId: img.id });
+                      setFormData(prev => ({ ...prev, imageId: img.id }));
                       setHasUnsavedChanges(true);
                       setImageDialogOpen(false);
                     }}
@@ -1053,6 +1121,20 @@ Format the includes list so I can easily copy each item individually.`;
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Service Preview Dialog */}
+      <ServicePreviewDialog
+        service={{
+          name: formData.name,
+          description: formData.description,
+          duration: formData.duration,
+          price: Math.round((formData.price || 0) * 100),
+          includes: formData.includes,
+          images: selectedImage ? [{ url: selectedImage.url, alt: selectedImage.alt || formData.name }] : [],
+        }}
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+      />
     </form>
   );
 }

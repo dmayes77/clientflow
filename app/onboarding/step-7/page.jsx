@@ -140,7 +140,7 @@ export default function Step7Page() {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="hig-caption1 font-medium text-gray-900">Your Booking Page</p>
-              <p className="hig-caption2 text-gray-500 truncate">
+              <p className="hig-caption-2 text-gray-500 truncate">
                 clientflow.app/{businessSettings.slug}
               </p>
             </div>

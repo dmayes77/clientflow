@@ -180,7 +180,7 @@ export default function CustomDevelopmentPage() {
       <section className="py-20 md:py-28 relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary/3 to-transparent" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-violet-500/5 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 rounded-full bg-violet-500/5 blur-3xl" />
 
         <SectionContainer className="relative">
           {/* Header */}

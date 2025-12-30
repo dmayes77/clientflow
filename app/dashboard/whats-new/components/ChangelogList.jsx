@@ -91,7 +91,6 @@ export function ChangelogList() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to fetch changelog:", err);
         setError(err.message);
         setLoading(false);
       });
@@ -182,7 +181,7 @@ export function ChangelogList() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{item.title}</span>
-                        <Badge variant="outline" className="hig-caption2">
+                        <Badge variant="outline" className="hig-caption-2">
                           {TYPE_LABELS[item.type] || TYPE_LABELS.feature}
                         </Badge>
                       </div>

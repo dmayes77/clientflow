@@ -112,7 +112,7 @@ export default function RetryPaymentPage() {
                 {PLAN.features.map((feature) => (
                   <div
                     key={feature}
-                    className="flex items-center gap-1.5 hig-caption2 text-gray-600"
+                    className="flex items-center gap-1.5 hig-caption-2 text-gray-600"
                   >
                     <Check className="w-3 h-3 shrink-0 text-violet-500" />
                     <span className="truncate">{feature}</span>
@@ -142,7 +142,7 @@ export default function RetryPaymentPage() {
             </div>
 
             {/* Trust indicators */}
-            <div className="flex items-center justify-center gap-3 pt-1 hig-caption2 text-muted-foreground">
+            <div className="flex items-center justify-center gap-3 pt-1 hig-caption-2 text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5" />
                 <span>Secure checkout</span>

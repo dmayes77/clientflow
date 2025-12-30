@@ -16,11 +16,11 @@ function ServiceFormSkeleton() {
       <Skeleton className="h-8 w-48" />
       <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
         <div className="space-y-4">
-          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-100 w-full" />
         </div>
         <div className="space-y-4">
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[200px] w-full" />
+          <Skeleton className="h-50 w-full" />
+          <Skeleton className="h-50 w-full" />
         </div>
       </div>
     </div>
@@ -100,7 +100,7 @@ export default function EditServicePage({ params }) {
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center">
+        <div className="flex flex-col items-center justify-center min-h-100 p-6 text-center">
           <AlertCircle className="h-12 w-12 text-destructive mb-4" />
           <h2 className="text-lg font-semibold mb-2">Failed to load service</h2>
           <p className="text-sm text-muted-foreground mb-4 max-w-md">

@@ -24,21 +24,50 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const contactId = searchParams.get("contactId");
     const statusFilter = searchParams.get("status");
+    const search = searchParams.get("search");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const limit = parseInt(searchParams.get("limit") || "0", 10);
+    const offset = parseInt(searchParams.get("offset") || "0", 10);
 
+    // Build where clause
     const where = {
       tenantId: tenant.id,
       ...(contactId && { contactId }),
       ...(statusFilter && { status: statusFilter }),
     };
 
+    // Date range filter
+    if (startDate) {
+      where.createdAt = { ...where.createdAt, gte: new Date(startDate) };
+    }
+    if (endDate) {
+      where.createdAt = { ...where.createdAt, lte: new Date(endDate) };
+    }
+
+    // Search filter (client name, email, or invoice number)
+    if (search) {
+      where.OR = [
+        { contactName: { contains: search, mode: "insensitive" } },
+        { contactEmail: { contains: search, mode: "insensitive" } },
+        { invoiceNumber: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // Get total count for pagination
+    const total = await prisma.invoice.count({ where });
+
+    // Fetch invoices with pagination
     const invoices = await prisma.invoice.findMany({
       where,
       include: {
         contact: true,
-        booking: {
+        bookings: {
           include: {
             service: true,
             package: true,
+            services: { include: { service: true } },
+            packages: { include: { package: true } },
           },
         },
         tags: {
@@ -53,7 +82,38 @@ export async function GET(request) {
         },
       },
       orderBy: { createdAt: "desc" },
+      ...(limit > 0 && { take: limit }),
+      ...(offset > 0 && { skip: offset }),
     });
+
+    // Calculate stats (from all tenant invoices, not filtered)
+    const allInvoicesForStats = await prisma.invoice.findMany({
+      where: { tenantId: tenant.id },
+      select: { status: true, total: true, balanceDue: true, amountPaid: true },
+    });
+
+    const stats = {
+      total: allInvoicesForStats.length,
+      paid: allInvoicesForStats.filter((i) => i.status === "paid").length,
+      pending: allInvoicesForStats.filter((i) => ["sent", "viewed"].includes(i.status)).length,
+      overdue: allInvoicesForStats.filter((i) => i.status === "overdue").length,
+      totalRevenue: allInvoicesForStats
+        .filter((i) => i.status === "paid")
+        .reduce((sum, i) => sum + (i.total || 0), 0),
+      outstandingAmount: allInvoicesForStats
+        .filter((i) => ["sent", "viewed", "overdue"].includes(i.status))
+        .reduce((sum, i) => sum + (i.balanceDue || i.total || 0), 0),
+      // Status counts for filter pills
+      statusCounts: {
+        all: allInvoicesForStats.length,
+        draft: allInvoicesForStats.filter((i) => i.status === "draft").length,
+        sent: allInvoicesForStats.filter((i) => i.status === "sent").length,
+        viewed: allInvoicesForStats.filter((i) => i.status === "viewed").length,
+        paid: allInvoicesForStats.filter((i) => i.status === "paid").length,
+        overdue: allInvoicesForStats.filter((i) => i.status === "overdue").length,
+        cancelled: allInvoicesForStats.filter((i) => i.status === "cancelled").length,
+      },
+    };
 
     // Flatten tags for easier consumption
     const invoicesWithTags = invoices.map((invoice) => ({
@@ -61,7 +121,11 @@ export async function GET(request) {
       tags: invoice.tags.map((t) => t.tag),
     }));
 
-    return NextResponse.json(invoicesWithTags);
+    return NextResponse.json({
+      invoices: invoicesWithTags,
+      total,
+      stats,
+    });
   } catch (error) {
     console.error("Error fetching invoices:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -98,11 +162,12 @@ export async function POST(request) {
       }
     }
 
-    // Verify booking belongs to tenant if provided
-    if (data.bookingId) {
-      const booking = await prisma.booking.findFirst({
+    // Verify bookings belong to tenant if provided (supports multiple bookings)
+    const bookingIds = data.bookingIds || (data.bookingId ? [data.bookingId] : []);
+    if (bookingIds.length > 0) {
+      const bookings = await prisma.booking.findMany({
         where: {
-          id: data.bookingId,
+          id: { in: bookingIds },
           tenantId: tenant.id,
         },
         include: {
@@ -110,14 +175,15 @@ export async function POST(request) {
         },
       });
 
-      if (!booking) {
-        return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+      if (bookings.length !== bookingIds.length) {
+        return NextResponse.json({ error: "One or more bookings not found" }, { status: 404 });
       }
 
-      // Check if booking already has an invoice (one invoice per booking)
-      if (booking.invoice) {
+      // Check if any booking already has an invoice (one invoice per booking)
+      const alreadyLinked = bookings.filter(b => b.invoice);
+      if (alreadyLinked.length > 0) {
         return NextResponse.json(
-          { error: "This booking already has an invoice" },
+          { error: `${alreadyLinked.length} booking(s) already have an invoice` },
           { status: 400 }
         );
       }
@@ -147,7 +213,6 @@ export async function POST(request) {
       data: {
         tenantId: tenant.id,
         contactId: data.contactId,
-        bookingId: data.bookingId,
         invoiceNumber,
         status: data.status || "draft",
         dueDate: data.dueDate,
@@ -170,7 +235,14 @@ export async function POST(request) {
       },
       include: {
         contact: true,
-        booking: true,
+        bookings: {
+          include: {
+            service: true,
+            package: true,
+            services: { include: { service: true } },
+            packages: { include: { package: true } },
+          },
+        },
         tags: {
           include: {
             tag: true,
@@ -183,6 +255,28 @@ export async function POST(request) {
         },
       },
     });
+
+    // Link bookings to the invoice and initialize payment tracking
+    if (bookingIds.length > 0) {
+      // Fetch bookings to get their totalPrice for balance initialization
+      const bookingsToLink = await prisma.booking.findMany({
+        where: { id: { in: bookingIds }, tenantId: tenant.id },
+        select: { id: true, totalPrice: true },
+      });
+
+      // Update each booking with invoiceId and initial balanceDue
+      await Promise.all(
+        bookingsToLink.map((booking) =>
+          prisma.booking.update({
+            where: { id: booking.id },
+            data: {
+              invoiceId: invoice.id,
+              bookingBalanceDue: booking.totalPrice, // Initialize balance to full amount
+            },
+          })
+        )
+      );
+    }
 
     // Track coupon usage if a coupon was applied
     if (data.couponId && data.couponDiscountAmount) {

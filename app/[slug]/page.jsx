@@ -26,20 +26,7 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
-
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function formatDuration(minutes) {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-}
+import { formatCurrency, formatDuration } from "@/lib/formatters";
 
 function toTitleCase(str) {
   if (!str) return str;
@@ -190,7 +177,7 @@ function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
                 <div className={`flex items-center gap-4 p-4 rounded-xl ${isPackage ? "bg-violet-50 border border-violet-100" : "bg-muted/50"}`}>
                   <div className="flex-1">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Price</p>
-                    <p className={`text-2xl font-bold ${isPackage ? "text-violet-600" : "text-primary"}`}>{formatPrice(item.price)}</p>
+                    <p className={`text-2xl font-bold ${isPackage ? "text-violet-600" : "text-primary"}`}>{formatCurrency(item.price)}</p>
                   </div>
                   <div className={`border-l pl-4 ${isPackage ? "border-violet-200" : ""}`}>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Duration</p>
@@ -303,7 +290,7 @@ function ServiceCard({ service, onClick }) {
             <Clock className="w-3.5 h-3.5" />
             {formatDuration(service.duration)}
           </span>
-          <span className="font-bold text-sm text-green-600">{formatPrice(service.price)}</span>
+          <span className="font-bold text-sm text-green-600">{formatCurrency(service.price)}</span>
         </div>
       </div>
 
@@ -330,7 +317,7 @@ function PackageCard({ pkg, onClick }) {
             {pkg.description && <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{pkg.description}</p>}
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xl font-bold text-violet-600">{formatPrice(pkg.price)}</p>
+            <p className="text-xl font-bold text-violet-600">{formatCurrency(pkg.price)}</p>
             <p className="text-xs text-muted-foreground">{formatDuration(pkg.totalDuration)}</p>
           </div>
         </div>

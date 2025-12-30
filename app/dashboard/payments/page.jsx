@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,25 +15,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   DollarSign,
   Search,
   CreditCard,
   ChevronRight,
-  Loader2,
-  AlertTriangle,
   RefreshCw,
   Receipt,
+  Download,
+  Calendar,
+  X,
+  ChevronLeft,
+  Loader2,
 } from "lucide-react";
-import { usePayments } from "@/lib/hooks";
+import { usePayments, useExportPayments } from "@/lib/hooks";
+import { formatCurrency } from "@/lib/formatters";
+import { PaymentStatusBadge } from "@/components/ui/status-badge";
+import { LoadingCard } from "@/components/ui/loading-card";
 
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
+const ITEMS_PER_PAGE = 20;
 
-function formatDate(date) {
+function formatDateTime(date) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -40,82 +48,129 @@ function formatDate(date) {
   }).format(new Date(date));
 }
 
-function formatFullDate(date) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
-}
+function formatDateRange(startDate, endDate) {
+  if (!startDate && !endDate) return null;
 
-function StatusBadge({ status, disputeStatus }) {
-  if (disputeStatus) {
-    return (
-      <Badge variant="destructive" className="gap-1">
-        <AlertTriangle className="size-3" />
-        Disputed
-      </Badge>
-    );
-  }
+  const formatDate = (d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  switch (status) {
-    case "succeeded":
-      return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Succeeded</Badge>;
-    case "refunded":
-      return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Refunded</Badge>;
-    case "partial_refund":
-      return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Partial</Badge>;
-    case "failed":
-      return <Badge variant="destructive">Failed</Badge>;
-    case "disputed":
-      return (
-        <Badge variant="destructive" className="gap-1">
-          <AlertTriangle className="size-3" />
-          Disputed
-        </Badge>
-      );
-    default:
-      return <Badge variant="outline">{status}</Badge>;
+  if (startDate && endDate) {
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`;
   }
+  if (startDate) return `From ${formatDate(startDate)}`;
+  if (endDate) return `Until ${formatDate(endDate)}`;
 }
 
 export default function PaymentsPage() {
   const [search, setSearch] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [page, setPage] = useState(0);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+
+  const exportMutation = useExportPayments();
 
   const { data, isLoading: loading, refetch } = usePayments({
     status: statusFilter !== "all" ? statusFilter : undefined,
     search: searchQuery || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    limit: ITEMS_PER_PAGE,
+    offset: page * ITEMS_PER_PAGE,
   });
 
   const payments = data?.payments || [];
+  const total = data?.total || 0;
   const stats = data?.stats || { totalRevenue: 0, paymentCount: 0 };
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const handleSearch = (e) => {
     e.preventDefault();
     setSearchQuery(search);
+    setPage(0);
   };
+
+  const handleStatusChange = (value) => {
+    setStatusFilter(value);
+    setPage(0);
+  };
+
+  const handleApplyDateFilter = () => {
+    setDatePopoverOpen(false);
+    setPage(0);
+  };
+
+  const handleClearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setDatePopoverOpen(false);
+    setPage(0);
+  };
+
+  const handleExport = async () => {
+    try {
+      const blob = await exportMutation.mutateAsync({
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `payments-export-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Payments exported successfully");
+    } catch (error) {
+      toast.error(error.message || "Failed to export payments");
+    }
+  };
+
+  const dateRangeLabel = formatDateRange(startDate, endDate);
+  const hasActiveFilters = statusFilter !== "all" || searchQuery || startDate || endDate;
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="hig-title-1">Payments</h1>
-        <p className="hig-footnote text-muted-foreground">View and manage payment history</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="hig-title-1">Payments</h1>
+          <p className="hig-footnote text-muted-foreground">View and manage payment history</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExport}
+          disabled={exportMutation.isPending}
+          className="shrink-0"
+        >
+          {exportMutation.isPending ? (
+            <Loader2 className="size-4 mr-1.5 animate-spin" />
+          ) : (
+            <Download className="size-4 mr-1.5" />
+          )}
+          Export
+        </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
-          <DollarSign className="size-5 text-green-100 mb-1" />
-          <span className="block font-bold text-white">{formatPrice(stats.totalRevenue)}</span>
-          <span className="hig-footnote text-green-100">Total Revenue</span>
+        <div className="rounded-lg border bg-card p-4 border-l-4 border-l-green-500">
+          <div className="flex items-center gap-2 mb-1">
+            <DollarSign className="size-4 text-green-600" />
+            <span className="hig-footnote text-muted-foreground">Total Revenue</span>
+          </div>
+          <span className="block text-xl font-bold">{formatCurrency(stats.totalRevenue)}</span>
         </div>
-        <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
-          <Receipt className="size-5 text-blue-100 mb-1" />
-          <span className="block font-bold text-white">{stats.paymentCount}</span>
-          <span className="hig-footnote text-blue-100">Payments</span>
+        <div className="rounded-lg border bg-card p-4 border-l-4 border-l-blue-500">
+          <div className="flex items-center gap-2 mb-1">
+            <Receipt className="size-4 text-blue-600" />
+            <span className="hig-footnote text-muted-foreground">Payments</span>
+          </div>
+          <span className="block text-xl font-bold">{stats.paymentCount}</span>
         </div>
       </div>
 
@@ -136,9 +191,9 @@ export default function PaymentsPage() {
           </Button>
         </form>
 
-        <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="flex-1">
+        <div className="flex gap-2 flex-wrap">
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <SelectTrigger className="flex-1 min-w-35">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -151,6 +206,57 @@ export default function PaymentsPage() {
             </SelectContent>
           </Select>
 
+          <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={dateRangeLabel ? "secondary" : "outline"}
+                className={cn("flex-1 min-w-35 justify-start", dateRangeLabel && "pr-2")}
+              >
+                <Calendar className="size-4 mr-2 shrink-0" />
+                <span className="truncate">{dateRangeLabel || "Date Range"}</span>
+                {dateRangeLabel && (
+                  <X
+                    className="size-4 ml-auto shrink-0 hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearDateFilter();
+                    }}
+                  />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72" align="start">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">From</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">To</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={handleClearDateFilter}>
+                    Clear
+                  </Button>
+                  <Button size="sm" className="flex-1" onClick={handleApplyDateFilter}>
+                    Apply
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Button variant="outline" size="icon" className="size-11 shrink-0" onClick={() => refetch()}>
             <RefreshCw className="size-4" />
           </Button>
@@ -159,68 +265,97 @@ export default function PaymentsPage() {
 
       {/* Payments List */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          <p className="hig-footnote text-muted-foreground mt-2">Loading payments...</p>
-        </div>
+        <LoadingCard message="Loading payments..." size="lg" card={false} />
       ) : payments.length === 0 ? (
         <div className="text-center py-12">
           <CreditCard className="size-12 text-muted-foreground/50 mx-auto mb-4" />
           <h3 className="hig-headline mb-1">No payments found</h3>
           <p className="hig-footnote text-muted-foreground">
-            {search || statusFilter !== "all"
+            {hasActiveFilters
               ? "Try adjusting your filters"
               : "Payments will appear here once customers start booking"}
           </p>
         </div>
       ) : (
-        <div className="rounded-xl border bg-card overflow-hidden">
-          {payments.map((payment, idx) => (
-            <Link
-              key={payment.id}
-              href={`/dashboard/payments/${payment.id}`}
-              className={`flex items-center gap-3 p-4 hover:bg-accent/50 active:bg-accent transition-colors ${
-                idx !== payments.length - 1 ? "border-b" : ""
-              }`}
-            >
-              {/* Avatar/Icon */}
-              <div className="size-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="font-medium text-primary">
-                  {payment.clientName?.[0]?.toUpperCase() || "?"}
-                </span>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="hig-body font-medium truncate">{payment.clientName || "Unknown"}</p>
-                  <StatusBadge status={payment.status} disputeStatus={payment.disputeStatus} />
+        <>
+          <div className="rounded-xl border bg-card overflow-hidden">
+            {payments.map((payment, idx) => (
+              <Link
+                key={payment.id}
+                href={`/dashboard/payments/${payment.id}`}
+                className={cn(
+                  "flex items-center gap-3 p-4 hover:bg-accent/50 active:bg-accent transition-colors",
+                  idx !== payments.length - 1 && "border-b"
+                )}
+              >
+                {/* Avatar/Icon */}
+                <div className="size-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="font-medium text-primary">
+                    {payment.clientName?.[0]?.toUpperCase() || "?"}
+                  </span>
                 </div>
-                <p className="hig-footnote text-muted-foreground truncate">
-                  {payment.booking?.serviceName || payment.clientEmail}
-                </p>
-                <p className="hig-caption-1 text-muted-foreground mt-0.5">
-                  {formatDate(payment.createdAt)}
-                  {payment.cardBrand && payment.cardLast4 && (
-                    <span> · {payment.cardBrand} •••• {payment.cardLast4}</span>
-                  )}
-                </p>
-              </div>
 
-              {/* Amount & Arrow */}
-              <div className="text-right shrink-0">
-                <p className="hig-body font-semibold text-green-600">{formatPrice(payment.amount)}</p>
-                {payment.depositAmount && (
-                  <p className="hig-caption-1 text-muted-foreground">deposit</p>
-                )}
-                {payment.refundedAmount > 0 && (
-                  <p className="hig-caption-1 text-red-600">-{formatPrice(payment.refundedAmount)}</p>
-                )}
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="hig-body font-medium truncate">{payment.clientName || "Unknown"}</p>
+                    <PaymentStatusBadge status={payment.status} disputeStatus={payment.disputeStatus} />
+                  </div>
+                  <p className="hig-footnote text-muted-foreground truncate">
+                    {payment.booking?.serviceName || payment.clientEmail}
+                  </p>
+                  <p className="hig-caption-1 text-muted-foreground mt-0.5">
+                    {formatDateTime(payment.createdAt)}
+                    {payment.cardBrand && payment.cardLast4 && (
+                      <span> · {payment.cardBrand} •••• {payment.cardLast4}</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Amount & Arrow */}
+                <div className="text-right shrink-0">
+                  <p className="hig-body font-semibold text-green-600">{formatCurrency(payment.amount)}</p>
+                  {payment.depositAmount && (
+                    <p className="hig-caption-1 text-muted-foreground">deposit</p>
+                  )}
+                  {payment.refundedAmount > 0 && (
+                    <p className="hig-caption-1 text-red-600">-{formatCurrency(payment.refundedAmount)}</p>
+                  )}
+                </div>
+                <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
+              </Link>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="hig-footnote text-muted-foreground">
+                Showing {page * ITEMS_PER_PAGE + 1}-{Math.min((page + 1) * ITEMS_PER_PAGE, total)} of {total}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                >
+                  <ChevronLeft className="size-4 mr-1" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                >
+                  Next
+                  <ChevronRight className="size-4 ml-1" />
+                </Button>
               </div>
-              <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
-            </Link>
-          ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

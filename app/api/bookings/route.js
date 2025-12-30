@@ -18,8 +18,9 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const contactId = searchParams.get("contactId");
     const statusFilter = searchParams.get("status");
-    const from = searchParams.get("from");
-    const to = searchParams.get("to");
+    // Support both from/to and startDate/endDate parameter names
+    const from = searchParams.get("from") || searchParams.get("startDate");
+    const to = searchParams.get("to") || searchParams.get("endDate");
 
     const where = {
       tenantId: tenant.id,
@@ -48,7 +49,7 @@ export async function GET(request) {
           include: { package: true },
         },
         invoice: {
-          select: { id: true },
+          select: { id: true, invoiceNumber: true, status: true, total: true },
         },
       },
       orderBy: { scheduledAt: "desc" },

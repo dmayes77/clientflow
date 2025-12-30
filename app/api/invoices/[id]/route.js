@@ -22,10 +22,12 @@ export async function GET(request, { params }) {
       },
       include: {
         contact: true,
-        booking: {
+        bookings: {
           include: {
             service: true,
             package: true,
+            services: { include: { service: true } },
+            packages: { include: { package: true } },
           },
         },
         coupons: {
@@ -160,9 +162,9 @@ export async function PATCH(request, { params }) {
     const depositAmount = safeDepositPercent ? Math.round(total * (safeDepositPercent / 100)) : null;
 
     // Filter out fields that shouldn't be passed to Prisma update
-    // contactId, bookingId - relation fields that shouldn't change
+    // contactId, bookingId, bookingIds - relation fields handled separately
     // couponId, couponDiscountAmount - not fields on Invoice model, handled separately
-    const { contactId, bookingId, couponId, couponDiscountAmount, ...validData } = data;
+    const { contactId, bookingId, bookingIds, couponId, couponDiscountAmount, ...validData } = data;
 
     // Ensure depositPercent is explicitly set in data for the update
     const dataWithDeposit = {
@@ -193,7 +195,14 @@ export async function PATCH(request, { params }) {
       },
       include: {
         contact: true,
-        booking: true,
+        bookings: {
+          include: {
+            service: true,
+            package: true,
+            services: { include: { service: true } },
+            packages: { include: { package: true } },
+          },
+        },
         coupons: {
           include: {
             coupon: true,
@@ -201,6 +210,24 @@ export async function PATCH(request, { params }) {
         },
       },
     });
+
+    // Handle booking updates if bookingIds provided
+    const newBookingIds = bookingIds || (bookingId ? [bookingId] : null);
+    if (newBookingIds !== null) {
+      // First, unlink any bookings currently linked to this invoice
+      await prisma.booking.updateMany({
+        where: { invoiceId: id },
+        data: { invoiceId: null },
+      });
+
+      // Then link the new bookings
+      if (newBookingIds.length > 0) {
+        await prisma.booking.updateMany({
+          where: { id: { in: newBookingIds } },
+          data: { invoiceId: id },
+        });
+      }
+    }
 
     // Handle coupon updates if couponId changed
     if (couponId !== undefined) {

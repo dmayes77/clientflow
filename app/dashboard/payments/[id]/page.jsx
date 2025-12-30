@@ -4,7 +4,6 @@ import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -23,22 +22,19 @@ import {
   User,
   Receipt,
   ExternalLink,
-  AlertTriangle,
   Loader2,
   RefreshCw,
-  CheckCircle2,
+  AlertTriangle,
+  Mail,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { usePayment, useRefundPayment } from "@/lib/hooks";
+import { usePayment, useRefundPayment, useSendPaymentReceipt } from "@/lib/hooks";
+import { formatCurrency, formatDate } from "@/lib/formatters";
+import { PaymentStatusBadge, BookingStatusBadge } from "@/components/ui/status-badge";
+import { LoadingCard } from "@/components/ui/loading-card";
 
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function formatDate(date) {
+function formatFullDate(date) {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
     month: "long",
@@ -49,50 +45,6 @@ function formatDate(date) {
   }).format(new Date(date));
 }
 
-function formatShortDate(date) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
-}
-
-function StatusBadge({ status, disputeStatus }) {
-  if (disputeStatus) {
-    return (
-      <Badge variant="destructive" className="gap-1">
-        <AlertTriangle className="size-3" />
-        Disputed
-      </Badge>
-    );
-  }
-
-  switch (status) {
-    case "succeeded":
-      return (
-        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 gap-1">
-          <CheckCircle2 className="size-3" />
-          Succeeded
-        </Badge>
-      );
-    case "refunded":
-      return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Refunded</Badge>;
-    case "partial_refund":
-      return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Partial Refund</Badge>;
-    case "failed":
-      return <Badge variant="destructive">Failed</Badge>;
-    case "disputed":
-      return (
-        <Badge variant="destructive" className="gap-1">
-          <AlertTriangle className="size-3" />
-          Disputed
-        </Badge>
-      );
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
-}
-
 export default function PaymentDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
@@ -101,6 +53,7 @@ export default function PaymentDetailPage({ params }) {
 
   const { data, isLoading: loading } = usePayment(id);
   const refundMutation = useRefundPayment();
+  const sendReceiptMutation = useSendPaymentReceipt();
 
   const payment = data?.payment;
 
@@ -121,7 +74,7 @@ export default function PaymentDetailPage({ params }) {
     const maxRefundable = payment.amount - (payment.refundedAmount || 0);
 
     if (amountInCents > maxRefundable) {
-      toast.error(`Maximum refundable amount is ${formatPrice(maxRefundable)}`);
+      toast.error(`Maximum refundable amount is ${formatCurrency(maxRefundable)}`);
       return;
     }
 
@@ -139,13 +92,19 @@ export default function PaymentDetailPage({ params }) {
     );
   };
 
+  const handleSendReceipt = () => {
+    sendReceiptMutation.mutate(id, {
+      onSuccess: (data) => {
+        toast.success(data.message || "Receipt sent successfully");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to send receipt");
+      },
+    });
+  };
+
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-100">
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
-        <p className="hig-footnote text-muted-foreground mt-2">Loading payment details...</p>
-      </div>
-    );
+    return <LoadingCard message="Loading payment details..." size="lg" card={false} className="min-h-100" />;
   }
 
   if (!payment) {
@@ -167,7 +126,7 @@ export default function PaymentDetailPage({ params }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="hig-title-2 truncate">Payment Details</h1>
-              <StatusBadge status={payment.status} disputeStatus={payment.disputeStatus} />
+              <PaymentStatusBadge status={payment.status} disputeStatus={payment.disputeStatus} />
             </div>
             <p className="hig-footnote text-muted-foreground truncate">{payment.stripePaymentIntentId}</p>
           </div>
@@ -183,6 +142,20 @@ export default function PaymentDetailPage({ params }) {
               </Button>
             </a>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 fold:flex-none"
+            onClick={handleSendReceipt}
+            disabled={sendReceiptMutation.isPending}
+          >
+            {sendReceiptMutation.isPending ? (
+              <Loader2 className="size-4 mr-1 animate-spin" />
+            ) : (
+              <Mail className="size-4 mr-1" />
+            )}
+            Email Receipt
+          </Button>
           {canRefund && (
             <Button size="sm" variant="outline" className="flex-1 fold:flex-none text-destructive hover:text-destructive" onClick={() => setRefundOpen(true)}>
               <RefreshCw className="size-4 mr-1" />
@@ -201,12 +174,12 @@ export default function PaymentDetailPage({ params }) {
       </div>
 
       {/* Payment Amount Card */}
-      <div className="rounded-xl bg-green-600 dark:bg-green-700 p-5">
-        <p className="hig-footnote text-green-100 mb-1">Amount Paid</p>
-        <p className="text-3xl font-bold text-white">{formatPrice(payment.amount)}</p>
+      <div className="rounded-lg border bg-card p-5 border-l-4 border-l-green-500">
+        <p className="hig-footnote text-muted-foreground mb-1">Amount Paid</p>
+        <p className="text-3xl font-bold text-green-600">{formatCurrency(payment.amount)}</p>
         {payment.refundedAmount > 0 && (
-          <p className="hig-footnote text-green-100 mt-2">
-            Refunded: {formatPrice(payment.refundedAmount)} · Net: {formatPrice(payment.amount - payment.refundedAmount)}
+          <p className="hig-footnote text-muted-foreground mt-2">
+            Refunded: <span className="text-red-600">{formatCurrency(payment.refundedAmount)}</span> · Net: {formatCurrency(payment.amount - payment.refundedAmount)}
           </p>
         )}
       </div>
@@ -218,16 +191,16 @@ export default function PaymentDetailPage({ params }) {
           <div className="space-y-2">
             <div className="flex justify-between hig-body">
               <span className="text-muted-foreground">Service Total</span>
-              <span>{formatPrice(payment.serviceTotal)}</span>
+              <span>{formatCurrency(payment.serviceTotal)}</span>
             </div>
             <div className="flex justify-between hig-body">
               <span className="text-muted-foreground">Deposit Paid</span>
-              <span className="text-green-600">{formatPrice(payment.depositAmount)}</span>
+              <span className="text-green-600">{formatCurrency(payment.depositAmount)}</span>
             </div>
             <div className="flex justify-between hig-body pt-2 border-t">
               <span className="font-medium">Remaining Balance</span>
               <span className="font-medium text-orange-600">
-                {formatPrice(payment.serviceTotal - payment.depositAmount)}
+                {formatCurrency(payment.serviceTotal - payment.depositAmount)}
               </span>
             </div>
           </div>
@@ -310,9 +283,7 @@ export default function PaymentDetailPage({ params }) {
               </div>
               <div>
                 <p className="hig-footnote text-muted-foreground">Status</p>
-                <Badge variant="outline" className="capitalize mt-0.5">
-                  {payment.booking.status}
-                </Badge>
+                <BookingStatusBadge status={payment.booking.status} size="sm" />
               </div>
               <div>
                 <p className="hig-footnote text-muted-foreground">Payment</p>
@@ -329,9 +300,9 @@ export default function PaymentDetailPage({ params }) {
                   <div key={idx} className="flex justify-between hig-body">
                     <span className="flex items-center gap-2">
                       {service.name}
-                      {service.isPackage && <Badge variant="outline" className="hig-caption2">Package</Badge>}
+                      {service.isPackage && <Badge variant="outline" className="hig-caption-2">Package</Badge>}
                     </span>
-                    <span className="font-medium">{formatPrice(service.price)}</span>
+                    <span className="font-medium">{formatCurrency(service.price)}</span>
                   </div>
                 ))}
               </div>
@@ -363,12 +334,12 @@ export default function PaymentDetailPage({ params }) {
         <div className="space-y-2">
           <div className="flex justify-between hig-body">
             <span className="text-muted-foreground">Created</span>
-            <span>{formatShortDate(payment.createdAt)}</span>
+            <span>{formatDate(payment.createdAt)}</span>
           </div>
           {payment.capturedAt && (
             <div className="flex justify-between hig-body">
               <span className="text-muted-foreground">Captured</span>
-              <span>{formatShortDate(payment.capturedAt)}</span>
+              <span>{formatDate(payment.capturedAt)}</span>
             </div>
           )}
         </div>
@@ -394,7 +365,7 @@ export default function PaymentDetailPage({ params }) {
                 </div>
                 <div className="flex justify-between hig-body">
                   <span className="text-muted-foreground">Amount</span>
-                  <span>{formatPrice(payment.metadata.dispute.amount)}</span>
+                  <span>{formatCurrency(payment.metadata.dispute.amount)}</span>
                 </div>
               </>
             )}
@@ -411,7 +382,7 @@ export default function PaymentDetailPage({ params }) {
           <DialogHeader>
             <DialogTitle>Issue Refund</DialogTitle>
             <DialogDescription>
-              Enter the amount to refund. Maximum refundable: {formatPrice(refundable)}
+              Enter the amount to refund. Maximum refundable: {formatCurrency(refundable)}
             </DialogDescription>
           </DialogHeader>
 
@@ -453,7 +424,7 @@ export default function PaymentDetailPage({ params }) {
               ) : (
                 <>
                   <RefreshCw className="size-4 mr-2" />
-                  Refund {refundAmount ? formatPrice(parseFloat(refundAmount) * 100) : "$0.00"}
+                  Refund {refundAmount ? formatCurrency(parseFloat(refundAmount) * 100) : "$0.00"}
                 </>
               )}
             </Button>

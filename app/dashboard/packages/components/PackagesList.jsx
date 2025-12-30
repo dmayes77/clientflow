@@ -43,13 +43,10 @@ import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar, Package
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-
-const formatPrice = (cents) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-};
+import { formatCurrency } from "@/lib/formatters";
+import { LoadingCard } from "@/components/ui/loading-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 // Package Card Component
 function PackageCard({ package: pkg, onDelete }) {
@@ -103,7 +100,7 @@ function PackageCard({ package: pkg, onDelete }) {
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div className="flex items-center gap-1.5 text-sm font-medium">
             <span className="text-muted-foreground">Price:</span>
-            <span>{formatPrice(pkg.price)}</span>
+            <span>{formatCurrency(pkg.price)}</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -481,7 +478,7 @@ export function PackagesList() {
         <DataTableColumnHeader column={column} title="Price" />
       ),
       cell: ({ row }) => (
-        <span className="font-medium">{formatPrice(row.original.price)}</span>
+        <span className="font-medium">{formatCurrency(row.original.price)}</span>
       ),
     },
     {
@@ -542,13 +539,7 @@ export function PackagesList() {
   ];
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <LoadingCard message="Loading packages..." />;
   }
 
   return (
@@ -571,19 +562,15 @@ export function PackagesList() {
         </CardHeader>
         <CardContent>
           {packages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-                <Boxes className="h-6 w-6 text-emerald-600" />
-              </div>
-              <h3 className="text-zinc-900 mb-1">No packages yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Bundle your services into packages for clients
-              </p>
-              <Button size="sm" onClick={() => handleOpenDialog()}>
-                <Plus className="h-4 w-4 mr-1" />
-                Create Package
-              </Button>
-            </div>
+            <EmptyState
+              icon={Boxes}
+              iconColor="emerald"
+              title="No packages yet"
+              description="Bundle your services into packages for clients"
+              actionLabel="Create Package"
+              actionIcon={<Plus className="h-4 w-4 mr-1" />}
+              onAction={() => handleOpenDialog()}
+            />
           ) : (
             <div className="space-y-4">
               {/* Search Bar */}
@@ -605,11 +592,12 @@ export function PackagesList() {
               )}
 
               {totalFilteredPackages === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Search className="h-12 w-12 text-muted-foreground mb-3 opacity-30" />
-                  <h3 className="text-zinc-900 mb-1">No packages found</h3>
-                  <p className="text-muted-foreground">Try adjusting your search</p>
-                </div>
+                <EmptyState
+                  icon={Search}
+                  iconColor="gray"
+                  title="No packages found"
+                  description="Try adjusting your search"
+                />
               ) : (
                 <div className="space-y-4">
                   {/* Uncategorized Packages */}
@@ -636,7 +624,7 @@ export function PackagesList() {
                         <div
                           className={`overflow-hidden transition-all duration-300 ease-in-out ${
                             expandedCategories['uncategorized']
-                              ? 'max-h-[5000px] opacity-100'
+                              ? 'max-h-1250 opacity-100'
                               : 'max-h-0 opacity-0'
                           }`}
                         >
@@ -703,7 +691,7 @@ export function PackagesList() {
                           <div
                             className={`overflow-hidden transition-all duration-300 ease-in-out ${
                               expandedCategories[categoryName]
-                                ? 'max-h-[5000px] opacity-100'
+                                ? 'max-h-1250 opacity-100'
                                 : 'max-h-0 opacity-0'
                             }`}
                           >
@@ -789,7 +777,7 @@ export function PackagesList() {
                       onBlur={field.handleBlur}
                     />
                     {field.state.meta.isTouched && field.state.meta.errors[0] && (
-                      <p className="hig-caption2 text-destructive">{field.state.meta.errors[0]}</p>
+                      <p className="hig-caption-2 text-destructive">{field.state.meta.errors[0]}</p>
                     )}
                   </div>
                 )}
@@ -854,13 +842,13 @@ export function PackagesList() {
                               >
                                 {service.name}
                                 <span className="text-muted-foreground ml-2">
-                                  ({formatPrice(service.price)})
+                                  ({formatCurrency(service.price)})
                                 </span>
                               </label>
                             </div>
                           ))}
                         </div>
-                        <p className="hig-caption2 text-muted-foreground">
+                        <p className="hig-caption-2 text-muted-foreground">
                           {selectedIds.length} service{selectedIds.length !== 1 ? "s" : ""} selected
                         </p>
                       </div>
@@ -911,25 +899,14 @@ export function PackagesList() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Package</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{packageToDelete?.name}"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        itemType="package"
+        itemName={packageToDelete?.name}
+        onConfirm={handleDelete}
+        isPending={deletePackageMutation.isPending}
+      />
     </>
   );
 }

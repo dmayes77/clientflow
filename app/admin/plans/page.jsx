@@ -40,20 +40,14 @@ import {
   useReorderPlans,
   useSyncStripeProducts,
 } from "@/lib/hooks/use-admin-plans";
-
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 function StatCard({ title, value, subtitle, icon: Icon, loading }) {
   return (
     <Card>
       <CardContent className="p-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="hig-caption2 font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="hig-caption-2 font-medium text-muted-foreground uppercase tracking-wide">
             {title}
           </span>
           <Icon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -64,7 +58,7 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }) {
           <>
             <div className="font-bold">{value}</div>
             {subtitle && (
-              <p className="hig-caption2 text-muted-foreground">{subtitle}</p>
+              <p className="hig-caption-2 text-muted-foreground">{subtitle}</p>
             )}
           </>
         )}
@@ -104,13 +98,13 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold">{plan.name}</h3>
               {plan.isDefault && (
-                <Badge variant="secondary" className="hig-caption2 h-4 px-1.5">
+                <Badge variant="secondary" className="hig-caption-2 h-4 px-1.5">
                   <Star className="h-2.5 w-2.5 mr-0.5" />
                   Default
                 </Badge>
               )}
               {!plan.active && (
-                <Badge variant="outline" className="hig-caption2 h-4 px-1.5">
+                <Badge variant="outline" className="hig-caption-2 h-4 px-1.5">
                   <Archive className="h-2.5 w-2.5 mr-0.5" />
                   Archived
                 </Badge>
@@ -121,11 +115,11 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
             )}
 
             <div className="flex items-baseline gap-1 mb-3">
-              <span className="font-bold">{formatPrice(plan.priceMonthly)}</span>
+              <span className="font-bold">{formatCurrency(plan.priceMonthly)}</span>
               <span className="text-muted-foreground">/month</span>
               {plan.priceYearly && (
-                <span className="hig-caption2 text-muted-foreground ml-2">
-                  or {formatPrice(plan.priceYearly)}/year
+                <span className="hig-caption-2 text-muted-foreground ml-2">
+                  or {formatCurrency(plan.priceYearly)}/year
                 </span>
               )}
             </div>
@@ -142,7 +136,7 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
             )}
 
             {(plan.maxContacts || plan.maxBookings || plan.maxServices) && (
-              <div className="flex gap-3 mt-3 hig-caption2 text-muted-foreground">
+              <div className="flex gap-3 mt-3 hig-caption-2 text-muted-foreground">
                 {plan.maxContacts && (
                   <span>{plan.maxContacts} contacts</span>
                 )}
@@ -191,7 +185,7 @@ function PlanCard({ plan, onEdit, onToggleActive, onDelete, onMoveUp, onMoveDown
         {plan.stripeProductId && (
           <div className="mt-auto">
             <div className="mt-3 pt-3 border-t">
-              <p className="hig-caption2 text-muted-foreground truncate">
+              <p className="hig-caption-2 text-muted-foreground truncate">
                 Stripe: {plan.stripeProductId}
               </p>
             </div>
@@ -266,7 +260,7 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
         {isLoading ? (
           <div className="py-6 text-center">
             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-muted-foreground" />
-            <p className="hig-caption2 text-muted-foreground">Fetching Stripe products...</p>
+            <p className="hig-caption-2 text-muted-foreground">Fetching Stripe products...</p>
           </div>
         ) : result ? (
           <div className="space-y-3 flex-1 overflow-auto">
@@ -275,7 +269,7 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
                 <Check className="h-4 w-4 text-green-600" />
                 <span className="font-medium text-green-800">Sync Complete</span>
               </div>
-              <div className="grid grid-cols-2 gap-1 hig-caption2 text-green-700">
+              <div className="grid grid-cols-2 gap-1 hig-caption-2 text-green-700">
                 <span>Created: {result.summary.created}</span>
                 <span>Updated: {result.summary.updated}</span>
                 <span>Skipped: {result.summary.skipped}</span>
@@ -283,7 +277,7 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
               </div>
             </div>
             {result.results?.skipped?.length > 0 && (
-              <div className="hig-caption2 text-muted-foreground">
+              <div className="hig-caption-2 text-muted-foreground">
                 <p className="font-medium mb-1">Skipped:</p>
                 <ul className="space-y-0.5">
                   {result.results.skipped.map((s, i) => (
@@ -299,7 +293,7 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
         ) : (
           <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
             {(error || syncMutation.error) && (
-              <div className="flex items-center gap-2 hig-caption2 text-red-500 bg-red-50 p-2.5 rounded-lg">
+              <div className="flex items-center gap-2 hig-caption-2 text-red-500 bg-red-50 p-2.5 rounded-lg">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 {error?.message || syncMutation.error?.message}
               </div>
@@ -308,12 +302,12 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
             {stripeProducts.length === 0 ? (
               <div className="py-6 text-center text-muted-foreground">
                 <CreditCard className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                <p className="hig-caption2">No products with recurring prices found</p>
+                <p className="hig-caption-2">No products with recurring prices found</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="hig-caption2 text-muted-foreground">
+                  <span className="hig-caption-2 text-muted-foreground">
                     {selectedIds.length}/{stripeProducts.length} selected
                   </span>
                   <div className="flex gap-1">
@@ -329,7 +323,7 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
                 <div className="space-y-2 flex-1 overflow-y-auto min-h-0 -mx-1 px-1">
                   {newProducts.length > 0 && (
                     <div>
-                      <p className="hig-caption2 font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
+                      <p className="hig-caption-2 font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
                         New ({newProducts.length})
                       </p>
                       <div className="space-y-1.5">
@@ -346,14 +340,14 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-medium truncate">{product.name}</span>
-                                <Badge variant="secondary" className="hig-caption2 shrink-0">New</Badge>
+                                <Badge variant="secondary" className="hig-caption-2 shrink-0">New</Badge>
                               </div>
-                              <div className="hig-caption2 text-muted-foreground">
+                              <div className="hig-caption-2 text-muted-foreground">
                                 {product.monthlyPrice && (
-                                  <span>{formatPrice(product.monthlyPrice.amount)}/mo</span>
+                                  <span>{formatCurrency(product.monthlyPrice.amount)}/mo</span>
                                 )}
                                 {product.yearlyPrice && (
-                                  <span> · {formatPrice(product.yearlyPrice.amount)}/yr</span>
+                                  <span> · {formatCurrency(product.yearlyPrice.amount)}/yr</span>
                                 )}
                               </div>
                             </div>
@@ -365,7 +359,7 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
 
                   {existingProducts.length > 0 && (
                     <div>
-                      <p className="hig-caption2 font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
+                      <p className="hig-caption-2 font-medium text-muted-foreground mb-1.5 sticky top-0 bg-background py-0.5">
                         Already Synced ({existingProducts.length})
                       </p>
                       <div className="space-y-1.5">
@@ -382,17 +376,17 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-medium truncate">{product.name}</span>
-                                <Badge variant="outline" className="hig-caption2 shrink-0">
+                                <Badge variant="outline" className="hig-caption-2 shrink-0">
                                   <Check className="h-2 w-2 mr-0.5" />
                                   Synced
                                 </Badge>
                               </div>
-                              <div className="hig-caption2 text-muted-foreground">
+                              <div className="hig-caption-2 text-muted-foreground">
                                 {product.monthlyPrice && (
-                                  <span>{formatPrice(product.monthlyPrice.amount)}/mo</span>
+                                  <span>{formatCurrency(product.monthlyPrice.amount)}/mo</span>
                                 )}
                                 {product.yearlyPrice && (
-                                  <span> · {formatPrice(product.yearlyPrice.amount)}/yr</span>
+                                  <span> · {formatCurrency(product.yearlyPrice.amount)}/yr</span>
                                 )}
                               </div>
                             </div>
@@ -410,7 +404,7 @@ function SyncFromStripeDialog({ open, onOpenChange }) {
                       onCheckedChange={setUpdateExisting}
                       className="h-5 w-5"
                     />
-                    <span className="hig-caption2">Update existing with latest Stripe data</span>
+                    <span className="hig-caption-2">Update existing with latest Stripe data</span>
                   </label>
                 )}
 
@@ -548,7 +542,7 @@ export default function PlansPage() {
         />
         <StatCard
           title="Avg Price"
-          value={formatPrice(avgPrice)}
+          value={formatCurrency(avgPrice)}
           subtitle="per month"
           icon={DollarSign}
           loading={false}
