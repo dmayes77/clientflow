@@ -159,6 +159,14 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
     }
 
+    // Prevent deletion of system workflows
+    if (existingWorkflow.isSystem) {
+      return NextResponse.json(
+        { error: "System workflows cannot be deleted. You can pause them instead." },
+        { status: 403 }
+      );
+    }
+
     await prisma.workflow.delete({
       where: { id },
     });

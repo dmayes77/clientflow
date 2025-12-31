@@ -11,28 +11,16 @@ import { Calendar, CalendarPlus, Users, UserPlus, DollarSign, TrendingUp, Trendi
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, formatDistanceToNow, subDays, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isSameDay, isWithinInterval, subMonths } from "date-fns";
 
+import { formatCompactCurrency } from "@/lib/formatters";
+
 const CHART_COLORS = {
-  inquiry: "#f59e0b",
+  pending: "#f59e0b",
+  inquiry: "#f59e0b", // Legacy - treat as pending
   scheduled: "#a855f7",
   confirmed: "#3b82f6",
   completed: "#22c55e",
   cancelled: "#71717a",
 };
-
-// Format currency - abbreviates large numbers for compact display
-function formatCurrency(cents) {
-  const dollars = cents / 100;
-  if (dollars >= 1000000) {
-    return `$${(dollars / 1000000).toFixed(1)}M`;
-  }
-  if (dollars >= 10000) {
-    return `$${(dollars / 1000).toFixed(0)}K`;
-  }
-  if (dollars >= 1000) {
-    return `$${(dollars / 1000).toFixed(1)}K`;
-  }
-  return `$${dollars.toFixed(2)}`;
-}
 
 // Roadmap Voting Component
 function RoadmapVoting() {
@@ -60,8 +48,7 @@ function RoadmapVoting() {
         setRoadmapItems(top);
         setLoading(false);
       })
-      .catch((err) => {
-        console.error("Failed to fetch roadmap:", err);
+      .catch(() => {
         setLoading(false);
       });
   }, []);
@@ -90,8 +77,8 @@ function RoadmapVoting() {
         setVotedItems(newVoted);
         localStorage.setItem("roadmap_votes", JSON.stringify([...newVoted]));
       }
-    } catch (err) {
-      console.error("Failed to vote:", err);
+    } catch {
+      // Vote failed silently
     }
   };
 
@@ -390,8 +377,8 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-green-600 font-medium">Revenue</p>
-              <p className="font-bold mt-1">{formatCurrency(monthlyComparison.thisMonthRevenue)}</p>
-              <div className={cn("flex items-center gap-1 hig-caption2 mt-1", monthlyComparison.revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
+              <p className="font-bold mt-1">{formatCompactCurrency(monthlyComparison.thisMonthRevenue)}</p>
+              <div className={cn("flex items-center gap-1 hig-caption-2 mt-1", monthlyComparison.revenueChange >= 0 ? "text-green-600" : "text-red-600")}>
                 {monthlyComparison.revenueChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 <span>
                   {monthlyComparison.revenueChange >= 0 ? "+" : ""}
@@ -411,7 +398,7 @@ export default function DashboardPage() {
             <div className="flex-1 min-w-0">
               <p className="text-blue-600 font-medium">Bookings</p>
               <p className="font-bold mt-1">{monthlyComparison.thisMonthBookings}</p>
-              <div className={cn("flex items-center gap-1 hig-caption2 mt-1", monthlyComparison.bookingsChange >= 0 ? "text-green-600" : "text-red-600")}>
+              <div className={cn("flex items-center gap-1 hig-caption-2 mt-1", monthlyComparison.bookingsChange >= 0 ? "text-green-600" : "text-red-600")}>
                 {monthlyComparison.bookingsChange >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                 <span>
                   {monthlyComparison.bookingsChange >= 0 ? "+" : ""}
@@ -458,7 +445,7 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-teal-600 font-medium">Avg Invoice</p>
-              <p className="font-bold mt-1">{formatCurrency(averageInvoice)}</p>
+              <p className="font-bold mt-1">{formatCompactCurrency(averageInvoice)}</p>
               <p className="text-muted-foreground mt-1">{paidInvoiceCount} paid</p>
             </div>
             <div className="size-10 rounded-full bg-teal-100 flex items-center justify-center">
@@ -551,7 +538,7 @@ export default function DashboardPage() {
               {bookingStatusData.map((entry) => (
                 <div key={entry.status} className="flex items-center gap-1">
                   <div className="size-2 rounded-full" style={{ backgroundColor: CHART_COLORS[entry.status] || "#71717a" }} />
-                  <span className="text-muted-foreground hig-caption2">
+                  <span className="text-muted-foreground hig-caption-2">
                     {entry.name} ({entry.value})
                   </span>
                 </div>
@@ -619,14 +606,14 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {topServices.map((service, index) => (
                   <div key={service.name} className="flex items-center gap-3">
-                    <div className="size-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center hig-caption2 font-semibold">{index + 1}</div>
+                    <div className="size-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center hig-caption-2 font-semibold">{index + 1}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{service.name}</p>
                       <div className="h-1.5 w-full bg-muted rounded-full mt-1">
                         <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(service.bookings / topServices[0].bookings) * 100}%` }} />
                       </div>
                     </div>
-                    <span className="font-semibold text-amber-600 hig-caption2">{service.bookings}</span>
+                    <span className="font-semibold text-amber-600 hig-caption-2">{service.bookings}</span>
                   </div>
                 ))}
               </div>
@@ -679,7 +666,7 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground truncate">{booking.service?.name || booking.package?.name}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium hig-caption2">{format(parseISO(booking.scheduledAt), "MMM d")}</p>
+                      <p className="font-medium hig-caption-2">{format(parseISO(booking.scheduledAt), "MMM d")}</p>
                       <p className="text-muted-foreground">{format(parseISO(booking.scheduledAt), "h:mm a")}</p>
                     </div>
                   </div>
@@ -732,7 +719,7 @@ export default function DashboardPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2">
                           <p className="font-semibold truncate">{client.name}</p>
-                          <span className="hig-caption2 text-muted-foreground shrink-0">
+                          <span className="hig-caption-2 text-muted-foreground shrink-0">
                             {formatDistanceToNow(parseISO(client.createdAt), { addSuffix: false })}
                           </span>
                         </div>

@@ -254,7 +254,7 @@ export default function NotificationsSettingsPage() {
                 </div>
                 <div>
                   <Label className="font-medium">Payments</Label>
-                  <p className="text-muted-foreground hig-caption2">
+                  <p className="text-muted-foreground hig-caption-2">
                     Payment received, failed, or disputed
                   </p>
                 </div>
@@ -273,7 +273,7 @@ export default function NotificationsSettingsPage() {
                 </div>
                 <div>
                   <Label className="font-medium">Bookings</Label>
-                  <p className="text-muted-foreground hig-caption2">
+                  <p className="text-muted-foreground hig-caption-2">
                     New bookings and cancellations
                   </p>
                 </div>
@@ -292,7 +292,7 @@ export default function NotificationsSettingsPage() {
                 </div>
                 <div>
                   <Label className="font-medium">System Alerts</Label>
-                  <p className="text-muted-foreground hig-caption2">
+                  <p className="text-muted-foreground hig-caption-2">
                     Trial expiring, account issues, announcements
                   </p>
                 </div>
@@ -331,7 +331,7 @@ export default function NotificationsSettingsPage() {
                         <p className="font-medium">
                           {sub.deviceName || "Unknown Device"}
                         </p>
-                        <p className="text-muted-foreground hig-caption2">
+                        <p className="text-muted-foreground hig-caption-2">
                           Added {formatDate(sub.createdAt)}
                           {sub.lastUsedAt && ` • Last used ${formatDate(sub.lastUsedAt)}`}
                         </p>

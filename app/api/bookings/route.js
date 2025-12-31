@@ -5,6 +5,7 @@ import { createBookingSchema, validateRequest } from "@/lib/validations";
 import { triggerWorkflows } from "@/lib/workflow-executor";
 import { checkBookingLimit } from "@/lib/plan-limits";
 import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
+import { applyBookingStatusTag } from "@/lib/system-tags";
 
 // GET /api/bookings - List all bookings
 export async function GET(request) {
@@ -18,8 +19,9 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const contactId = searchParams.get("contactId");
     const statusFilter = searchParams.get("status");
-    const from = searchParams.get("from");
-    const to = searchParams.get("to");
+    // Support both from/to and startDate/endDate parameter names
+    const from = searchParams.get("from") || searchParams.get("startDate");
+    const to = searchParams.get("to") || searchParams.get("endDate");
 
     const where = {
       tenantId: tenant.id,
@@ -48,7 +50,7 @@ export async function GET(request) {
           include: { package: true },
         },
         invoice: {
-          select: { id: true },
+          select: { id: true, invoiceNumber: true, status: true, total: true },
         },
       },
       orderBy: { scheduledAt: "desc" },
@@ -195,7 +197,7 @@ export async function POST(request) {
           serviceId: data.serviceId,
           packageId: data.packageId,
           scheduledAt: data.scheduledAt,
-          status: data.status || "inquiry",
+          status: data.status || "confirmed", // Default to confirmed when created by business owner
           notes: data.notes,
           totalPrice: data.totalPrice,
           duration: data.duration,
@@ -208,20 +210,21 @@ export async function POST(request) {
       });
     });
 
-    // Auto-tag contact based on booking status
-    const bookingStatus = data.status || "inquiry";
-    if (bookingStatus === "inquiry" || bookingStatus === "scheduled") {
-      const tagName = bookingStatus === "inquiry" ? "Lead" : "Client";
+    // Apply booking status tag
+    const bookingStatus = data.status || "confirmed";
+    await applyBookingStatusTag(prisma, booking.id, tenant.id, bookingStatus);
 
-      // Find or create the tag using upsert to avoid race conditions
+    // Auto-tag contact as "Client" when booking is confirmed
+    if (bookingStatus === "confirmed" || bookingStatus === "completed") {
+      // Find or create the Client tag
       const tag = await prisma.tag.upsert({
-        where: { tenantId_name: { tenantId: tenant.id, name: tagName } },
+        where: { tenantId_name: { tenantId: tenant.id, name: "Client" } },
         update: {},
         create: {
           tenantId: tenant.id,
-          name: tagName,
+          name: "Client",
           type: "contact",
-          color: tagName === "Lead" ? "#f59e0b" : "#22c55e",
+          color: "#22c55e",
         },
       });
 

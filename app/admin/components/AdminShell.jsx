@@ -69,7 +69,7 @@ function SidebarNav() {
               </div>
               <div>
                 <span className="truncate font-semibold">Admin Panel</span>
-                <p className="text-muted-foreground hig-caption2">ClientFlow</p>
+                <p className="text-muted-foreground hig-caption-2">ClientFlow</p>
               </div>
             </div>
           </SidebarMenuItem>

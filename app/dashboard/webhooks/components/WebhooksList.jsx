@@ -81,6 +81,7 @@ import {
   SaveButton,
   useSaveButton,
 } from "@/components/ui/tanstack-form";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const WEBHOOK_EVENTS = [
   { id: "booking.created", label: "Booking Created", category: "Bookings" },
@@ -292,20 +293,15 @@ export function WebhooksList() {
         </CardHeader>
         <CardContent>
           {webhooks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
-                <Webhook className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="hig-subheadline mb-1">No webhooks yet</h3>
-              <p className="hig-footnote text-muted-foreground mb-4 max-w-sm">
-                Webhooks allow external applications to receive real-time data when events happen in
-                your ClientFlow account.
-              </p>
-              <Button size="sm" onClick={() => handleOpenDialog()}>
-                <Plus className="h-4 w-4 mr-1" />
-                Create Webhook
-              </Button>
-            </div>
+            <EmptyState
+              icon={Webhook}
+              iconColor="violet"
+              title="No webhooks yet"
+              description="Webhooks allow external applications to receive real-time data when events happen in your ClientFlow account."
+              actionLabel="Create Webhook"
+              actionIcon={<Plus className="h-4 w-4 mr-1" />}
+              onAction={() => handleOpenDialog()}
+            />
           ) : (
             <div className="space-y-4">
               {webhooks.map((webhook) => {
@@ -320,7 +316,7 @@ export function WebhooksList() {
                         <div className="flex items-center gap-2 mb-1">
                           <Badge
                             variant={webhook.active ? "default" : "secondary"}
-                            className="hig-caption2"
+                            className="hig-caption-2"
                           >
                             {webhook.active ? "Active" : "Disabled"}
                           </Badge>
@@ -334,7 +330,7 @@ export function WebhooksList() {
                                 ? "warning"
                                 : "secondary"
                             }
-                            className="hig-caption2"
+                            className="hig-caption-2"
                           >
                             {deliveryStatus.status === "success" && (
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -557,7 +553,7 @@ export function WebhooksList() {
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 hig-caption2"
+                                  className="h-6 hig-caption-2"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleCategoryToggle(category);
@@ -586,7 +582,7 @@ export function WebhooksList() {
                           );
                         })}
                       </ScrollArea>
-                      <p className="hig-caption2 text-muted-foreground">
+                      <p className="hig-caption-2 text-muted-foreground">
                         {field.state.value.length} event
                         {field.state.value.length !== 1 ? "s" : ""} selected
                       </p>
@@ -715,15 +711,15 @@ export function WebhooksList() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <code className="hig-caption2">{delivery.event}</code>
+                            <code className="hig-caption-2">{delivery.event}</code>
                           </TableCell>
                           <TableCell>
-                            <code className="hig-caption2">{delivery.statusCode || "—"}</code>
+                            <code className="hig-caption-2">{delivery.statusCode || "—"}</code>
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              <span className="hig-caption2">
+                              <span className="hig-caption-2">
                                 {format(new Date(delivery.createdAt), "MMM d, h:mm a")}
                               </span>
                             </div>

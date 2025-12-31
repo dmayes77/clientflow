@@ -22,6 +22,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useEmailTemplates, useCreateEmailTemplate, useDeleteEmailTemplate } from "@/lib/hooks";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingCard } from "@/components/ui/loading-card";
 
 const CATEGORIES = [
   { value: "welcome", label: "Welcome" },
@@ -101,15 +103,7 @@ export function EmailTemplatesList() {
   };
 
   if (loading) {
-    return (
-      <Card className="py-6">
-        <CardContent className="py-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <LoadingCard message="Loading templates..." />;
   }
 
   return (
@@ -150,21 +144,15 @@ export function EmailTemplatesList() {
           </div>
 
           {filteredTemplates.length === 0 ? (
-            <div className="text-center py-8 sm:py-12">
-              <div className="size-11 sm:size-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Mail className="size-5.5 sm:size-7 text-primary" />
-              </div>
-              <h3 className="font-semibold mb-0.5 sm:mb-1">No email templates</h3>
-              <p className="text-muted-foreground mb-3 sm:mb-4">
-                {filterCategory === "all" ? "Create your first email template to get started" : "No templates found in this category"}
-              </p>
-              {filterCategory === "all" && (
-                <Button onClick={handleOpenCreate} variant="outline" size="sm" className="h-8.5 sm:h-9">
-                  <Plus className="size-4 mr-1.5" />
-                  Create Template
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              icon={Mail}
+              iconColor="blue"
+              title="No email templates"
+              description={filterCategory === "all" ? "Create your first email template to get started" : "No templates found in this category"}
+              actionLabel={filterCategory === "all" ? "Create Template" : undefined}
+              actionIcon={filterCategory === "all" ? <Plus className="size-4 mr-1.5" /> : undefined}
+              onAction={filterCategory === "all" ? handleOpenCreate : undefined}
+            />
           ) : isMobile ? (
             /* iOS-style Mobile List */
             <div>
@@ -193,7 +181,7 @@ export function EmailTemplatesList() {
                           </Badge>
                         )}
                       </div>
-                      <p className="hig-caption2 text-muted-foreground truncate mt-0.5">
+                      <p className="hig-caption-2 text-muted-foreground truncate mt-0.5">
                         {template.subject}
                       </p>
                     </div>
@@ -250,7 +238,7 @@ export function EmailTemplatesList() {
                     <p className="text-muted-foreground truncate mb-2">
                       <span className="font-medium">Subject:</span> {template.subject}
                     </p>
-                    {template.description && <p className="hig-caption2 text-muted-foreground line-clamp-2 wrap-break-word">{template.description}</p>}
+                    {template.description && <p className="hig-caption-2 text-muted-foreground line-clamp-2 wrap-break-word">{template.description}</p>}
                   </CardContent>
                 </Card>
               ))}
@@ -269,11 +257,11 @@ export function EmailTemplatesList() {
           {selectedTemplate && (
             <div className="space-y-4">
               <div className="space-y-1">
-                <p className="hig-caption2 font-medium text-muted-foreground">Subject</p>
+                <p className="hig-caption-2 font-medium text-muted-foreground">Subject</p>
                 <p>{selectedTemplate.subject}</p>
               </div>
               <div className="space-y-1">
-                <p className="hig-caption2 font-medium text-muted-foreground">Body</p>
+                <p className="hig-caption-2 font-medium text-muted-foreground">Body</p>
                 <div className="prose prose-sm max-w-none p-4 bg-muted/30 rounded-md" dangerouslySetInnerHTML={{ __html: selectedTemplate.body }} />
               </div>
             </div>

@@ -26,6 +26,7 @@ function transformPackage(pkg) {
     description: pkg.description,
     discountPercent: pkg.discountPercent,
     active: pkg.active,
+    includes: pkg.includes || [],
     createdAt: pkg.createdAt,
     updatedAt: pkg.updatedAt,
     categoryId: pkg.categoryId,
@@ -173,6 +174,7 @@ export async function PATCH(request, { params }) {
       ...(data.description !== undefined && { description: data.description }),
       ...(data.discountPercent !== undefined && { discountPercent: data.discountPercent }),
       ...(data.active !== undefined && { active: data.active }),
+      ...(data.includes !== undefined && { includes: data.includes }),
       ...(categoryId !== undefined && { categoryId }),
       price, // Use override price or calculated price
     };
@@ -245,7 +247,10 @@ export async function DELETE(request, { params }) {
     // Check if package has bookings
     if (existingPackage._count.bookings > 0) {
       return NextResponse.json(
-        { error: "Cannot delete package with existing bookings. Consider deactivating it instead." },
+        {
+          error: "Cannot delete package with existing bookings. Consider archiving it instead.",
+          canArchive: true,
+        },
         { status: 400 }
       );
     }

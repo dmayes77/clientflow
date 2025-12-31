@@ -2,13 +2,27 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
 import { createInvoiceSchema, validateRequest } from "@/lib/validations";
+import { applyInvoiceStatusTag } from "@/lib/system-tags";
 
-// Generate invoice number
+// Generate invoice number - finds the highest existing number and increments
 async function generateInvoiceNumber(tenantId) {
-  const count = await prisma.invoice.count({
+  // Find the highest invoice number for this tenant
+  const lastInvoice = await prisma.invoice.findFirst({
     where: { tenantId },
+    orderBy: { invoiceNumber: "desc" },
+    select: { invoiceNumber: true },
   });
-  const paddedNumber = String(count + 1).padStart(5, "0");
+
+  let nextNumber = 1;
+  if (lastInvoice?.invoiceNumber) {
+    // Extract the number from "INV-00001" format
+    const match = lastInvoice.invoiceNumber.match(/INV-(\d+)/);
+    if (match) {
+      nextNumber = parseInt(match[1], 10) + 1;
+    }
+  }
+
+  const paddedNumber = String(nextNumber).padStart(5, "0");
   return `INV-${paddedNumber}`;
 }
 
@@ -24,13 +38,40 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const contactId = searchParams.get("contactId");
     const statusFilter = searchParams.get("status");
+    const search = searchParams.get("search");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const limit = parseInt(searchParams.get("limit") || "0", 10);
+    const offset = parseInt(searchParams.get("offset") || "0", 10);
 
+    // Build where clause
     const where = {
       tenantId: tenant.id,
       ...(contactId && { contactId }),
       ...(statusFilter && { status: statusFilter }),
     };
 
+    // Date range filter
+    if (startDate) {
+      where.createdAt = { ...where.createdAt, gte: new Date(startDate) };
+    }
+    if (endDate) {
+      where.createdAt = { ...where.createdAt, lte: new Date(endDate) };
+    }
+
+    // Search filter (client name, email, or invoice number)
+    if (search) {
+      where.OR = [
+        { contactName: { contains: search, mode: "insensitive" } },
+        { contactEmail: { contains: search, mode: "insensitive" } },
+        { invoiceNumber: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // Get total count for pagination
+    const total = await prisma.invoice.count({ where });
+
+    // Fetch invoices with pagination
     const invoices = await prisma.invoice.findMany({
       where,
       include: {
@@ -39,6 +80,8 @@ export async function GET(request) {
           include: {
             service: true,
             package: true,
+            services: { include: { service: true } },
+            packages: { include: { package: true } },
           },
         },
         tags: {
@@ -53,7 +96,38 @@ export async function GET(request) {
         },
       },
       orderBy: { createdAt: "desc" },
+      ...(limit > 0 && { take: limit }),
+      ...(offset > 0 && { skip: offset }),
     });
+
+    // Calculate stats (from all tenant invoices, not filtered)
+    const allInvoicesForStats = await prisma.invoice.findMany({
+      where: { tenantId: tenant.id },
+      select: { status: true, total: true, balanceDue: true, amountPaid: true },
+    });
+
+    const stats = {
+      total: allInvoicesForStats.length,
+      paid: allInvoicesForStats.filter((i) => i.status === "paid").length,
+      pending: allInvoicesForStats.filter((i) => ["sent", "viewed"].includes(i.status)).length,
+      overdue: allInvoicesForStats.filter((i) => i.status === "overdue").length,
+      totalRevenue: allInvoicesForStats
+        .filter((i) => i.status === "paid")
+        .reduce((sum, i) => sum + (i.total || 0), 0),
+      outstandingAmount: allInvoicesForStats
+        .filter((i) => ["sent", "viewed", "overdue"].includes(i.status))
+        .reduce((sum, i) => sum + (i.balanceDue || i.total || 0), 0),
+      // Status counts for filter pills
+      statusCounts: {
+        all: allInvoicesForStats.length,
+        draft: allInvoicesForStats.filter((i) => i.status === "draft").length,
+        sent: allInvoicesForStats.filter((i) => i.status === "sent").length,
+        viewed: allInvoicesForStats.filter((i) => i.status === "viewed").length,
+        paid: allInvoicesForStats.filter((i) => i.status === "paid").length,
+        overdue: allInvoicesForStats.filter((i) => i.status === "overdue").length,
+        cancelled: allInvoicesForStats.filter((i) => i.status === "cancelled").length,
+      },
+    };
 
     // Flatten tags for easier consumption
     const invoicesWithTags = invoices.map((invoice) => ({
@@ -61,7 +135,11 @@ export async function GET(request) {
       tags: invoice.tags.map((t) => t.tag),
     }));
 
-    return NextResponse.json(invoicesWithTags);
+    return NextResponse.json({
+      invoices: invoicesWithTags,
+      total,
+      stats,
+    });
   } catch (error) {
     console.error("Error fetching invoices:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -98,9 +176,10 @@ export async function POST(request) {
       }
     }
 
-    // Verify booking belongs to tenant if provided
+    // Verify booking belongs to tenant if provided (1:1 relationship - one invoice per booking)
+    let linkedBooking = null;
     if (data.bookingId) {
-      const booking = await prisma.booking.findFirst({
+      linkedBooking = await prisma.booking.findFirst({
         where: {
           id: data.bookingId,
           tenantId: tenant.id,
@@ -110,12 +189,12 @@ export async function POST(request) {
         },
       });
 
-      if (!booking) {
+      if (!linkedBooking) {
         return NextResponse.json({ error: "Booking not found" }, { status: 404 });
       }
 
-      // Check if booking already has an invoice (one invoice per booking)
-      if (booking.invoice) {
+      // Check if booking already has an invoice (1:1 relationship)
+      if (linkedBooking.invoice) {
         return NextResponse.json(
           { error: "This booking already has an invoice" },
           { status: 400 }
@@ -147,7 +226,6 @@ export async function POST(request) {
       data: {
         tenantId: tenant.id,
         contactId: data.contactId,
-        bookingId: data.bookingId,
         invoiceNumber,
         status: data.status || "draft",
         dueDate: data.dueDate,
@@ -170,7 +248,14 @@ export async function POST(request) {
       },
       include: {
         contact: true,
-        booking: true,
+        booking: {
+          include: {
+            service: true,
+            package: true,
+            services: { include: { service: true } },
+            packages: { include: { package: true } },
+          },
+        },
         tags: {
           include: {
             tag: true,
@@ -183,6 +268,20 @@ export async function POST(request) {
         },
       },
     });
+
+    // Link booking to the invoice and initialize payment tracking (1:1 relationship)
+    if (linkedBooking) {
+      await prisma.booking.update({
+        where: { id: linkedBooking.id },
+        data: {
+          invoiceId: invoice.id,
+          bookingBalanceDue: linkedBooking.totalPrice, // Initialize balance to full amount
+        },
+      });
+    }
+
+    // Apply status tag
+    await applyInvoiceStatusTag(prisma, invoice.id, tenant.id, invoice.status);
 
     // Track coupon usage if a coupon was applied
     if (data.couponId && data.couponDiscountAmount) {

@@ -54,6 +54,17 @@
   --shadow-xl: 0 10px 20px 0 rgb(0 0 0 / 0.15);
 
   /* ============================================
+     Animation Tokens
+     Single source of truth for all UI animations
+     ============================================ */
+  --animation-duration: 500ms;
+  --animation-timing: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Tailwind v4 theme variables */
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-smooth: 500ms;
+
+  /* ============================================
      Typography Tokens (HIG Compact Scale)
      Single source of truth for all components
      ============================================ */
@@ -236,7 +247,164 @@
   --size-icon-xl: 1.5rem;
 }
 
+@layer base {
+  /* ========================================
+     CUSTOM KEYFRAME ANIMATIONS
+     Using our timing variables
+     ======================================== */
+
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-out-to-right {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slide-out-to-left {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes slide-in-from-top {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-out-to-top {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-100%);
+    }
+  }
+
+  @keyframes slide-in-from-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-out-to-bottom {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
+
 @layer utilities {
+  /* ========================================
+     ANIMATION UTILITIES
+     Apply consistent animation timing globally
+     ======================================== */
+
+  /* Override Tailwind's default animation durations */
+  [data-state="open"],
+  [data-state="closed"] {
+    animation-duration: var(--duration-smooth) !important;
+    animation-timing-function: var(--ease-smooth) !important;
+  }
+
+  /* Consistent transition timing utility */
+  .transition-smooth {
+    transition-duration: var(--duration-smooth);
+    transition-timing-function: var(--ease-smooth);
+  }
+
+  /* Sheet/Overlay animations */
+  [data-slot="sheet-overlay"][data-state="open"] {
+    animation: fade-in var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-overlay"][data-state="closed"] {
+    animation: fade-out var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  /* Sheet content animations by side */
+  [data-slot="sheet-content"][data-side="right"][data-state="open"] {
+    animation: slide-in-from-right var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="right"][data-state="closed"] {
+    animation: slide-out-to-right var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="left"][data-state="open"] {
+    animation: slide-in-from-left var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="left"][data-state="closed"] {
+    animation: slide-out-to-left var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="top"][data-state="open"] {
+    animation: slide-in-from-top var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="top"][data-state="closed"] {
+    animation: slide-out-to-top var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="bottom"][data-state="open"] {
+    animation: slide-in-from-bottom var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
+  [data-slot="sheet-content"][data-side="bottom"][data-state="closed"] {
+    animation: slide-out-to-bottom var(--duration-smooth) var(--ease-smooth) forwards;
+  }
+
   /* ========================================
      COMPACT HIG-STYLE UTILITIES
      References :root typography tokens
@@ -677,5 +845,206 @@ summary {
   .size-5, .h-5.w-5 {
     width: 1.5rem !important;
     height: 1.5rem !important;
+  }
+}
+
+/* Print styles for invoices */
+@media print {
+  /* Page setup - 8.5x11 with narrow 0.25in border */
+  @page {
+    margin: 0.25in;
+    size: letter;
+  }
+
+  /* Hide everything by default, then show what we need */
+  [data-sidebar],
+  [data-sidebar-wrapper],
+  nav,
+  header,
+  aside,
+  footer,
+  .no-print,
+  .fixed,
+  button,
+  [role="dialog"],
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  /* Reset document */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    font-size: 10pt !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Scale down invoice content */
+  #invoice-print-area h2 {
+    font-size: 20pt !important;
+  }
+
+  #invoice-print-area .text-3xl {
+    font-size: 20pt !important;
+  }
+
+  #invoice-print-area .text-2xl {
+    font-size: 14pt !important;
+  }
+
+  #invoice-print-area .text-lg {
+    font-size: 11pt !important;
+  }
+
+  #invoice-print-area .text-sm {
+    font-size: 9pt !important;
+  }
+
+  #invoice-print-area .text-xs {
+    font-size: 8pt !important;
+  }
+
+  /* Reset main content area for full page */
+  main, [data-main-content] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    background: white !important;
+  }
+
+  /* Print utility classes */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:w-full {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .print\:h-auto {
+    height: auto !important;
+  }
+
+  .print\:overflow-visible {
+    overflow: visible !important;
+  }
+
+  .print\:pb-0 {
+    padding-bottom: 0 !important;
+  }
+
+  .print\:min-h-auto {
+    min-height: auto !important;
+  }
+
+  .print\:shadow-none,
+  .shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: none !important;
+  }
+
+  .print\:border-none {
+    border: none !important;
+  }
+
+  /* Force white background on layout containers */
+  html, body, main, div, section, article, form {
+    background-color: white !important;
+    background: white !important;
+  }
+
+  /* Invoice print area - target by ID */
+  #invoice-print-area {
+    background: white !important;
+    background-color: white !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Card backgrounds */
+  [class*="card"], [class*="Card"] {
+    background: white !important;
+    background-color: white !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Invoice card wrapper */
+  #invoice-print-area {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Invoice preview inner content */
+  .print\:overflow-visible {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0.25in !important;
+  }
+
+  .print\:rounded-none {
+    border-radius: 0 !important;
+  }
+
+  .print\:bg-white {
+    background: white !important;
+    background-color: white !important;
+  }
+
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  /* Ensure good contrast and colors print correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Make text crisp for printing */
+  p, span, div, td, th, li {
+    color: black !important;
+  }
+
+  /* Ensure SVG icons print correctly */
+  svg {
+    color: inherit !important;
+    stroke: currentColor !important;
+  }
+
+  #invoice-print-area svg {
+    color: #666 !important;
+  }
+
+  /* Keep muted text slightly lighter for hierarchy */
+  .text-muted-foreground {
+    color: #555 !important;
+  }
+
+  /* Tables print cleanly */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  /* Avoid page breaks inside important elements */
+  .invoice-header,
+  .invoice-totals,
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* Grid becomes single column */
+  .grid {
+    display: block !important;
   }
 }

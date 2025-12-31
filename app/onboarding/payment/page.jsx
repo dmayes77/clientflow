@@ -201,7 +201,7 @@ export default function PaymentPage() {
                 <span className="text-4xl font-bold">${plan.price}</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
-              <p className="mt-2 hig-caption2 text-muted-foreground">
+              <p className="mt-2 hig-caption-2 text-muted-foreground">
                 14-day free trial • Cancel anytime
               </p>
             </CardHeader>

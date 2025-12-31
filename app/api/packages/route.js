@@ -26,6 +26,7 @@ function transformPackage(pkg) {
     description: pkg.description,
     discountPercent: pkg.discountPercent,
     active: pkg.active,
+    includes: pkg.includes || [],
     createdAt: pkg.createdAt,
     updatedAt: pkg.updatedAt,
     categoryId: pkg.categoryId,
@@ -74,7 +75,10 @@ export async function GET(request) {
           select: { bookings: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { createdAt: "desc" },
+      ],
     });
 
     const transformedPackages = packages.map(transformPackage);
@@ -150,6 +154,7 @@ export async function POST(request) {
         price,
         discountPercent: data.discountPercent,
         active: data.active ?? true,
+        includes: data.includes || [],
         categoryId,
         services: {
           create: data.serviceIds.map((serviceId) => ({

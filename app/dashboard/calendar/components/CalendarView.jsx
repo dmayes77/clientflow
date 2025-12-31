@@ -41,17 +41,18 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Clock,
   CalendarDays,
   User,
   Eye,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 const statusConfig = {
-  inquiry: { label: "Inquiry", color: "bg-yellow-500", textColor: "text-yellow-600", icon: AlertCircle },
+  pending: { label: "Pending", color: "bg-yellow-500", textColor: "text-yellow-600", icon: Clock },
+  inquiry: { label: "Pending", color: "bg-yellow-500", textColor: "text-yellow-600", icon: Clock }, // Legacy - treat as pending
   scheduled: { label: "Scheduled", color: "bg-blue-500", textColor: "text-blue-600", icon: Calendar },
   confirmed: { label: "Confirmed", color: "bg-green-500", textColor: "text-green-600", icon: CheckCircle },
   completed: { label: "Completed", color: "bg-gray-500", textColor: "text-gray-600", icon: CheckCircle },
@@ -96,8 +97,7 @@ const BreakTimeIndicator = ({ breakStartTime, breakEndTime }) => {
         </div>
       </div>
     );
-  } catch (e) {
-    console.error('Error rendering break time indicator:', e);
+  } catch {
     return null;
   }
 };
@@ -149,10 +149,18 @@ export function CalendarView() {
   }, [tenant]);
 
   // Fetch bookings with date range params
-  const { data: bookings = [], isLoading: loading } = useBookings({
+  const { data: allBookings = [], isLoading: loading } = useBookings({
     from: dateRange.start.toISOString(),
     to: dateRange.end.toISOString(),
   });
+
+  // Filter out pending bookings - only show scheduled, confirmed, completed bookings on calendar
+  // Pending bookings should not appear until at least the deposit is paid (scheduled status)
+  const bookings = useMemo(() => {
+    return allBookings.filter((booking) =>
+      booking.status !== "pending" && booking.status !== "inquiry"
+    );
+  }, [allBookings]);
 
   // Mutations
   const updateBooking = useUpdateBooking();
@@ -272,7 +280,7 @@ export function CalendarView() {
 
           <div className="grid grid-cols-7 gap-0 text-center mb-1">
             {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
-              <div key={i} className="hig-caption2 text-muted-foreground font-medium py-1">
+              <div key={i} className="hig-caption-2 text-muted-foreground font-medium py-1">
                 {day}
               </div>
             ))}
@@ -311,7 +319,7 @@ export function CalendarView() {
         {/* Agenda Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 shrink-0">
           <span className="font-medium">{isToday(selectedDate) ? "Today" : format(selectedDate, "EEEE, MMM d")}</span>
-          <span className="hig-caption2 text-muted-foreground">
+          <span className="hig-caption-2 text-muted-foreground">
             {selectedDayBookings.length} booking{selectedDayBookings.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -344,8 +352,8 @@ export function CalendarView() {
                   {/* Time + Status indicator */}
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="flex flex-col items-center text-center w-10">
-                      <span className="hig-caption2 font-semibold">{formatTimeInTz(booking.scheduledAt, "h:mm")}</span>
-                      <span className="hig-caption2 text-muted-foreground">{formatTimeInTz(booking.scheduledAt, "a")}</span>
+                      <span className="hig-caption-2 font-semibold">{formatTimeInTz(booking.scheduledAt, "h:mm")}</span>
+                      <span className="hig-caption-2 text-muted-foreground">{formatTimeInTz(booking.scheduledAt, "a")}</span>
                     </div>
                     <div className={cn("w-1 h-10 rounded-full shrink-0", statusConfig[booking.status]?.color)} />
                   </div>
@@ -353,8 +361,28 @@ export function CalendarView() {
                   {/* Content with iOS-style divider */}
                   <div className={cn("flex-1 min-w-0 flex items-center gap-2 py-3 pr-4", index < selectedDayBookings.length - 1 && "border-b border-border")}>
                     <div className="flex-1 min-w-0">
-                      <span className="font-semibold truncate block">{booking.contact?.name || "Unknown"}</span>
-                      <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold truncate">{booking.contact?.name || "Unknown"}</span>
+                        {booking.invoice && (
+                          <span
+                            className={cn(
+                              "shrink-0 flex items-center gap-0.5 px-1 py-0.5 rounded text-2xs font-medium",
+                              booking.invoice.status === "paid"
+                                ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
+                                : booking.invoice.status === "sent" || booking.invoice.status === "viewed"
+                                ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
+                                : booking.invoice.status === "overdue"
+                                ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"
+                                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                            )}
+                            title={`Invoice ${booking.invoice.invoiceNumber}: ${booking.invoice.status}`}
+                          >
+                            <Receipt className="size-2.5" />
+                            {booking.invoice.status === "paid" ? "Paid" : booking.invoice.status === "draft" ? "Draft" : "Due"}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="size-3" />
                           {booking.duration} min
@@ -388,7 +416,7 @@ export function CalendarView() {
       <div className="flex flex-col h-full">
         <div className="grid grid-cols-7 border-b border-border">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <div key={day} className="py-2 text-center hig-caption2 font-medium text-muted-foreground">
+            <div key={day} className="py-2 text-center hig-caption-2 font-medium text-muted-foreground">
               {day}
             </div>
           ))}
@@ -412,7 +440,7 @@ export function CalendarView() {
                 <div className="flex items-center justify-between mb-1">
                   <span
                     className={cn(
-                      "hig-caption2 font-medium size-6 flex items-center justify-center rounded-full",
+                      "hig-caption-2 font-medium size-6 flex items-center justify-center rounded-full",
                       isToday(day) && "bg-primary text-primary-foreground",
                       !isCurrentMonth && "text-muted-foreground"
                     )}
@@ -424,7 +452,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 2).map((booking) => (
                     <div
                       key={booking.id}
-                      className={cn("hig-caption2 leading-tight px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
+                      className={cn("hig-caption-2 leading-tight px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleBookingClick(booking);
@@ -433,7 +461,7 @@ export function CalendarView() {
                       {formatTimeInTz(booking.scheduledAt, "h:mma")} {booking.contact?.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && <div className="hig-caption2 leading-tight text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
+                  {dayBookings.length > 2 && <div className="hig-caption-2 leading-tight text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
                 </div>
               </div>
             );
@@ -454,7 +482,7 @@ export function CalendarView() {
           <div className="w-14 shrink-0" />
           {weekDays.map((day) => (
             <div key={day.toISOString()} className="flex-1 text-center py-2">
-              <div className="hig-caption2 text-muted-foreground">{format(day, "EEE")}</div>
+              <div className="hig-caption-2 text-muted-foreground">{format(day, "EEE")}</div>
               <div
                 className={cn(
                   "font-medium size-8 flex items-center justify-center rounded-full mx-auto",
@@ -512,7 +540,7 @@ export function CalendarView() {
                       return (
                         <div
                           key={booking.id}
-                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white hig-caption2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
+                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white hig-caption-2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
                           style={{
                             top: `${topOffset}px`,
                             height: `${Math.max(height, 20)}px`,
@@ -545,7 +573,7 @@ export function CalendarView() {
         <div className="flex border-b border-border shrink-0">
           <div className="w-14 shrink-0" />
           <div className="flex-1 text-center py-2">
-            <div className="hig-caption2 text-muted-foreground">{format(currentDate, "EEEE")}</div>
+            <div className="hig-caption-2 text-muted-foreground">{format(currentDate, "EEEE")}</div>
             <div
               className={cn(
                 "font-medium size-8 flex items-center justify-center rounded-full mx-auto",
@@ -601,7 +629,7 @@ export function CalendarView() {
                     return (
                       <div
                         key={booking.id}
-                        className={cn("absolute left-1 right-1 rounded px-2 text-white hig-caption2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
+                        className={cn("absolute left-1 right-1 rounded px-2 text-white hig-caption-2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
                         style={{
                           top: `${topOffset}px`,
                           height: `${Math.max(height, 28)}px`,
@@ -701,7 +729,7 @@ export function CalendarView() {
           <MobileAgendaView />
         </div>
 
-        <div className="flex flex-wrap gap-3 mt-3 hig-caption2">
+        <div className="flex flex-wrap gap-3 mt-3 hig-caption-2">
           {Object.entries(statusConfig)
             .slice(0, 4)
             .map(([key, config]) => (
@@ -790,7 +818,7 @@ export function CalendarView() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mt-3 hig-caption2">
+      <div className="flex items-center gap-4 mt-3 hig-caption-2">
         <span className="text-muted-foreground font-medium">Status:</span>
         {Object.entries(statusConfig).map(([key, config]) => (
           <div key={key} className="flex items-center gap-1.5">
@@ -805,7 +833,7 @@ export function CalendarView() {
           <DialogHeader>
             <DialogTitle>Delete Booking</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this booking for {bookingToDelete?.client?.name}? This action cannot be undone.
+              Are you sure you want to delete this booking for {bookingToDelete?.contact?.name}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

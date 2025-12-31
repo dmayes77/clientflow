@@ -65,6 +65,7 @@ import {
   SaveButton,
   useSaveButton,
 } from "@/components/ui/tanstack-form";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const TAG_TYPES = [
   { value: "all", label: "All", icon: Layers },
@@ -306,21 +307,15 @@ export function TagsList() {
       ) : tags.length === 0 ? (
         <Card className="py-3 sm:py-4 md:py-6">
           <CardContent className="py-8 sm:py-12">
-            <div className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
-              <div className="size-11 sm:size-14 rounded-full bg-rose-100 flex items-center justify-center">
-                <Tag className="size-5.5 sm:size-7 text-rose-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold">No tags yet</h3>
-                <p className="text-muted-foreground mt-0.5 sm:mt-1 max-w-sm">
-                  Create tags to categorize your contacts, invoices, and bookings. Tags can trigger automated workflows.
-                </p>
-              </div>
-              <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-8 sm:h-9">
-                <Plus className="h-4 w-4 mr-1" />
-                Create Your First Tag
-              </Button>
-            </div>
+            <EmptyState
+              icon={Tag}
+              iconColor="rose"
+              title="No tags yet"
+              description="Create tags to categorize your contacts, invoices, and bookings. Tags can trigger automated workflows."
+              actionLabel="Create Your First Tag"
+              actionIcon={<Plus className="h-4 w-4 mr-1" />}
+              onAction={() => handleOpenDialog()}
+            />
           </CardContent>
         </Card>
       ) : isMobile ? (
@@ -362,25 +357,25 @@ export function TagsList() {
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
                         {(tag.type === "general" || tag.type === "contact") && tag._count?.contacts > 0 && (
-                          <span className="hig-caption2 text-muted-foreground flex items-center gap-1">
+                          <span className="hig-caption-2 text-muted-foreground flex items-center gap-1">
                             <Users className="size-3" />
                             {tag._count.contacts}
                           </span>
                         )}
                         {(tag.type === "general" || tag.type === "invoice") && tag._count?.invoices > 0 && (
-                          <span className="hig-caption2 text-muted-foreground flex items-center gap-1">
+                          <span className="hig-caption-2 text-muted-foreground flex items-center gap-1">
                             <Receipt className="size-3" />
                             {tag._count.invoices}
                           </span>
                         )}
                         {(tag.type === "general" || tag.type === "booking") && tag._count?.bookings > 0 && (
-                          <span className="hig-caption2 text-muted-foreground flex items-center gap-1">
+                          <span className="hig-caption-2 text-muted-foreground flex items-center gap-1">
                             <Calendar className="size-3" />
                             {tag._count.bookings}
                           </span>
                         )}
                         {totalCount === 0 && (
-                          <span className="hig-caption2 text-muted-foreground">No items</span>
+                          <span className="hig-caption-2 text-muted-foreground">No items</span>
                         )}
                       </div>
                     </div>
@@ -449,7 +444,7 @@ export function TagsList() {
                       </Badge>
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <TypeIcon className="h-3 w-3" />
-                        <span className="hig-caption2">{getTypeLabel(tag.type)}</span>
+                        <span className="hig-caption-2">{getTypeLabel(tag.type)}</span>
                       </div>
                     </div>
                     <DropdownMenu>
@@ -498,7 +493,7 @@ export function TagsList() {
                     {(tag.type === "general" || tag.type === "contact") && (
                       <div className="flex items-center gap-1.5">
                         <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="hig-caption2 text-muted-foreground">
+                        <span className="hig-caption-2 text-muted-foreground">
                           {tag._count?.contacts || 0}
                         </span>
                       </div>
@@ -506,7 +501,7 @@ export function TagsList() {
                     {(tag.type === "general" || tag.type === "invoice") && (
                       <div className="flex items-center gap-1.5">
                         <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="hig-caption2 text-muted-foreground">
+                        <span className="hig-caption-2 text-muted-foreground">
                           {tag._count?.invoices || 0}
                         </span>
                       </div>
@@ -514,7 +509,7 @@ export function TagsList() {
                     {(tag.type === "general" || tag.type === "booking") && (
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="hig-caption2 text-muted-foreground">
+                        <span className="hig-caption-2 text-muted-foreground">
                           {tag._count?.bookings || 0}
                         </span>
                       </div>

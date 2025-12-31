@@ -109,7 +109,7 @@ function FormDescription({
         "text-muted-foreground",
         "tablet:text-sm desktop:text-xs",
         /* HIG footnote (mobile default) */
-        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        "text-[13px] tracking-[-0.078px] leading-4.5",
         className
       )}
       {...props} />
@@ -135,7 +135,7 @@ function FormMessage({
         "text-destructive",
         "tablet:text-sm desktop:text-xs",
         /* HIG footnote (mobile default) */
-        "text-[13px] tracking-[-0.078px] leading-[18px]",
+        "text-[13px] tracking-[-0.078px] leading-4.5",
         className
       )}
       {...props}>

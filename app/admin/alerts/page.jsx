@@ -111,7 +111,7 @@ function AlertCard({ alert, onDismiss }) {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="font-medium truncate">{alert.title}</div>
-                <p className="text-muted-foreground mt-0.5 line-clamp-2 hig-caption2">
+                <p className="text-muted-foreground mt-0.5 line-clamp-2 hig-caption-2">
                   {alert.message}
                 </p>
               </div>
@@ -124,7 +124,7 @@ function AlertCard({ alert, onDismiss }) {
               {alert.tenant && (
                 <Link
                   href={`/admin/tenants/${alert.tenant.id}`}
-                  className="text-primary hover:underline hig-caption2"
+                  className="text-primary hover:underline hig-caption-2"
                 >
                   {alert.tenant.businessName || alert.tenant.name}
                 </Link>
@@ -132,7 +132,7 @@ function AlertCard({ alert, onDismiss }) {
               {alert.isGlobal && (
                 <Badge variant="outline">Global</Badge>
               )}
-              <span className="text-muted-foreground ml-auto hig-caption2">
+              <span className="text-muted-foreground ml-auto hig-caption-2">
                 {formatDate(alert.createdAt)}
               </span>
             </div>
@@ -192,7 +192,7 @@ function TypeFilter({ value, onChange, counts }) {
           >
             {type.label}
             {count > 0 && (
-              <span className="ml-1 opacity-70 hig-caption2">({count})</span>
+              <span className="ml-1 opacity-70 hig-caption-2">({count})</span>
             )}
           </Button>
         );
@@ -323,7 +323,7 @@ function CreateAlertDialog() {
                         onClick={() => addTenant(tenant)}
                       >
                         <span className="truncate">{tenant.businessName || tenant.name}</span>
-                        <span className="text-muted-foreground truncate ml-2 hig-caption2">{tenant.email}</span>
+                        <span className="text-muted-foreground truncate ml-2 hig-caption-2">{tenant.email}</span>
                       </button>
                     ))}
                   </div>
@@ -467,7 +467,7 @@ function RuleCard({ rule, onEdit, onToggle, onDelete, scheduleTypes, eventTypes,
             </div>
 
             {rule.description && (
-              <p className="text-muted-foreground mb-2 hig-caption2">{rule.description}</p>
+              <p className="text-muted-foreground mb-2 hig-caption-2">{rule.description}</p>
             )}
 
             <div className="flex flex-wrap gap-2 mb-2">
@@ -481,7 +481,7 @@ function RuleCard({ rule, onEdit, onToggle, onDelete, scheduleTypes, eventTypes,
                 <Badge variant="outline">{rule.cooldownHours}h cooldown</Badge>
               )}
               {filterCount > 0 && (
-                <Badge variant="outline" className="hig-caption2 bg-amber-50 border-amber-200">
+                <Badge variant="outline" className="hig-caption-2 bg-amber-50 border-amber-200">
                   <Users className="h-2.5 w-2.5 mr-1" />
                   {filterCount} filter{filterCount !== 1 ? "s" : ""}
                 </Badge>
@@ -490,7 +490,7 @@ function RuleCard({ rule, onEdit, onToggle, onDelete, scheduleTypes, eventTypes,
 
             {/* Show filter details */}
             {filterCount > 0 && (
-              <div className="flex flex-wrap gap-1 mb-2 hig-caption2">
+              <div className="flex flex-wrap gap-1 mb-2 hig-caption-2">
                 {planNames.length > 0 && (
                   <span className="text-muted-foreground">Plans: {planNames.join(", ")}</span>
                 )}
@@ -505,10 +505,10 @@ function RuleCard({ rule, onEdit, onToggle, onDelete, scheduleTypes, eventTypes,
 
             <div className="bg-muted/50 rounded p-2 mb-2">
               <p className="font-medium">{rule.alertTitle}</p>
-              <p className="text-muted-foreground line-clamp-2 hig-caption2">{rule.alertMessage}</p>
+              <p className="text-muted-foreground line-clamp-2 hig-caption-2">{rule.alertMessage}</p>
             </div>
 
-            <div className="flex items-center gap-4 text-muted-foreground hig-caption2">
+            <div className="flex items-center gap-4 text-muted-foreground hig-caption-2">
               <span>Sent: {rule.alertsSent}</span>
               <span>Last run: {formatDate(rule.lastRunAt)}</span>
             </div>
@@ -759,19 +759,19 @@ export default function AlertsPage() {
             <Card>
               <CardContent className="p-3 text-center">
                 <div className="hig-title-1 font-bold text-red-600">{criticalCount}</div>
-                <div className="text-muted-foreground hig-caption2">Critical</div>
+                <div className="text-muted-foreground hig-caption-2">Critical</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <div className="hig-title-1 font-bold text-orange-600">{typeCounts.dispute || 0}</div>
-                <div className="text-muted-foreground hig-caption2">Disputes</div>
+                <div className="text-muted-foreground hig-caption-2">Disputes</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <div className="hig-title-1 font-bold">{unreadCount}</div>
-                <div className="text-muted-foreground hig-caption2">Unread</div>
+                <div className="text-muted-foreground hig-caption-2">Unread</div>
               </CardContent>
             </Card>
           </div>
@@ -828,19 +828,19 @@ export default function AlertsPage() {
             <Card>
               <CardContent className="p-3 text-center">
                 <div className="hig-title-1 font-bold">{rules.filter((r) => r.active).length}</div>
-                <div className="text-muted-foreground hig-caption2">Active Rules</div>
+                <div className="text-muted-foreground hig-caption-2">Active Rules</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <div className="hig-title-1 font-bold text-blue-600">{scheduledRules.length}</div>
-                <div className="text-muted-foreground hig-caption2">Scheduled</div>
+                <div className="text-muted-foreground hig-caption-2">Scheduled</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3 text-center">
                 <div className="hig-title-1 font-bold text-purple-600">{eventRules.length}</div>
-                <div className="text-muted-foreground hig-caption2">Event-Based</div>
+                <div className="text-muted-foreground hig-caption-2">Event-Based</div>
               </CardContent>
             </Card>
           </div>
@@ -989,7 +989,7 @@ export default function AlertsPage() {
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Target Filters</span>
-                  <span className="text-muted-foreground hig-caption2">(Optional - narrow down recipients)</span>
+                  <span className="text-muted-foreground hig-caption-2">(Optional - narrow down recipients)</span>
                 </div>
 
                 {/* Plan Filter */}
@@ -1131,7 +1131,7 @@ export default function AlertsPage() {
               <Label>Alert Title *</Label>
               <Input value={formData.alertTitle} onChange={(e) => setFormData((p) => ({ ...p, alertTitle: e.target.value }))}
                 placeholder="e.g., Your trial expires in {{daysRemaining}} days" required className="h-9" />
-              <p className="text-muted-foreground hig-caption2">
+              <p className="text-muted-foreground hig-caption-2">
                 Placeholders: {"{{tenantName}}"}, {"{{businessName}}"}, {"{{daysRemaining}}"}, {"{{expiryDate}}"}
               </p>
             </div>
@@ -1156,7 +1156,7 @@ export default function AlertsPage() {
               <Switch id="active" checked={formData.active} onCheckedChange={(v) => setFormData((p) => ({ ...p, active: v }))} />
               <Label htmlFor="active" className="cursor-pointer">Active</Label>
             </div>
-            {error && <div className="text-red-500 bg-red-50 p-2 rounded hig-caption2">{error}</div>}
+            {error && <div className="text-red-500 bg-red-50 p-2 rounded hig-caption-2">{error}</div>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setRuleDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={saveRuleMutation.isPending}>

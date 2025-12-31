@@ -31,6 +31,7 @@ import {
   SaveButton,
   useSaveButton,
 } from "@/components/ui/tanstack-form";
+import { formatCurrency } from "@/lib/formatters";
 
 const SOURCE_OPTIONS = [
   { value: "none", label: "--" },
@@ -66,7 +67,9 @@ export function ContactForm({ mode = "create", contactId = null }) {
 
   // TanStack Query hooks
   const { data: contactData, isLoading: contactLoading, error: contactError } = useContact(mode === "edit" ? contactId : null);
-  const { data: allTags = [], isLoading: tagsLoading } = useTags();
+  const { data: allTagsRaw = [], isLoading: tagsLoading } = useTags();
+  // Filter to only show contact and general type tags
+  const allTags = allTagsRaw.filter((tag) => tag.type === "contact" || tag.type === "general");
   const createContactMutation = useCreateContact();
   const updateContactMutation = useUpdateContact();
   const deleteContactMutation = useDeleteContact();
@@ -209,6 +212,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
       const newTag = await createTagMutation.mutateAsync({
         name: newTagName.trim(),
         color: "blue",
+        type: "contact",
       });
 
       // Add to contact
@@ -258,13 +262,6 @@ export function ContactForm({ mode = "create", contactId = null }) {
       gray: "bg-gray-100 text-gray-800 border-gray-200",
     };
     return colorMap[color] || colorMap.blue;
-  };
-
-  const formatCurrency = (cents) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(cents / 100);
   };
 
   if (loading) {
@@ -390,7 +387,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
                     {clientTags.map((tag) => (
                       <span
                         key={tag.id}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full hig-caption2 font-medium border ${getTagColorClass(tag.color)}`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full hig-caption-2 font-medium border ${getTagColorClass(tag.color)}`}
                       >
                         {tag.name}
                         <button type="button" onClick={() => handleRemoveTag(tag.id)} className="hover:opacity-70 transition-opacity">

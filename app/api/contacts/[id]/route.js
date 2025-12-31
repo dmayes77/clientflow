@@ -26,6 +26,7 @@ export async function GET(request, { params }) {
             include: {
               service: { select: { name: true } },
               package: { select: { name: true } },
+              invoice: { select: { id: true } },
               services: {
                 include: {
                   service: { select: { name: true } },
@@ -118,6 +119,44 @@ export async function PATCH(request, { params }) {
 
     if (!success) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
+    }
+
+    // Check for duplicate email if email is being changed
+    if (data.email && data.email !== existingContact.email) {
+      const existingByEmail = await prisma.contact.findFirst({
+        where: {
+          tenantId: tenant.id,
+          email: data.email,
+          archived: false,
+          id: { not: id },
+        },
+      });
+
+      if (existingByEmail) {
+        return NextResponse.json(
+          { error: `A contact with email "${data.email}" already exists`, field: "email", duplicate: true },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Check for duplicate phone if phone is being changed
+    if (data.phone && data.phone !== existingContact.phone) {
+      const existingByPhone = await prisma.contact.findFirst({
+        where: {
+          tenantId: tenant.id,
+          phone: data.phone,
+          archived: false,
+          id: { not: id },
+        },
+      });
+
+      if (existingByPhone) {
+        return NextResponse.json(
+          { error: `A contact with phone number "${data.phone}" already exists`, field: "phone", duplicate: true },
+          { status: 409 }
+        );
+      }
     }
 
     const contact = await prisma.contact.update({

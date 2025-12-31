@@ -66,9 +66,9 @@ function FieldWrapper({
       )}
       {children}
       {description && !error && (
-        <p className="hig-caption2 text-muted-foreground">{description}</p>
+        <p className="hig-caption-2 text-muted-foreground">{description}</p>
       )}
-      {error && <p className="hig-caption2 text-destructive">{error}</p>}
+      {error && <p className="hig-caption-2 text-destructive">{error}</p>}
     </div>
   );
 }
@@ -326,7 +326,7 @@ export function CheckboxField({
               </Label>
             )}
             {description && (
-              <p className="text-muted-foreground hig-caption2">{description}</p>
+              <p className="text-muted-foreground hig-caption-2">{description}</p>
             )}
           </div>
         </div>
@@ -384,7 +384,7 @@ export function CheckboxGroupField({
                 </div>
               ))}
             </div>
-            <p className="hig-caption2 text-muted-foreground">
+            <p className="hig-caption-2 text-muted-foreground">
               {values.length} item{values.length !== 1 ? "s" : ""} selected
             </p>
           </FieldWrapper>

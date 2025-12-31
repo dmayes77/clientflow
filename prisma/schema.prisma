@@ -101,6 +101,8 @@ model Tenant {
   pushSubscriptions   PushSubscription[]
   supportMessages     SupportMessage[]
   coupons             Coupon[]
+  contactSegments     ContactSegment[]
+  customFields        CustomField[]
   plan                Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
 
   @@index([clerkOrgId])
@@ -108,48 +110,59 @@ model Tenant {
 }
 
 model ServiceCategory {
-  id          String    @id @default(cuid())
-  tenantId    String
+  id           String    @id @default(cuid())
+  tenantId     String
 
-  name        String
-  description String?
-  color       String?   @default("#6366f1") // Indigo default
+  name         String
+  description  String?
+  color        String?   @default("#6366f1") // Indigo default
+  icon         String?   // Lucide icon name or emoji
+  active       Boolean   @default(true)
+  displayOrder Int       @default(0)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  services    Service[]
-  packages    Package[]
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  services     Service[]
+  packages     Package[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
+  @@index([tenantId, displayOrder])
 }
 
 model Service {
-  id          String    @id @default(cuid())
-  tenantId    String
-  categoryId  String?
+  id           String    @id @default(cuid())
+  tenantId     String
+  categoryId   String?
 
-  name        String
-  description String?
-  duration    Int
-  price       Int
-  active      Boolean   @default(true)
-  includes    String[]  @default([])
+  name         String
+  description  String?
+  duration     Int
+  price        Int
+  active       Boolean   @default(true)
+  includes     String[]  @default([])
+  displayOrder Int       @default(0)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  archived     Boolean   @default(false)
+  archivedAt   DateTime?
 
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category    ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  bookings    Booking[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category     ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  bookings     Booking[]
   bookingServices BookingService[]
   packageServices PackageService[]
-  images      Image[]
+  images       Image[]
 
   @@index([tenantId])
   @@index([categoryId])
+  @@index([archived])
+  @@index([tenantId, archived])
+  @@index([tenantId, categoryId, displayOrder])
 }
 
 model Package {
@@ -162,6 +175,11 @@ model Package {
   price           Int       // Final price after discount (in cents)
   discountPercent Int       @default(15) // 5, 10, 15, or 20
   active          Boolean   @default(true)
+  displayOrder    Int       @default(0)
+  includes        String[]  @default([])  // What's included in this package
+
+  archived        Boolean   @default(false)
+  archivedAt      DateTime?
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -175,6 +193,9 @@ model Package {
 
   @@index([tenantId])
   @@index([categoryId])
+  @@index([archived])
+  @@index([tenantId, archived])
+  @@index([tenantId, categoryId, displayOrder])
 }
 
 model PackageService {
@@ -200,6 +221,9 @@ model Contact {
   status    String?   @default("lead") // lead, client, active, inactive, unclassified
   notes     String?
 
+  archived   Boolean   @default(false)
+  archivedAt DateTime?
+
   stripeCustomerId String?  @unique  // Stripe Customer ID for saved payment methods
 
   createdAt DateTime  @default(now())
@@ -212,10 +236,13 @@ model Contact {
   tags               ContactTag[]
   campaignRecipients CampaignRecipient[]
   recurringBookings  RecurringBooking[]
+  customFieldValues  ContactCustomFieldValue[]
 
   @@map("Client")
   @@index([tenantId])
   @@index([email])
+  @@index([archived])
+  @@index([tenantId, archived])
 }
 
 model Tag {
@@ -242,6 +269,65 @@ model Tag {
   @@index([tenantId])
   @@index([type])
   @@index([isSystem])
+}
+
+model ContactSegment {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String
+  description String?
+  filters     Json      // Stores filter configuration (status, tags, dateRange, etc.)
+  isSystem    Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model CustomField {
+  id          String    @id @default(cuid())
+  tenantId    String
+
+  name        String    // Display name
+  key         String    // Internal key (e.g., "pet_name")
+  group       String?   // Optional group name (e.g., "Vehicle Information")
+  fieldType   String    // "text", "number", "date", "select", "multiselect", "boolean", "textarea"
+  options     Json?     // For select/multiselect: ["Option 1", "Option 2"]
+  required    Boolean   @default(false)
+  order       Int       @default(0)
+  active      Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  values      ContactCustomFieldValue[]
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([active])
+}
+
+model ContactCustomFieldValue {
+  id           String   @id @default(cuid())
+  contactId    String
+  fieldId      String
+  value        String   // Stores all types as string (convert as needed)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contact      Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  field        CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, fieldId])
+  @@index([contactId])
+  @@index([fieldId])
 }
 
 model ContactTag {
@@ -297,10 +383,12 @@ model Workflow {
 
   name          String
   description   String?
-  triggerType   String    // tag_added, tag_removed, lead_created, booking_created, client_converted
+  triggerType   String    // tag_added, tag_removed, lead_created, booking_created, booking_scheduled, booking_confirmed, booking_cancelled, client_converted, payment_received, invoice_paid, invoice_tag_added, booking_tag_added
   delayMinutes  Int       @default(0)
   actions       Json      // Array of action objects
   active        Boolean   @default(true)
+  isSystem      Boolean   @default(false)  // System workflows cannot be deleted, only paused/edited
+  systemKey     String?                    // Unique key for system workflows (e.g., "invoice_sent_email")
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -309,9 +397,11 @@ model Workflow {
   triggerTag    Tag?      @relation(fields: [triggerTagId], references: [id], onDelete: SetNull)
   runs          WorkflowRun[]
 
+  @@unique([tenantId, systemKey])
   @@index([tenantId])
   @@index([triggerTagId])
   @@index([active])
+  @@index([systemKey])
 }
 
 model WorkflowRun {
@@ -435,15 +525,24 @@ model Booking {
   contactId       String    @map("clientId")
   serviceId       String?   // Legacy - kept for backwards compat
   packageId       String?   // Legacy - kept for backwards compat
+  invoiceId       String?   @unique // 1:1 - each booking has at most one invoice
 
   scheduledAt     DateTime
-  status          String    @default("inquiry")
+  status          String    @default("pending")
   notes           String?
   totalPrice      Int
   duration        Int
 
   paymentStatus   String?   @default("unpaid")
   paymentId       String?
+
+  // Payment allocation tracking (for multi-booking invoices)
+  depositAllocated  Int       @default(0)  // cents - deposit allocated to this booking
+  bookingAmountPaid Int       @default(0)  // cents - total paid toward this booking
+  bookingBalanceDue Int?                   // cents - totalPrice - bookingAmountPaid
+
+  // Confirmation token for secure email links (confirm/reschedule/cancel)
+  confirmationToken String?   @unique
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -453,7 +552,7 @@ model Booking {
   service         Service?  @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   package         Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
   payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  invoice         Invoice?
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   tags            BookingTag[]
   services        BookingService[]
   packages        BookingPackage[]
@@ -756,7 +855,6 @@ model Invoice {
   id              String    @id @default(cuid())
   tenantId        String
   contactId       String    @map("clientId")
-  bookingId       String?   @unique
 
   invoiceNumber   String
   status          String    @default("draft")
@@ -795,12 +893,15 @@ model Invoice {
   notes           String?
   terms           String?
 
+  // Audit trail for edits made after invoice is paid
+  editHistory     Json?     // Array of { editedAt, description }
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact         Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  booking         Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  booking         Booking?  // 1:1 - each invoice has at most one booking
   tags            InvoiceTag[]
   coupons         InvoiceCoupon[]
   payments        InvoicePayment[]

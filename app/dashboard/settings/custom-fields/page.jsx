@@ -1,0 +1,551 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useCustomFields, useCreateCustomField, useUpdateCustomField, useDeleteCustomField } from "@/lib/hooks";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { toast } from "sonner";
+import { Plus, Trash2, Edit, Sliders, Loader2, Check, ChevronsUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+export default function CustomFieldsPage() {
+  const { data: customFields = [], isLoading } = useCustomFields();
+  const createMutation = useCreateCustomField();
+  const updateMutation = useUpdateCustomField();
+  const deleteMutation = useDeleteCustomField();
+
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [editingField, setEditingField] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [groupPopoverOpen, setGroupPopoverOpen] = useState(false);
+  const [groupSearch, setGroupSearch] = useState("");
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+  const [formData, setFormData] = useState({
+    name: "",
+    key: "",
+    group: "",
+    fieldType: "text",
+    options: "",
+    required: false,
+    active: true,
+  });
+
+  // Extract unique existing groups
+  const existingGroups = [...new Set(customFields.filter((f) => f.group).map((f) => f.group))].sort();
+
+  const handleOpenSheet = (field = null) => {
+    if (field) {
+      setEditingField(field);
+      setFormData({
+        name: field.name,
+        key: field.key,
+        group: field.group || "",
+        fieldType: field.fieldType,
+        options: field.options?.join(", ") || "",
+        required: field.required,
+        active: field.active,
+      });
+    } else {
+      setEditingField(null);
+      setFormData({
+        name: "",
+        key: "",
+        group: "",
+        fieldType: "text",
+        options: "",
+        required: false,
+        active: true,
+      });
+    }
+    setGroupSearch("");
+    setIsSheetOpen(true);
+  };
+
+  const generateKey = (name) => {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  };
+
+  const handleNameChange = (name) => {
+    setFormData((prev) => ({
+      ...prev,
+      name,
+      key: editingField ? prev.key : generateKey(name),
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const data = {
+        name: formData.name,
+        key: formData.key,
+        group: formData.group || null,
+        fieldType: formData.fieldType,
+        required: formData.required,
+        active: formData.active,
+      };
+
+      // Parse options if field type is select/multiselect
+      if (formData.fieldType === "select" || formData.fieldType === "multiselect") {
+        data.options = formData.options
+          .split(",")
+          .map((opt) => opt.trim())
+          .filter((opt) => opt);
+      }
+
+      if (editingField) {
+        await updateMutation.mutateAsync({ id: editingField.id, ...data });
+        toast.success("Custom field updated");
+      } else {
+        await createMutation.mutateAsync(data);
+        toast.success("Custom field created");
+      }
+
+      setIsSheetOpen(false);
+    } catch (error) {
+      toast.error(error.message || "Failed to save custom field");
+    }
+  };
+
+  const handleDelete = async (field) => {
+    if (!confirm(`Delete custom field "${field.name}"?`)) return;
+
+    try {
+      await deleteMutation.mutateAsync(field.id);
+      toast.success("Custom field deleted");
+    } catch (error) {
+      toast.error(error.message || "Failed to delete custom field");
+    }
+  };
+
+  const handleReorder = async (field, direction) => {
+    const fieldsInGroup = customFields
+      .filter((f) => f.group === field.group)
+      .sort((a, b) => a.order - b.order);
+
+    // Check if all fields have the same order (e.g., all 0)
+    const allSameOrder = fieldsInGroup.every((f) => f.order === fieldsInGroup[0].order);
+
+    try {
+      if (allSameOrder) {
+        // Reassign sequential orders to all fields in the group
+        for (let i = 0; i < fieldsInGroup.length; i++) {
+          await updateMutation.mutateAsync({ id: fieldsInGroup[i].id, order: i });
+        }
+        toast.success("Field orders initialized");
+        return;
+      }
+
+      const currentIndex = fieldsInGroup.findIndex((f) => f.id === field.id);
+      const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+
+      if (swapIndex < 0 || swapIndex >= fieldsInGroup.length) return;
+
+      const currentField = fieldsInGroup[currentIndex];
+      const swapField = fieldsInGroup[swapIndex];
+
+      // Swap orders sequentially to avoid race conditions
+      await updateMutation.mutateAsync({ id: currentField.id, order: swapField.order });
+      await updateMutation.mutateAsync({ id: swapField.id, order: currentField.order });
+      toast.success("Field order updated");
+    } catch (error) {
+      toast.error(error.message || "Failed to reorder field");
+    }
+  };
+
+  const fieldTypeLabels = {
+    text: "Text",
+    number: "Number",
+    date: "Date",
+    select: "Dropdown",
+    multiselect: "Checkboxes",
+    boolean: "Checkbox",
+    textarea: "Long Text",
+  };
+
+  // Group fields by their group property
+  const groupedFields = customFields.reduce((acc, field) => {
+    const groupName = field.group || "_ungrouped";
+    if (!acc[groupName]) acc[groupName] = [];
+    acc[groupName].push(field);
+    return acc;
+  }, {});
+
+  // Sort fields within each group by order
+  Object.keys(groupedFields).forEach((groupName) => {
+    groupedFields[groupName].sort((a, b) => a.order - b.order);
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-bold">Custom Fields</h1>
+          <p className="text-muted-foreground">Create custom fields for your contacts</p>
+        </div>
+        <Button onClick={() => handleOpenSheet()}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Field
+        </Button>
+      </div>
+
+      {customFields.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Sliders className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No custom fields yet</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              Create custom fields to capture additional information about your contacts
+            </p>
+            <Button onClick={() => handleOpenSheet()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Field
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {/* Ungrouped fields */}
+          {groupedFields._ungrouped && groupedFields._ungrouped.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Ungrouped Fields</h2>
+              <div className="grid gap-4">
+                {groupedFields._ungrouped.map((field) => (
+                  <Card key={field.id}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <CardTitle className="text-lg">{field.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-2 flex-wrap">
+                            <code className="text-xs bg-muted px-2 py-0.5 rounded">{field.key}</code>
+                            <Badge variant="outline">{fieldTypeLabels[field.fieldType]}</Badge>
+                            {field.required && <Badge variant="destructive">Required</Badge>}
+                            {!field.active && <Badge variant="secondary">Inactive</Badge>}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenSheet(field)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(field)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    {field.options && field.options.length > 0 && (
+                      <CardContent className="pt-0">
+                        <p className="text-sm text-muted-foreground mb-2">Options:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {field.options.map((option) => (
+                            <Badge key={option} variant="secondary">
+                              {option}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Grouped fields */}
+          {Object.entries(groupedFields)
+            .filter(([groupName]) => groupName !== "_ungrouped")
+            .map(([groupName, fields]) => (
+              <div key={groupName} className="space-y-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  {groupName}
+                  <Badge variant="secondary">{fields.length} fields</Badge>
+                </h2>
+                <div className="grid gap-4">
+                  {fields.map((field, index) => (
+                    <Card key={field.id}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{field.name}</CardTitle>
+                            <CardDescription className="flex items-center gap-2 flex-wrap">
+                              <code className="text-xs bg-muted px-2 py-0.5 rounded">{field.key}</code>
+                              <Badge variant="secondary">{groupName}</Badge>
+                              <Badge variant="outline">{fieldTypeLabels[field.fieldType]}</Badge>
+                              {field.required && <Badge variant="destructive">Required</Badge>}
+                              {!field.active && <Badge variant="secondary">Inactive</Badge>}
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReorder(field, "up")}
+                              disabled={index === 0 || updateMutation.isPending}
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReorder(field, "down")}
+                              disabled={index === fields.length - 1 || updateMutation.isPending}
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenSheet(field)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(field)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      {field.options && field.options.length > 0 && (
+                        <CardContent className="pt-0">
+                          <p className="text-sm text-muted-foreground mb-2">Options:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {field.options.map((option) => (
+                              <Badge key={option} variant="secondary">
+                                {option}
+                              </Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side={isMobile ? "bottom" : "right"} className="flex flex-col">
+          <SheetHeader>
+            <SheetTitle>{editingField ? "Edit" : "Create"} Custom Field</SheetTitle>
+            <SheetDescription>
+              {editingField
+                ? "Update the custom field details"
+                : "Add a new custom field for your contacts"}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto px-4">
+            <div className="space-y-4 mt-6">
+            <div className="space-y-2">
+              <Label htmlFor="name">Field Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="e.g., Pet Name, Property Address"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="key">Field Key *</Label>
+              <Input
+                id="key"
+                value={formData.key}
+                placeholder="e.g., pet_name, property_address"
+                disabled
+                readOnly
+              />
+              <p className="text-xs text-muted-foreground">
+                {editingField ? "Key cannot be changed after creation" : "Auto-generated from field name"}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="group">Group (Optional)</Label>
+              <Popover open={groupPopoverOpen} onOpenChange={setGroupPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={groupPopoverOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {formData.group || "Select or create a group..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search or create group..."
+                      value={groupSearch}
+                      onValueChange={setGroupSearch}
+                    />
+                    <CommandList>
+                      {groupSearch && !existingGroups.includes(groupSearch) && (
+                        <CommandGroup>
+                          <CommandItem
+                            onSelect={() => {
+                              setFormData({ ...formData, group: groupSearch });
+                              setGroupPopoverOpen(false);
+                              setGroupSearch("");
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create "{groupSearch}"
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+                      {existingGroups.filter((g) => !groupSearch || g.toLowerCase().includes(groupSearch.toLowerCase())).length > 0 && (
+                        <CommandGroup heading="Existing Groups">
+                          {existingGroups
+                            .filter((g) => !groupSearch || g.toLowerCase().includes(groupSearch.toLowerCase()))
+                            .map((group) => (
+                              <CommandItem
+                                key={group}
+                                value={group}
+                                onSelect={() => {
+                                  setFormData({ ...formData, group });
+                                  setGroupPopoverOpen(false);
+                                  setGroupSearch("");
+                                }}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${formData.group === group ? "opacity-100" : "opacity-0"}`}
+                                />
+                                {group}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      )}
+                      {!groupSearch && existingGroups.length === 0 && (
+                        <CommandEmpty>Type to create a new group</CommandEmpty>
+                      )}
+                      {formData.group && (
+                        <CommandGroup>
+                          <CommandItem
+                            onSelect={() => {
+                              setFormData({ ...formData, group: "" });
+                              setGroupPopoverOpen(false);
+                              setGroupSearch("");
+                            }}
+                          >
+                            Clear selection
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Select an existing group or type to create a new one
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fieldType">Field Type *</Label>
+              <Select value={formData.fieldType} onValueChange={(value) => setFormData({ ...formData, fieldType: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text (single line)</SelectItem>
+                  <SelectItem value="textarea">Long Text (multi-line)</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="select">Dropdown (single choice)</SelectItem>
+                  <SelectItem value="multiselect">Checkboxes (multiple choice)</SelectItem>
+                  <SelectItem value="boolean">Checkbox (yes/no)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(formData.fieldType === "select" || formData.fieldType === "multiselect") && (
+              <div className="space-y-2">
+                <Label htmlFor="options">Options *</Label>
+                <Input
+                  id="options"
+                  value={formData.options}
+                  onChange={(e) => setFormData({ ...formData, options: e.target.value })}
+                  placeholder="Option 1, Option 2, Option 3"
+                />
+                <p className="text-xs text-muted-foreground">Separate options with commas</p>
+              </div>
+            )}
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="required"
+                checked={formData.required}
+                onCheckedChange={(checked) => setFormData({ ...formData, required: checked })}
+              />
+              <Label htmlFor="required" className="cursor-pointer">
+                Required field
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="active"
+                checked={formData.active}
+                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+              />
+              <Label htmlFor="active" className="cursor-pointer">
+                Active
+              </Label>
+            </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setIsSheetOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={!formData.name || !formData.key || createMutation.isPending || updateMutation.isPending}
+                >
+                  {createMutation.isPending || updateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : null}
+                  {editingField ? "Update" : "Create"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}

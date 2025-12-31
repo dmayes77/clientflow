@@ -12,7 +12,7 @@ export function PasswordStrength({ password, context = {} }) {
     <div className="space-y-3">
       {/* Strength bar */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between hig-caption2">
+        <div className="flex items-center justify-between hig-caption-2">
           <span className="text-gray-500">Password strength</span>
           {strength.label && (
             <span
@@ -37,7 +37,7 @@ export function PasswordStrength({ password, context = {} }) {
       </div>
 
       {/* Rules checklist */}
-      <div className="grid grid-cols-1 gap-1 hig-caption2">
+      <div className="grid grid-cols-1 gap-1 hig-caption-2">
         {rules.map((rule) => {
           const passed = rule.test(password);
           return (

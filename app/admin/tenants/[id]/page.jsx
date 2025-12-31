@@ -51,44 +51,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const STATUS_CONFIG = {
-  active: { label: "Active", icon: CheckCircle2, color: "bg-green-100 text-green-700" },
-  trialing: { label: "Trial", icon: Clock, color: "bg-blue-100 text-blue-700" },
-  past_due: { label: "Past Due", icon: AlertTriangle, color: "bg-yellow-100 text-yellow-700" },
-  canceled: { label: "Canceled", icon: XCircle, color: "bg-red-100 text-red-700" },
-  incomplete: { label: "Incomplete", icon: AlertTriangle, color: "bg-orange-100 text-orange-700" },
-};
-
-function formatDate(date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatCurrency(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function StatusBadge({ status, size = "default" }) {
-  const config = STATUS_CONFIG[status] || {
-    label: status || "None",
-    icon: XCircle,
-    color: "bg-zinc-100 text-zinc-600"
-  };
-  const Icon = config.icon;
-
-  return (
-    <Badge className={`${config.color} ${size === "sm" ? "hig-caption2 px-1.5 py-0" : ""}`}>
-      <Icon className={size === "sm" ? "h-2.5 w-2.5 mr-0.5" : "h-3 w-3 mr-1"} />
-      {config.label}
-    </Badge>
-  );
-}
+import { formatCurrency, formatDate } from "@/lib/formatters";
+import { SubscriptionStatusBadge } from "@/components/ui/status-badge";
 
 function MiniStat({ icon: Icon, label, value }) {
   return (
@@ -96,7 +60,7 @@ function MiniStat({ icon: Icon, label, value }) {
       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="hig-title-2 font-semibold leading-none truncate">{value}</div>
-        <div className="hig-caption2 text-muted-foreground truncate">{label}</div>
+        <div className="hig-caption-2 text-muted-foreground truncate">{label}</div>
       </div>
     </div>
   );
@@ -107,10 +71,10 @@ function BookingCard({ booking }) {
     <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
       <div className="min-w-0 flex-1">
         <div className="hig-body font-medium truncate">{booking.contact?.name || "Unknown"}</div>
-        <div className="hig-caption2 text-muted-foreground">{formatDate(booking.createdAt)}</div>
+        <div className="hig-caption-2 text-muted-foreground">{formatDate(booking.createdAt)}</div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Badge variant="outline" className="hig-caption2">{booking.status}</Badge>
+        <Badge variant="outline" className="hig-caption-2">{booking.status}</Badge>
         <span className="hig-body font-medium">
           {booking.totalPrice ? formatCurrency(booking.totalPrice) : "-"}
         </span>
@@ -255,7 +219,7 @@ export default function TenantDetailPage({ params }) {
             </h1>
             <p className="hig-body text-muted-foreground truncate">{tenant.email}</p>
           </div>
-          <StatusBadge status={tenant.subscriptionStatus} size="sm" />
+          <SubscriptionStatusBadge status={tenant.subscriptionStatus} size="sm" />
         </div>
       </div>
 
@@ -288,7 +252,7 @@ export default function TenantDetailPage({ params }) {
         <CardContent className="p-3 pt-0 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label className="hig-caption2">Status</Label>
+              <Label className="hig-caption-2">Status</Label>
               <Select value={subscriptionStatus} onValueChange={setSubscriptionStatus}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select" />
@@ -302,7 +266,7 @@ export default function TenantDetailPage({ params }) {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="hig-caption2">Plan</Label>
+              <Label className="hig-caption-2">Plan</Label>
               <Select value={planType} onValueChange={setPlanType}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select" />
@@ -318,7 +282,7 @@ export default function TenantDetailPage({ params }) {
             </div>
           </div>
           <div className="space-y-1">
-            <Label className="hig-caption2">Account Type</Label>
+            <Label className="hig-caption-2">Account Type</Label>
             <Select value={accountType} onValueChange={setAccountType}>
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="Select" />
@@ -330,7 +294,7 @@ export default function TenantDetailPage({ params }) {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="hig-caption2">Period End</Label>
+            <Label className="hig-caption-2">Period End</Label>
             <Input
               type="date"
               value={currentPeriodEnd}
@@ -389,15 +353,15 @@ export default function TenantDetailPage({ params }) {
           <div className="grid grid-cols-3 gap-3 text-center min-w-0">
             <div className="min-w-0">
               <div className="hig-title-1 font-bold truncate">{usage?.bookingsThisMonth || 0}</div>
-              <div className="hig-caption2 text-muted-foreground truncate">Bookings</div>
+              <div className="hig-caption-2 text-muted-foreground truncate">Bookings</div>
             </div>
             <div className="min-w-0">
               <div className="hig-title-1 font-bold truncate">{formatCurrency(usage?.totalRevenue || 0)}</div>
-              <div className="hig-caption2 text-muted-foreground truncate">Revenue</div>
+              <div className="hig-caption-2 text-muted-foreground truncate">Revenue</div>
             </div>
             <div className="min-w-0">
               <div className="hig-title-1 font-bold truncate">{usage?.totalPayments || 0}</div>
-              <div className="hig-caption2 text-muted-foreground truncate">Payments</div>
+              <div className="hig-caption-2 text-muted-foreground truncate">Payments</div>
             </div>
           </div>
         </CardContent>
@@ -411,14 +375,14 @@ export default function TenantDetailPage({ params }) {
         <CardContent className="p-3 pt-0 space-y-3">
           <div className="grid grid-cols-2 gap-3 hig-body min-w-0">
             <div className="min-w-0">
-              <div className="hig-caption2 text-muted-foreground uppercase">Slug</div>
+              <div className="hig-caption-2 text-muted-foreground uppercase">Slug</div>
               <div className="flex items-center gap-1 min-w-0">
                 <Globe className="h-3 w-3 text-muted-foreground shrink-0" />
                 <span className="truncate">/{tenant.slug || "-"}</span>
               </div>
             </div>
             <div className="min-w-0">
-              <div className="hig-caption2 text-muted-foreground uppercase">Created</div>
+              <div className="hig-caption-2 text-muted-foreground uppercase">Created</div>
               <div className="truncate">{formatDate(tenant.createdAt)}</div>
             </div>
           </div>
@@ -426,19 +390,19 @@ export default function TenantDetailPage({ params }) {
           <Separator />
 
           <div className="min-w-0">
-            <div className="hig-caption2 text-muted-foreground uppercase mb-1">Stripe Connect</div>
+            <div className="hig-caption-2 text-muted-foreground uppercase mb-1">Stripe Connect</div>
             {tenant.stripeAccountId ? (
               <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <Badge variant="outline" className="text-green-600 hig-caption2">
+                <Badge variant="outline" className="text-green-600 hig-caption-2">
                   <CreditCard className="h-2.5 w-2.5 mr-0.5" />
                   Connected
                 </Badge>
-                <span className="hig-caption2 text-muted-foreground truncate">
+                <span className="hig-caption-2 text-muted-foreground truncate">
                   {tenant.stripeAccountStatus || "unknown"}
                 </span>
               </div>
             ) : (
-              <Badge variant="outline" className="text-muted-foreground hig-caption2">
+              <Badge variant="outline" className="text-muted-foreground hig-caption-2">
                 Not Connected
               </Badge>
             )}
@@ -450,17 +414,17 @@ export default function TenantDetailPage({ params }) {
             <div className="flex flex-col items-center gap-1 min-w-0">
               <Image className="h-4 w-4 text-muted-foreground" />
               <span className="truncate w-full">{tenant._count?.images || 0}</span>
-              <span className="hig-caption2 text-muted-foreground truncate w-full">Images</span>
+              <span className="hig-caption-2 text-muted-foreground truncate w-full">Images</span>
             </div>
             <div className="flex flex-col items-center gap-1 min-w-0">
               <Workflow className="h-4 w-4 text-muted-foreground" />
               <span className="truncate w-full">{tenant._count?.workflows || 0}</span>
-              <span className="hig-caption2 text-muted-foreground truncate w-full">Workflows</span>
+              <span className="hig-caption-2 text-muted-foreground truncate w-full">Workflows</span>
             </div>
             <div className="flex flex-col items-center gap-1 min-w-0">
               <Webhook className="h-4 w-4 text-muted-foreground" />
               <span className="truncate w-full">{tenant._count?.webhooks || 0}</span>
-              <span className="hig-caption2 text-muted-foreground truncate w-full">Webhooks</span>
+              <span className="hig-caption-2 text-muted-foreground truncate w-full">Webhooks</span>
             </div>
           </div>
         </CardContent>
@@ -483,7 +447,7 @@ export default function TenantDetailPage({ params }) {
       {/* IDs - collapsible or at bottom */}
       <Card>
         <CardContent className="p-3">
-          <div className="hig-caption2 text-muted-foreground space-y-1 min-w-0">
+          <div className="hig-caption-2 text-muted-foreground space-y-1 min-w-0">
             <div className="flex justify-between gap-2 min-w-0">
               <span className="shrink-0">Tenant ID:</span>
               <span className="font-mono truncate">{tenant.id}</span>

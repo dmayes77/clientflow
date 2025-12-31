@@ -73,7 +73,7 @@ export function InstallPrompt() {
   // iOS-specific install instructions
   if (isIOS) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4" style={{ animationDuration: 'var(--animation-duration)', animationTimingFunction: 'var(--animation-timing)' }}>
         <div className="bg-card border border-border rounded-xl shadow-xl p-4 max-w-md mx-auto">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -99,7 +99,7 @@ export function InstallPrompt() {
 
   // Chrome/Android install prompt
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4" style={{ animationDuration: 'var(--animation-duration)', animationTimingFunction: 'var(--animation-timing)' }}>
       <div className="bg-card border border-border rounded-xl shadow-xl p-4 max-w-md mx-auto">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">

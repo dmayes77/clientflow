@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { sendInvoiceEmail } from "@/lib/email";
+import { applyBookingStatusTag } from "@/lib/system-tags";
 
 // GET /api/public/[slug]/verify-payment - Verify Stripe Checkout session and return booking info
 export async function GET(request, { params }) {
@@ -136,6 +137,9 @@ export async function GET(request, { params }) {
           status: "confirmed", // Auto-confirm when paid
         },
       });
+
+      // Apply confirmed status tag
+      await applyBookingStatusTag(prisma, booking.id, tenant.id, "confirmed", { tenant });
 
       // If deposit, create invoice with Stripe Payment Link for remaining balance
       if (isDeposit && remainingBalance > 0) {

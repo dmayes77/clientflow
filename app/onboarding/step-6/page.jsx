@@ -161,7 +161,7 @@ export default function Step6Page() {
                   className="w-full h-11 pl-10 pr-3 hig-body border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-gray-700 placeholder:text-gray-400"
                 />
               </div>
-              <p className="hig-caption2 text-gray-400 mt-1">
+              <p className="hig-caption-2 text-gray-400 mt-1">
                 Leave empty for free
               </p>
             </div>

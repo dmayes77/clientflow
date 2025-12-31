@@ -154,7 +154,7 @@ const DropdownMenuLabel = React.forwardRef(
         "px-2 py-1 font-medium text-muted-foreground",
         "tablet:text-xs desktop:text-2xs",
         /* HIG caption-2 (mobile default) */
-        "text-[11px] tracking-[0.066px] leading-[13px]",
+        "text-[11px] tracking-[0.066px] leading-3.25",
         inset && "pl-8",
         className
       )}

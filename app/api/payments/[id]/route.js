@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedTenant } from "@/lib/auth";
 
 // GET /api/payments/[id] - Get payment details
 export async function GET(request, { params }) {
   try {
-    const { orgId } = await auth();
+    const { tenant, error, status } = await getAuthenticatedTenant(request);
     const { id } = await params;
 
-    if (!orgId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const tenant = await prisma.tenant.findUnique({
-      where: { clerkOrgId: orgId },
-      select: { id: true },
-    });
-
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+      return NextResponse.json({ error }, { status });
     }
 
     const payment = await prisma.payment.findFirst({
@@ -50,6 +41,23 @@ export async function GET(request, { params }) {
           },
           take: 1,
         },
+        invoices: {
+          select: {
+            invoice: {
+              select: {
+                id: true,
+                invoiceNumber: true,
+                total: true,
+                amountPaid: true,
+                balanceDue: true,
+                status: true,
+                contactName: true,
+              },
+            },
+            amountApplied: true,
+          },
+          take: 1,
+        },
       },
     });
 
@@ -59,6 +67,10 @@ export async function GET(request, { params }) {
 
     // Get first booking (Payment has many-to-many with Booking)
     const booking = payment.bookings?.[0] || null;
+
+    // Get first invoice (Payment has many-to-many with Invoice via InvoicePayment)
+    const invoicePayment = payment.invoices?.[0] || null;
+    const invoice = invoicePayment?.invoice || null;
 
     // Build service details
     let serviceDetails = [];
@@ -130,6 +142,18 @@ export async function GET(request, { params }) {
               status: booking.status,
               paymentStatus: booking.paymentStatus,
               notes: booking.notes,
+            }
+          : null,
+        invoice: invoice
+          ? {
+              id: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              total: invoice.total,
+              amountPaid: invoice.amountPaid,
+              balanceDue: invoice.balanceDue,
+              status: invoice.status,
+              contactName: invoice.contactName,
+              amountApplied: invoicePayment.amountApplied,
             }
           : null,
         serviceDetails,

@@ -119,16 +119,16 @@ function SortableRoadmapItem({ item, onEdit, onDelete }) {
             <div className="flex-1 min-w-0">
               <div className="font-medium hig-body">{item.title}</div>
               {item.description && (
-                <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
+                <p className="hig-caption-2 text-muted-foreground mt-0.5 line-clamp-2">
                   {item.description}
                 </p>
               )}
             </div>
           </div>
           <div className="flex items-center justify-between mt-2 ml-6">
-            <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+            <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
               {item.category && (
-                <Badge variant="outline" className="hig-caption2">{item.category}</Badge>
+                <Badge variant="outline" className="hig-caption-2">{item.category}</Badge>
               )}
               {item.targetDate && (
                 <span>Target: {formatDate(item.targetDate)}</span>
@@ -172,7 +172,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label className="hig-caption2">Title</Label>
+        <Label className="hig-caption-2">Title</Label>
         <Input
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -181,7 +181,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
         />
       </div>
       <div className="space-y-1">
-        <Label className="hig-caption2">Description</Label>
+        <Label className="hig-caption-2">Description</Label>
         <Textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -191,7 +191,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="hig-caption2">Status</Label>
+          <Label className="hig-caption-2">Status</Label>
           <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
             <SelectTrigger className="h-9">
               <SelectValue />
@@ -205,7 +205,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="hig-caption2">Category</Label>
+          <Label className="hig-caption-2">Category</Label>
           <Input
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -216,7 +216,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label className="hig-caption2">Priority</Label>
+          <Label className="hig-caption-2">Priority</Label>
           <Input
             type="number"
             value={form.priority}
@@ -225,7 +225,7 @@ function RoadmapEditor({ item, onSave, onCancel }) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="hig-caption2">Target Date</Label>
+          <Label className="hig-caption-2">Target Date</Label>
           <Input
             type="date"
             value={form.targetDate}
@@ -257,42 +257,42 @@ function ChangelogEntryCard({ entry }) {
             <div className="flex items-center gap-2">
               <div className="font-medium hig-body">{entry.title}</div>
               {entry.version && (
-                <Badge variant="outline" className="hig-caption2">v{entry.version}</Badge>
+                <Badge variant="outline" className="hig-caption-2">v{entry.version}</Badge>
               )}
             </div>
-            <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
+            <p className="hig-caption-2 text-muted-foreground mt-0.5 line-clamp-2">
               {entry.content ? entry.content.substring(0, 100) + "..." : "No description"}
             </p>
           </div>
           <div className="flex flex-col gap-1 shrink-0">
-            <Badge className={`hig-caption2 ${typeConfig.color}`}>
+            <Badge className={`hig-caption-2 ${typeConfig.color}`}>
               <TypeIcon className="h-2.5 w-2.5 mr-0.5" />
               {typeConfig.label}
             </Badge>
             {entry.published ? (
-              <Badge variant="outline" className="hig-caption2 text-green-600">
+              <Badge variant="outline" className="hig-caption-2 text-green-600">
                 <Eye className="h-2.5 w-2.5 mr-0.5" />
                 Published
               </Badge>
             ) : (
-              <Badge variant="outline" className="hig-caption2">Draft</Badge>
+              <Badge variant="outline" className="hig-caption-2">Draft</Badge>
             )}
           </div>
         </div>
         <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+          <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
             <span>
               {entry.publishedAt ? `Published ${formatDate(entry.publishedAt)}` : `Created ${formatDate(entry.createdAt)}`}
             </span>
             {entry.author && (
-              <Badge variant="outline" className="hig-caption2">@{entry.author}</Badge>
+              <Badge variant="outline" className="hig-caption-2">@{entry.author}</Badge>
             )}
           </div>
           {entry.htmlUrl && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 px-2 hig-caption2"
+              className="h-6 px-2 hig-caption-2"
               onClick={() => window.open(entry.htmlUrl, "_blank")}
             >
               <ExternalLink className="h-3 w-3 mr-1" />
@@ -443,7 +443,7 @@ export default function ContentManagementPage() {
             <Map className="h-4 w-4 mr-1" />
             Roadmap
             {roadmapCounts.planned > 0 && (
-              <Badge variant="secondary" className="ml-1 hig-caption2">
+              <Badge variant="secondary" className="ml-1 hig-caption-2">
                 {roadmapCounts.planned}
               </Badge>
             )}
@@ -452,7 +452,7 @@ export default function ContentManagementPage() {
             <FileText className="h-4 w-4 mr-1" />
             Changelog
             {changelogCounts.draft > 0 && (
-              <Badge variant="secondary" className="ml-1 hig-caption2">
+              <Badge variant="secondary" className="ml-1 hig-caption-2">
                 {changelogCounts.draft}
               </Badge>
             )}
@@ -470,7 +470,7 @@ export default function ContentManagementPage() {
                   <CardContent className="p-2 text-center">
                     <Icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
                     <div className="hig-title-2 font-bold">{roadmapCounts[status] || 0}</div>
-                    <div className="hig-caption2 text-muted-foreground">{config.label}</div>
+                    <div className="hig-caption-2 text-muted-foreground">{config.label}</div>
                   </CardContent>
                 </Card>
               );
@@ -505,13 +505,13 @@ export default function ContentManagementPage() {
                           <div className="flex-1 min-w-0">
                             <div className="hig-caption1 font-medium truncate">{item.title}</div>
                             {item.category && (
-                              <Badge variant="outline" className="hig-caption2 mt-0.5">
+                              <Badge variant="outline" className="hig-caption-2 mt-0.5">
                                 {item.category}
                               </Badge>
                             )}
                           </div>
                           {index === 0 && (
-                            <Badge className="bg-blue-600 hover:bg-blue-600 hig-caption2 shrink-0">
+                            <Badge className="bg-blue-600 hover:bg-blue-600 hig-caption-2 shrink-0">
                               Most Wanted
                             </Badge>
                           )}
@@ -589,11 +589,11 @@ export default function ContentManagementPage() {
                           <Icon className="h-3.5 w-3.5" />
                         </div>
                         <CardTitle className="hig-body">{config.label}</CardTitle>
-                        <Badge variant="outline" className="hig-caption2 ml-auto">
+                        <Badge variant="outline" className="hig-caption-2 ml-auto">
                           {statusItems.length}
                         </Badge>
                       </div>
-                      <CardDescription className="hig-caption2">
+                      <CardDescription className="hig-caption-2">
                         {allowReorder
                           ? "Sorted by votes. Drag to manually override priority."
                           : "Completed items sorted by votes"}
@@ -634,16 +634,16 @@ export default function ContentManagementPage() {
                                   <div className="flex-1 min-w-0">
                                     <div className="font-medium hig-body">{item.title}</div>
                                     {item.description && (
-                                      <p className="hig-caption2 text-muted-foreground mt-0.5 line-clamp-2">
+                                      <p className="hig-caption-2 text-muted-foreground mt-0.5 line-clamp-2">
                                         {item.description}
                                       </p>
                                     )}
                                   </div>
                                 </div>
                                 <div className="flex items-center mt-2">
-                                  <div className="flex items-center gap-2 hig-caption2 text-muted-foreground">
+                                  <div className="flex items-center gap-2 hig-caption-2 text-muted-foreground">
                                     {item.category && (
-                                      <Badge variant="outline" className="hig-caption2">{item.category}</Badge>
+                                      <Badge variant="outline" className="hig-caption-2">{item.category}</Badge>
                                     )}
                                     {item.targetDate && (
                                       <span>Target: {formatDate(item.targetDate)}</span>
@@ -675,7 +675,7 @@ export default function ContentManagementPage() {
                 <Sparkles className="h-4 w-4 text-blue-600 mt-0.5" />
                 <div className="min-w-0 flex-1">
                   <div className="hig-body font-medium text-blue-900">Powered by GitHub Releases</div>
-                  <p className="hig-caption2 text-blue-700 mt-0.5">
+                  <p className="hig-caption-2 text-blue-700 mt-0.5">
                     Changelog entries are automatically synced from your GitHub releases.
                     Create a new release on GitHub to add entries here.
                   </p>
@@ -689,19 +689,19 @@ export default function ContentManagementPage() {
             <Card>
               <CardContent className="p-2 text-center">
                 <div className="hig-title-2 font-bold">{changelogCounts.total || 0}</div>
-                <div className="hig-caption2 text-muted-foreground">Total</div>
+                <div className="hig-caption-2 text-muted-foreground">Total</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-2 text-center">
                 <div className="hig-title-2 font-bold text-green-600">{changelogCounts.published || 0}</div>
-                <div className="hig-caption2 text-muted-foreground">Published</div>
+                <div className="hig-caption-2 text-muted-foreground">Published</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-2 text-center">
                 <div className="hig-title-2 font-bold text-yellow-600">{changelogCounts.draft || 0}</div>
-                <div className="hig-caption2 text-muted-foreground">Drafts</div>
+                <div className="hig-caption-2 text-muted-foreground">Drafts</div>
               </CardContent>
             </Card>
           </div>

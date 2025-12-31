@@ -93,6 +93,7 @@ export function SaveButton({
   className,
   variant = "default",
   loadingText = "Saving...",
+  formId,
 }) {
   const status = saveButton?.status || "idle";
 
@@ -101,9 +102,10 @@ export function SaveButton({
       {([canSubmit, isSubmitting]) => (
         <button
           type="submit"
+          form={formId}
           disabled={!canSubmit || isSubmitting || status === "success"}
           className={cn(
-            "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200",
+            "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all transition-smooth",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             "disabled:pointer-events-none disabled:opacity-50",
             "h-9 px-4 py-2",
@@ -213,7 +215,7 @@ export function StandaloneSaveButton({
       onClick={handleClick}
       disabled={isDisabled}
       className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200",
+        "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all transition-smooth",
         "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
         "disabled:pointer-events-none disabled:opacity-50",
         "h-9 px-4 py-2",

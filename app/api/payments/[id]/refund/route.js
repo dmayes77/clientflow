@@ -1,25 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { getAuthenticatedTenant } from "@/lib/auth";
 
 // POST /api/payments/[id]/refund - Process refund for a payment
 export async function POST(request, { params }) {
   try {
-    const { orgId } = await auth();
+    const { tenant, error, status } = await getAuthenticatedTenant(request);
     const { id } = await params;
 
-    if (!orgId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const tenant = await prisma.tenant.findUnique({
-      where: { clerkOrgId: orgId },
-      select: { id: true, stripeAccountId: true },
-    });
-
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+      return NextResponse.json({ error }, { status });
     }
 
     // Parse request body
@@ -36,14 +27,14 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Invalid refund amount" }, { status: 400 });
     }
 
-    // Get the payment
+    // Get the payment with associated bookings
     const payment = await prisma.payment.findFirst({
       where: {
         id,
         tenantId: tenant.id,
       },
       include: {
-        booking: true,
+        bookings: true,
       },
     });
 
@@ -120,14 +111,18 @@ export async function POST(request, { params }) {
       },
     });
 
-    // Update booking payment status if applicable
-    if (payment.bookingId) {
-      await prisma.booking.update({
-        where: { id: payment.bookingId },
-        data: {
-          paymentStatus: isFullyRefunded ? "refunded" : "partial_refund",
-        },
-      });
+    // Update booking payment status if applicable (many-to-many relationship)
+    if (payment.bookings && payment.bookings.length > 0) {
+      await Promise.all(
+        payment.bookings.map((booking) =>
+          prisma.booking.update({
+            where: { id: booking.id },
+            data: {
+              paymentStatus: isFullyRefunded ? "refunded" : "partial_refund",
+            },
+          })
+        )
+      );
     }
 
     return NextResponse.json({

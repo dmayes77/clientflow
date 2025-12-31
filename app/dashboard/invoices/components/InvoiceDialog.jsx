@@ -51,7 +51,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Calendar, Send } from "lucide-react";
+import { Wrench, Package, Search, Percent, Plus, Minus, UserPlus, User, Loader2, Calendar, Send, CreditCard, CheckCircle } from "lucide-react";
 import {
   AddIcon,
   LoadingIcon,
@@ -756,7 +756,7 @@ export function InvoiceDialog({
                                   <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
                                     <Wrench className="mr-2 h-4 w-4 text-muted-foreground" />
                                     <span className="flex-1 truncate">{option.name}</span>
-                                    <span className="text-muted-foreground hig-caption2">${option.price.toFixed(2)}</span>
+                                    <span className="text-muted-foreground hig-caption-2">${option.price.toFixed(2)}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -767,7 +767,7 @@ export function InvoiceDialog({
                                   <CommandItem key={option.id} onSelect={() => handleServiceSelect(index, option)}>
                                     <Package className="mr-2 h-4 w-4 text-violet-500" />
                                     <span className="flex-1 truncate">{option.name}</span>
-                                    <span className="text-muted-foreground hig-caption2">${option.price.toFixed(2)}</span>
+                                    <span className="text-muted-foreground hig-caption-2">${option.price.toFixed(2)}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -795,7 +795,7 @@ export function InvoiceDialog({
                 </div>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1">
-                    <Label className="hig-caption2 text-muted-foreground">Qty</Label>
+                    <Label className="hig-caption-2 text-muted-foreground">Qty</Label>
                     <Input
                       type="number"
                       min="1"
@@ -804,7 +804,7 @@ export function InvoiceDialog({
                     />
                   </div>
                   <div className="flex-1">
-                    <Label className="hig-caption2 text-muted-foreground">{item.isDiscount ? "Discount" : "Price"}</Label>
+                    <Label className="hig-caption-2 text-muted-foreground">{item.isDiscount ? "Discount" : "Price"}</Label>
                     <div className="flex items-center">
                       {item.isDiscount && <Minus className="h-3 w-3 mr-1 text-red-600" />}
                       <Input
@@ -818,7 +818,7 @@ export function InvoiceDialog({
                     </div>
                   </div>
                   <div className="w-20 text-right">
-                    <Label className="hig-caption2 text-muted-foreground">Amount</Label>
+                    <Label className="hig-caption-2 text-muted-foreground">Amount</Label>
                     <p className={`font-medium py-2 ${item.isDiscount ? "text-red-600" : ""}`}>
                       {item.isDiscount ? "-" : ""}${Math.abs(item.amount || 0).toFixed(2)}
                     </p>

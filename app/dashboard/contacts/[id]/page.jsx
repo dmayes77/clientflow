@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useContact, useUpdateContact, useAddContactTag, useRemoveContactTag } from "@/lib/hooks/use-contacts";
-import { useServices } from "@/lib/hooks/use-services";
-import { usePackages } from "@/lib/hooks/use-packages";
 import { useTags, useCreateTag } from "@/lib/hooks/use-tags";
+import { useDeleteBooking } from "@/lib/hooks/use-bookings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +25,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DeleteContactDialog } from "../components/DeleteContactDialog";
+import { ActivityTimeline } from "../components/ActivityTimeline";
+import { ContactCustomFields } from "../components/ContactCustomFields";
 import {
   BackIcon,
   BookingIcon,
@@ -51,34 +52,14 @@ import {
   NextIcon,
   MoreIcon,
 } from "@/lib/icons";
+import { Flame, Sparkles } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
-import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
-
-function formatCurrency(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
-
-function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatDateTime(dateString) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { getTagColor, isLeadTag, isVIPTag } from "@/lib/utils/tag-colors";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatters";
+import { BookingStatusBadge, InvoiceStatusBadge } from "@/components/ui/status-badge";
+import { LoadingCard } from "@/components/ui/loading-card";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 function formatFullDateTime(dateString) {
   return (
@@ -98,32 +79,6 @@ function formatFullDateTime(dateString) {
   );
 }
 
-function BookingStatusBadge({ status }) {
-  const variantMap = {
-    inquiry: "info",
-    confirmed: "info",
-    scheduled: "info",
-    in_progress: "warning",
-    completed: "success",
-    cancelled: "destructive",
-  };
-
-  return <Badge variant={variantMap[status] || "secondary"}>{status.replace("_", " ").charAt(0).toUpperCase() + status.replace("_", " ").slice(1)}</Badge>;
-}
-
-function InvoiceStatusBadge({ status }) {
-  const variantMap = {
-    draft: "secondary",
-    sent: "info",
-    viewed: "info",
-    paid: "success",
-    overdue: "destructive",
-    cancelled: "secondary",
-  };
-
-  return <Badge variant={variantMap[status] || "secondary"}>{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
-}
-
 export default function ClientDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
@@ -132,12 +87,13 @@ export default function ClientDetailPage({ params }) {
   // TanStack Query hooks
   const { data: contactData, isLoading: loading, error } = useContact(id);
   const updateContactMutation = useUpdateContact();
-  const { data: services = [], isLoading: servicesLoading } = useServices();
-  const { data: packages = [], isLoading: packagesLoading } = usePackages();
-  const { data: allTags = [], isLoading: tagsLoading } = useTags();
+  const { data: allTagsRaw = [] } = useTags();
+  // Filter to only show contact and general type tags
+  const allTags = allTagsRaw.filter((tag) => tag.type === "contact" || tag.type === "general");
   const createTagMutation = useCreateTag();
   const addContactTagMutation = useAddContactTag();
   const removeContactTagMutation = useRemoveContactTag();
+  const deleteBookingMutation = useDeleteBooking();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
@@ -145,9 +101,6 @@ export default function ClientDetailPage({ params }) {
   const [hasChanges, setHasChanges] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
-  const [deletingBooking, setDeletingBooking] = useState(false);
-  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -157,7 +110,10 @@ export default function ClientDetailPage({ params }) {
     website: "",
     notes: "",
   });
+  const [errors, setErrors] = useState({});
   const [isMobile, setIsMobile] = useState(false);
+  const [unsavedChangesDialogOpen, setUnsavedChangesDialogOpen] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
 
   // Derived state from query data
   const client = contactData?.contact;
@@ -173,6 +129,20 @@ export default function ClientDetailPage({ params }) {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Warn user before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
 
   // Handle query error
   useEffect(() => {
@@ -198,22 +168,116 @@ export default function ClientDetailPage({ params }) {
     }
   }, [client]);
 
+  // Validation functions
+  const validateField = (field, value) => {
+    const newErrors = { ...errors };
+
+    switch (field) {
+      case "name":
+        if (!value || !value.trim()) {
+          newErrors.name = "Name is required";
+        } else {
+          delete newErrors.name;
+        }
+        break;
+
+      case "email":
+        if (!value || !value.trim()) {
+          newErrors.email = "Email is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          newErrors.email = "Please enter a valid email address";
+        } else {
+          delete newErrors.email;
+        }
+        break;
+
+      case "phone":
+        if (value && value.trim() && !/^[\d\s\-\(\)\+\.]+$/.test(value)) {
+          newErrors.phone = "Please enter a valid phone number";
+        } else {
+          delete newErrors.phone;
+        }
+        break;
+
+      case "website":
+        if (value && value.trim()) {
+          try {
+            // Allow URLs with or without protocol
+            const urlToTest = value.startsWith('http') ? value : `https://${value}`;
+            new URL(urlToTest);
+            delete newErrors.website;
+          } catch {
+            newErrors.website = "Please enter a valid URL";
+          }
+        } else {
+          delete newErrors.website;
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateAllFields = () => {
+    const fieldsToValidate = ["name", "email", "phone", "website"];
+    let isValid = true;
+
+    fieldsToValidate.forEach((field) => {
+      const fieldIsValid = validateField(field, formData[field]);
+      if (!fieldIsValid) {
+        isValid = false;
+      }
+    });
+
+    return isValid;
+  };
+
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
+    // Validate field on change
+    validateField(field, value);
   };
 
   const handleSave = async () => {
+    // Validate all fields before saving
+    if (!validateAllFields()) {
+      toast.error("Please fix validation errors before saving");
+      return;
+    }
+
     try {
       await updateContactMutation.mutateAsync({
         id,
         ...formData,
       });
       setHasChanges(false);
-      toast.success("Client saved successfully");
+      toast.success("Contact saved successfully");
     } catch (error) {
-      console.error("Error updating client:", error);
-      toast.error(error.message || "Failed to save client");
+      // Handle specific error cases
+      if (error.message?.includes("already exists")) {
+        // Duplicate error - highlight the field
+        if (error.message.includes("email")) {
+          setErrors({ ...errors, email: error.message });
+          toast.error(error.message);
+        } else if (error.message.includes("phone")) {
+          setErrors({ ...errors, phone: error.message });
+          toast.error(error.message);
+        } else {
+          toast.error(error.message);
+        }
+      } else if (error.message?.includes("Validation failed")) {
+        toast.error("Please check all required fields and try again");
+      } else if (error.message?.includes("not found")) {
+        toast.error("Contact not found. It may have been deleted.");
+        setTimeout(() => router.push("/dashboard/contacts"), 2000);
+      } else {
+        toast.error(error.message || "Failed to save contact. Please try again.");
+      }
     }
   };
 
@@ -224,7 +288,6 @@ export default function ClientDetailPage({ params }) {
       setTagPopoverOpen(false);
       toast.success(`Tag "${tag?.name || 'Tag'}" added`);
     } catch (error) {
-      console.error("Error adding tag:", error);
       toast.error(error.message || "Failed to add tag");
     }
   };
@@ -234,7 +297,6 @@ export default function ClientDetailPage({ params }) {
       await removeContactTagMutation.mutateAsync({ contactId: id, tagId });
       toast.success("Tag removed");
     } catch (error) {
-      console.error("Error removing tag:", error);
       toast.error(error.message || "Failed to remove tag");
     }
   };
@@ -246,7 +308,8 @@ export default function ClientDetailPage({ params }) {
       // First create the tag
       const newTag = await createTagMutation.mutateAsync({
         name: newTagName.trim(),
-        color: "blue"
+        color: "blue",
+        type: "contact",
       });
 
       // Then add the tag to the contact
@@ -259,74 +322,61 @@ export default function ClientDetailPage({ params }) {
       setTagPopoverOpen(false);
       toast.success(`Tag "${newTag.name}" created and added`);
     } catch (error) {
-      console.error("Error creating tag:", error);
       toast.error(error.message || "Failed to create tag");
     }
   };
 
   const handleDeleteBooking = async () => {
     try {
-      setDeletingBooking(true);
-      const response = await fetch(`/api/bookings/${bookingToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete booking");
-      }
-
+      await deleteBookingMutation.mutateAsync(bookingToDelete.id);
       // Invalidate contact query to refetch with updated bookings
       queryClient.invalidateQueries({ queryKey: ["contacts", id] });
       setDeleteBookingDialogOpen(false);
       setBookingToDelete(null);
       toast.success("Booking deleted");
     } catch (error) {
-      console.error("Error deleting booking:", error);
       toast.error("Failed to delete booking");
-    } finally {
-      setDeletingBooking(false);
     }
   };
 
-  const handleOpenInvoice = (invoice, e) => {
-    e.stopPropagation();
-    setSelectedInvoice(invoice);
-    setInvoiceDialogOpen(true);
+  // Navigation handlers with unsaved changes check
+  const handleNavigate = (path) => {
+    if (hasChanges) {
+      setPendingNavigation(() => () => router.push(path));
+      setUnsavedChangesDialogOpen(true);
+    } else {
+      router.push(path);
+    }
   };
 
-  const handleInvoiceSave = (savedInvoice) => {
-    // Invalidate contact query to refetch with updated invoices
-    queryClient.invalidateQueries({ queryKey: ["contacts", id] });
-    setInvoiceDialogOpen(false);
-    setSelectedInvoice(null);
+  const handleBack = () => {
+    if (hasChanges) {
+      setPendingNavigation(() => () => router.back());
+      setUnsavedChangesDialogOpen(true);
+    } else {
+      router.back();
+    }
+  };
+
+  const confirmNavigation = () => {
+    if (pendingNavigation) {
+      pendingNavigation();
+    }
+    setUnsavedChangesDialogOpen(false);
+    setPendingNavigation(null);
+    setHasChanges(false);
+  };
+
+  const cancelNavigation = () => {
+    setUnsavedChangesDialogOpen(false);
+    setPendingNavigation(null);
   };
 
   // Get tags that aren't already on this client
   const availableTags = allTags.filter((tag) => !clientTags.some((ct) => ct.id === tag.id));
 
-  // Get tag color class
-  const getTagColorClass = (color) => {
-    const colorMap = {
-      blue: "bg-blue-100 text-blue-800 border-blue-200",
-      green: "bg-green-100 text-green-800 border-green-200",
-      red: "bg-red-100 text-red-800 border-red-200",
-      yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      purple: "bg-purple-100 text-purple-800 border-purple-200",
-      pink: "bg-pink-100 text-pink-800 border-pink-200",
-      orange: "bg-orange-100 text-orange-800 border-orange-200",
-      teal: "bg-teal-100 text-teal-800 border-teal-200",
-      gray: "bg-gray-100 text-gray-800 border-gray-200",
-    };
-    return colorMap[color] || colorMap.blue;
-  };
-
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <LoadingIcon className="size-8 animate-spin text-muted-foreground" />
-        <p className="text-muted-foreground mt-2">Loading contact details...</p>
-      </div>
-    );
+    return <LoadingCard message="Loading contact details..." size="lg" card={false} className="min-h-100" />;
   }
 
   if (!client) {
@@ -336,18 +386,31 @@ export default function ClientDetailPage({ params }) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="space-y-3">
+      <div className="bg-card rounded-lg border p-4 space-y-3">
         {/* Top row - back button, name, status */}
         <div className="flex items-start gap-3">
-          <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={handleBack}>
             <BackIcon className="size-6" />
           </Button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="hig-title-2 truncate">{formData.name || "Unnamed"}</h1>
-              <Badge variant={client.status === "lead" ? "warning" : "info"}>
-                {client.status === "lead" ? "Lead" : "Contact"}
-              </Badge>
+              {clientTags.slice(0, 3).map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant="outline"
+                  className={`text-xs ${getTagColor(tag)}`}
+                >
+                  {isLeadTag(tag) && <Flame className="h-3 w-3 mr-1" />}
+                  {isVIPTag(tag) && <Sparkles className="h-3 w-3 mr-1" />}
+                  {tag.name}
+                </Badge>
+              ))}
+              {clientTags.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{clientTags.length - 3}
+                </Badge>
+              )}
             </div>
             <p className="hig-footnote text-muted-foreground">Added {formatFullDateTime(client.createdAt)}</p>
           </div>
@@ -359,15 +422,21 @@ export default function ClientDetailPage({ params }) {
 
         {/* Action buttons row */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant={hasChanges ? "default" : "outline"} onClick={handleSave} disabled={updateContactMutation.isPending || !hasChanges} className="flex-1 fold:flex-none">
+          <Button
+            size="sm"
+            variant={hasChanges ? "default" : "outline"}
+            onClick={handleSave}
+            disabled={updateContactMutation.isPending || !hasChanges || Object.keys(errors).length > 0}
+            className="flex-1 fold:flex-none"
+          >
             {updateContactMutation.isPending ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
             Save
           </Button>
-          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white flex-1 fold:flex-none" onClick={() => router.push(`/dashboard/bookings/new?clientId=${id}`)}>
+          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white flex-1 fold:flex-none" onClick={() => handleNavigate(`/dashboard/bookings/new?clientId=${id}`)}>
             <NewBookingIcon className="size-4 mr-1" />
             Book
           </Button>
-          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white flex-1 fold:flex-none" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
+          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white flex-1 fold:flex-none" onClick={() => handleNavigate(`/dashboard/invoices/new?clientId=${id}`)}>
             <NewInvoiceIcon className="size-4 mr-1" />
             Invoice
           </Button>
@@ -403,28 +472,47 @@ export default function ClientDetailPage({ params }) {
       )}
 
       {/* Two Column Form Layout */}
+      <div className="bg-card rounded-lg border p-6">
       <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
         {/* Left Column - Contact Info */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Customer Name</Label>
-            <Input id="name" value={formData.name} onChange={(e) => handleInputChange("name", e.target.value)} placeholder="Enter customer name" />
+            <Label htmlFor="name">Contact Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter contact name"
+              className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "name-error" : undefined}
+            />
+            {errors.name && <p id="name-error" className="text-sm text-red-500">{errors.name}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
             <div className="relative">
-              <Input id="phone" value={formData.phone} onChange={(e) => handleInputChange("phone", e.target.value)} placeholder="(555) 123-4567" className="pr-10" />
-              {formData.phone && (
-                <a href={`tel:${formData.phone}`} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-accent transition-colors">
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                placeholder="(555) 123-4567"
+                className={`pr-10 ${errors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "phone-error" : undefined}
+              />
+              {formData.phone && !errors.phone && (
+                <a href={`tel:${formData.phone}`} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-accent transition-colors" aria-label="Call this phone number">
                   <PhoneIcon className="size-4 text-blue-500" />
                 </a>
               )}
             </div>
+            {errors.phone && <p id="phone-error" className="text-sm text-red-500">{errors.phone}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <div className="relative">
               <Input
                 id="email"
@@ -432,14 +520,17 @@ export default function ClientDetailPage({ params }) {
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 placeholder="customer@example.com"
-                className="pr-10"
+                className={`pr-10 ${errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? "email-error" : undefined}
               />
-              {formData.email && (
-                <a href={`mailto:${formData.email}`} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-accent transition-colors">
+              {formData.email && !errors.email && (
+                <a href={`mailto:${formData.email}`} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded hover:bg-accent transition-colors" aria-label="Send email to this address">
                   <EmailIcon className="size-4 text-blue-500" />
                 </a>
               )}
             </div>
+            {errors.email && <p id="email-error" className="text-sm text-red-500">{errors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -449,7 +540,16 @@ export default function ClientDetailPage({ params }) {
 
           <div className="space-y-2">
             <Label htmlFor="website">Website</Label>
-            <Input id="website" value={formData.website} onChange={(e) => handleInputChange("website", e.target.value)} placeholder="https://example.com" />
+            <Input
+              id="website"
+              value={formData.website}
+              onChange={(e) => handleInputChange("website", e.target.value)}
+              placeholder="https://example.com"
+              className={errors.website ? "border-red-500 focus-visible:ring-red-500" : ""}
+              aria-invalid={!!errors.website}
+              aria-describedby={errors.website ? "website-error" : undefined}
+            />
+            {errors.website && <p id="website-error" className="text-sm text-red-500">{errors.website}</p>}
           </div>
 
           {/* Tags Section */}
@@ -457,15 +557,18 @@ export default function ClientDetailPage({ params }) {
             <Label>Tags</Label>
             <div className="flex flex-wrap gap-2">
               {clientTags.map((tag) => (
-                <span
+                <Badge
                   key={tag.id}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full hig-caption2 font-medium border ${getTagColorClass(tag.color)}`}
+                  variant="outline"
+                  className={`text-xs ${getTagColor(tag)} inline-flex items-center gap-1`}
                 >
+                  {isLeadTag(tag) && <Flame className="h-3 w-3" />}
+                  {isVIPTag(tag) && <Sparkles className="h-3 w-3" />}
                   {tag.name}
-                  <button onClick={() => handleRemoveTag(tag.id)} className="hover:opacity-70 transition-opacity">
+                  <button onClick={() => handleRemoveTag(tag.id)} className="ml-1 hover:opacity-70 transition-opacity">
                     <CloseIcon className="size-3" />
                   </button>
-                </span>
+                </Badge>
               ))}
               <Popover open={tagPopoverOpen} onOpenChange={setTagPopoverOpen}>
                 <PopoverTrigger asChild>
@@ -495,7 +598,7 @@ export default function ClientDetailPage({ params }) {
                         <CommandGroup heading="Available Tags">
                           {availableTags.map((tag) => (
                             <CommandItem key={tag.id} onSelect={() => handleAddTag(tag.id)} disabled={addingTag} className="cursor-pointer">
-                              <span className={`inline-block w-3 h-3 rounded-full mr-2 ${getTagColorClass(tag.color).split(" ")[0]}`} />
+                              <span className={`inline-block w-3 h-3 rounded-full mr-2 ${getTagColor(tag).split(" ")[0]}`} />
                               {tag.name}
                             </CommandItem>
                           ))}
@@ -588,6 +691,10 @@ export default function ClientDetailPage({ params }) {
           </div>
         </div>
       </div>
+      </div>
+
+      {/* Custom Fields */}
+      <ContactCustomFields contactId={id} />
 
       {/* Bookings Section */}
       <div className="bg-card rounded-lg border">
@@ -597,7 +704,7 @@ export default function ClientDetailPage({ params }) {
             Bookings
             <span className="text-muted-foreground font-normal">({client.bookings?.length || 0})</span>
           </div>
-          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => router.push(`/dashboard/bookings/new?clientId=${id}`)}>
+          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleNavigate(`/dashboard/bookings/new?clientId=${id}`)}>
             <AddIcon className="size-4" /> {!isMobile && "Add"}
           </Button>
         </div>
@@ -616,16 +723,16 @@ export default function ClientDetailPage({ params }) {
               <div
                 key={booking.id}
                 className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-accent/50 cursor-pointer transition-colors"
-                onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
+                onClick={() => handleNavigate(`/dashboard/bookings/${booking.id}`)}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <span className="font-medium truncate">
                       {booking.services?.[0]?.service?.name || booking.packages?.[0]?.package?.name || booking.service?.name || booking.package?.name || "—"}
                     </span>
-                    <span className="hig-caption2 font-semibold">{formatCurrency(booking.totalPrice)}</span>
+                    <span className="hig-caption-2 font-semibold">{formatCurrency(booking.totalPrice)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 hig-caption2 text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 hig-caption-2 text-muted-foreground">
                     <span>{formatDateTime(booking.scheduledAt)}</span>
                     <BookingStatusBadge status={booking.status} />
                   </div>
@@ -645,7 +752,7 @@ export default function ClientDetailPage({ params }) {
                     <TableHead>Service/Package</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Price</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
+                    <TableHead className="w-25">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -663,7 +770,7 @@ export default function ClientDetailPage({ params }) {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
+                            onClick={() => handleNavigate(`/dashboard/bookings/${booking.id}`)}
                           >
                             <EditIcon className="h-4 w-4" />
                           </Button>
@@ -697,7 +804,7 @@ export default function ClientDetailPage({ params }) {
             Invoices
             <span className="text-muted-foreground font-normal">({client.invoices?.length || 0})</span>
           </div>
-          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => router.push(`/dashboard/invoices/new?clientId=${id}`)}>
+          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => handleNavigate(`/dashboard/invoices/new?clientId=${id}`)}>
             <AddIcon className="size-4" /> {!isMobile && "Add"}
           </Button>
         </div>
@@ -715,23 +822,22 @@ export default function ClientDetailPage({ params }) {
             {client.invoices.map((invoice) => (
               <div
                 key={invoice.id}
-                className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-accent/50 transition-colors"
+                className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-accent/50 cursor-pointer transition-colors"
+                onClick={() => handleNavigate(`/dashboard/invoices/${invoice.id}`)}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <button
-                      onClick={(e) => handleOpenInvoice(invoice, e)}
-                      className="font-medium text-primary hover:underline cursor-pointer text-left"
-                    >
+                    <span className="font-medium text-primary">
                       {invoice.invoiceNumber}
-                    </button>
-                    <span className="hig-caption2 font-semibold">{formatCurrency(invoice.total)}</span>
+                    </span>
+                    <span className="hig-caption-2 font-semibold">{formatCurrency(invoice.total)}</span>
                   </div>
-                  <div className="flex items-center justify-between gap-2 hig-caption2 text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 hig-caption-2 text-muted-foreground">
                     <span>Due {formatDate(invoice.dueDate)}</span>
                     <InvoiceStatusBadge status={invoice.status} />
                   </div>
                 </div>
+                <NextIcon className="size-5 text-muted-foreground shrink-0" />
               </div>
             ))}
           </div>
@@ -751,14 +857,15 @@ export default function ClientDetailPage({ params }) {
                 </TableHeader>
                 <TableBody>
                   {client.invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
+                    <TableRow
+                      key={invoice.id}
+                      className="cursor-pointer hover:bg-accent/50"
+                      onClick={() => handleNavigate(`/dashboard/invoices/${invoice.id}`)}
+                    >
                       <TableCell>
-                        <button
-                          onClick={(e) => handleOpenInvoice(invoice, e)}
-                          className="font-medium text-primary hover:underline cursor-pointer text-left"
-                        >
+                        <span className="font-medium text-primary">
                           {invoice.invoiceNumber}
-                        </button>
+                        </span>
                       </TableCell>
                       <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                       <TableCell>{formatDate(invoice.dueDate)}</TableCell>
@@ -775,43 +882,41 @@ export default function ClientDetailPage({ params }) {
         )}
       </div>
 
+      {/* Activity Timeline */}
+      <ActivityTimeline contactId={id} />
+
       <DeleteContactDialog
         contact={client}
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
       />
 
-      {/* Delete Booking Confirmation Dialog */}
-      <AlertDialog open={deleteBookingDialogOpen} onOpenChange={setDeleteBookingDialogOpen}>
+      <DeleteConfirmationDialog
+        open={deleteBookingDialogOpen}
+        onOpenChange={setDeleteBookingDialogOpen}
+        itemType="booking"
+        itemName={bookingToDelete?.service?.name || bookingToDelete?.package?.name}
+        onConfirm={handleDeleteBooking}
+        isPending={deleteBookingMutation.isPending}
+      />
+
+      {/* Unsaved Changes Warning Dialog */}
+      <AlertDialog open={unsavedChangesDialogOpen} onOpenChange={setUnsavedChangesDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this booking
-              {bookingToDelete && ` for ${bookingToDelete.service?.name || bookingToDelete.package?.name || "this service"}`}?
-              This action cannot be undone.
+              You have unsaved changes. Are you sure you want to leave this page? Your changes will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteBooking} disabled={deletingBooking}>
-              {deletingBooking && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
-              Delete
+            <AlertDialogCancel onClick={cancelNavigation}>Stay on Page</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmNavigation} variant="destructive">
+              Leave Without Saving
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Invoice Dialog */}
-      <InvoiceDialog
-        open={invoiceDialogOpen}
-        onOpenChange={setInvoiceDialogOpen}
-        invoice={selectedInvoice}
-        contacts={client ? [client] : []}
-        services={services}
-        packages={packages}
-        onSave={handleInvoiceSave}
-      />
     </div>
   );
 }

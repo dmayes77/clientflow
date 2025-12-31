@@ -30,38 +30,8 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Suspense } from "react";
-
-const STATUS_CONFIG = {
-  active: { label: "Active", icon: CheckCircle2, color: "bg-green-100 text-green-700" },
-  trialing: { label: "Trial", icon: Clock, color: "bg-blue-100 text-blue-700" },
-  past_due: { label: "Past Due", icon: AlertTriangle, color: "bg-yellow-100 text-yellow-700" },
-  canceled: { label: "Canceled", icon: XCircle, color: "bg-red-100 text-red-700" },
-  incomplete: { label: "Incomplete", icon: AlertTriangle, color: "bg-orange-100 text-orange-700" },
-};
-
-function formatDate(date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function StatusBadge({ status, size = "default" }) {
-  const config = STATUS_CONFIG[status] || {
-    label: status || "None",
-    icon: XCircle,
-    color: "bg-zinc-100 text-zinc-600"
-  };
-  const Icon = config.icon;
-
-  return (
-    <Badge className={`${config.color} ${size === "sm" ? "hig-caption2 px-1.5 py-0" : ""}`}>
-      <Icon className={size === "sm" ? "h-2.5 w-2.5 mr-0.5" : "h-3 w-3 mr-1"} />
-      {config.label}
-    </Badge>
-  );
-}
+import { SubscriptionStatusBadge } from "@/components/ui/status-badge";
+import { formatDate } from "@/lib/formatters";
 
 function TenantCard({ tenant }) {
   return (
@@ -73,14 +43,14 @@ function TenantCard({ tenant }) {
               <div className="font-medium hig-body truncate">
                 {tenant.businessName || tenant.name || "Unnamed"}
               </div>
-              <div className="hig-caption2 text-muted-foreground truncate">
+              <div className="hig-caption-2 text-muted-foreground truncate">
                 {tenant.email}
               </div>
             </div>
-            <StatusBadge status={tenant.subscriptionStatus} size="sm" />
+            <SubscriptionStatusBadge status={tenant.subscriptionStatus} size="sm" />
           </div>
 
-          <div className="flex items-center gap-3 mt-2 hig-caption2 text-muted-foreground">
+          <div className="flex items-center gap-3 mt-2 hig-caption-2 text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {tenant._count?.bookings || 0}
@@ -212,7 +182,7 @@ function TenantsTableContent() {
       {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <div className="hig-caption2 text-muted-foreground">
+          <div className="hig-caption-2 text-muted-foreground">
             Page {pagination.page} of {pagination.totalPages}
           </div>
           <div className="flex gap-2">

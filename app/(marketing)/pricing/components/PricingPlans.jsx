@@ -5,15 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ArrowRight, Sparkles, Zap, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
-}
+import { formatWholeDollars } from "@/lib/formatters";
 
 // Plan tier icons based on position
 const tierIcons = [Zap, Sparkles, Crown];
@@ -93,7 +85,7 @@ function SinglePlanCard({ plan }) {
               <span className="text-muted-foreground">/month</span>
               {plan.priceYearly && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  or {formatPrice(plan.priceYearly)}/year
+                  or {formatWholeDollars(plan.priceYearly)}/year
                   <Badge variant="secondary" className="ml-2 text-xs">
                     Save {Math.round((1 - plan.priceYearly / (plan.priceMonthly * 12)) * 100)}%
                   </Badge>
@@ -235,7 +227,7 @@ function PlanCard({ plan, featured, icon: Icon, position, total }) {
             </div>
             {plan.priceYearly && (
               <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
-                <span>{formatPrice(plan.priceYearly)}/year</span>
+                <span>{formatWholeDollars(plan.priceYearly)}/year</span>
                 <Badge
                   variant="secondary"
                   className={cn(

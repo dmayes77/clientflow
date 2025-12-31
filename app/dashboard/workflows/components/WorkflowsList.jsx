@@ -61,6 +61,10 @@ import {
   Loader2,
   X,
   ChevronRight,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  DollarSign,
 } from "lucide-react";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import {
@@ -71,13 +75,19 @@ import {
   SwitchField,
   SubmitButton,
 } from "@/components/ui/tanstack-form";
+import { EmptyState } from "@/components/ui/empty-state";
 
 const TRIGGER_TYPES = [
   { value: "tag_added", label: "When tag is added", icon: Tag },
   { value: "tag_removed", label: "When tag is removed", icon: Tag },
   { value: "lead_created", label: "When lead is created", icon: UserCheck },
   { value: "booking_created", label: "When booking is created", icon: Play },
+  { value: "booking_scheduled", label: "When booking is scheduled", icon: Calendar },
+  { value: "booking_confirmed", label: "When booking is confirmed", icon: CheckCircle },
+  { value: "booking_cancelled", label: "When booking is cancelled", icon: XCircle },
   { value: "client_converted", label: "When lead converts to client", icon: ArrowRight },
+  { value: "payment_received", label: "When payment is received", icon: DollarSign },
+  { value: "invoice_paid", label: "When invoice is paid", icon: DollarSign },
 ];
 
 const ACTION_TYPES = [
@@ -295,21 +305,15 @@ export function WorkflowsList() {
           {workflows.length === 0 ? (
             <Card className="py-3 sm:py-4 md:py-6">
               <CardContent className="py-8 sm:py-12">
-                <div className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
-                  <div className="size-11 sm:size-14 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <Settings className="size-5.5 sm:size-7 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">No workflows yet</h3>
-                    <p className="text-muted-foreground mt-0.5 sm:mt-1 max-w-sm">
-                      Create workflows to automate actions. For example, send an email when a "hot-lead" tag is added.
-                    </p>
-                  </div>
-                  <Button size="sm" onClick={() => handleOpenDialog()} className="mt-1.5 sm:mt-2 h-8.5 sm:h-9">
-                    <Plus className="size-4 mr-1.5" />
-                    Create Your First Workflow
-                  </Button>
-                </div>
+                <EmptyState
+                  icon={Settings}
+                  iconColor="violet"
+                  title="No workflows yet"
+                  description="Create workflows to automate actions. For example, send an email when a &quot;hot-lead&quot; tag is added."
+                  actionLabel="Create Your First Workflow"
+                  actionIcon={<Plus className="size-4 mr-1.5" />}
+                  onAction={() => handleOpenDialog()}
+                />
               </CardContent>
             </Card>
           ) : isMobile ? (
@@ -348,7 +352,7 @@ export function WorkflowsList() {
                             <span className="text-muted-foreground truncate">
                               {TRIGGER_TYPES.find((t) => t.value === workflow.triggerType)?.label || workflow.triggerType}
                             </span>
-                            <span className="hig-caption2 text-muted-foreground shrink-0">
+                            <span className="hig-caption-2 text-muted-foreground shrink-0">
                               • {workflow.actions?.length || 0} action{(workflow.actions?.length || 0) !== 1 ? "s" : ""}
                             </span>
                           </div>
@@ -403,17 +407,19 @@ export function WorkflowsList() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setWorkflowToDelete(workflow);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {!workflow.isSystem && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setWorkflowToDelete(workflow);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -421,10 +427,15 @@ export function WorkflowsList() {
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="hig-caption2 text-muted-foreground">Trigger:</span>
+                        <span className="hig-caption-2 text-muted-foreground">Trigger:</span>
                         <Badge variant="secondary">
                           {TRIGGER_TYPES.find((t) => t.value === workflow.triggerType)?.label || workflow.triggerType}
                         </Badge>
+                        {workflow.isSystem && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            System
+                          </Badge>
+                        )}
                         {workflow.triggerTag && (
                           <Badge className="bg-indigo-100 text-indigo-700">
                             {workflow.triggerTag.name}
@@ -433,13 +444,13 @@ export function WorkflowsList() {
                       </div>
                       <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex items-center gap-1.5">
-                          <span className="hig-caption2 text-muted-foreground">Actions:</span>
+                          <span className="hig-caption-2 text-muted-foreground">Actions:</span>
                           <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">
                             {workflow.actions?.length || 0}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="hig-caption2 text-muted-foreground">Runs:</span>
+                          <span className="hig-caption-2 text-muted-foreground">Runs:</span>
                           <Badge variant="secondary">
                             {workflow._count?.runs || 0}
                           </Badge>
@@ -515,7 +526,7 @@ export function WorkflowsList() {
                   className={cn(errors.name && "border-red-500")}
                 />
                 {errors.name && (
-                  <p className="hig-caption2 text-red-500">{errors.name}</p>
+                  <p className="hig-caption-2 text-red-500">{errors.name}</p>
                 )}
               </div>
 
@@ -535,7 +546,7 @@ export function WorkflowsList() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-background px-2 hig-caption2 text-muted-foreground uppercase">Trigger</span>
+                  <span className="bg-background px-2 hig-caption-2 text-muted-foreground uppercase">Trigger</span>
                 </div>
               </div>
 
@@ -579,7 +590,7 @@ export function WorkflowsList() {
                     </SelectContent>
                   </Select>
                   {errors.triggerTagId && (
-                    <p className="hig-caption2 text-red-500">{errors.triggerTagId}</p>
+                    <p className="hig-caption-2 text-red-500">{errors.triggerTagId}</p>
                   )}
                 </div>
               )}
@@ -593,7 +604,7 @@ export function WorkflowsList() {
                   value={formData.delayMinutes}
                   onChange={(e) => setFormData({ ...formData, delayMinutes: e.target.value })}
                 />
-                <p className="hig-caption2 text-muted-foreground">Wait this many minutes before executing</p>
+                <p className="hig-caption-2 text-muted-foreground">Wait this many minutes before executing</p>
               </div>
 
               <div className="relative">
@@ -601,7 +612,7 @@ export function WorkflowsList() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-background px-2 hig-caption2 text-muted-foreground uppercase">Actions</span>
+                  <span className="bg-background px-2 hig-caption-2 text-muted-foreground uppercase">Actions</span>
                 </div>
               </div>
 
@@ -652,7 +663,7 @@ export function WorkflowsList() {
                                     <p className="text-muted-foreground">No templates found</p>
                                     <a
                                       href="/dashboard/email-templates"
-                                      className="hig-caption2 text-primary hover:underline"
+                                      className="hig-caption-2 text-primary hover:underline"
                                     >
                                       Create one
                                     </a>
@@ -667,7 +678,7 @@ export function WorkflowsList() {
                               </SelectContent>
                             </Select>
                             {action.config.templateId && (
-                              <p className="hig-caption2 text-muted-foreground">
+                              <p className="hig-caption-2 text-muted-foreground">
                                 Subject: {emailTemplates.find((t) => t.id === action.config.templateId)?.subject}
                               </p>
                             )}
@@ -753,7 +764,7 @@ export function WorkflowsList() {
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Active</Label>
-                  <p className="hig-caption2 text-muted-foreground">Enable or disable this workflow</p>
+                  <p className="hig-caption-2 text-muted-foreground">Enable or disable this workflow</p>
                 </div>
                 <Switch
                   checked={formData.active}

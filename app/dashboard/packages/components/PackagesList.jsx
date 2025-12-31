@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useState, Fragment, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useTanstackForm } from "@/components/ui/tanstack-form";
 import { toast } from "sonner";
-import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useServices } from "@/lib/hooks";
+import { usePackages, useCreatePackage, useUpdatePackage, useDeletePackage, useReorderPackages, useServices } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,32 +39,240 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar } from "lucide-react";
+import { Boxes, Plus, MoreHorizontal, Pencil, Trash2, Loader2, Calendar, Package, ChevronDown, ChevronRight, Search, GripVertical } from "lucide-react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { formatCurrency } from "@/lib/formatters";
+import { LoadingCard } from "@/components/ui/loading-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
-const formatPrice = (cents) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-};
+// Package Card Component
+function PackageCard({ package: pkg, onDelete }) {
+  const router = useRouter();
+
+  return (
+    <div
+      className="border rounded-lg overflow-hidden cursor-pointer transition-colors hover:bg-accent/50"
+      onClick={() => router.push(`/dashboard/packages/${pkg.id}`)}
+    >
+      {/* Image Header */}
+      <div className="relative h-32 w-full bg-muted">
+        <Image
+          src={pkg.images?.[0]?.url || "/default_img.webp"}
+          alt={pkg.name}
+          fill
+          sizes="(max-width: 640px) 100vw, 640px"
+          className="object-cover"
+        />
+        {/* Status Badge Overlay */}
+        <div className="absolute top-2 right-2">
+          <Badge variant={pkg.active ? "success" : "secondary"}>
+            {pkg.active ? "Public" : "Hidden"}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-3">
+        {/* Title */}
+        <div className="mb-2">
+          <h3 className="font-semibold text-base mb-1">{pkg.name}</h3>
+        </div>
+
+        {/* Description */}
+        {pkg.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {pkg.description}
+          </p>
+        )}
+
+        {/* Services Included */}
+        {pkg.services && pkg.services.length > 0 && (
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
+            <Package className="h-4 w-4 text-blue-600 shrink-0" />
+            <span>{pkg.services.length} service{pkg.services.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <span className="text-muted-foreground">Price:</span>
+            <span>{formatCurrency(pkg.price)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span>{pkg.bookingCount || 0} booking{pkg.bookingCount !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/dashboard/packages/${pkg.id}`);
+            }}
+            aria-label={`Edit ${pkg.name}`}
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            Edit
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="outline" size="sm" aria-label="More actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(pkg);
+                }}
+                className="text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Sortable Package Card Component (for drag-drop)
+function SortablePackageCard({ package: pkg, onDelete }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: pkg.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const router = useRouter();
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      {/* Drag Handle - Mobile First, always visible */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-2 top-2 z-10 touch-none cursor-grab active:cursor-grabbing bg-background/90 backdrop-blur-sm rounded-md p-1.5 border shadow-sm hover:bg-accent transition-colors"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Package Card */}
+      <div className="pl-8">
+        <PackageCard
+          package={pkg}
+          onDelete={onDelete}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Virtualized Package List Component
+function VirtualizedPackageList({ packages, onDelete }) {
+  const parentRef = useRef(null);
+
+  const virtualizer = useVirtualizer({
+    count: packages.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 280, // Estimated height of PackageCard
+    overscan: 2,
+  });
+
+  return (
+    <div
+      ref={parentRef}
+      className="space-y-3"
+      style={{ maxHeight: '600px', overflow: 'auto' }}
+    >
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const pkg = packages[virtualItem.index];
+          return (
+            <div
+              key={pkg.id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              <PackageCard
+                package={pkg}
+                onDelete={onDelete}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function PackagesList() {
+  const router = useRouter();
+
   // TanStack Query hooks
   const { data: packages = [], isLoading: packagesLoading } = usePackages();
   const { data: services = [], isLoading: servicesLoading } = useServices();
   const createPackageMutation = useCreatePackage();
   const updatePackageMutation = useUpdatePackage();
   const deletePackageMutation = useDeletePackage();
+  const reorderPackages = useReorderPackages();
 
   const loading = packagesLoading || servicesLoading;
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Prevents accidental drags, mobile-friendly
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [packageToDelete, setPackageToDelete] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   // TanStack Form
-  const form = useForm({
+  const form = useTanstackForm({
     defaultValues: {
       name: "",
       description: "",
@@ -69,10 +280,10 @@ export function PackagesList() {
       active: true,
       serviceIds: [],
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: async (values) => {
       const payload = {
-        ...value,
-        price: Math.round(value.price * 100),
+        ...values.value,
+        price: Math.round(values.value.price * 100),
       };
 
       const mutation = editingPackage ? updatePackageMutation : createPackageMutation;
@@ -129,6 +340,92 @@ export function PackagesList() {
     });
   };
 
+  const handleDeletePackage = (pkg) => {
+    setPackageToDelete(pkg);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDragEnd = (event, categoryName) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    // Get the packages for this category
+    const categoryPackages = categoryName === 'uncategorized'
+      ? packagesByCategory.uncategorized
+      : packagesByCategory.categorized[categoryName];
+
+    const oldIndex = categoryPackages.findIndex((p) => p.id === active.id);
+    const newIndex = categoryPackages.findIndex((p) => p.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder the packages array
+    const reordered = arrayMove(categoryPackages, oldIndex, newIndex);
+
+    // Create updates array with new displayOrder values
+    const updates = reordered.map((pkg, index) => ({
+      id: pkg.id,
+      displayOrder: index,
+    }));
+
+    // Optimistically update the local state
+    // The query will be invalidated and refetched after mutation success
+    reorderPackages.mutate(updates, {
+      onError: (error) => {
+        toast.error(error.message || "Failed to reorder packages");
+      },
+    });
+  };
+
+  // Group packages by category
+  const groupedPackages = () => {
+    const filtered = packages.filter(pkg => {
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        pkg.name.toLowerCase().includes(query) ||
+        pkg.description?.toLowerCase().includes(query) ||
+        pkg.category?.name.toLowerCase().includes(query)
+      );
+    });
+
+    const groups = {
+      uncategorized: [],
+      categorized: {}
+    };
+
+    filtered.forEach(pkg => {
+      if (!pkg.category) {
+        groups.uncategorized.push(pkg);
+      } else {
+        const categoryName = pkg.category.name;
+        if (!groups.categorized[categoryName]) {
+          groups.categorized[categoryName] = [];
+        }
+        groups.categorized[categoryName].push(pkg);
+      }
+    });
+
+    return groups;
+  };
+
+  const toggleCategory = (categoryName) => {
+    setExpandedCategories(prev => {
+      const isCurrentlyExpanded = prev[categoryName];
+      // If closing current category, just close it
+      if (isCurrentlyExpanded) {
+        return { [categoryName]: false };
+      }
+      // If opening a category, close all others and open this one
+      return { [categoryName]: true };
+    });
+  };
+
+  const packagesByCategory = groupedPackages();
+  const totalFilteredPackages = packagesByCategory.uncategorized.length +
+    Object.values(packagesByCategory.categorized).reduce((sum, pkgs) => sum + pkgs.length, 0);
+
   // Define columns for DataTable
   const columns = [
     {
@@ -181,7 +478,7 @@ export function PackagesList() {
         <DataTableColumnHeader column={column} title="Price" />
       ),
       cell: ({ row }) => (
-        <span className="font-medium">{formatPrice(row.original.price)}</span>
+        <span className="font-medium">{formatCurrency(row.original.price)}</span>
       ),
     },
     {
@@ -202,8 +499,8 @@ export function PackagesList() {
         <DataTableColumnHeader column={column} title="Status" />
       ),
       cell: ({ row }) => (
-        <Badge variant={row.original.active ? "default" : "secondary"}>
-          {row.original.active ? "Active" : "Inactive"}
+        <Badge variant={row.original.active ? "success" : "secondary"}>
+          {row.original.active ? "Public" : "Hidden"}
         </Badge>
       ),
     },
@@ -242,13 +539,7 @@ export function PackagesList() {
   ];
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <LoadingCard message="Loading packages..." />;
   }
 
   return (
@@ -271,34 +562,185 @@ export function PackagesList() {
         </CardHeader>
         <CardContent>
           {packages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-                <Boxes className="h-6 w-6 text-emerald-600" />
-              </div>
-              <h3 className="text-zinc-900 mb-1">No packages yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Bundle your services into packages for clients
-              </p>
-              <Button size="sm" onClick={() => handleOpenDialog()}>
-                <Plus className="h-4 w-4 mr-1" />
-                Create Package
-              </Button>
-            </div>
-          ) : (
-            <DataTable
-              columns={columns}
-              data={packages}
-              showSearch={false}
-              pageSize={10}
-              emptyMessage="No packages found."
+            <EmptyState
+              icon={Boxes}
+              iconColor="emerald"
+              title="No packages yet"
+              description="Bundle your services into packages for clients"
+              actionLabel="Create Package"
+              actionIcon={<Plus className="h-4 w-4 mr-1" />}
+              onAction={() => handleOpenDialog()}
             />
+          ) : (
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search packages..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              {/* Results count */}
+              {searchQuery && (
+                <p className="text-sm text-muted-foreground">
+                  {totalFilteredPackages} result{totalFilteredPackages !== 1 ? 's' : ''} found
+                </p>
+              )}
+
+              {totalFilteredPackages === 0 ? (
+                <EmptyState
+                  icon={Search}
+                  iconColor="gray"
+                  title="No packages found"
+                  description="Try adjusting your search"
+                />
+              ) : (
+                <div className="space-y-4">
+                  {/* Uncategorized Packages */}
+                  {packagesByCategory.uncategorized.length > 0 && (
+                    <>
+                      <div className="space-y-2">
+                        <button
+                          onClick={() => toggleCategory('uncategorized')}
+                          className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                          aria-label={`${expandedCategories['uncategorized'] ? 'Collapse' : 'Expand'} uncategorized packages`}
+                          aria-expanded={expandedCategories['uncategorized']}
+                        >
+                          <ChevronRight
+                            className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                              expandedCategories['uncategorized'] ? 'rotate-90' : ''
+                            }`}
+                          />
+                          <span className="font-medium">Uncategorized</span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {packagesByCategory.uncategorized.length}
+                          </Badge>
+                        </button>
+
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            expandedCategories['uncategorized']
+                              ? 'max-h-1250 opacity-100'
+                              : 'max-h-0 opacity-0'
+                          }`}
+                        >
+                          {expandedCategories['uncategorized'] && (
+                            packagesByCategory.uncategorized.length > 10 ? (
+                              <VirtualizedPackageList
+                                packages={packagesByCategory.uncategorized}
+                                onDelete={handleDeletePackage}
+                              />
+                            ) : (
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={(event) => handleDragEnd(event, 'uncategorized')}
+                              >
+                                <SortableContext
+                                  items={packagesByCategory.uncategorized.map((p) => p.id)}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <div className="space-y-3">
+                                    {packagesByCategory.uncategorized.map((pkg) => (
+                                      <SortablePackageCard
+                                        key={pkg.id}
+                                        package={pkg}
+                                        onDelete={handleDeletePackage}
+                                      />
+                                    ))}
+                                  </div>
+                                </SortableContext>
+                              </DndContext>
+                            )
+                          )}
+                        </div>
+                      </div>
+                      {Object.keys(packagesByCategory.categorized).length > 0 && (
+                        <div className="h-px bg-border" />
+                      )}
+                    </>
+                  )}
+
+                  {/* Categorized Packages */}
+                  {Object.entries(packagesByCategory.categorized)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([categoryName, categoryPackages], categoryIndex, array) => (
+                      <Fragment key={categoryName}>
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => toggleCategory(categoryName)}
+                            className="flex items-center gap-2 w-full p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                            aria-label={`${expandedCategories[categoryName] ? 'Collapse' : 'Expand'} ${categoryName} category`}
+                            aria-expanded={expandedCategories[categoryName]}
+                          >
+                            <ChevronRight
+                              className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                                expandedCategories[categoryName] ? 'rotate-90' : ''
+                              }`}
+                            />
+                            <span className="font-medium">{categoryName}</span>
+                            <Badge variant="secondary" className="ml-auto">
+                              {categoryPackages.length}
+                            </Badge>
+                          </button>
+
+                          <div
+                            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              expandedCategories[categoryName]
+                                ? 'max-h-1250 opacity-100'
+                                : 'max-h-0 opacity-0'
+                            }`}
+                          >
+                            {expandedCategories[categoryName] && (
+                              categoryPackages.length > 10 ? (
+                                <VirtualizedPackageList
+                                  packages={categoryPackages}
+                                  onDelete={handleDeletePackage}
+                                />
+                              ) : (
+                                <DndContext
+                                  sensors={sensors}
+                                  collisionDetection={closestCenter}
+                                  onDragEnd={(event) => handleDragEnd(event, categoryName)}
+                                >
+                                  <SortableContext
+                                    items={categoryPackages.map((p) => p.id)}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    <div className="space-y-3">
+                                      {categoryPackages.map((pkg) => (
+                                        <SortablePackageCard
+                                          key={pkg.id}
+                                          package={pkg}
+                                          onDelete={handleDeletePackage}
+                                        />
+                                      ))}
+                                    </div>
+                                  </SortableContext>
+                                </DndContext>
+                              )
+                            )}
+                          </div>
+                        </div>
+                        {categoryIndex < array.length - 1 && (
+                          <div className="h-px bg-border" />
+                        )}
+                      </Fragment>
+                    ))}
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Add/Edit Sheet */}
       <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-        <SheetContent className="sm:max-w-lg overflow-y-auto">
+        <SheetContent responsive side="right" className="sm:max-w-lg overflow-y-auto">
           <SheetHeader>
             <SheetTitle>
               {editingPackage ? "Edit Package" : "Create Package"}
@@ -335,7 +777,7 @@ export function PackagesList() {
                       onBlur={field.handleBlur}
                     />
                     {field.state.meta.isTouched && field.state.meta.errors[0] && (
-                      <p className="hig-caption2 text-destructive">{field.state.meta.errors[0]}</p>
+                      <p className="hig-caption-2 text-destructive">{field.state.meta.errors[0]}</p>
                     )}
                   </div>
                 )}
@@ -400,13 +842,13 @@ export function PackagesList() {
                               >
                                 {service.name}
                                 <span className="text-muted-foreground ml-2">
-                                  ({formatPrice(service.price)})
+                                  ({formatCurrency(service.price)})
                                 </span>
                               </label>
                             </div>
                           ))}
                         </div>
-                        <p className="hig-caption2 text-muted-foreground">
+                        <p className="hig-caption-2 text-muted-foreground">
                           {selectedIds.length} service{selectedIds.length !== 1 ? "s" : ""} selected
                         </p>
                       </div>
@@ -419,9 +861,11 @@ export function PackagesList() {
                 {(field) => (
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                      <Label htmlFor={field.name} className="font-medium">Active</Label>
+                      <Label htmlFor={field.name} className="font-medium">
+                        {field.state.value ? "Public" : "Hidden"}
+                      </Label>
                       <p className="text-muted-foreground">
-                        Inactive packages won't appear in booking options
+                        Hidden packages won't appear on your booking page
                       </p>
                     </div>
                     <Switch
@@ -457,25 +901,14 @@ export function PackagesList() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Package</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{packageToDelete?.name}"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        itemType="package"
+        itemName={packageToDelete?.name}
+        onConfirm={handleDelete}
+        isPending={deletePackageMutation.isPending}
+      />
     </>
   );
 }

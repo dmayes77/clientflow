@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { Tag, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ALL_SYSTEM_TAGS } from "@/lib/system-tags";
 
 /**
  * TagFilter Component
@@ -53,11 +54,7 @@ export function TagFilter({
 
     // Exclude system tags if requested (status tags)
     if (excludeSystemTags) {
-      const systemTagNames = [
-        "Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled", // Invoice status
-        "Inquiry", "Confirmed", "Completed", "Cancelled", "No Show", // Booking status
-        "Lead", "Client", "Inactive", // Contact status
-      ];
+      const systemTagNames = ALL_SYSTEM_TAGS.map((t) => t.name);
       filtered = filtered.filter((tag) => !systemTagNames.includes(tag.name));
     }
 
@@ -120,7 +117,7 @@ export function TagFilter({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-75 p-0" align="start">
         <Command>
           <CommandInput placeholder="Search tags..." />
           <CommandList>

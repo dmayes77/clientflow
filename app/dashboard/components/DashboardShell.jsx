@@ -44,6 +44,8 @@ import {
   Briefcase,
   User,
   Bell,
+  Sliders,
+  BookOpen,
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
@@ -67,11 +69,13 @@ const accountItems = [
   { label: "Business", href: "/dashboard/settings/business", icon: Settings },
   { label: "Availability", href: "/dashboard/availability", icon: Clock },
   { label: "Coupons", href: "/dashboard/coupons", icon: Ticket },
+  { label: "Custom Fields", href: "/dashboard/settings/custom-fields", icon: Sliders },
   { label: "Billing", href: "/dashboard/settings/billing", icon: Receipt },
   { label: "Notifications", href: "/dashboard/settings/notifications", icon: Bell },
   { label: "Integrations", href: "/dashboard/integrations", icon: Workflow },
   { label: "API Keys", href: "/dashboard/settings", icon: Key },
   { label: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
+  { label: "How To", href: "/dashboard/how-to", icon: BookOpen },
 ];
 
 function SidebarNav({ businessName }) {
@@ -83,7 +87,9 @@ function SidebarNav({ businessName }) {
     return pathname.startsWith("/dashboard/settings") ||
       pathname.startsWith("/dashboard/availability") ||
       pathname.startsWith("/dashboard/webhooks") ||
-      pathname.startsWith("/dashboard/integrations")
+      pathname.startsWith("/dashboard/integrations") ||
+      pathname.startsWith("/dashboard/coupons") ||
+      pathname.startsWith("/dashboard/how-to")
       ? "account"
       : "business";
   };

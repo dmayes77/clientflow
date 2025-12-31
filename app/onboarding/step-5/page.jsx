@@ -180,7 +180,7 @@ export default function Step5Page() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <span className="hig-caption2 text-gray-400 shrink-0">–</span>
+                      <span className="hig-caption-2 text-gray-400 shrink-0">–</span>
                       <Select
                         value={day.endTime}
                         onValueChange={(v) =>

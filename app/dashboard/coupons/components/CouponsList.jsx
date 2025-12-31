@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useTanstackForm } from "@/components/ui/tanstack-form";
 import { toast } from "sonner";
 import { useCoupons, useCreateCoupon, useUpdateCoupon, useDeleteCoupon, useServices, usePackages } from "@/lib/hooks";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,7 +66,7 @@ export function CouponsList() {
   const [couponToDelete, setCouponToDelete] = useState(null);
 
   // TanStack Form
-  const form = useForm({
+  const form = useTanstackForm({
     defaultValues: {
       code: "",
       description: "",
@@ -80,7 +80,8 @@ export function CouponsList() {
       expiresAt: "",
       active: true,
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: async (values) => {
+      const { value } = values;
       // Prepare payload
       const payload = {
         code: value.code.toUpperCase(),

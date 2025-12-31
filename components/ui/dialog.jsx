@@ -34,7 +34,7 @@ const DialogContent = React.forwardRef(
         ref={ref}
         className={cn(
           // Mobile: bottom sheet style
-          "fixed inset-x-0 bottom-0 z-50 grid w-full gap-3 border-t border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-lg duration-200",
+          "fixed inset-x-0 bottom-0 z-50 grid w-full gap-3 border-t border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-lg",
           "rounded-t-xl",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
           // Desktop: centered modal

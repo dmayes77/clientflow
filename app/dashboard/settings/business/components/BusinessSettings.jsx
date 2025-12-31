@@ -217,7 +217,7 @@ export function BusinessSettings() {
                 System
               </Button>
             </div>
-            <p className="hig-caption2 text-muted-foreground mt-2">
+            <p className="hig-caption-2 text-muted-foreground mt-2">
               Choose your preferred color scheme or sync with your device settings
             </p>
           </div>
@@ -425,7 +425,7 @@ export function BusinessSettings() {
                   />
                   <span className="text-muted-foreground">%</span>
                 </div>
-                <p className="hig-caption2 text-muted-foreground">
+                <p className="hig-caption-2 text-muted-foreground">
                   This rate will be automatically applied to new invoices. You can change it per invoice as needed.
                 </p>
               </div>

@@ -18,13 +18,7 @@ import {
   Receipt,
   CreditCard,
 } from "lucide-react";
-
-function formatPrice(cents) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(cents / 100);
-}
+import { formatCurrency } from "@/lib/formatters";
 
 function formatTime(date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -174,18 +168,18 @@ function SuccessPageContent({ params }) {
                 <>
                   <div className="flex justify-between hig-body">
                     <span className="text-muted-foreground">Service Total</span>
-                    <span>{formatPrice(paymentData.serviceTotal)}</span>
+                    <span>{formatCurrency(paymentData.serviceTotal)}</span>
                   </div>
                   <div className="flex justify-between hig-body">
                     <span className="text-muted-foreground">Deposit Paid</span>
                     <span className="text-green-600 font-medium">
-                      {formatPrice(paymentData.amountPaid)}
+                      {formatCurrency(paymentData.amountPaid)}
                     </span>
                   </div>
                   <div className="flex justify-between hig-body pt-2 border-t">
                     <span className="font-medium">Balance Due</span>
                     <span className="font-bold text-orange-600">
-                      {formatPrice(remainingBalance)}
+                      {formatCurrency(remainingBalance)}
                     </span>
                   </div>
                 </>
@@ -193,7 +187,7 @@ function SuccessPageContent({ params }) {
                 <div className="flex justify-between">
                   <span className="font-medium">Amount Paid</span>
                   <span className="font-bold text-green-600">
-                    {formatPrice(paymentData.amountPaid)}
+                    {formatCurrency(paymentData.amountPaid)}
                   </span>
                 </div>
               )}
@@ -207,7 +201,7 @@ function SuccessPageContent({ params }) {
                 <DollarSign className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-orange-800 dark:text-orange-200">
-                    Balance Due: {formatPrice(remainingBalance)}
+                    Balance Due: {formatCurrency(remainingBalance)}
                   </p>
                   <p className="hig-body text-orange-700 dark:text-orange-300 mb-3">
                     Pay the remaining balance before your appointment.

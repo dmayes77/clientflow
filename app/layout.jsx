@@ -101,7 +101,7 @@ export default function RootLayout({ children }) {
         {/* Disable callout on long press */}
         <meta name="format-detection" content="telephone=no" />
       </head>
-      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`} suppressHydrationWarning>
         <ClerkProvider
           signInFallbackRedirectUrl="/dashboard"
           signUpFallbackRedirectUrl="/dashboard"

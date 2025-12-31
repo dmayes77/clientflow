@@ -27,7 +27,7 @@ function SettingRow({ label, description, children }) {
       <div className="min-w-0 flex-1">
         <div className="hig-body font-medium">{label}</div>
         {description && (
-          <p className="hig-caption2 text-muted-foreground mt-0.5">{description}</p>
+          <p className="hig-caption-2 text-muted-foreground mt-0.5">{description}</p>
         )}
       </div>
       <div className="shrink-0">{children}</div>
@@ -162,7 +162,7 @@ export default function SettingsPage() {
             <AlertTriangle className={`h-4 w-4 ${settings?.maintenanceMode ? "text-yellow-600" : ""}`} />
             Maintenance Mode
           </CardTitle>
-          <CardDescription className="hig-caption2">
+          <CardDescription className="hig-caption-2">
             Enable to show maintenance page to all visitors
           </CardDescription>
         </CardHeader>
@@ -181,7 +181,7 @@ export default function SettingsPage() {
           {settings?.maintenanceMode && (
             <div className="mt-3 space-y-3">
               <div className="space-y-1">
-                <Label className="hig-caption2">Maintenance Message</Label>
+                <Label className="hig-caption-2">Maintenance Message</Label>
                 <Textarea
                   value={settings?.maintenanceMessage || ""}
                   onChange={(e) => setSettings(prev => ({ ...prev, maintenanceMessage: e.target.value }))}
@@ -192,7 +192,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-1">
-                <Label className="hig-caption2">Expected End Time</Label>
+                <Label className="hig-caption-2">Expected End Time</Label>
                 <Input
                   type="datetime-local"
                   value={settings?.maintenanceEndTime
@@ -215,7 +215,7 @@ export default function SettingsPage() {
             <Shield className="h-4 w-4" />
             Feature Flags
           </CardTitle>
-          <CardDescription className="hig-caption2">
+          <CardDescription className="hig-caption-2">
             Enable or disable platform features
           </CardDescription>
         </CardHeader>
@@ -289,7 +289,7 @@ export default function SettingsPage() {
                 max={90}
                 className="w-16 h-8 hig-body"
               />
-              <span className="hig-caption2 text-muted-foreground">days</span>
+              <span className="hig-caption-2 text-muted-foreground">days</span>
             </div>
           </SettingRow>
           <SettingRow
@@ -316,7 +316,7 @@ export default function SettingsPage() {
         <CardContent>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="hig-caption2">Platform Name</Label>
+              <Label className="hig-caption-2">Platform Name</Label>
               <Input
                 value={settings?.platformName || "ClientFlow"}
                 onChange={(e) => setSettings(prev => ({ ...prev, platformName: e.target.value }))}
@@ -325,7 +325,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="hig-caption2">Support Email</Label>
+              <Label className="hig-caption-2">Support Email</Label>
               <Input
                 type="email"
                 value={settings?.supportEmail || ""}
@@ -336,7 +336,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label className="hig-caption2">Support URL</Label>
+              <Label className="hig-caption-2">Support URL</Label>
               <Input
                 type="url"
                 value={settings?.supportUrl || ""}
@@ -357,7 +357,7 @@ export default function SettingsPage() {
             <Users className="h-4 w-4" />
             Rate Limits
           </CardTitle>
-          <CardDescription className="hig-caption2">
+          <CardDescription className="hig-caption-2">
             Platform-wide limits and quotas
           </CardDescription>
         </CardHeader>
@@ -406,7 +406,7 @@ export default function SettingsPage() {
                 <Activity className="h-4 w-4" />
                 Clerk Diagnostics
               </CardTitle>
-              <CardDescription className="hig-caption2">
+              <CardDescription className="hig-caption-2">
                 Organization usage and limits
               </CardDescription>
             </div>
@@ -437,19 +437,19 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="hig-caption2 text-muted-foreground">Total Organizations</p>
+                  <p className="hig-caption-2 text-muted-foreground">Total Organizations</p>
                   <p className="hig-title-2 font-bold">{clerkData.totalCount}</p>
                 </div>
                 <div>
-                  <p className="hig-caption2 text-muted-foreground">Remaining</p>
+                  <p className="hig-caption-2 text-muted-foreground">Remaining</p>
                   <p className="hig-title-2 font-bold">{clerkData.remaining}</p>
                 </div>
                 <div>
-                  <p className="hig-caption2 text-muted-foreground">Plan Limit</p>
+                  <p className="hig-caption-2 text-muted-foreground">Plan Limit</p>
                   <p className="hig-title-2 font-bold">{clerkData.limit}</p>
                 </div>
                 <div>
-                  <p className="hig-caption2 text-muted-foreground">Usage</p>
+                  <p className="hig-caption-2 text-muted-foreground">Usage</p>
                   <p className="hig-title-2 font-bold">{clerkData.percentUsed}%</p>
                 </div>
               </div>
@@ -459,10 +459,10 @@ export default function SettingsPage() {
                   <div className="flex gap-2">
                     <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="hig-caption2 font-medium text-yellow-900 dark:text-yellow-100">
+                      <p className="hig-caption-2 font-medium text-yellow-900 dark:text-yellow-100">
                         {clerkData.percentUsed >= 100 ? "Organization Limit Reached" : "Approaching Organization Limit"}
                       </p>
-                      <p className="hig-caption2 text-yellow-800 dark:text-yellow-200 mt-1">
+                      <p className="hig-caption-2 text-yellow-800 dark:text-yellow-200 mt-1">
                         {clerkData.percentUsed >= 100
                           ? "You've reached the maximum number of organizations. Upgrade your Clerk plan to continue accepting signups."
                           : "You're approaching the maximum number of organizations. Consider upgrading your Clerk plan."
@@ -475,7 +475,7 @@ export default function SettingsPage() {
 
               {clerkData.organizations && clerkData.organizations.length > 0 && (
                 <details className="mt-3">
-                  <summary className="hig-caption2 text-muted-foreground cursor-pointer hover:text-foreground">
+                  <summary className="hig-caption-2 text-muted-foreground cursor-pointer hover:text-foreground">
                     View all organizations ({clerkData.organizations.length})
                   </summary>
                   <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
@@ -492,14 +492,14 @@ export default function SettingsPage() {
               )}
             </div>
           ) : (
-            <p className="hig-caption2 text-muted-foreground">No data available</p>
+            <p className="hig-caption-2 text-muted-foreground">No data available</p>
           )}
         </CardContent>
       </Card>
 
       {/* Last Updated */}
       {settings?.updatedAt && (
-        <p className="hig-caption2 text-muted-foreground text-center">
+        <p className="hig-caption-2 text-muted-foreground text-center">
           Last updated: {new Date(settings.updatedAt).toLocaleString()}
         </p>
       )}

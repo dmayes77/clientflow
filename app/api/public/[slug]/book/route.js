@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dispatchBookingCreated, dispatchContactCreated } from "@/lib/webhooks";
 import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
+import { applyBookingStatusTag } from "@/lib/system-tags";
 
 // POST /api/public/[slug]/book - Create a public booking
 export async function POST(request, { params }) {
@@ -30,6 +31,7 @@ export async function POST(request, { params }) {
       notes,
       totalDuration,
       totalPrice,
+      customFields, // Array of { fieldId/fieldKey, value }
     } = body;
 
     // Normalize to arrays for multi-selection support
@@ -236,7 +238,7 @@ export async function POST(request, { params }) {
           serviceId: primaryServiceId,
           packageId: primaryPackageId,
           scheduledAt: new Date(scheduledAt),
-          status: "inquiry",
+          status: "pending", // Awaiting payment or business confirmation
           notes: notes || null,
           totalPrice: finalPrice,
           duration: finalDuration,
@@ -254,6 +256,82 @@ export async function POST(request, { params }) {
         isNewContact: newContactFlag,
       };
     });
+
+    // Apply booking status tag (pending - awaiting payment or confirmation)
+    await applyBookingStatusTag(prisma, booking.id, tenant.id, "pending", { tenant });
+
+    // Save custom field values if provided
+    if (customFields && Array.isArray(customFields) && customFields.length > 0) {
+      try {
+        // Get active custom fields for this tenant
+        const activeFields = await prisma.customField.findMany({
+          where: {
+            tenantId: tenant.id,
+            active: true,
+          },
+          select: {
+            id: true,
+            key: true,
+            fieldType: true,
+          },
+        });
+
+        const fieldsByKey = activeFields.reduce((acc, f) => {
+          acc[f.key] = f;
+          return acc;
+        }, {});
+
+        const fieldsById = activeFields.reduce((acc, f) => {
+          acc[f.id] = f;
+          return acc;
+        }, {});
+
+        // Process and save custom field values
+        const valuesToUpsert = [];
+        for (const cf of customFields) {
+          const field = cf.fieldId ? fieldsById[cf.fieldId] : fieldsByKey[cf.fieldKey];
+          if (!field) continue;
+
+          let stringValue = "";
+          const value = cf.value;
+          if (value !== undefined && value !== null) {
+            if (Array.isArray(value)) {
+              stringValue = value.join(",");
+            } else if (typeof value === "boolean") {
+              stringValue = value ? "true" : "false";
+            } else {
+              stringValue = String(value);
+            }
+          }
+
+          valuesToUpsert.push({
+            contactId: contact.id,
+            fieldId: field.id,
+            value: stringValue,
+          });
+        }
+
+        if (valuesToUpsert.length > 0) {
+          await prisma.$transaction(
+            valuesToUpsert.map((v) =>
+              prisma.contactCustomFieldValue.upsert({
+                where: {
+                  contactId_fieldId: {
+                    contactId: v.contactId,
+                    fieldId: v.fieldId,
+                  },
+                },
+                update: { value: v.value },
+                create: v,
+              })
+            )
+          );
+        }
+      } catch (cfError) {
+        // Log but don't fail the booking for custom field errors
+        console.error("Error saving custom field values:", cfError);
+      }
+    }
 
     // Build service name for response
     const allNames = [

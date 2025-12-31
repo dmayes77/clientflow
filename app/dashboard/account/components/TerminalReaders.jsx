@@ -251,7 +251,7 @@ export function TerminalReaders({ isStripeConnected = false }) {
                         </div>
                         <div>
                           <p className="font-medium">{reader.label}</p>
-                          <p className="hig-caption2 text-muted-foreground">
+                          <p className="hig-caption-2 text-muted-foreground">
                             {formatDeviceType(reader.deviceType)}
                             {reader.serialNumber && ` · ${reader.serialNumber}`}
                           </p>
@@ -302,7 +302,7 @@ export function TerminalReaders({ isStripeConnected = false }) {
                 value={newReader.registrationCode}
                 onChange={(e) => setNewReader((prev) => ({ ...prev, registrationCode: e.target.value }))}
               />
-              <p className="hig-caption2 text-muted-foreground">
+              <p className="hig-caption-2 text-muted-foreground">
                 Find this code on your reader's display during setup
               </p>
             </div>
@@ -314,7 +314,7 @@ export function TerminalReaders({ isStripeConnected = false }) {
                 value={newReader.label}
                 onChange={(e) => setNewReader((prev) => ({ ...prev, label: e.target.value }))}
               />
-              <p className="hig-caption2 text-muted-foreground">
+              <p className="hig-caption-2 text-muted-foreground">
                 A name to identify this reader (e.g., "Front Desk", "Room 1")
               </p>
             </div>

@@ -55,7 +55,7 @@ export function TapToPayInfo() {
           <div>
             <div className="flex items-center gap-2">
               <CardTitle>Accept Payments on Your Phone</CardTitle>
-              <Badge variant="secondary" className="hig-caption2">Coming Soon</Badge>
+              <Badge variant="secondary" className="hig-caption-2">Coming Soon</Badge>
             </div>
             <CardDescription className="hig-caption-1">
               Turn your iPhone or Android into a payment terminal
@@ -144,7 +144,7 @@ export function TapToPayInfo() {
           </div>
         </div>
 
-        <div className="hig-caption2 text-muted-foreground text-center space-y-1">
+        <div className="hig-caption-2 text-muted-foreground text-center space-y-1">
           <p>
             Tap to Pay lets customers pay by tapping their card, Apple Pay, or Google Pay
             directly on your phone—no additional hardware needed.

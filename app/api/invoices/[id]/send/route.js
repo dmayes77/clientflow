@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
-import { renderToBuffer } from "@react-pdf/renderer";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedTenant } from "@/lib/auth";
-import { InvoiceDocument } from "@/lib/invoice-pdf";
-import { sendInvoiceEmail } from "@/lib/email";
 import { dispatchInvoiceSent } from "@/lib/webhooks";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
-// POST /api/invoices/[id]/send - Send invoice via email
+/**
+ * POST /api/invoices/[id]/send - Mark invoice as sent and trigger workflow
+ *
+ * This route:
+ * 1. Updates invoice status to "sent"
+ * 2. Triggers the "invoice_sent" workflow
+ *
+ * The workflow handles all actions:
+ * - Applying the "Sent" tag
+ * - Sending the invoice email
+ */
 export async function POST(request, { params }) {
   try {
     const { tenant, error, status } = await getAuthenticatedTenant(request);
@@ -17,14 +25,14 @@ export async function POST(request, { params }) {
 
     const { id } = await params;
 
-    // Get the invoice
+    // Get the invoice with contact
     const invoice = await prisma.invoice.findFirst({
       where: {
         id,
         tenantId: tenant.id,
       },
       include: {
-        client: true,
+        contact: true,
       },
     });
 
@@ -32,76 +40,19 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Get full tenant info for PDF
-    const fullTenant = await prisma.tenant.findUnique({
-      where: { id: tenant.id },
-      select: {
-        businessName: true,
-        businessAddress: true,
-        businessCity: true,
-        businessState: true,
-        businessZip: true,
-        businessCountry: true,
-        businessPhone: true,
-        email: true,
-        logoUrl: true,
-        slug: true,
-      },
-    });
-
-    // Generate PDF
-    const pdfBuffer = await renderToBuffer(
-      <InvoiceDocument invoice={invoice} tenant={fullTenant} />
-    );
-
-    // Build URLs
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://getclientflow.app";
-    const viewUrl = `${baseUrl}/invoice/${invoice.id}`;
-
-    // If invoice has Stripe checkout, use that. Otherwise, create a pay URL
-    let payUrl = null;
-    if (invoice.stripeCheckoutSessionId) {
-      // Existing checkout session
-      payUrl = viewUrl; // They can pay from the view page
-    } else if (fullTenant.slug) {
-      // Create a new checkout URL
-      payUrl = `${baseUrl}/pay/${fullTenant.slug}/${invoice.id}`;
-    }
-
-    // Send email with PDF attachment
-    const emailResult = await sendInvoiceEmail({
-      to: invoice.contactEmail,
-      contactName: invoice.contactName,
-      businessName: fullTenant.businessName,
-      invoiceNumber: invoice.invoiceNumber,
-      total: invoice.total,
-      currency: invoice.currency,
-      dueDate: invoice.dueDate,
-      viewUrl,
-      payUrl,
-      pdfAttachment: pdfBuffer,
-    });
-
-    if (!emailResult.success) {
-      return NextResponse.json(
-        { error: "Failed to send invoice email" },
-        { status: 500 }
-      );
-    }
-
-    // Update invoice status to sent
+    // Update invoice status to "sent"
     const updatedInvoice = await prisma.invoice.update({
       where: { id },
       data: {
-        status: invoice.status === "draft" ? "sent" : invoice.status,
+        status: "sent",
         sentAt: invoice.sentAt || new Date(),
       },
       include: {
-        client: true,
+        contact: true,
       },
     });
 
-    // Dispatch webhook
+    // Dispatch webhook (non-blocking)
     dispatchInvoiceSent(tenant.id, {
       id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
@@ -111,6 +62,15 @@ export async function POST(request, { params }) {
       dueDate: invoice.dueDate,
       status: updatedInvoice.status,
     }).catch((err) => console.error("Failed to dispatch invoice.sent webhook:", err));
+
+    // Trigger invoice_sent workflow (handles tag + email)
+    triggerWorkflows("invoice_sent", {
+      tenant,
+      invoice: updatedInvoice,
+      contact: updatedInvoice.contact,
+    }).catch((err) => {
+      console.error("Error triggering invoice_sent workflow:", err);
+    });
 
     return NextResponse.json({
       success: true,

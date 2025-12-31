@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { getAuthenticatedTenant } from "@/lib/auth";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
 const bulkAssignSchema = z.object({
   operation: z.enum(["assign", "remove"]),
@@ -59,28 +58,36 @@ export async function POST(request) {
         tagModel: prisma.contactTag,
         idField: "contactId",
         foreignKey: "contactId",
+        addTrigger: "tag_added",
+        removeTrigger: "tag_removed",
       },
       invoice: {
         model: prisma.invoice,
         tagModel: prisma.invoiceTag,
         idField: "invoiceId",
         foreignKey: "invoiceId",
+        addTrigger: "invoice_tag_added",
+        removeTrigger: "invoice_tag_removed",
       },
       booking: {
         model: prisma.booking,
         tagModel: prisma.bookingTag,
         idField: "bookingId",
         foreignKey: "bookingId",
+        addTrigger: "booking_tag_added",
+        removeTrigger: "booking_tag_removed",
       },
       payment: {
         model: prisma.payment,
         tagModel: prisma.paymentTag,
         idField: "paymentId",
         foreignKey: "paymentId",
+        addTrigger: "payment_tag_added",
+        removeTrigger: "payment_tag_removed",
       },
     };
 
-    const { model, tagModel, idField, foreignKey } = modelMap[entityType];
+    const { model, tagModel, idField, foreignKey, addTrigger, removeTrigger } = modelMap[entityType];
 
     // Verify all entities exist and belong to tenant
     const entities = await model.findMany({
@@ -116,6 +123,19 @@ export async function POST(request) {
         skipDuplicates: true, // Don't fail if tag already assigned
       });
 
+      // Trigger workflows for bulk tag addition (async, don't block response)
+      if (result.count > 0) {
+        triggerBulkWorkflows({
+          triggerType: addTrigger,
+          entityType,
+          entityIds,
+          tag,
+          tenant,
+        }).catch((err) => {
+          console.error(`Error triggering bulk ${addTrigger} workflows:`, err);
+        });
+      }
+
       return NextResponse.json({
         success: true,
         operation: "assign",
@@ -139,6 +159,19 @@ export async function POST(request) {
         },
       });
 
+      // Trigger workflows for bulk tag removal (async, don't block response)
+      if (result.count > 0) {
+        triggerBulkWorkflows({
+          triggerType: removeTrigger,
+          entityType,
+          entityIds,
+          tag,
+          tenant,
+        }).catch((err) => {
+          console.error(`Error triggering bulk ${removeTrigger} workflows:`, err);
+        });
+      }
+
       return NextResponse.json({
         success: true,
         operation: "remove",
@@ -159,5 +192,81 @@ export async function POST(request) {
       { error: "Failed to perform bulk operation" },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Trigger workflows for bulk tag operations
+ * Processes in batches to avoid overwhelming the system
+ */
+async function triggerBulkWorkflows({ triggerType, entityType, entityIds, tag, tenant }) {
+  const BATCH_SIZE = 10;
+
+  // Fetch full entities with related data for workflow context
+  let entities;
+  switch (entityType) {
+    case "contact":
+      entities = await prisma.contact.findMany({
+        where: { id: { in: entityIds } },
+      });
+      break;
+    case "invoice":
+      entities = await prisma.invoice.findMany({
+        where: { id: { in: entityIds } },
+        include: { contact: true },
+      });
+      break;
+    case "booking":
+      entities = await prisma.booking.findMany({
+        where: { id: { in: entityIds } },
+        include: { contact: true, service: true },
+      });
+      break;
+    case "payment":
+      entities = await prisma.payment.findMany({
+        where: { id: { in: entityIds } },
+        include: { contact: true, invoice: true },
+      });
+      break;
+    default:
+      return;
+  }
+
+  // Process in batches
+  for (let i = 0; i < entities.length; i += BATCH_SIZE) {
+    const batch = entities.slice(i, i + BATCH_SIZE);
+
+    // Trigger workflows for each entity in the batch
+    await Promise.all(
+      batch.map((entity) => {
+        const context = { tenant, tag };
+
+        switch (entityType) {
+          case "contact":
+            context.contact = entity;
+            break;
+          case "invoice":
+            context.invoice = entity;
+            context.contact = entity.contact;
+            break;
+          case "booking":
+            context.booking = entity;
+            context.contact = entity.contact;
+            break;
+          case "payment":
+            context.payment = entity;
+            context.contact = entity.contact;
+            context.invoice = entity.invoice;
+            break;
+        }
+
+        return triggerWorkflows(triggerType, context);
+      })
+    );
+
+    // Small delay between batches to prevent overwhelming the system
+    if (i + BATCH_SIZE < entities.length) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
   }
 }

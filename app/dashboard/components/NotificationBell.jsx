@@ -86,7 +86,7 @@ export function NotificationBell() {
         <Button variant="ghost" size="icon" className="relative h-8 w-8">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 hig-caption2 font-bold text-white">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 hig-caption-2 font-bold text-white">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -149,15 +149,15 @@ export function NotificationBell() {
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
-                      <p className="text-muted-foreground line-clamp-2 mt-0.5 hig-caption2">
+                      <p className="text-muted-foreground line-clamp-2 mt-0.5 hig-caption-2">
                         {alert.message}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-muted-foreground hig-caption2">
+                        <span className="text-muted-foreground hig-caption-2">
                           {formatTimeAgo(alert.createdAt)}
                         </span>
                         {alert.actionUrl && (
-                          <span className="flex items-center text-primary hig-caption2">
+                          <span className="flex items-center text-primary hig-caption-2">
                             <ExternalLink className="h-2.5 w-2.5 mr-0.5" />
                             {alert.actionLabel || "View"}
                           </span>

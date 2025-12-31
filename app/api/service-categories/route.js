@@ -6,7 +6,9 @@ import { z } from "zod";
 const createCategorySchema = z.object({
   name: z.string().min(1, "Name is required").max(50, "Name must be less than 50 characters"),
   description: z.string().max(500).optional().nullable(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format").optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format").optional().nullable(),
+  icon: z.string().max(50).optional().nullable(),
+  active: z.boolean().optional(),
 });
 
 // GET /api/service-categories - List all categories
@@ -28,7 +30,10 @@ export async function GET(request) {
           },
         },
       },
-      orderBy: { name: "asc" },
+      orderBy: [
+        { displayOrder: "asc" },
+        { name: "asc" },
+      ],
     });
 
     const categoriesWithCounts = categories.map((cat) => ({
@@ -64,7 +69,7 @@ export async function POST(request) {
       );
     }
 
-    const { name, description, color } = result.data;
+    const { name, description, color, icon, active } = result.data;
 
     // Check if category with same name already exists
     const existing = await prisma.serviceCategory.findFirst({
@@ -84,6 +89,8 @@ export async function POST(request) {
         name,
         description,
         color,
+        icon,
+        ...(active !== undefined && { active }),
       },
     });
 

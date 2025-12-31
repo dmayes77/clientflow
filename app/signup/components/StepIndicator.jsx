@@ -39,7 +39,7 @@ export function StepIndicator({ currentStep }) {
               {/* HIG caption-1 labels */}
               <span
                 className={cn(
-                  "mt-1.5 hig-caption-1 tablet:hig-caption2 hidden fold:block",
+                  "mt-1.5 hig-caption-1 tablet:hig-caption-2 hidden fold:block",
                   isActive && "text-blue-500 font-semibold",
                   isCompleted && "text-green-600 font-medium",
                   !isActive && !isCompleted && "text-gray-400"

@@ -106,7 +106,7 @@ export default function Step4Page() {
                 <Upload className="w-6 h-6 text-gray-400" />
               )}
             </div>
-            <p className="hig-caption2 text-gray-400 text-center mt-1.5">
+            <p className="hig-caption-2 text-gray-400 text-center mt-1.5">
               Logo (optional)
             </p>
           </div>
