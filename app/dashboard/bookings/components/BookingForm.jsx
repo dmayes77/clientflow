@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BottomActionBar, BottomActionBarSpacer } from "@/components/ui/bottom-action-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -664,6 +665,7 @@ export function BookingForm({
   }
 
   return (
+    <>
     <form
       onSubmit={(e) => {
         e.preventDefault();
@@ -673,36 +675,11 @@ export function BookingForm({
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-3 pb-4 border-b">
-          {/* Top row: Back button and actions */}
-          <div className="flex items-center justify-between">
+          {/* Top row: Back button */}
+          <div className="flex items-center">
             <Button type="button" variant="ghost" size="icon" onClick={() => router.back()} className="size-11 shrink-0">
               <ArrowLeft className="size-6" />
             </Button>
-            <div className="flex items-center gap-2">
-              <SaveButton
-                form={form}
-                saveButton={saveButton}
-                variant="success"
-                size="sm"
-                loadingText={isEditMode ? "Saving..." : "Creating..."}
-              >
-                {isEditMode ? "Save" : "Create"}
-              </SaveButton>
-              {isEditMode && booking && (
-                <Button type="button" variant="outline" size="sm" onClick={handleShare}>
-                  <Share2 className="size-4 mr-1" />
-                  Share
-                </Button>
-              )}
-              <Button type="button" variant="outline" size="sm" onClick={() => router.back()}>
-                Cancel
-              </Button>
-              {isEditMode && onDelete && (
-                <Button type="button" variant="ghost" size="icon" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={onDelete}>
-                  <Trash2 className="size-5" />
-                </Button>
-              )}
-            </div>
           </div>
           {/* Title row */}
           <div>
@@ -1490,7 +1467,46 @@ export function BookingForm({
           />
         </>
       )}
+
+      {/* Spacer for fixed footer */}
+      <BottomActionBarSpacer />
       </div>
     </form>
+
+    {/* Action Buttons - Fixed footer */}
+    <BottomActionBar
+      left={isEditMode && onDelete ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Delete</span>
+        </Button>
+      ) : null}
+    >
+      <Button type="button" variant="outline" size="sm" onClick={() => router.back()}>
+        Cancel
+      </Button>
+      {isEditMode && booking && (
+        <Button type="button" variant="outline" size="sm" onClick={handleShare}>
+          <Share2 className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Share</span>
+        </Button>
+      )}
+      <SaveButton
+        form={form}
+        saveButton={saveButton}
+        variant="success"
+        size="sm"
+        loadingText={isEditMode ? "Saving..." : "Creating..."}
+      >
+        {isEditMode ? "Save" : "Create"}
+      </SaveButton>
+    </BottomActionBar>
+    </>
   );
 }

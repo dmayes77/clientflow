@@ -60,6 +60,8 @@ import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatters";
 import { BookingStatusBadge, InvoiceStatusBadge } from "@/components/ui/status-badge";
 import { LoadingCard } from "@/components/ui/loading-card";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
+import { BottomActionBar, BottomActionBarSpacer } from "@/components/ui/bottom-action-bar";
+import { StatCard } from "@/components/ui/stat-card";
 
 function formatFullDateTime(dateString) {
   return (
@@ -384,9 +386,9 @@ export default function ClientDetailPage({ params }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-4">
       {/* Header */}
-      <div className="bg-card rounded-lg border p-4 space-y-3">
+      <div className="bg-card rounded-lg border p-4">
         {/* Top row - back button, name, status */}
         <div className="flex items-start gap-3">
           <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={handleBack}>
@@ -414,37 +416,6 @@ export default function ClientDetailPage({ params }) {
             </div>
             <p className="hig-footnote text-muted-foreground">Added {formatFullDateTime(client.createdAt)}</p>
           </div>
-          {/* Desktop delete button */}
-          <Button variant="ghost" size="icon" className="hidden tablet:flex text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0" onClick={() => setDeleteDialogOpen(true)}>
-            <DeleteIcon className="size-4" />
-          </Button>
-        </div>
-
-        {/* Action buttons row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            variant={hasChanges ? "default" : "outline"}
-            onClick={handleSave}
-            disabled={updateContactMutation.isPending || !hasChanges || Object.keys(errors).length > 0}
-            className="flex-1 fold:flex-none"
-          >
-            {updateContactMutation.isPending ? <LoadingIcon className="size-4 mr-1 animate-spin" /> : <SaveIcon className="size-4 mr-1" />}
-            Save
-          </Button>
-          <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white flex-1 fold:flex-none" onClick={() => handleNavigate(`/dashboard/bookings/new?clientId=${id}`)}>
-            <NewBookingIcon className="size-4 mr-1" />
-            Book
-          </Button>
-          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white flex-1 fold:flex-none" onClick={() => handleNavigate(`/dashboard/invoices/new?clientId=${id}`)}>
-            <NewInvoiceIcon className="size-4 mr-1" />
-            Invoice
-          </Button>
-          {/* Mobile delete button */}
-          <Button variant="outline" size="sm" className="tablet:hidden text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeleteDialogOpen(true)}>
-            <DeleteIcon className="size-4 mr-1" />
-            Delete
-          </Button>
         </div>
       </div>
 
@@ -452,22 +423,34 @@ export default function ClientDetailPage({ params }) {
       {/* Stats Summary - shown early on mobile for quick glance */}
       {stats && isMobile && (
         <div className="grid grid-cols-2 gap-3">
-          <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
-            <span className="block font-bold text-white">{stats.totalBookings}</span>
-            <span className="text-blue-100">Total Bookings</span>
-          </div>
-          <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
-            <span className="block font-bold text-white">{stats.completedBookings}</span>
-            <span className="text-green-100">Completed</span>
-          </div>
-          <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
-            <span className="block font-bold text-white">{stats.upcomingBookings}</span>
-            <span className="text-amber-100">Upcoming</span>
-          </div>
-          <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
-            <span className="block font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
-            <span className="text-teal-100">Total Spent</span>
-          </div>
+          <StatCard
+            title="Total Bookings"
+            value={stats.totalBookings}
+            variant="accent"
+            accentColor="blue"
+            icon={BookingIcon}
+          />
+          <StatCard
+            title="Completed"
+            value={stats.completedBookings}
+            variant="accent"
+            accentColor="green"
+            icon={SuccessIcon}
+          />
+          <StatCard
+            title="Upcoming"
+            value={stats.upcomingBookings}
+            variant="accent"
+            accentColor="amber"
+            icon={PendingIcon}
+          />
+          <StatCard
+            title="Total Spent"
+            value={formatCurrency(stats.totalSpent)}
+            variant="accent"
+            accentColor="teal"
+            icon={MoneyIcon}
+          />
         </div>
       )}
 
@@ -648,22 +631,34 @@ export default function ClientDetailPage({ params }) {
           {/* Stats Summary - desktop only (mobile shown above) */}
           {stats && !isMobile && (
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-xl bg-blue-600 dark:bg-blue-700">
-                <span className="block font-bold text-white">{stats.totalBookings}</span>
-                <span className="text-blue-100">Total Bookings</span>
-              </div>
-              <div className="p-4 rounded-xl bg-green-600 dark:bg-green-700">
-                <span className="block font-bold text-white">{stats.completedBookings}</span>
-                <span className="text-green-100">Completed</span>
-              </div>
-              <div className="p-4 rounded-xl bg-amber-500 dark:bg-amber-600">
-                <span className="block font-bold text-white">{stats.upcomingBookings}</span>
-                <span className="text-amber-100">Upcoming</span>
-              </div>
-              <div className="p-4 rounded-xl bg-teal-600 dark:bg-teal-700">
-                <span className="block font-bold text-white">{formatCurrency(stats.totalSpent)}</span>
-                <span className="text-teal-100">Total Spent</span>
-              </div>
+              <StatCard
+                title="Total Bookings"
+                value={stats.totalBookings}
+                variant="accent"
+                accentColor="blue"
+                icon={BookingIcon}
+              />
+              <StatCard
+                title="Completed"
+                value={stats.completedBookings}
+                variant="accent"
+                accentColor="green"
+                icon={SuccessIcon}
+              />
+              <StatCard
+                title="Upcoming"
+                value={stats.upcomingBookings}
+                variant="accent"
+                accentColor="amber"
+                icon={PendingIcon}
+              />
+              <StatCard
+                title="Total Spent"
+                value={formatCurrency(stats.totalSpent)}
+                variant="accent"
+                accentColor="teal"
+                icon={MoneyIcon}
+              />
             </div>
           )}
 
@@ -884,6 +879,42 @@ export default function ClientDetailPage({ params }) {
 
       {/* Activity Timeline */}
       <ActivityTimeline contactId={id} />
+
+      {/* Spacer for fixed footer */}
+      <BottomActionBarSpacer />
+
+      {/* Action Buttons - Fixed footer */}
+      <BottomActionBar
+        left={
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <DeleteIcon className="size-4 sm:mr-1" />
+            <span className="hidden sm:inline">Delete</span>
+          </Button>
+        }
+      >
+        <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-white" onClick={() => handleNavigate(`/dashboard/bookings/new?clientId=${id}`)}>
+          <NewBookingIcon className="size-4 sm:mr-1" />
+          <span className="hidden sm:inline">Book</span>
+        </Button>
+        <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => handleNavigate(`/dashboard/invoices/new?clientId=${id}`)}>
+          <NewInvoiceIcon className="size-4 sm:mr-1" />
+          <span className="hidden sm:inline">Invoice</span>
+        </Button>
+        <Button
+          size="sm"
+          variant={hasChanges ? "default" : "outline"}
+          onClick={handleSave}
+          disabled={updateContactMutation.isPending || !hasChanges || Object.keys(errors).length > 0}
+        >
+          {updateContactMutation.isPending ? <LoadingIcon className="size-4 sm:mr-1 animate-spin" /> : <SaveIcon className="size-4 sm:mr-1" />}
+          <span className="hidden sm:inline">Save</span>
+        </Button>
+      </BottomActionBar>
 
       <DeleteContactDialog
         contact={client}
