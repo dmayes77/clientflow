@@ -87,10 +87,16 @@ const STATUS_CONFIGS = {
 
   // Booking statuses
   booking: {
+    pending: {
+      label: "Pending",
+      color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400",
+      icon: Clock,
+    },
     inquiry: {
-      label: "Inquiry",
-      color: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
-      icon: Circle,
+      // Legacy - treat as pending for backwards compatibility
+      label: "Pending",
+      color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400",
+      icon: Clock,
     },
     scheduled: {
       label: "Scheduled",
@@ -144,6 +150,11 @@ const STATUS_CONFIGS = {
     cancelled: {
       label: "Cancelled",
       color: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+      icon: Ban,
+    },
+    void: {
+      label: "Void",
+      color: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400",
       icon: Ban,
     },
   },

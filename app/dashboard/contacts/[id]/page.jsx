@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useContact, useUpdateContact, useAddContactTag, useRemoveContactTag } from "@/lib/hooks/use-contacts";
-import { useServices } from "@/lib/hooks/use-services";
-import { usePackages } from "@/lib/hooks/use-packages";
 import { useTags, useCreateTag } from "@/lib/hooks/use-tags";
 import { useDeleteBooking } from "@/lib/hooks/use-bookings";
 import { Button } from "@/components/ui/button";
@@ -57,7 +55,6 @@ import {
 import { Flame, Sparkles } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
-import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
 import { getTagColor, isLeadTag, isVIPTag } from "@/lib/utils/tag-colors";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/formatters";
 import { BookingStatusBadge, InvoiceStatusBadge } from "@/components/ui/status-badge";
@@ -90,9 +87,9 @@ export default function ClientDetailPage({ params }) {
   // TanStack Query hooks
   const { data: contactData, isLoading: loading, error } = useContact(id);
   const updateContactMutation = useUpdateContact();
-  const { data: services = [], isLoading: servicesLoading } = useServices();
-  const { data: packages = [], isLoading: packagesLoading } = usePackages();
-  const { data: allTags = [], isLoading: tagsLoading } = useTags();
+  const { data: allTagsRaw = [] } = useTags();
+  // Filter to only show contact and general type tags
+  const allTags = allTagsRaw.filter((tag) => tag.type === "contact" || tag.type === "general");
   const createTagMutation = useCreateTag();
   const addContactTagMutation = useAddContactTag();
   const removeContactTagMutation = useRemoveContactTag();
@@ -104,8 +101,6 @@ export default function ClientDetailPage({ params }) {
   const [hasChanges, setHasChanges] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState(null);
   const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
-  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -313,7 +308,8 @@ export default function ClientDetailPage({ params }) {
       // First create the tag
       const newTag = await createTagMutation.mutateAsync({
         name: newTagName.trim(),
-        color: "blue"
+        color: "blue",
+        type: "contact",
       });
 
       // Then add the tag to the contact
@@ -341,19 +337,6 @@ export default function ClientDetailPage({ params }) {
     } catch (error) {
       toast.error("Failed to delete booking");
     }
-  };
-
-  const handleOpenInvoice = (invoice, e) => {
-    e.stopPropagation();
-    setSelectedInvoice(invoice);
-    setInvoiceDialogOpen(true);
-  };
-
-  const handleInvoiceSave = (savedInvoice) => {
-    // Invalidate contact query to refetch with updated invoices
-    queryClient.invalidateQueries({ queryKey: ["contacts", id] });
-    setInvoiceDialogOpen(false);
-    setSelectedInvoice(null);
   };
 
   // Navigation handlers with unsaved changes check
@@ -839,16 +822,14 @@ export default function ClientDetailPage({ params }) {
             {client.invoices.map((invoice) => (
               <div
                 key={invoice.id}
-                className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-accent/50 transition-colors"
+                className="flex items-center gap-3 p-4 border-b last:border-b-0 hover:bg-accent/50 cursor-pointer transition-colors"
+                onClick={() => handleNavigate(`/dashboard/invoices/${invoice.id}`)}
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <button
-                      onClick={(e) => handleOpenInvoice(invoice, e)}
-                      className="font-medium text-primary hover:underline cursor-pointer text-left"
-                    >
+                    <span className="font-medium text-primary">
                       {invoice.invoiceNumber}
-                    </button>
+                    </span>
                     <span className="hig-caption-2 font-semibold">{formatCurrency(invoice.total)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2 hig-caption-2 text-muted-foreground">
@@ -856,6 +837,7 @@ export default function ClientDetailPage({ params }) {
                     <InvoiceStatusBadge status={invoice.status} />
                   </div>
                 </div>
+                <NextIcon className="size-5 text-muted-foreground shrink-0" />
               </div>
             ))}
           </div>
@@ -875,14 +857,15 @@ export default function ClientDetailPage({ params }) {
                 </TableHeader>
                 <TableBody>
                   {client.invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
+                    <TableRow
+                      key={invoice.id}
+                      className="cursor-pointer hover:bg-accent/50"
+                      onClick={() => handleNavigate(`/dashboard/invoices/${invoice.id}`)}
+                    >
                       <TableCell>
-                        <button
-                          onClick={(e) => handleOpenInvoice(invoice, e)}
-                          className="font-medium text-primary hover:underline cursor-pointer text-left"
-                        >
+                        <span className="font-medium text-primary">
                           {invoice.invoiceNumber}
-                        </button>
+                        </span>
                       </TableCell>
                       <TableCell>{formatDate(invoice.issueDate)}</TableCell>
                       <TableCell>{formatDate(invoice.dueDate)}</TableCell>
@@ -915,18 +898,6 @@ export default function ClientDetailPage({ params }) {
         itemName={bookingToDelete?.service?.name || bookingToDelete?.package?.name}
         onConfirm={handleDeleteBooking}
         isPending={deleteBookingMutation.isPending}
-      />
-
-      {/* Invoice Dialog */}
-      <InvoiceDialog
-        open={invoiceDialogOpen}
-        onOpenChange={setInvoiceDialogOpen}
-        invoice={selectedInvoice}
-        contacts={client ? [client] : []}
-        bookings={client?.bookings || []}
-        services={services}
-        packages={packages}
-        onSave={handleInvoiceSave}
       />
 
       {/* Unsaved Changes Warning Dialog */}

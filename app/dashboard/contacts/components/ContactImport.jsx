@@ -23,7 +23,9 @@ export function ContactImport({ open, onOpenChange }) {
   const [importResults, setImportResults] = useState(null);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
 
-  const { data: allTags = [] } = useTags();
+  const { data: allTagsRaw = [] } = useTags();
+  // Filter to only show contact and general type tags
+  const allTags = allTagsRaw.filter((tag) => tag.type === "contact" || tag.type === "general");
   const importMutation = useImportContacts();
 
   const handleFileChange = (e) => {

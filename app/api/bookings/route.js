@@ -197,7 +197,7 @@ export async function POST(request) {
           serviceId: data.serviceId,
           packageId: data.packageId,
           scheduledAt: data.scheduledAt,
-          status: data.status || "inquiry",
+          status: data.status || "confirmed", // Default to confirmed when created by business owner
           notes: data.notes,
           totalPrice: data.totalPrice,
           duration: data.duration,
@@ -211,22 +211,20 @@ export async function POST(request) {
     });
 
     // Apply booking status tag
-    const bookingStatus = data.status || "inquiry";
+    const bookingStatus = data.status || "confirmed";
     await applyBookingStatusTag(prisma, booking.id, tenant.id, bookingStatus);
 
-    // Auto-tag contact based on booking status
-    if (bookingStatus === "inquiry" || bookingStatus === "scheduled") {
-      const tagName = bookingStatus === "inquiry" ? "Lead" : "Client";
-
-      // Find or create the tag using upsert to avoid race conditions
+    // Auto-tag contact as "Client" when booking is confirmed
+    if (bookingStatus === "confirmed" || bookingStatus === "completed") {
+      // Find or create the Client tag
       const tag = await prisma.tag.upsert({
-        where: { tenantId_name: { tenantId: tenant.id, name: tagName } },
+        where: { tenantId_name: { tenantId: tenant.id, name: "Client" } },
         update: {},
         create: {
           tenantId: tenant.id,
-          name: tagName,
+          name: "Client",
           type: "contact",
-          color: tagName === "Lead" ? "#f59e0b" : "#22c55e",
+          color: "#22c55e",
         },
       });
 

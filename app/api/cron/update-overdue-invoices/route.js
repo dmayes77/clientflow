@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { triggerWorkflows } from "@/lib/workflow-executor";
 
 /**
  * Cron job endpoint to automatically mark invoices as overdue
@@ -38,26 +39,30 @@ export async function GET(request) {
           { balanceDue: { gt: 0 } },
         ],
       },
-      select: {
-        id: true,
-        invoiceNumber: true,
-        dueDate: true,
-        status: true,
-        tenantId: true,
+      include: {
+        tenant: true,
+        contact: true,
       },
     });
 
     console.log(`[Cron] Found ${overdueInvoices.length} overdue invoices to update`);
 
-    // Update all overdue invoices to "overdue" status
-    const updatePromises = overdueInvoices.map((invoice) =>
-      prisma.invoice.update({
+    // Update all overdue invoices to "overdue" status and trigger workflows
+    for (const invoice of overdueInvoices) {
+      await prisma.invoice.update({
         where: { id: invoice.id },
         data: { status: "overdue" },
-      })
-    );
+      });
 
-    await Promise.all(updatePromises);
+      // Trigger invoice_overdue workflow (handles tag + email)
+      triggerWorkflows("invoice_overdue", {
+        tenant: invoice.tenant,
+        invoice,
+        contact: invoice.contact,
+      }).catch((err) => {
+        console.error(`[Cron] Error triggering invoice_overdue workflow for invoice ${invoice.invoiceNumber}:`, err);
+      });
+    }
 
     return NextResponse.json({
       success: true,

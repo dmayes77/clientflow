@@ -26,12 +26,13 @@ import {
   RefreshCw,
   AlertTriangle,
   Mail,
+  FileText,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { usePayment, useRefundPayment, useSendPaymentReceipt } from "@/lib/hooks";
+import { usePayment, useRefundPayment, useSendPaymentReceipt, useSyncPayment } from "@/lib/hooks";
 import { formatCurrency, formatDate } from "@/lib/formatters";
-import { PaymentStatusBadge, BookingStatusBadge } from "@/components/ui/status-badge";
+import { PaymentStatusBadge, BookingStatusBadge, InvoiceStatusBadge } from "@/components/ui/status-badge";
 import { LoadingCard } from "@/components/ui/loading-card";
 
 function formatFullDate(date) {
@@ -54,15 +55,23 @@ export default function PaymentDetailPage({ params }) {
   const { data, isLoading: loading } = usePayment(id);
   const refundMutation = useRefundPayment();
   const sendReceiptMutation = useSendPaymentReceipt();
+  const syncMutation = useSyncPayment();
 
-  const payment = data?.payment;
+  const rawPayment = data?.payment;
+  // Parse metadata if it's a string (stored as JSON in database)
+  const payment = rawPayment ? {
+    ...rawPayment,
+    metadata: typeof rawPayment.metadata === "string"
+      ? JSON.parse(rawPayment.metadata || "{}")
+      : (rawPayment.metadata || {}),
+  } : null;
 
   useEffect(() => {
-    if (payment) {
-      const refundable = payment.amount - (payment.refundedAmount || 0);
+    if (rawPayment) {
+      const refundable = rawPayment.amount - (rawPayment.refundedAmount || 0);
       setRefundAmount((refundable / 100).toFixed(2));
     }
-  }, [payment]);
+  }, [rawPayment]);
 
   const handleRefund = async () => {
     if (!refundAmount || parseFloat(refundAmount) <= 0) {
@@ -99,6 +108,21 @@ export default function PaymentDetailPage({ params }) {
       },
       onError: (error) => {
         toast.error(error.message || "Failed to send receipt");
+      },
+    });
+  };
+
+  const handleSync = () => {
+    syncMutation.mutate(id, {
+      onSuccess: (data) => {
+        if (data.changed) {
+          toast.success(data.message || "Payment synced from Stripe");
+        } else {
+          toast.info(data.message || "Payment is already in sync");
+        }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to sync payment");
       },
     });
   };
@@ -169,6 +193,24 @@ export default function PaymentDetailPage({ params }) {
                 Stripe
               </Button>
             </a>
+          )}
+          {payment.stripePaymentIntentId &&
+           !payment.stripePaymentIntentId.startsWith("offline_") &&
+           payment.stripeAccountId && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="flex-1 fold:flex-none"
+              onClick={handleSync}
+              disabled={syncMutation.isPending}
+            >
+              {syncMutation.isPending ? (
+                <Loader2 className="size-4 mr-1 animate-spin" />
+              ) : (
+                <RefreshCw className="size-4 mr-1" />
+              )}
+              Sync
+            </Button>
           )}
         </div>
       </div>
@@ -252,8 +294,25 @@ export default function PaymentDetailPage({ params }) {
                 <p className="hig-footnote text-muted-foreground">•••• {payment.cardLast4}</p>
               </div>
             </div>
+          ) : payment.metadata?.method ? (
+            <div className="flex items-center gap-3">
+              <div className="size-11 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Receipt className="size-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="hig-body font-medium capitalize">{payment.metadata.method.replace("_", " ")}</p>
+                <p className="hig-footnote text-muted-foreground">Offline payment</p>
+              </div>
+            </div>
           ) : (
             <p className="hig-body text-muted-foreground">Card details not available</p>
+          )}
+          {payment.metadata?.type && (
+            <div className="pt-2 border-t">
+              <p className="hig-footnote text-muted-foreground">
+                Source: <span className="capitalize">{payment.metadata.type.replace(/_/g, " ")}</span>
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -325,11 +384,57 @@ export default function PaymentDetailPage({ params }) {
         </div>
       )}
 
-      {/* Timestamps */}
+      {/* Invoice Details */}
+      {payment.invoice && (
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <FileText className="size-5 text-muted-foreground" />
+            <h3 className="hig-headline">Invoice</h3>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="hig-body font-medium">Invoice #{payment.invoice.invoiceNumber}</p>
+                {payment.invoice.contactName && (
+                  <p className="hig-footnote text-muted-foreground">{payment.invoice.contactName}</p>
+                )}
+              </div>
+              <InvoiceStatusBadge status={payment.invoice.status} size="sm" />
+            </div>
+
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex justify-between hig-body">
+                <span className="text-muted-foreground">Invoice Total</span>
+                <span>{formatCurrency(payment.invoice.total)}</span>
+              </div>
+              <div className="flex justify-between hig-body">
+                <span className="text-muted-foreground">Amount Applied</span>
+                <span className="text-green-600">{formatCurrency(payment.invoice.amountApplied)}</span>
+              </div>
+              {payment.invoice.balanceDue > 0 && (
+                <div className="flex justify-between hig-body">
+                  <span className="text-muted-foreground">Balance Due</span>
+                  <span className="text-orange-600">{formatCurrency(payment.invoice.balanceDue)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Link href={`/dashboard/invoices/${payment.invoice.id}`}>
+            <Button variant="outline" className="w-full">
+              View Invoice
+              <ExternalLink className="size-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Timestamps & Details */}
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Clock className="size-5 text-muted-foreground" />
-          <h3 className="hig-headline">Timestamps</h3>
+          <h3 className="hig-headline">Details</h3>
         </div>
         <div className="space-y-2">
           <div className="flex justify-between hig-body">
@@ -340,6 +445,24 @@ export default function PaymentDetailPage({ params }) {
             <div className="flex justify-between hig-body">
               <span className="text-muted-foreground">Captured</span>
               <span>{formatDate(payment.capturedAt)}</span>
+            </div>
+          )}
+          {payment.stripePaymentIntentId && (
+            <div className="flex justify-between hig-body">
+              <span className="text-muted-foreground">Payment Intent</span>
+              <span className="font-mono text-xs truncate max-w-48">{payment.stripePaymentIntentId}</span>
+            </div>
+          )}
+          {payment.stripeChargeId && (
+            <div className="flex justify-between hig-body">
+              <span className="text-muted-foreground">Charge ID</span>
+              <span className="font-mono text-xs truncate max-w-48">{payment.stripeChargeId}</span>
+            </div>
+          )}
+          {payment.stripeAccountId && (
+            <div className="flex justify-between hig-body">
+              <span className="text-muted-foreground">Account</span>
+              <span className="font-mono text-xs truncate max-w-48">{payment.stripeAccountId}</span>
             </div>
           )}
         </div>

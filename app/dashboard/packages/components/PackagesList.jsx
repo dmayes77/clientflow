@@ -69,7 +69,7 @@ function PackageCard({ package: pkg, onDelete }) {
         {/* Status Badge Overlay */}
         <div className="absolute top-2 right-2">
           <Badge variant={pkg.active ? "success" : "secondary"}>
-            {pkg.active ? "Active" : "Off"}
+            {pkg.active ? "Public" : "Hidden"}
           </Badge>
         </div>
       </div>
@@ -499,8 +499,8 @@ export function PackagesList() {
         <DataTableColumnHeader column={column} title="Status" />
       ),
       cell: ({ row }) => (
-        <Badge variant={row.original.active ? "default" : "secondary"}>
-          {row.original.active ? "Active" : "Inactive"}
+        <Badge variant={row.original.active ? "success" : "secondary"}>
+          {row.original.active ? "Public" : "Hidden"}
         </Badge>
       ),
     },
@@ -861,9 +861,11 @@ export function PackagesList() {
                 {(field) => (
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                      <Label htmlFor={field.name} className="font-medium">Active</Label>
+                      <Label htmlFor={field.name} className="font-medium">
+                        {field.state.value ? "Public" : "Hidden"}
+                      </Label>
                       <p className="text-muted-foreground">
-                        Inactive packages won't appear in booking options
+                        Hidden packages won't appear on your booking page
                       </p>
                     </div>
                     <Switch

@@ -67,7 +67,9 @@ export function ContactForm({ mode = "create", contactId = null }) {
 
   // TanStack Query hooks
   const { data: contactData, isLoading: contactLoading, error: contactError } = useContact(mode === "edit" ? contactId : null);
-  const { data: allTags = [], isLoading: tagsLoading } = useTags();
+  const { data: allTagsRaw = [], isLoading: tagsLoading } = useTags();
+  // Filter to only show contact and general type tags
+  const allTags = allTagsRaw.filter((tag) => tag.type === "contact" || tag.type === "general");
   const createContactMutation = useCreateContact();
   const updateContactMutation = useUpdateContact();
   const deleteContactMutation = useDeleteContact();
@@ -210,6 +212,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
       const newTag = await createTagMutation.mutateAsync({
         name: newTagName.trim(),
         color: "blue",
+        type: "contact",
       });
 
       // Add to contact

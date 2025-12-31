@@ -108,7 +108,7 @@ export function TrialBanner() {
 
   return (
     <div
-      className={`${config.bgColor} ${config.borderColor} border-b px-3 sm:px-4 py-2.5 sm:py-3`}
+      className={`${config.bgColor} ${config.borderColor} border-b px-3 sm:px-4 py-2.5 sm:py-3 no-print`}
     >
       <div className="flex items-center justify-between gap-3 sm:gap-4 max-w-7xl mx-auto">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">

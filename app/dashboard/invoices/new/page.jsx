@@ -8,11 +8,13 @@ import { Loader2 } from "lucide-react";
 function NewInvoiceContent() {
   const searchParams = useSearchParams();
   const contactId = searchParams.get("contactId") || searchParams.get("clientId") || "";
+  const bookingId = searchParams.get("bookingId") || "";
 
   return (
     <InvoiceForm
       mode="create"
       defaultContactId={contactId}
+      defaultBookingId={bookingId || null}
     />
   );
 }

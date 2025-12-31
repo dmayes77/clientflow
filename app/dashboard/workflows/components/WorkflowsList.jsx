@@ -61,6 +61,10 @@ import {
   Loader2,
   X,
   ChevronRight,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  DollarSign,
 } from "lucide-react";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import {
@@ -78,7 +82,12 @@ const TRIGGER_TYPES = [
   { value: "tag_removed", label: "When tag is removed", icon: Tag },
   { value: "lead_created", label: "When lead is created", icon: UserCheck },
   { value: "booking_created", label: "When booking is created", icon: Play },
+  { value: "booking_scheduled", label: "When booking is scheduled", icon: Calendar },
+  { value: "booking_confirmed", label: "When booking is confirmed", icon: CheckCircle },
+  { value: "booking_cancelled", label: "When booking is cancelled", icon: XCircle },
   { value: "client_converted", label: "When lead converts to client", icon: ArrowRight },
+  { value: "payment_received", label: "When payment is received", icon: DollarSign },
+  { value: "invoice_paid", label: "When invoice is paid", icon: DollarSign },
 ];
 
 const ACTION_TYPES = [
@@ -398,17 +407,19 @@ export function WorkflowsList() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setWorkflowToDelete(workflow);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {!workflow.isSystem && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setWorkflowToDelete(workflow);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -420,6 +431,11 @@ export function WorkflowsList() {
                         <Badge variant="secondary">
                           {TRIGGER_TYPES.find((t) => t.value === workflow.triggerType)?.label || workflow.triggerType}
                         </Badge>
+                        {workflow.isSystem && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            System
+                          </Badge>
+                        )}
                         {workflow.triggerTag && (
                           <Badge className="bg-indigo-100 text-indigo-700">
                             {workflow.triggerTag.name}

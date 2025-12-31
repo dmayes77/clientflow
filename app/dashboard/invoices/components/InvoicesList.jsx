@@ -19,10 +19,10 @@ import {
 import { InvoiceMobileCardList } from "./InvoiceMobileCard";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusFilterDropdown } from "@/components/ui/status-filter-dropdown";
 import {
@@ -38,28 +38,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  PreviewSheet,
-  PreviewSheetContent,
-  PreviewSheetSection,
-} from "@/components/ui/preview-sheet";
-import { Separator } from "@/components/ui/separator";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
-import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, User, Calendar, Clock, FileCheck, Ticket, Check, X, CalendarDays, AlertCircle, Receipt, Loader2, RefreshCw, FileText, Eye, Ban, Search } from "lucide-react";
+import { Percent, DollarSign, CreditCard, Send, Pencil, Trash2, Download, Calendar, Clock, Check, X, CalendarDays, AlertCircle, Receipt, Loader2, RefreshCw, FileText, Eye, Ban } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   MoneyIcon,
   AddIcon,
   LoadingIcon,
   InvoiceIcon,
-  SendIcon,
-  CompleteIcon,
   PendingIcon,
-  WarningIcon,
-  ViewIcon,
-  CloseIcon,
-  DownloadIcon,
 } from "@/lib/icons";
 import { formatCurrency } from "@/lib/formatters";
 import { InvoiceStatusBadge } from "@/components/ui/status-badge";
@@ -86,34 +74,19 @@ const getSafeDepositAmount = (invoice) => {
   return (!isNaN(parsed) && isFinite(parsed) && parsed >= 0) ? parsed : 0;
 };
 
-// Safe lineItems parser - handles JSON string or array
-const getSafeLineItems = (lineItems) => {
-  if (!lineItems) return [];
-  if (Array.isArray(lineItems)) return lineItems;
-  if (typeof lineItems === 'string') {
-    try {
-      const parsed = JSON.parse(lineItems);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
-
-const getTagColorClass = (color) => {
-  const colorMap = {
-    blue: "bg-blue-100 text-blue-800 border-blue-200",
-    green: "bg-green-100 text-green-800 border-green-200",
+// Helper to get tag color classes
+const getTagColor = (tag) => {
+  const colors = {
+    gray: "bg-gray-100 text-gray-800 border-gray-200",
     red: "bg-red-100 text-red-800 border-red-200",
+    orange: "bg-orange-100 text-orange-800 border-orange-200",
     yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    green: "bg-green-100 text-green-800 border-green-200",
+    blue: "bg-blue-100 text-blue-800 border-blue-200",
     purple: "bg-purple-100 text-purple-800 border-purple-200",
     pink: "bg-pink-100 text-pink-800 border-pink-200",
-    orange: "bg-orange-100 text-orange-800 border-orange-200",
-    teal: "bg-teal-100 text-teal-800 border-teal-200",
-    gray: "bg-gray-100 text-gray-800 border-gray-200",
   };
-  return colorMap[color] || colorMap.gray;
+  return colors[tag.color] || colors.gray;
 };
 
 // Helper to format date range for display
@@ -181,8 +154,6 @@ export function InvoicesList() {
   const [invoiceForPayment, setInvoiceForPayment] = useState(null);
   const [paymentData, setPaymentData] = useState({ amount: 0, isDeposit: false, depositPercent: null });
   const [sendingId, setSendingId] = useState(null);
-  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
-  const [previewInvoice, setPreviewInvoice] = useState(null);
 
   const handleStatusChange = (invoice, newStatus) => {
     // Validate state transitions
@@ -385,7 +356,7 @@ export function InvoicesList() {
     // Additional tag filter (non-status tags via TagFilter component)
     if (selectedTagIds.length > 0) {
       result = result.filter((invoice) =>
-        invoice.tags?.some((tagAssoc) => selectedTagIds.includes(tagAssoc.tag.id))
+        invoice.tags?.some((tag) => selectedTagIds.includes(tag.id))
       );
     }
 
@@ -533,8 +504,7 @@ export function InvoicesList() {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            setPreviewInvoice(row.original);
-            setPreviewSheetOpen(true);
+            router.push(`/dashboard/invoices/${row.original.id}`);
           }}
           className="font-medium text-primary hover:underline cursor-pointer"
         >
@@ -601,6 +571,37 @@ export function InvoicesList() {
       cell: ({ row }) => (
         <InvoiceStatusBadge status={row.original.status} />
       ),
+    },
+    {
+      accessorKey: "tags",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Tags" />
+      ),
+      cell: ({ row }) => {
+        const tags = row.original.tags || [];
+        if (tags.length === 0) {
+          return <span className="text-muted-foreground text-sm">—</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tags.slice(0, 2).map((tag) => (
+              <Badge
+                key={tag.id}
+                variant="outline"
+                className={`text-xs ${getTagColor(tag)}`}
+              >
+                {tag.name}
+              </Badge>
+            ))}
+            {tags.length > 2 && (
+              <Badge variant="outline" className="text-xs">
+                +{tags.length - 2}
+              </Badge>
+            )}
+          </div>
+        );
+      },
+      enableSorting: false,
     },
   ];
 
@@ -799,10 +800,7 @@ export function InvoicesList() {
                       setMobileSelectedIds(new Set());
                     }
                   }}
-                  onPreview={(invoice) => {
-                    setPreviewInvoice(invoice);
-                    setPreviewSheetOpen(true);
-                  }}
+                  onPreview={(invoice) => router.push(`/dashboard/invoices/${invoice.id}`)}
                   onEdit={(invoice) => router.push(`/dashboard/invoices/${invoice.id}`)}
                   onSend={handleSend}
                   onPay={handleOpenPaymentDialog}
@@ -819,10 +817,7 @@ export function InvoicesList() {
                 data={filteredInvoices}
                 searchPlaceholder="Search invoices..."
                 pageSize={25}
-                onRowClick={(invoice) => {
-                  setPreviewInvoice(invoice);
-                  setPreviewSheetOpen(true);
-                }}
+                onRowClick={(invoice) => router.push(`/dashboard/invoices/${invoice.id}`)}
                 emptyMessage="No invoices found."
               toolbar={({ table }) => {
                 const selectedInvoices = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
@@ -1026,409 +1021,6 @@ export function InvoicesList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Invoice Preview Sheet */}
-      {previewInvoice && (
-        <PreviewSheet
-          open={previewSheetOpen}
-          onOpenChange={setPreviewSheetOpen}
-          title={previewInvoice?.invoiceNumber || "Invoice Preview"}
-          scrollable
-          actionColumns={getSafeDepositPercent(previewInvoice.depositPercent) > 0 ? 6 : 5}
-          header={
-            <div className="flex items-center justify-between">
-              <h3 className="hig-headline">{previewInvoice.invoiceNumber}</h3>
-              <InvoiceStatusBadge status={previewInvoice.status} />
-            </div>
-          }
-          actions={
-            <>
-              {/* Action 1: Send (if draft) or Pay (if sent/viewed/overdue) */}
-              {previewInvoice.status === "draft" ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                  disabled={sendingId === previewInvoice.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPreviewSheetOpen(false);
-                    handleSend(previewInvoice);
-                  }}
-                >
-                  <Send className="h-5 w-5" />
-                  <span className="hig-caption-2">Send</span>
-                </Button>
-              ) : ["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPreviewSheetOpen(false);
-                    handleOpenPaymentDialog(previewInvoice);
-                  }}
-                >
-                  <CreditCard className="h-5 w-5" />
-                  <span className="hig-caption-2">Pay</span>
-                </Button>
-              ) : (
-                <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 opacity-50" disabled>
-                  <CreditCard className="h-5 w-5" />
-                  <span className="hig-caption-2">Pay</span>
-                </Button>
-              )}
-
-              {/* Action 2: Download PDF */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                disabled={downloadInvoicePDF.isPending}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload(previewInvoice);
-                }}
-              >
-                <Download className="h-5 w-5" />
-                <span className="hig-caption-2">PDF</span>
-              </Button>
-
-              {/* Action 3: Toggle Payment Status */}
-              {previewInvoice.status === "paid" ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-amber-600 hover:text-amber-700"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Reset to sent status and clear payment fields
-                    updateInvoice.mutate({
-                      id: previewInvoice.id,
-                      status: "sent",
-                      amountPaid: 0,
-                      balanceDue: previewInvoice.total,
-                      paidAt: null,
-                      depositPaidAt: null,
-                    }, {
-                      onSuccess: () => {
-                        toast.success("Invoice marked as unpaid");
-                        setPreviewSheetOpen(false);
-                      },
-                      onError: () => {
-                        toast.error("Failed to update invoice");
-                      },
-                    });
-                  }}
-                >
-                  <CreditCard className="h-5 w-5" />
-                  <span className="hig-caption-2">Unpaid</span>
-                </Button>
-              ) : ["sent", "viewed", "overdue"].includes(previewInvoice.status) ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-green-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPreviewSheetOpen(false);
-                    handleStatusChange(previewInvoice, "paid");
-                  }}
-                >
-                  <CompleteIcon className="h-5 w-5" />
-                  <span className="hig-caption-2">Paid</span>
-                </Button>
-              ) : (
-                <Button variant="ghost" size="sm" className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 opacity-50" disabled>
-                  <CompleteIcon className="h-5 w-5" />
-                  <span className="hig-caption-2">Paid</span>
-                </Button>
-              )}
-
-              {/* Action 4: Toggle Deposit (if has deposit) */}
-              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
-                previewInvoice.depositPaidAt ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-blue-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateInvoice.mutate({
-                        id: previewInvoice.id,
-                        depositPaidAt: null,
-                      }, {
-                        onSuccess: () => {
-                          toast.success("Deposit marked as unpaid");
-                        },
-                        onError: () => {
-                          toast.error("Failed to update deposit status");
-                        },
-                      });
-                    }}
-                  >
-                    <Percent className="h-5 w-5" />
-                    <span className="hig-caption-2">Dep.Unpaid</span>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-green-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateInvoice.mutate({
-                        id: previewInvoice.id,
-                        depositPaidAt: new Date().toISOString(),
-                      }, {
-                        onSuccess: () => {
-                          toast.success("Deposit marked as paid");
-                        },
-                        onError: () => {
-                          toast.error("Failed to update deposit status");
-                        },
-                      });
-                    }}
-                  >
-                    <Percent className="h-5 w-5" />
-                    <span className="hig-caption-2">Dep.Paid</span>
-                  </Button>
-                )
-              )}
-
-              {/* Action 5: Edit */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewSheetOpen(false);
-                  router.push(`/dashboard/invoices/${previewInvoice.id}`);
-                }}
-              >
-                <Pencil className="h-5 w-5" />
-                <span className="hig-caption-2">Edit</span>
-              </Button>
-
-              {/* Action 6: Delete */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-auto py-2 gap-0.5 focus-visible:ring-0 text-destructive hover:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPreviewSheetOpen(false);
-                  setInvoiceToDelete(previewInvoice);
-                  setDeleteDialogOpen(true);
-                }}
-              >
-                <Trash2 className="h-5 w-5" />
-                <span className="hig-caption-2">Delete</span>
-              </Button>
-            </>
-          }
-        >
-          <PreviewSheetContent className="space-y-4">
-            {/* Contact Info */}
-            <PreviewSheetSection className="flex items-center gap-3">
-              <div className="size-10 rounded-full bg-muted flex items-center justify-center">
-                <User className="size-5 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="hig-subheadline font-medium truncate">{previewInvoice.contactName}</p>
-                <p className="hig-footnote text-muted-foreground truncate">{previewInvoice.contactEmail}</p>
-                {previewInvoice.contactAddress && (
-                  <p className="hig-caption-2 text-muted-foreground truncate">{previewInvoice.contactAddress}</p>
-                )}
-              </div>
-            </PreviewSheetSection>
-
-            {/* Linked Booking */}
-            {previewInvoice.booking && (
-              <>
-                <Separator />
-                <PreviewSheetSection className="flex items-center gap-3">
-                  <div className="size-10 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
-                    <CalendarDays className="size-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="hig-caption-2 text-muted-foreground">Linked Booking</p>
-                    <p className="hig-footnote font-medium">
-                      {format(new Date(previewInvoice.booking.scheduledAt), "EEEE, MMM d, yyyy")}
-                    </p>
-                    {(previewInvoice.booking.service?.name || previewInvoice.booking.package?.name) && (
-                      <p className="hig-caption-2 text-muted-foreground">
-                        {previewInvoice.booking.service?.name || previewInvoice.booking.package?.name}
-                      </p>
-                    )}
-                  </div>
-                </PreviewSheetSection>
-              </>
-            )}
-
-            <Separator />
-
-            {/* Dates */}
-            <PreviewSheetSection className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="size-4 text-muted-foreground" />
-                <div>
-                  <p className="hig-caption-2 text-muted-foreground">Issue Date</p>
-                  <p className="hig-footnote font-medium">{format(new Date(previewInvoice.issueDate || previewInvoice.createdAt), "MMM d, yyyy")}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="size-4 text-muted-foreground" />
-                <div>
-                  <p className="hig-caption-2 text-muted-foreground">Due Date</p>
-                  <p className="hig-footnote font-medium">{format(new Date(previewInvoice.dueDate), "MMM d, yyyy")}</p>
-                </div>
-              </div>
-              {previewInvoice.sentAt && (
-                <div className="flex items-center gap-2">
-                  <Send className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="hig-caption-2 text-muted-foreground">Sent</p>
-                    <p className="hig-footnote font-medium">{format(new Date(previewInvoice.sentAt), "MMM d, yyyy")}</p>
-                  </div>
-                </div>
-              )}
-              {previewInvoice.paidAt && (
-                <div className="flex items-center gap-2">
-                  <FileCheck className="size-4 text-green-600" />
-                  <div>
-                    <p className="hig-caption-2 text-muted-foreground">Paid</p>
-                    <p className="hig-footnote font-medium text-green-600">{format(new Date(previewInvoice.paidAt), "MMM d, yyyy")}</p>
-                  </div>
-                </div>
-              )}
-            </PreviewSheetSection>
-
-            <Separator />
-
-            {/* Line Items */}
-            <PreviewSheetSection>
-              <h4 className="hig-subheadline font-semibold mb-2">Line Items</h4>
-              <div className="space-y-2">
-                {getSafeLineItems(previewInvoice.lineItems)
-                  .filter(item => !item.description?.toLowerCase().includes('deposit'))
-                  .map((item, index) => (
-                  <div key={index} className={`flex justify-between items-start hig-footnote ${item.isDiscount ? "text-red-600" : ""}`}>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{item.description || "Item"}</p>
-                      {item.quantity > 1 && (
-                        <p className="hig-caption-2 text-muted-foreground">
-                          {item.quantity} × {formatCurrency(item.unitPrice)}
-                        </p>
-                      )}
-                    </div>
-                    <span className="font-medium ml-2">
-                      {item.isDiscount ? "-" : ""}{formatCurrency(Math.abs(item.amount))}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </PreviewSheetSection>
-
-            <Separator />
-
-            {/* Financial Summary */}
-            <PreviewSheetSection className="space-y-2">
-              <div className="flex justify-between hig-footnote">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatCurrency(previewInvoice.subtotal)}</span>
-              </div>
-              {(previewInvoice.discountAmount || 0) > 0 && (
-                <div className="flex justify-between hig-footnote text-red-600">
-                  <span>Discount {previewInvoice.discountCode ? `(${previewInvoice.discountCode})` : ""}</span>
-                  <span>-{formatCurrency(previewInvoice.discountAmount)}</span>
-                </div>
-              )}
-              {/* Coupons */}
-              {previewInvoice.coupons?.length > 0 && previewInvoice.coupons.map((invoiceCoupon) => (
-                <div key={invoiceCoupon.id} className="flex justify-between hig-footnote text-green-600">
-                  <span className="flex items-center gap-1">
-                    <Ticket className="h-3 w-3" />
-                    Coupon ({invoiceCoupon.coupon?.code || "Applied"})
-                  </span>
-                  <span>-{formatCurrency(invoiceCoupon.calculatedAmount)}</span>
-                </div>
-              ))}
-              {(previewInvoice.taxAmount || 0) > 0 && (
-                <div className="flex justify-between hig-footnote">
-                  <span className="text-muted-foreground">Tax ({previewInvoice.taxRate}%)</span>
-                  <span>{formatCurrency(previewInvoice.taxAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between hig-subheadline font-semibold pt-2 border-t">
-                <span>Total</span>
-                <span>{formatCurrency(previewInvoice.total)}</span>
-              </div>
-
-              {/* Deposit */}
-              {getSafeDepositPercent(previewInvoice.depositPercent) > 0 && (
-                <div className="flex justify-between hig-footnote pt-2 border-t">
-                  <span className={previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}>
-                    {previewInvoice.depositPaidAt ? "✓ Deposit Paid" : `Deposit Due (${getSafeDepositPercent(previewInvoice.depositPercent)}%)`}
-                  </span>
-                  <span className={previewInvoice.depositPaidAt ? "text-green-600" : "text-blue-600"}>
-                    {formatCurrency(getSafeDepositAmount(previewInvoice))}
-                  </span>
-                </div>
-              )}
-
-              {/* Balance Due */}
-              {(previewInvoice.balanceDue || 0) > 0 && previewInvoice.status !== "paid" && (
-                <div className="flex justify-between hig-subheadline font-medium pt-2 border-t">
-                  <span>Balance Due</span>
-                  <span>{formatCurrency(previewInvoice.balanceDue)}</span>
-                </div>
-              )}
-            </PreviewSheetSection>
-
-            {/* Notes */}
-            {previewInvoice.notes && (
-              <>
-                <Separator />
-                <PreviewSheetSection>
-                  <h4 className="hig-subheadline font-semibold mb-1">Notes</h4>
-                  <p className="hig-footnote text-muted-foreground whitespace-pre-wrap">{previewInvoice.notes}</p>
-                </PreviewSheetSection>
-              </>
-            )}
-
-            {/* Terms */}
-            {previewInvoice.terms && (
-              <>
-                <Separator />
-                <PreviewSheetSection>
-                  <h4 className="hig-subheadline font-semibold mb-1">Terms</h4>
-                  <p className="hig-footnote text-muted-foreground whitespace-pre-wrap">{previewInvoice.terms}</p>
-                </PreviewSheetSection>
-              </>
-            )}
-
-            {/* Tags */}
-            {previewInvoice.tags?.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).length > 0 && (
-              <>
-                <Separator />
-                <PreviewSheetSection className="flex flex-wrap gap-2">
-                  {previewInvoice.tags.filter(t => !["Draft", "Sent", "Viewed", "Paid", "Overdue", "Cancelled"].includes(t.name)).map((tag) => (
-                    <span
-                      key={tag.id}
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full hig-caption-2 font-medium border ${getTagColorClass(tag.color)}`}
-                    >
-                      {tag.name}
-                    </span>
-                  ))}
-                </PreviewSheetSection>
-              </>
-            )}
-          </PreviewSheetContent>
-        </PreviewSheet>
-      )}
     </>
   );
 }

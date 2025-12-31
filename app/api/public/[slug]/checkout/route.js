@@ -194,6 +194,7 @@ export async function POST(request, { params }) {
         ],
         payment_intent_data: {
           metadata: {
+            type: "booking_payment", // Identifies this as a public booking payment
             bookingId: booking.id,
             tenantId: tenant.id,
             contactId: booking.contact?.id || "",
@@ -203,6 +204,7 @@ export async function POST(request, { params }) {
           },
         },
         metadata: {
+          type: "booking_payment",
           bookingId: booking.id,
           tenantId: tenant.id,
           contactId: booking.contact?.id || "",

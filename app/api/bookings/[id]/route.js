@@ -131,9 +131,12 @@ export async function PATCH(request, { params }) {
     }
 
     const body = await request.json();
+    console.log("[PATCH booking] Request body:", JSON.stringify(body, null, 2));
+
     const { success, data, errors } = validateRequest(body, updateBookingSchema);
 
     if (!success) {
+      console.log("[PATCH booking] Validation errors:", JSON.stringify(errors, null, 2));
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
@@ -178,11 +181,22 @@ export async function PATCH(request, { params }) {
           console.error("Error triggering booking_cancelled workflow:", err);
         });
       }
+
+      // Trigger booking_no_show workflow
+      if (data.status === "no_show") {
+        triggerWorkflows("booking_no_show", {
+          tenant,
+          booking,
+          contact: booking.contact,
+        }).catch((err) => {
+          console.error("Error triggering booking_no_show workflow:", err);
+        });
+      }
     }
 
     // Auto-tag contact based on booking status change
-    if (data.status && (data.status === "inquiry" || data.status === "scheduled")) {
-      const tagName = data.status === "inquiry" ? "Lead" : "Client";
+    if (data.status && (data.status === "pending" || data.status === "scheduled")) {
+      const tagName = data.status === "pending" ? "Lead" : "Client";
 
       // Find or create the tag using upsert to avoid race conditions
       const tag = await prisma.tag.upsert({

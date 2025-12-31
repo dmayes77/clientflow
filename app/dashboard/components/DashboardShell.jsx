@@ -45,6 +45,7 @@ import {
   User,
   Bell,
   Sliders,
+  BookOpen,
 } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
@@ -74,6 +75,7 @@ const accountItems = [
   { label: "Integrations", href: "/dashboard/integrations", icon: Workflow },
   { label: "API Keys", href: "/dashboard/settings", icon: Key },
   { label: "Webhooks", href: "/dashboard/webhooks", icon: Webhook },
+  { label: "How To", href: "/dashboard/how-to", icon: BookOpen },
 ];
 
 function SidebarNav({ businessName }) {
@@ -86,7 +88,8 @@ function SidebarNav({ businessName }) {
       pathname.startsWith("/dashboard/availability") ||
       pathname.startsWith("/dashboard/webhooks") ||
       pathname.startsWith("/dashboard/integrations") ||
-      pathname.startsWith("/dashboard/coupons")
+      pathname.startsWith("/dashboard/coupons") ||
+      pathname.startsWith("/dashboard/how-to")
       ? "account"
       : "business";
   };

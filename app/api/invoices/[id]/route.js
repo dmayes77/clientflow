@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
       },
       include: {
         contact: true,
-        bookings: {
+        booking: {
           include: {
             service: true,
             package: true,
@@ -35,6 +35,24 @@ export async function GET(request, { params }) {
         coupons: {
           include: {
             coupon: true,
+          },
+        },
+        payments: {
+          include: {
+            payment: {
+              select: {
+                id: true,
+                amount: true,
+                status: true,
+                cardBrand: true,
+                cardLast4: true,
+                metadata: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
           },
         },
       },
@@ -49,6 +67,7 @@ export async function GET(request, { params }) {
       depositPercent: invoice.depositPercent,
       depositAmount: invoice.depositAmount,
       hasCoupons: invoice.coupons?.length > 0,
+      paymentsCount: invoice.payments?.length || 0,
     }));
 
     return NextResponse.json(invoice);
@@ -146,12 +165,20 @@ export async function PATCH(request, { params }) {
       }
     }
 
-    // Prevent changing deposit once it's been paid
-    if (existingInvoice.depositPaidAt && data.depositPercent !== undefined && data.depositPercent !== existingInvoice.depositPercent) {
-      return NextResponse.json(
-        { error: "Cannot change deposit after it has been paid" },
-        { status: 400 }
-      );
+    // If deposit is already paid, preserve the existing deposit percent (ignore form value)
+    // Only error if explicitly trying to change to a DIFFERENT non-null value
+    if (existingInvoice.depositPaidAt) {
+      const incomingPercent = data.depositPercent;
+      const existingPercent = existingInvoice.depositPercent;
+      // Only reject if trying to change to a different positive value
+      if (incomingPercent !== undefined && incomingPercent !== null && incomingPercent > 0 && incomingPercent !== existingPercent) {
+        return NextResponse.json(
+          { error: "Cannot change deposit after it has been paid" },
+          { status: 400 }
+        );
+      }
+      // Otherwise, always use the existing percent (ignore null/undefined from form)
+      data.depositPercent = existingPercent;
     }
 
     // Safely handle deposit percent - use new value if provided, otherwise keep existing
@@ -188,16 +215,63 @@ export async function PATCH(request, { params }) {
 
     console.log("[PATCH /api/invoices/[id]] Cleaned data keys:", Object.keys(cleanedData));
 
+    // Log edits to paid invoices for audit trail
+    let editHistoryUpdate = {};
+    if (existingInvoice.status === "paid") {
+      const changes = [];
+
+      // Detect booking link changes
+      const newBookingId = bookingId || (bookingIds && bookingIds[0]) || null;
+      // We need to check current booking - fetch it
+      const currentBooking = await prisma.booking.findFirst({
+        where: { invoiceId: id },
+        select: { id: true },
+      });
+      const currentBookingId = currentBooking?.id || null;
+
+      if (newBookingId !== currentBookingId) {
+        if (newBookingId && !currentBookingId) {
+          changes.push(`Linked booking ${newBookingId.slice(-8).toUpperCase()}`);
+        } else if (!newBookingId && currentBookingId) {
+          changes.push(`Unlinked booking ${currentBookingId.slice(-8).toUpperCase()}`);
+        } else if (newBookingId && currentBookingId) {
+          changes.push(`Changed booking from ${currentBookingId.slice(-8).toUpperCase()} to ${newBookingId.slice(-8).toUpperCase()}`);
+        }
+      }
+
+      // Detect notes changes
+      if (cleanedData.notes !== undefined && cleanedData.notes !== existingInvoice.notes) {
+        changes.push("Updated notes");
+      }
+
+      // Detect terms changes
+      if (cleanedData.terms !== undefined && cleanedData.terms !== existingInvoice.terms) {
+        changes.push("Updated terms");
+      }
+
+      // If there are changes, add to edit history
+      if (changes.length > 0) {
+        const existingHistory = Array.isArray(existingInvoice.editHistory) ? existingInvoice.editHistory : [];
+        const newEntry = {
+          editedAt: new Date().toISOString(),
+          description: changes.join(", "),
+        };
+        editHistoryUpdate = { editHistory: [...existingHistory, newEntry] };
+        console.log("[PATCH /api/invoices/[id]] Recording edit to paid invoice:", newEntry);
+      }
+    }
+
     const invoice = await prisma.invoice.update({
       where: { id },
       data: {
         ...cleanedData,
         ...statusUpdates,
+        ...editHistoryUpdate,
         depositAmount,
       },
       include: {
         contact: true,
-        bookings: {
+        booking: {
           include: {
             service: true,
             package: true,
@@ -208,6 +282,24 @@ export async function PATCH(request, { params }) {
         coupons: {
           include: {
             coupon: true,
+          },
+        },
+        payments: {
+          include: {
+            payment: {
+              select: {
+                id: true,
+                amount: true,
+                status: true,
+                cardBrand: true,
+                cardLast4: true,
+                metadata: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
           },
         },
       },

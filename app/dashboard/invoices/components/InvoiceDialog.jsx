@@ -1082,58 +1082,6 @@ export function InvoiceDialog({
           )}
         </div>
 
-        {/* Bookings Breakdown - for multi-booking invoices */}
-        {invoice?.bookings && invoice.bookings.length > 1 && (
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Bookings Breakdown
-            </Label>
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-              {invoice.bookings.map((bk) => {
-                const balanceDue = bk.bookingBalanceDue ?? (bk.totalPrice - (bk.bookingAmountPaid || 0));
-                const isPaid = bk.paymentStatus === "paid" || balanceDue <= 0;
-                const depositPaid = (bk.depositAllocated || 0) > 0;
-
-                return (
-                  <div key={bk.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">
-                          {bk.scheduledAt ? format(new Date(bk.scheduledAt), "MMM d, yyyy") : "Booking"}
-                        </span>
-                        {isPaid ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
-                            <CheckCircle className="h-3 w-3" />
-                            Paid
-                          </span>
-                        ) : depositPaid ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                            <CreditCard className="h-3 w-3" />
-                            Deposit
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
-                            Unpaid
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Total: ${(bk.totalPrice / 100).toFixed(2)}
-                        {!isPaid && balanceDue > 0 && (
-                          <span className="ml-2 text-orange-600">
-                            Due: ${(balanceDue / 100).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Status */}
         <SelectField
           form={form}

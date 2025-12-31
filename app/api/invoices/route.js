@@ -4,12 +4,25 @@ import { getAuthenticatedTenant } from "@/lib/auth";
 import { createInvoiceSchema, validateRequest } from "@/lib/validations";
 import { applyInvoiceStatusTag } from "@/lib/system-tags";
 
-// Generate invoice number
+// Generate invoice number - finds the highest existing number and increments
 async function generateInvoiceNumber(tenantId) {
-  const count = await prisma.invoice.count({
+  // Find the highest invoice number for this tenant
+  const lastInvoice = await prisma.invoice.findFirst({
     where: { tenantId },
+    orderBy: { invoiceNumber: "desc" },
+    select: { invoiceNumber: true },
   });
-  const paddedNumber = String(count + 1).padStart(5, "0");
+
+  let nextNumber = 1;
+  if (lastInvoice?.invoiceNumber) {
+    // Extract the number from "INV-00001" format
+    const match = lastInvoice.invoiceNumber.match(/INV-(\d+)/);
+    if (match) {
+      nextNumber = parseInt(match[1], 10) + 1;
+    }
+  }
+
+  const paddedNumber = String(nextNumber).padStart(5, "0");
   return `INV-${paddedNumber}`;
 }
 
@@ -63,7 +76,7 @@ export async function GET(request) {
       where,
       include: {
         contact: true,
-        bookings: {
+        booking: {
           include: {
             service: true,
             package: true,
@@ -163,12 +176,12 @@ export async function POST(request) {
       }
     }
 
-    // Verify bookings belong to tenant if provided (supports multiple bookings)
-    const bookingIds = data.bookingIds || (data.bookingId ? [data.bookingId] : []);
-    if (bookingIds.length > 0) {
-      const bookings = await prisma.booking.findMany({
+    // Verify booking belongs to tenant if provided (1:1 relationship - one invoice per booking)
+    let linkedBooking = null;
+    if (data.bookingId) {
+      linkedBooking = await prisma.booking.findFirst({
         where: {
-          id: { in: bookingIds },
+          id: data.bookingId,
           tenantId: tenant.id,
         },
         include: {
@@ -176,15 +189,14 @@ export async function POST(request) {
         },
       });
 
-      if (bookings.length !== bookingIds.length) {
-        return NextResponse.json({ error: "One or more bookings not found" }, { status: 404 });
+      if (!linkedBooking) {
+        return NextResponse.json({ error: "Booking not found" }, { status: 404 });
       }
 
-      // Check if any booking already has an invoice (one invoice per booking)
-      const alreadyLinked = bookings.filter(b => b.invoice);
-      if (alreadyLinked.length > 0) {
+      // Check if booking already has an invoice (1:1 relationship)
+      if (linkedBooking.invoice) {
         return NextResponse.json(
-          { error: `${alreadyLinked.length} booking(s) already have an invoice` },
+          { error: "This booking already has an invoice" },
           { status: 400 }
         );
       }
@@ -236,7 +248,7 @@ export async function POST(request) {
       },
       include: {
         contact: true,
-        bookings: {
+        booking: {
           include: {
             service: true,
             package: true,
@@ -257,26 +269,15 @@ export async function POST(request) {
       },
     });
 
-    // Link bookings to the invoice and initialize payment tracking
-    if (bookingIds.length > 0) {
-      // Fetch bookings to get their totalPrice for balance initialization
-      const bookingsToLink = await prisma.booking.findMany({
-        where: { id: { in: bookingIds }, tenantId: tenant.id },
-        select: { id: true, totalPrice: true },
+    // Link booking to the invoice and initialize payment tracking (1:1 relationship)
+    if (linkedBooking) {
+      await prisma.booking.update({
+        where: { id: linkedBooking.id },
+        data: {
+          invoiceId: invoice.id,
+          bookingBalanceDue: linkedBooking.totalPrice, // Initialize balance to full amount
+        },
       });
-
-      // Update each booking with invoiceId and initial balanceDue
-      await Promise.all(
-        bookingsToLink.map((booking) =>
-          prisma.booking.update({
-            where: { id: booking.id },
-            data: {
-              invoiceId: invoice.id,
-              bookingBalanceDue: booking.totalPrice, // Initialize balance to full amount
-            },
-          })
-        )
-      );
     }
 
     // Apply status tag

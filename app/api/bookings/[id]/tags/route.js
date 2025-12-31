@@ -106,6 +106,23 @@ export async function POST(request, { params }) {
           tagId: { in: statusTagIds },
         },
       });
+
+      // Also update the booking.status field to keep in sync with tag
+      const tagToStatusMap = {
+        "Pending": "pending",
+        "Scheduled": "scheduled",
+        "Confirmed": "confirmed",
+        "Completed": "completed",
+        "Cancelled": "cancelled",
+        "No Show": "no_show",
+      };
+      const newStatus = tagToStatusMap[tag.name];
+      if (newStatus) {
+        await prisma.booking.update({
+          where: { id },
+          data: { status: newStatus },
+        });
+      }
     }
 
     // Add the new tag

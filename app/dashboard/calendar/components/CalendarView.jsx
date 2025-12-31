@@ -41,7 +41,6 @@ import {
   Trash2,
   CheckCircle,
   XCircle,
-  AlertCircle,
   Clock,
   CalendarDays,
   User,
@@ -52,7 +51,8 @@ import { cn } from "@/lib/utils";
 import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
 
 const statusConfig = {
-  inquiry: { label: "Inquiry", color: "bg-yellow-500", textColor: "text-yellow-600", icon: AlertCircle },
+  pending: { label: "Pending", color: "bg-yellow-500", textColor: "text-yellow-600", icon: Clock },
+  inquiry: { label: "Pending", color: "bg-yellow-500", textColor: "text-yellow-600", icon: Clock }, // Legacy - treat as pending
   scheduled: { label: "Scheduled", color: "bg-blue-500", textColor: "text-blue-600", icon: Calendar },
   confirmed: { label: "Confirmed", color: "bg-green-500", textColor: "text-green-600", icon: CheckCircle },
   completed: { label: "Completed", color: "bg-gray-500", textColor: "text-gray-600", icon: CheckCircle },
@@ -149,10 +149,18 @@ export function CalendarView() {
   }, [tenant]);
 
   // Fetch bookings with date range params
-  const { data: bookings = [], isLoading: loading } = useBookings({
+  const { data: allBookings = [], isLoading: loading } = useBookings({
     from: dateRange.start.toISOString(),
     to: dateRange.end.toISOString(),
   });
+
+  // Filter out pending bookings - only show scheduled, confirmed, completed bookings on calendar
+  // Pending bookings should not appear until at least the deposit is paid (scheduled status)
+  const bookings = useMemo(() => {
+    return allBookings.filter((booking) =>
+      booking.status !== "pending" && booking.status !== "inquiry"
+    );
+  }, [allBookings]);
 
   // Mutations
   const updateBooking = useUpdateBooking();

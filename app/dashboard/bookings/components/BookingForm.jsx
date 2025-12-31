@@ -16,8 +16,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Calendar, DollarSign, Loader2, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle, Share2, CreditCard, CheckCircle } from "lucide-react";
-import { InvoiceDialog } from "../../invoices/components/InvoiceDialog";
+import Link from "next/link";
+import { ArrowLeft, Calendar, DollarSign, Loader2, Trash2, User, Package, Receipt, ExternalLink, Plus, Tag, X, UserPlus, MinusCircle, Share2, CreditCard, CheckCircle, ChevronDown, Banknote, Link2, Smartphone } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { OfflinePaymentDialog } from "../../invoices/components/OfflinePaymentDialog";
+import { CardPaymentDialog } from "../../invoices/components/CardPaymentDialog";
+import { CheckoutOptionsDialog } from "../../invoices/components/CheckoutOptionsDialog";
 import { CameraCapture } from "@/components/camera";
 import { CollectPaymentModal } from "@/components/terminal/CollectPaymentModal";
 import { useBooking, useCreateBooking, useUpdateBooking, useAddBookingTag, useRemoveBookingTag, useAddBookingService, useRemoveBookingService, useAddBookingPackage, useRemoveBookingPackage, usePayBookingBalance } from "@/lib/hooks";
@@ -82,7 +92,9 @@ export function BookingForm({
   const { data: contacts = [] } = useContacts();
   const { data: allServices = [] } = useServices();
   const { data: allPackages = [] } = usePackages();
-  const { data: allTags = [] } = useTags();
+  const { data: allTagsRaw = [] } = useTags();
+  // Filter to only show booking and general type tags
+  const allTags = allTagsRaw.filter((tag) => tag.type === "booking" || tag.type === "general");
   const { data: bookingData, isLoading: isLoadingBooking } = useBooking(bookingId);
   const createBookingMutation = useCreateBooking();
   const updateBookingMutation = useUpdateBooking();
@@ -105,8 +117,10 @@ export function BookingForm({
   const [servicePopoverOpen, setServicePopoverOpen] = useState(false);
   const [packagePopoverOpen, setPackagePopoverOpen] = useState(false);
   const [tagPopoverOpen, setTagPopoverOpen] = useState(false);
-  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [collectPaymentOpen, setCollectPaymentOpen] = useState(false);
+  const [offlinePaymentOpen, setOfflinePaymentOpen] = useState(false);
+  const [cardPaymentOpen, setCardPaymentOpen] = useState(false);
+  const [checkoutOptionsOpen, setCheckoutOptionsOpen] = useState(false);
 
   // New contact dialog state
   const [newContactDialogOpen, setNewContactDialogOpen] = useState(false);
@@ -143,7 +157,7 @@ export function BookingForm({
       contactId: defaultContactId,
       scheduledAt: defaultDate,
       scheduledTime: defaultTime,
-      status: "inquiry",
+      status: "pending", // Starts as pending, becomes scheduled when deposit paid, confirmed when contact confirms
       duration: 60,
       notes: "",
       totalPrice: 0,
@@ -357,6 +371,7 @@ export function BookingForm({
       const newTag = await createTagMutation.mutateAsync({
         name: newTagData.name.trim(),
         color: newTagData.color,
+        type: "booking", // Tags created from BookingForm should be booking type
       });
 
       // Also add to current tags (same as handleAddTag)
@@ -578,16 +593,10 @@ export function BookingForm({
     return { totalPrice, totalDuration };
   };
 
-  // Invoice creation (edit mode only) - open the dialog
+  // Invoice creation (edit mode only) - navigate to new invoice page
   const handleCreateInvoice = () => {
     if (!isEditMode || !booking) return;
-    setInvoiceDialogOpen(true);
-  };
-
-  // Handle invoice saved from dialog
-  const handleInvoiceSave = (savedInvoice) => {
-    setBooking((prev) => ({ ...prev, invoice: savedInvoice }));
-    setInvoiceDialogOpen(false);
+    router.push(`/dashboard/invoices/new?bookingId=${bookingId}`);
   };
 
   // Handle share
@@ -1073,12 +1082,12 @@ export function BookingForm({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <button
-                          onClick={() => setInvoiceDialogOpen(true)}
-                          className="font-medium text-primary hover:underline cursor-pointer text-left"
+                        <Link
+                          href={`/dashboard/invoices/${booking.invoice.id}`}
+                          className="font-medium text-primary hover:underline"
                         >
                           {booking.invoice.invoiceNumber}
-                        </button>
+                        </Link>
                         <p className="hig-caption-2 text-muted-foreground">{formatCurrency(booking.invoice.total)}</p>
                       </div>
                       <InvoiceStatusBadge status={booking.invoice.status} />
@@ -1144,15 +1153,43 @@ export function BookingForm({
                       <span className="text-sm font-medium">Fully Paid</span>
                     </div>
                   ) : (booking.bookingBalanceDue ?? (booking.totalPrice - (booking.bookingAmountPaid || 0))) > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setCollectPaymentOpen(true)}
-                    >
-                      <CreditCard className="size-3 mr-2" />
-                      Collect Balance
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800"
+                        >
+                          <CreditCard className="size-3 mr-2" />
+                          Collect Balance
+                          <ChevronDown className="size-3 ml-auto" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem onClick={() => setCheckoutOptionsOpen(true)}>
+                          <Link2 className="size-4 mr-2" />
+                          Generate Pay Link
+                          <span className="ml-auto text-xs text-muted-foreground">Online</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setCardPaymentOpen(true)}>
+                          <CreditCard className="size-4 mr-2" />
+                          Enter Card
+                          <span className="ml-auto text-xs text-muted-foreground">Manual</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setCollectPaymentOpen(true)}>
+                          <Smartphone className="size-4 mr-2" />
+                          Terminal
+                          <span className="ml-auto text-xs text-muted-foreground">Tap/Swipe</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setOfflinePaymentOpen(true)}>
+                          <Banknote className="size-4 mr-2" />
+                          Cash / Check / Other
+                          <span className="ml-auto text-xs text-muted-foreground">Offline</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
               </CardContent>
@@ -1404,36 +1441,54 @@ export function BookingForm({
         </DialogContent>
       </Dialog>
 
-      {/* Invoice Dialog */}
-      {isEditMode && booking && (
-        <InvoiceDialog
-          open={invoiceDialogOpen}
-          onOpenChange={setInvoiceDialogOpen}
-          invoice={booking.invoice} // Pass existing invoice for viewing/editing
-          booking={!booking.invoice ? booking : null} // Only pass booking when creating new invoice
-          contacts={contacts}
-          services={allServices}
-          packages={allPackages}
-          onSave={handleInvoiceSave}
-        />
-      )}
+      {/* Payment Dialogs */}
+      {isEditMode && booking && booking.invoice && (
+        <>
+          <OfflinePaymentDialog
+            open={offlinePaymentOpen}
+            onOpenChange={setOfflinePaymentOpen}
+            invoice={booking.invoice}
+            onSuccess={() => {
+              setOfflinePaymentOpen(false);
+              router.refresh();
+            }}
+          />
 
-      {/* Collect Balance Payment Modal */}
-      {isEditMode && booking && (
-        <CollectPaymentModal
-          open={collectPaymentOpen}
-          onOpenChange={setCollectPaymentOpen}
-          amount={booking.bookingBalanceDue ?? (booking.totalPrice - (booking.bookingAmountPaid || 0))}
-          bookingId={bookingId}
-          invoiceId={booking.invoiceId}
-          contactId={booking.contactId}
-          description={`Balance payment for booking ${booking.id?.slice(-6).toUpperCase()}`}
-          onSuccess={() => {
-            // Refresh booking data after successful payment
-            setCollectPaymentOpen(false);
-            router.refresh();
-          }}
-        />
+          <CardPaymentDialog
+            open={cardPaymentOpen}
+            onOpenChange={setCardPaymentOpen}
+            invoice={booking.invoice}
+            stripeAccountId={tenant?.stripeAccountId}
+            onSuccess={() => {
+              setCardPaymentOpen(false);
+              router.refresh();
+            }}
+          />
+
+          <CheckoutOptionsDialog
+            open={checkoutOptionsOpen}
+            onOpenChange={setCheckoutOptionsOpen}
+            invoice={booking.invoice}
+            onSuccess={() => {
+              setCheckoutOptionsOpen(false);
+              router.refresh();
+            }}
+          />
+
+          <CollectPaymentModal
+            open={collectPaymentOpen}
+            onOpenChange={setCollectPaymentOpen}
+            amount={booking.bookingBalanceDue ?? (booking.totalPrice - (booking.bookingAmountPaid || 0))}
+            bookingId={bookingId}
+            invoiceId={booking.invoice.id}
+            contactId={booking.contactId}
+            description={`Balance payment for booking ${booking.id?.slice(-6).toUpperCase()}`}
+            onSuccess={() => {
+              setCollectPaymentOpen(false);
+              router.refresh();
+            }}
+          />
+        </>
       )}
       </div>
     </form>

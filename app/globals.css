@@ -847,3 +847,204 @@ summary {
     height: 1.5rem !important;
   }
 }
+
+/* Print styles for invoices */
+@media print {
+  /* Page setup - 8.5x11 with narrow 0.25in border */
+  @page {
+    margin: 0.25in;
+    size: letter;
+  }
+
+  /* Hide everything by default, then show what we need */
+  [data-sidebar],
+  [data-sidebar-wrapper],
+  nav,
+  header,
+  aside,
+  footer,
+  .no-print,
+  .fixed,
+  button,
+  [role="dialog"],
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+
+  /* Reset document */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    font-size: 10pt !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Scale down invoice content */
+  #invoice-print-area h2 {
+    font-size: 20pt !important;
+  }
+
+  #invoice-print-area .text-3xl {
+    font-size: 20pt !important;
+  }
+
+  #invoice-print-area .text-2xl {
+    font-size: 14pt !important;
+  }
+
+  #invoice-print-area .text-lg {
+    font-size: 11pt !important;
+  }
+
+  #invoice-print-area .text-sm {
+    font-size: 9pt !important;
+  }
+
+  #invoice-print-area .text-xs {
+    font-size: 8pt !important;
+  }
+
+  /* Reset main content area for full page */
+  main, [data-main-content] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    background: white !important;
+  }
+
+  /* Print utility classes */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:w-full {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .print\:h-auto {
+    height: auto !important;
+  }
+
+  .print\:overflow-visible {
+    overflow: visible !important;
+  }
+
+  .print\:pb-0 {
+    padding-bottom: 0 !important;
+  }
+
+  .print\:min-h-auto {
+    min-height: auto !important;
+  }
+
+  .print\:shadow-none,
+  .shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: none !important;
+  }
+
+  .print\:border-none {
+    border: none !important;
+  }
+
+  /* Force white background on layout containers */
+  html, body, main, div, section, article, form {
+    background-color: white !important;
+    background: white !important;
+  }
+
+  /* Invoice print area - target by ID */
+  #invoice-print-area {
+    background: white !important;
+    background-color: white !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Card backgrounds */
+  [class*="card"], [class*="Card"] {
+    background: white !important;
+    background-color: white !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Invoice card wrapper */
+  #invoice-print-area {
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Invoice preview inner content */
+  .print\:overflow-visible {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0.25in !important;
+  }
+
+  .print\:rounded-none {
+    border-radius: 0 !important;
+  }
+
+  .print\:bg-white {
+    background: white !important;
+    background-color: white !important;
+  }
+
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  /* Ensure good contrast and colors print correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Make text crisp for printing */
+  p, span, div, td, th, li {
+    color: black !important;
+  }
+
+  /* Ensure SVG icons print correctly */
+  svg {
+    color: inherit !important;
+    stroke: currentColor !important;
+  }
+
+  #invoice-print-area svg {
+    color: #666 !important;
+  }
+
+  /* Keep muted text slightly lighter for hierarchy */
+  .text-muted-foreground {
+    color: #555 !important;
+  }
+
+  /* Tables print cleanly */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  /* Avoid page breaks inside important elements */
+  .invoice-header,
+  .invoice-totals,
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  /* Grid becomes single column */
+  .grid {
+    display: block !important;
+  }
+}

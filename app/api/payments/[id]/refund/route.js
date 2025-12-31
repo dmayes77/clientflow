@@ -27,14 +27,14 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: "Invalid refund amount" }, { status: 400 });
     }
 
-    // Get the payment
+    // Get the payment with associated bookings
     const payment = await prisma.payment.findFirst({
       where: {
         id,
         tenantId: tenant.id,
       },
       include: {
-        booking: true,
+        bookings: true,
       },
     });
 
@@ -111,14 +111,18 @@ export async function POST(request, { params }) {
       },
     });
 
-    // Update booking payment status if applicable
-    if (payment.bookingId) {
-      await prisma.booking.update({
-        where: { id: payment.bookingId },
-        data: {
-          paymentStatus: isFullyRefunded ? "refunded" : "partial_refund",
-        },
-      });
+    // Update booking payment status if applicable (many-to-many relationship)
+    if (payment.bookings && payment.bookings.length > 0) {
+      await Promise.all(
+        payment.bookings.map((booking) =>
+          prisma.booking.update({
+            where: { id: booking.id },
+            data: {
+              paymentStatus: isFullyRefunded ? "refunded" : "partial_refund",
+            },
+          })
+        )
+      );
     }
 
     return NextResponse.json({

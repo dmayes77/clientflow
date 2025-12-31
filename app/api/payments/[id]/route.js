@@ -41,6 +41,23 @@ export async function GET(request, { params }) {
           },
           take: 1,
         },
+        invoices: {
+          select: {
+            invoice: {
+              select: {
+                id: true,
+                invoiceNumber: true,
+                total: true,
+                amountPaid: true,
+                balanceDue: true,
+                status: true,
+                contactName: true,
+              },
+            },
+            amountApplied: true,
+          },
+          take: 1,
+        },
       },
     });
 
@@ -50,6 +67,10 @@ export async function GET(request, { params }) {
 
     // Get first booking (Payment has many-to-many with Booking)
     const booking = payment.bookings?.[0] || null;
+
+    // Get first invoice (Payment has many-to-many with Invoice via InvoicePayment)
+    const invoicePayment = payment.invoices?.[0] || null;
+    const invoice = invoicePayment?.invoice || null;
 
     // Build service details
     let serviceDetails = [];
@@ -121,6 +142,18 @@ export async function GET(request, { params }) {
               status: booking.status,
               paymentStatus: booking.paymentStatus,
               notes: booking.notes,
+            }
+          : null,
+        invoice: invoice
+          ? {
+              id: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              total: invoice.total,
+              amountPaid: invoice.amountPaid,
+              balanceDue: invoice.balanceDue,
+              status: invoice.status,
+              contactName: invoice.contactName,
+              amountApplied: invoicePayment.amountApplied,
             }
           : null,
         serviceDetails,

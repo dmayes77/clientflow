@@ -14,7 +14,8 @@ import { format, formatDistanceToNow, subDays, startOfMonth, endOfMonth, eachDay
 import { formatCompactCurrency } from "@/lib/formatters";
 
 const CHART_COLORS = {
-  inquiry: "#f59e0b",
+  pending: "#f59e0b",
+  inquiry: "#f59e0b", // Legacy - treat as pending
   scheduled: "#a855f7",
   confirmed: "#3b82f6",
   completed: "#22c55e",

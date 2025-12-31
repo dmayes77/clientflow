@@ -383,10 +383,12 @@ model Workflow {
 
   name          String
   description   String?
-  triggerType   String    // tag_added, tag_removed, lead_created, booking_created, client_converted
+  triggerType   String    // tag_added, tag_removed, lead_created, booking_created, booking_scheduled, booking_confirmed, booking_cancelled, client_converted, payment_received, invoice_paid, invoice_tag_added, booking_tag_added
   delayMinutes  Int       @default(0)
   actions       Json      // Array of action objects
   active        Boolean   @default(true)
+  isSystem      Boolean   @default(false)  // System workflows cannot be deleted, only paused/edited
+  systemKey     String?                    // Unique key for system workflows (e.g., "invoice_sent_email")
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -395,9 +397,11 @@ model Workflow {
   triggerTag    Tag?      @relation(fields: [triggerTagId], references: [id], onDelete: SetNull)
   runs          WorkflowRun[]
 
+  @@unique([tenantId, systemKey])
   @@index([tenantId])
   @@index([triggerTagId])
   @@index([active])
+  @@index([systemKey])
 }
 
 model WorkflowRun {
@@ -521,10 +525,10 @@ model Booking {
   contactId       String    @map("clientId")
   serviceId       String?   // Legacy - kept for backwards compat
   packageId       String?   // Legacy - kept for backwards compat
-  invoiceId       String?   // Many bookings can link to one invoice
+  invoiceId       String?   @unique // 1:1 - each booking has at most one invoice
 
   scheduledAt     DateTime
-  status          String    @default("inquiry")
+  status          String    @default("pending")
   notes           String?
   totalPrice      Int
   duration        Int
@@ -536,6 +540,9 @@ model Booking {
   depositAllocated  Int       @default(0)  // cents - deposit allocated to this booking
   bookingAmountPaid Int       @default(0)  // cents - total paid toward this booking
   bookingBalanceDue Int?                   // cents - totalPrice - bookingAmountPaid
+
+  // Confirmation token for secure email links (confirm/reschedule/cancel)
+  confirmationToken String?   @unique
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -555,7 +562,6 @@ model Booking {
   @@index([contactId])
   @@index([status])
   @@index([scheduledAt])
-  @@index([invoiceId])
 }
 
 model BookingService {
@@ -887,12 +893,15 @@ model Invoice {
   notes           String?
   terms           String?
 
+  // Audit trail for edits made after invoice is paid
+  editHistory     Json?     // Array of { editedAt, description }
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact         Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  bookings        Booking[] // Multiple bookings can be linked to one invoice
+  booking         Booking?  // 1:1 - each invoice has at most one booking
   tags            InvoiceTag[]
   coupons         InvoiceCoupon[]
   payments        InvoicePayment[]

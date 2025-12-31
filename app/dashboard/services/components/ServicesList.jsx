@@ -86,7 +86,7 @@ function ServiceCard({ service, onDuplicate, onDelete, formatDuration }) {
         {/* Status Badge Overlay */}
         <div className="absolute top-2 right-2">
           <Badge variant={service.active ? "success" : "secondary"}>
-            {service.active ? "Active" : "Off"}
+            {service.active ? "Public" : "Hidden"}
           </Badge>
         </div>
       </div>
@@ -1011,7 +1011,7 @@ Format the includes list so I can easily copy each item individually.`;
       ),
       cell: ({ row }) => (
         <Badge variant={row.original.active ? "success" : "secondary"}>
-          {row.original.active ? "Active" : "Off"}
+          {row.original.active ? "Public" : "Hidden"}
         </Badge>
       ),
     },
@@ -1326,7 +1326,7 @@ Format the includes list so I can easily copy each item individually.`;
                   {(field) => (
                     <div className="flex items-center gap-2 shrink-0">
                       <Label htmlFor="active" className={`font-medium leading-none mb-0! ${field.state.value ? "text-[#16a34a]" : "text-muted-foreground"}`}>
-                        {field.state.value ? "Active" : "Inactive"}
+                        {field.state.value ? "Public" : "Hidden"}
                       </Label>
                       <Switch id="active" checked={field.state.value} onCheckedChange={field.handleChange} />
                     </div>
