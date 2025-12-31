@@ -55,6 +55,11 @@ export async function GET(request, { params }) {
             createdAt: "desc",
           },
         },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     });
 
@@ -62,15 +67,19 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
+    // Flatten tags for frontend consumption
+    const flattenedTags = invoice.tags?.map((it) => it.tag) || [];
+
     console.log("[GET /api/invoices/[id]] Returning invoice:", JSON.stringify({
       id: invoice.id,
       depositPercent: invoice.depositPercent,
       depositAmount: invoice.depositAmount,
       hasCoupons: invoice.coupons?.length > 0,
       paymentsCount: invoice.payments?.length || 0,
+      tagsCount: flattenedTags.length,
     }));
 
-    return NextResponse.json(invoice);
+    return NextResponse.json({ ...invoice, tags: flattenedTags });
   } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -302,6 +311,11 @@ export async function PATCH(request, { params }) {
             createdAt: "desc",
           },
         },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     });
 
@@ -411,7 +425,10 @@ export async function PATCH(request, { params }) {
       }
     }
 
-    return NextResponse.json(invoice);
+    // Flatten tags for frontend consumption
+    const flattenedTags = invoice.tags?.map((it) => it.tag) || [];
+
+    return NextResponse.json({ ...invoice, tags: flattenedTags });
   } catch (error) {
     console.error("Error updating invoice:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

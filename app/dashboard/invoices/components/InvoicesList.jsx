@@ -14,6 +14,7 @@ import {
   useAddInvoiceTag,
   useRemoveInvoiceTag,
   useExportInvoices,
+  useRecordOfflinePayment,
   useIsMobile,
 } from "@/lib/hooks";
 import { InvoiceMobileCardList } from "./InvoiceMobileCard";
@@ -126,6 +127,7 @@ export function InvoicesList() {
   const addInvoiceTag = useAddInvoiceTag();
   const removeInvoiceTag = useRemoveInvoiceTag();
   const exportMutation = useExportInvoices();
+  const recordOfflinePayment = useRecordOfflinePayment();
 
   // Extract data from API response (new format)
   const invoices = data?.invoices || data || [];
@@ -202,9 +204,7 @@ export function InvoicesList() {
     if (!invoiceForPayment) return;
 
     const amountInCents = Math.round(paymentData.amount * 100);
-    const currentAmountPaid = invoiceForPayment.amountPaid || 0;
-    const totalAmount = invoiceForPayment.total;
-    const currentBalanceDue = invoiceForPayment.balanceDue || totalAmount - currentAmountPaid;
+    const currentBalanceDue = invoiceForPayment.balanceDue || invoiceForPayment.total - (invoiceForPayment.amountPaid || 0);
 
     // Prevent overpayment
     if (amountInCents > currentBalanceDue) {
@@ -212,60 +212,30 @@ export function InvoicesList() {
       return;
     }
 
-    const newAmountPaid = currentAmountPaid + amountInCents;
-    const newBalanceDue = totalAmount - newAmountPaid;
-    const isPaidInFull = newBalanceDue <= 0;
-
-    // Store previous state for undo
-    const previousState = {
-      amountPaid: currentAmountPaid,
-      balanceDue: currentBalanceDue,
-      status: invoiceForPayment.status,
-      depositPaidAt: invoiceForPayment.depositPaidAt,
-      paidAt: invoiceForPayment.paidAt,
-    };
-
-    const updateData = {
-      id: invoiceForPayment.id,
-      amountPaid: newAmountPaid,
-      balanceDue: Math.max(0, newBalanceDue),
-      ...(paymentData.isDeposit && { depositPaidAt: new Date().toISOString() }),
-      ...(isPaidInFull && { status: "paid", paidAt: new Date().toISOString() }),
-    };
-
-    updateInvoice.mutate(updateData, {
-      onSuccess: () => {
-        const message = paymentData.isDeposit ? "Deposit recorded" : isPaidInFull ? "Invoice marked as paid" : "Payment recorded";
-        toast.success(message, {
-          action: {
-            label: "Undo",
-            onClick: () => {
-              // Revert to previous state
-              updateInvoice.mutate({
-                id: invoiceForPayment.id,
-                amountPaid: previousState.amountPaid,
-                balanceDue: previousState.balanceDue,
-                status: previousState.status,
-                depositPaidAt: paymentData.isDeposit ? previousState.depositPaidAt : undefined,
-                paidAt: isPaidInFull ? previousState.paidAt : undefined,
-              }, {
-                onSuccess: () => {
-                  toast.success("Payment undone");
-                },
-                onError: () => {
-                  toast.error("Failed to undo payment");
-                },
-              });
-            },
-          },
-        });
-        setPaymentDialogOpen(false);
-        setInvoiceForPayment(null);
+    // Use the record-payment endpoint which applies tags and triggers workflows
+    recordOfflinePayment.mutate(
+      {
+        invoiceId: invoiceForPayment.id,
+        amount: amountInCents,
+        method: "other",
+        isDeposit: paymentData.isDeposit,
       },
-      onError: () => {
-        toast.error("Failed to record payment");
-      },
-    });
+      {
+        onSuccess: (data) => {
+          const message = paymentData.isDeposit
+            ? "Deposit recorded"
+            : data.isPaidInFull
+            ? "Invoice marked as paid"
+            : "Payment recorded";
+          toast.success(message);
+          setPaymentDialogOpen(false);
+          setInvoiceForPayment(null);
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to record payment");
+        },
+      }
+    );
   };
 
   const handleDelete = () => {
@@ -1014,8 +984,8 @@ export function InvoicesList() {
             <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleRecordPayment} disabled={updateInvoice.isPending || paymentData.amount <= 0}>
-              {updateInvoice.isPending && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
+            <Button onClick={handleRecordPayment} disabled={recordOfflinePayment.isPending || paymentData.amount <= 0}>
+              {recordOfflinePayment.isPending && <LoadingIcon className="h-4 w-4 mr-2 animate-spin" />}
               Record Payment
             </Button>
           </DialogFooter>

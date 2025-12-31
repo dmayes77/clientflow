@@ -236,7 +236,7 @@ export function DashboardShell({ children }) {
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col min-h-0 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">{children}</div>
+        <div className="flex-1 flex flex-col min-h-0 p-3 pb-[calc(6rem+env(safe-area-inset-bottom))]">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </>

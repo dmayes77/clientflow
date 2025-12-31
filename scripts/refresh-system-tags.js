@@ -20,7 +20,8 @@ const INVOICE_STATUS_TAGS = [
   { name: "Draft", color: "gray", description: "Invoice has been created but not yet sent", type: "invoice" },
   { name: "Sent", color: "blue", description: "Invoice has been sent to the client", type: "invoice" },
   { name: "Viewed", color: "indigo", description: "Client has viewed the invoice", type: "invoice" },
-  { name: "Paid", color: "green", description: "Invoice has been paid", type: "invoice" },
+  { name: "Deposit Paid", color: "yellow", description: "Deposit has been paid, balance remaining", type: "invoice" },
+  { name: "Paid", color: "green", description: "Invoice has been paid in full", type: "invoice" },
   { name: "Overdue", color: "red", description: "Invoice is past due date", type: "invoice" },
   { name: "Cancelled", color: "gray", description: "Invoice has been cancelled", type: "invoice" },
 ];
@@ -40,7 +41,14 @@ const CONTACT_STATUS_TAGS = [
   { name: "Inactive", color: "gray", description: "Inactive contact", type: "contact" },
 ];
 
-const ALL_SYSTEM_TAGS = [...INVOICE_STATUS_TAGS, ...BOOKING_STATUS_TAGS, ...CONTACT_STATUS_TAGS];
+const PAYMENT_STATUS_TAGS = [
+  { name: "Succeeded", color: "green", description: "Payment was successful", type: "payment" },
+  { name: "Failed", color: "red", description: "Payment failed", type: "payment" },
+  { name: "Refunded", color: "orange", description: "Payment was refunded", type: "payment" },
+  { name: "Disputed", color: "red", description: "Payment is disputed", type: "payment" },
+];
+
+const ALL_SYSTEM_TAGS = [...INVOICE_STATUS_TAGS, ...BOOKING_STATUS_TAGS, ...CONTACT_STATUS_TAGS, ...PAYMENT_STATUS_TAGS];
 
 // ============================================================================
 // SYSTEM EMAIL TEMPLATES (copied from lib/system-templates.js)

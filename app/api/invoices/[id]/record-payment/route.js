@@ -163,6 +163,11 @@ export async function POST(request, { params }) {
             createdAt: "desc",
           },
         },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     });
 
@@ -206,24 +211,30 @@ export async function POST(request, { params }) {
       }
     }
 
-    // Apply status tags
+    // Apply status tags (synchronously so they're included in response)
     // Payment status tag (succeeded)
-    applyPaymentStatusTag(prisma, payment.id, tenant.id, "succeeded", { tenant, payment }).catch((err) => {
+    try {
+      await applyPaymentStatusTag(prisma, payment.id, tenant.id, "succeeded", { tenant, payment });
+    } catch (err) {
       console.error("Error applying payment status tag:", err);
-    });
+    }
 
     // Invoice status tag (paid or deposit_paid)
     if (isPaidInFull) {
-      applyInvoiceStatusTag(prisma, invoice.id, tenant.id, "paid", { tenant, invoice: updatedInvoice }).catch((err) => {
+      try {
+        await applyInvoiceStatusTag(prisma, invoice.id, tenant.id, "paid", { tenant, invoice: updatedInvoice });
+      } catch (err) {
         console.error("Error applying invoice paid tag:", err);
-      });
+      }
     } else if (isDeposit && !invoice.depositPaidAt) {
       // First deposit payment - apply deposit_paid tag
-      applyInvoiceStatusTag(prisma, invoice.id, tenant.id, "deposit_paid", { tenant, invoice: updatedInvoice }).catch((err) => {
+      try {
+        await applyInvoiceStatusTag(prisma, invoice.id, tenant.id, "deposit_paid", { tenant, invoice: updatedInvoice });
+      } catch (err) {
         console.error("Error applying invoice deposit_paid tag:", err);
-      });
+      }
 
-      // Trigger invoice_deposit_paid workflow
+      // Trigger invoice_deposit_paid workflow (async - doesn't need to complete before response)
       triggerWorkflows("invoice_deposit_paid", {
         tenant,
         invoice: updatedInvoice,
@@ -267,9 +278,56 @@ export async function POST(request, { params }) {
       });
     }
 
+    // Re-fetch invoice with updated tags for response
+    const finalInvoice = await prisma.invoice.findUnique({
+      where: { id: invoice.id },
+      include: {
+        contact: true,
+        booking: {
+          include: {
+            service: true,
+            package: true,
+            services: { include: { service: true } },
+            packages: { include: { package: true } },
+          },
+        },
+        coupons: {
+          include: {
+            coupon: true,
+          },
+        },
+        payments: {
+          include: {
+            payment: {
+              select: {
+                id: true,
+                amount: true,
+                status: true,
+                cardBrand: true,
+                cardLast4: true,
+                metadata: true,
+                createdAt: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+
+    // Flatten tags for frontend consumption
+    const flattenedTags = finalInvoice?.tags?.map((it) => it.tag) || [];
+
     return NextResponse.json({
       success: true,
-      invoice: updatedInvoice,
+      invoice: { ...finalInvoice, tags: flattenedTags },
       payment: {
         id: payment.id,
         amount: payment.amount,
