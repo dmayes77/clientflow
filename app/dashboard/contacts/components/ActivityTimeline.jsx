@@ -1,10 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useContactActivity } from "@/lib/hooks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Calendar, FileText, DollarSign, Tag, UserPlus, CheckCircle2, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Calendar, FileText, DollarSign, Tag, UserPlus, CheckCircle2, Clock, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
+
+const INITIAL_VISIBLE = 10;
+const LOAD_MORE_COUNT = 10;
 
 const activityIcons = {
   contact_created: UserPlus,
@@ -155,6 +160,11 @@ function ActivityItem({ activity }) {
 
 export function ActivityTimeline({ contactId }) {
   const { data, isLoading, error } = useContactActivity(contactId);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+
+  const handleShowMore = () => {
+    setVisibleCount((prev) => prev + LOAD_MORE_COUNT);
+  };
 
   if (isLoading) {
     return (
@@ -191,6 +201,9 @@ export function ActivityTimeline({ contactId }) {
   }
 
   const { activities = [], stats } = data || {};
+  const visibleActivities = activities.slice(0, visibleCount);
+  const hasMore = activities.length > visibleCount;
+  const remainingCount = activities.length - visibleCount;
 
   if (activities.length === 0) {
     return (
@@ -230,10 +243,24 @@ export function ActivityTimeline({ contactId }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-0">
-          {activities.map((activity) => (
+          {visibleActivities.map((activity) => (
             <ActivityItem key={activity.id} activity={activity} />
           ))}
         </div>
+        {hasMore && (
+          <div className="pt-4 border-t mt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground"
+              onClick={handleShowMore}
+            >
+              <ChevronDown className="h-4 w-4 mr-2" />
+              Show {Math.min(remainingCount, LOAD_MORE_COUNT)} more
+              {remainingCount > LOAD_MORE_COUNT && ` (${remainingCount} remaining)`}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -777,7 +777,7 @@ export function InvoiceForm({ mode = "create", invoiceId = null, defaultContactI
 
     const result = await share({
       title: `Invoice ${invoice.invoiceNumber}`,
-      text: `Invoice for ${contactName} - Total: $${(total / 100).toFixed(2)}`,
+      text: `Invoice for ${contactName} - Total: $${(invoice.total / 100).toFixed(2)}`,
       url: invoiceUrl,
     });
 
