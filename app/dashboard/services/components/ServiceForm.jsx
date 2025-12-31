@@ -15,6 +15,7 @@ import { useImages, useUploadImage } from "@/lib/hooks/use-media";
 import { CameraCapture } from "@/components/camera";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BottomActionBar, BottomActionBarSpacer } from "@/components/ui/bottom-action-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -855,6 +856,7 @@ Format the includes list so I can easily copy each item individually.`;
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Mobile Tabs (< 1024px) */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="lg:hidden">
@@ -896,60 +898,58 @@ Format the includes list so I can easily copy each item individually.`;
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t mt-6">
-        {/* Delete button - only show in edit mode */}
-        {isEdit && (
+      {/* Spacer for fixed footer */}
+      <BottomActionBarSpacer />
+    </form>
+
+    {/* Action Buttons - Fixed footer */}
+    <BottomActionBar
+        left={isEdit ? (
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => setDeleteDialogOpen(true)}
-            className="h-11 text-destructive hover:bg-destructive/10 hover:text-destructive order-2 sm:order-1"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Service
+            <Trash2 className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Delete</span>
           </Button>
-        )}
-
-        {/* Spacer for create mode */}
-        {!isEdit && <div className="hidden sm:block" />}
-
-        {/* Preview/Save/Cancel buttons */}
-        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 order-1 sm:order-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={mutation.isPending}
-            className="h-11"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setPreviewDialogOpen(true)}
-            disabled={!formData.name}
-            className="h-11"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Preview
-          </Button>
-          <Button type="submit" disabled={mutation.isPending} className="h-11">
-            {mutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {isEdit ? "Saving..." : "Creating..."}
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {isEdit ? "Save Changes" : "Create Service"}
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+        ) : null}
+      >
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleCancel}
+          disabled={mutation.isPending}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setPreviewDialogOpen(true)}
+          disabled={!formData.name}
+        >
+          <Eye className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Preview</span>
+        </Button>
+        <Button type="button" size="sm" disabled={mutation.isPending} onClick={handleSubmit}>
+          {mutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
+              <span className="hidden sm:inline">{isEdit ? "Saving..." : "Creating..."}</span>
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">{isEdit ? "Save Changes" : "Create Service"}</span>
+            </>
+          )}
+        </Button>
+      </BottomActionBar>
 
       {/* Image Selection Dialog */}
       <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
@@ -1135,6 +1135,6 @@ Format the includes list so I can easily copy each item individually.`;
         open={previewDialogOpen}
         onOpenChange={setPreviewDialogOpen}
       />
-    </form>
+    </>
   );
 }

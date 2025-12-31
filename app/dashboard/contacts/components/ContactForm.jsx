@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { BottomActionBar, BottomActionBarSpacer } from "@/components/ui/bottom-action-bar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
@@ -273,7 +274,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-4">
       {/* Header */}
       <div className="flex items-start gap-3">
         <Button variant="ghost" size="icon" className="size-11 shrink-0" onClick={() => router.back()}>
@@ -473,39 +474,42 @@ export function ContactForm({ mode = "create", contactId = null }) {
                 <p className="text-xs text-muted-foreground">Photos are saved to Media Library</p>
               </div>
 
-              {/* Delete Button (edit mode only) */}
-              {mode === "edit" && (
-                <div className="pt-4 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Contact
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/contacts")}>
-            Cancel
-          </Button>
-          <SaveButton
-            form={form}
-            saveButton={saveButton}
-            variant="success"
-            loadingText={mode === "edit" ? "Saving..." : "Creating..."}
-          >
-            {mode === "edit" ? "Save Changes" : "Create Contact"}
-          </SaveButton>
-        </div>
+        {/* Spacer for fixed footer */}
+        <BottomActionBarSpacer />
       </form>
+
+      {/* Action Buttons - Fixed footer */}
+      <BottomActionBar
+        left={mode === "edit" ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Delete</span>
+          </Button>
+        ) : null}
+      >
+        <Button type="button" variant="outline" size="sm" onClick={() => router.push("/dashboard/contacts")}>
+          Cancel
+        </Button>
+        <SaveButton
+          form={form}
+          saveButton={saveButton}
+          variant="success"
+          size="sm"
+          loadingText={mode === "edit" ? "Saving..." : "Creating..."}
+        >
+          {mode === "edit" ? "Save Changes" : "Create Contact"}
+        </SaveButton>
+      </BottomActionBar>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
