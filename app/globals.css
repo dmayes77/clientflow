@@ -168,10 +168,23 @@
 }
 
 @theme {
-  /* Breakpoints */
+  /* ============================================
+     Breakpoints - Mobile-first approach
+
+     Usage: p-0 fold:p-1 tablet:p-2 laptop:p-3 desktop:p-4
+
+     mobile: 0-479px (default, small phones)
+     fold: 480px+ (foldable/large phones)
+     tablet: 640px+ (tablets)
+     laptop: 1024px+ (laptops)
+     desktop: 1280px+ (large desktops)
+
+     JS: useMediaQuery("(max-width: 639px)") for mobile+fold
+     ============================================ */
   --breakpoint-fold: 480px;
   --breakpoint-tablet: 640px;
-  --breakpoint-desktop: 1024px;
+  --breakpoint-laptop: 1024px;
+  --breakpoint-desktop: 1280px;
 
   /* Typography - Compact scale */
   --font-size-2xs: 0.625rem;

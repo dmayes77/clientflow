@@ -11,6 +11,55 @@ import { useSidebar } from "@/components/ui/sidebar";
 export const BOTTOM_ACTION_BAR_HEIGHT = 80; // ~5rem (h-20)
 
 /**
+ * ActionButtonGroup - Flexible button layout with equal-width buttons
+ *
+ * Renders buttons in a flex-wrap layout with equal widths (max 4 per row).
+ * When there are 4+ buttons, automatically switches to icon-only mode.
+ *
+ * @example
+ * <ActionButtonGroup left={<Button>Delete</Button>}>
+ *   <Button>Cancel</Button>
+ *   <Button>Save</Button>
+ * </ActionButtonGroup>
+ */
+export function ActionButtonGroup({ children, left, className }) {
+  // Count total buttons to determine flex basis (max 4 per row)
+  const leftCount = left ? 1 : 0;
+  const childrenCount = Array.isArray(children) ? children.length : children ? 1 : 0;
+  const totalButtons = leftCount + childrenCount;
+  const cols = Math.min(totalButtons, 4);
+
+  // Calculate flex basis percentage (accounting for gap)
+  const basisClass = {
+    1: "basis-full",
+    2: "basis-[calc(50%-0.25rem)]",
+    3: "basis-[calc(33.333%-0.334rem)]",
+    4: "basis-[calc(25%-0.375rem)]",
+  }[cols];
+
+  // When 4+ buttons, show icon-only (hide text, keep svg icons)
+  const iconOnlyClass = cols >= 4 && "[&_button]:gap-0 [&_button>*:not(svg)]:sr-only";
+
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-stretch gap-2",
+        iconOnlyClass,
+        className
+      )}
+    >
+      {left && <div className={cn("grow *:w-full *:h-full", basisClass)}>{left}</div>}
+      {Array.isArray(children)
+        ? children.map((child, i) => (
+            <div key={i} className={cn("grow *:w-full *:h-full", basisClass)}>{child}</div>
+          ))
+        : children && <div className={cn("grow *:w-full *:h-full", basisClass)}>{children}</div>
+      }
+    </div>
+  );
+}
+
+/**
  * BottomActionBar - Fixed footer for form/page actions
  *
  * A mobile-first, fixed-to-bottom action bar for primary page actions.
@@ -47,24 +96,22 @@ export function BottomActionBar({
         "pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] px-4",
         "border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80",
         "z-50 transition-[left] duration-200",
+        // Desktop: right-align the action group
+        "flex justify-end",
         sidebarOpen && "md:left-64",
         className
       )}
     >
-      <div className={cn(
-        "flex items-center gap-2 md:gap-3",
-        left ? "justify-between" : "justify-end",
-        contentClassName
-      )}>
-        {left && (
-          <div className="flex items-center gap-2">
-            {left}
-          </div>
+      <ActionButtonGroup
+        left={left}
+        className={cn(
+          // Mobile: full width, Desktop: max-width with right alignment
+          "w-full tablet:w-auto tablet:min-w-80 tablet:max-w-md",
+          contentClassName
         )}
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          {children}
-        </div>
-      </div>
+      >
+        {children}
+      </ActionButtonGroup>
     </div>
   );
 }
