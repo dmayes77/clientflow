@@ -719,10 +719,10 @@ export function EmailTemplateForm({ mode = "create", template = null }) {
           e.preventDefault();
           form.handleSubmit();
         }}
-        className="h-full flex flex-col"
+        className="space-y-4 pb-20 sm:pb-0"
       >
         {/* Header */}
-        <div className="flex items-start gap-3 shrink-0 mb-4">
+        <div className="flex items-start gap-3">
           <Button type="button" variant="ghost" size="icon" onClick={() => router.push("/dashboard/email-templates")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -735,11 +735,10 @@ export function EmailTemplateForm({ mode = "create", template = null }) {
         </div>
 
         {/* Split View - hide preview on mobile */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form */}
-          <Card className="h-full overflow-hidden flex flex-col">
-            <CardContent className="p-4 sm:p-6 flex flex-col flex-1 overflow-hidden">
-              <div className="flex-1 overflow-auto -mr-4 pr-4 sm:-mr-6 sm:pr-6 space-y-4">
+          <Card>
+            <CardContent className="p-4 sm:p-6 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <form.Field name="name">
                     {(field) => (
@@ -826,7 +825,6 @@ export function EmailTemplateForm({ mode = "create", template = null }) {
 
                 {/* Spacer for mobile bottom action bar */}
                 {isMobile && <BottomActionBarSpacer />}
-              </div>
             </CardContent>
           </Card>
 
