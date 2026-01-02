@@ -1,5 +1,12 @@
 # What's New
 
+## v1.10.6 - January 2, 2026
+
+### What's New Page
+- **Dynamic Release Notes** - The What's New page now displays updates directly from this changelog
+
+---
+
 ## v1.10.5 - January 2, 2026
 
 ### Workflow Improvements
