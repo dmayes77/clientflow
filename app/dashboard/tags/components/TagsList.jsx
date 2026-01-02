@@ -10,14 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -58,14 +50,7 @@ import {
 } from "lucide-react";
 import { BottomSheet, BottomSheetActions, BottomSheetStats, BottomSheetStat } from "@/components/ui/bottom-sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import { useTags, useCreateTag, useDeleteTag, useMergeTags, useImportTags, useExportTags } from "@/lib/hooks";
-import {
-  useTanstackForm,
-  TextField,
-  TextareaField,
-  SaveButton,
-  useSaveButton,
-} from "@/components/ui/tanstack-form";
+import { useTags, useDeleteTag, useMergeTags, useImportTags, useExportTags } from "@/lib/hooks";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const TAG_TYPES = [
@@ -96,16 +81,9 @@ function getColorClasses(colorValue) {
   return COLORS.find((c) => c.value === colorValue) || COLORS[0];
 }
 
-const getInitialFormState = (activeFilter) => ({
-  name: "",
-  color: "blue",
-  description: "",
-  type: activeFilter !== "all" ? activeFilter : "general",
-});
 
 export function TagsList() {
   const router = useRouter();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [viewingTag, setViewingTag] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -120,43 +98,10 @@ export function TagsList() {
 
   // TanStack Query hooks
   const { data: tags = [], isLoading: loading } = useTags(activeFilter);
-  const createTagMutation = useCreateTag();
   const deleteTagMutation = useDeleteTag();
   const mergeTagsMutation = useMergeTags();
   const importTagsMutation = useImportTags();
   const exportTagsMutation = useExportTags();
-
-  // Save button state
-  const saveButton = useSaveButton();
-
-  // TanStack Form (for creating new tags only)
-  const form = useTanstackForm({
-    defaultValues: getInitialFormState(activeFilter),
-    onSubmit: async ({ value }) => {
-      const startTime = Date.now();
-
-      try {
-        // Minimum 2 second delay for loading state visibility
-        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
-        await Promise.all([createTagMutation.mutateAsync(value), minDelay]);
-
-        toast.success("Tag created");
-        saveButton.handleSuccess();
-
-        // Close dialog after 2 seconds to show success state
-        setTimeout(() => {
-          handleCloseCreate();
-        }, 2000);
-      } catch (error) {
-        const elapsed = Date.now() - startTime;
-        const remainingTime = Math.max(0, 2000 - elapsed);
-        await new Promise(resolve => setTimeout(resolve, remainingTime));
-
-        toast.error(error.message || "Failed to create tag");
-        saveButton.handleError();
-      }
-    },
-  });
 
   const getTypeLabel = (type) => {
     const found = TAG_TYPES.find((t) => t.value === type);
@@ -164,14 +109,7 @@ export function TagsList() {
   };
 
   const handleOpenCreate = () => {
-    form.reset();
-    form.setFieldValue("type", activeFilter !== "all" ? activeFilter : "general");
-    setCreateDialogOpen(true);
-  };
-
-  const handleCloseCreate = () => {
-    setCreateDialogOpen(false);
-    form.reset();
+    router.push("/dashboard/tags/new");
   };
 
   const handleTagClick = (tag) => {
@@ -455,154 +393,6 @@ export function TagsList() {
           })}
         </div>
       )}
-
-      {/* Create Tag Sheet */}
-      <Sheet open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Create Tag</SheetTitle>
-            <SheetDescription>
-              Create a new tag to organize your contacts
-            </SheetDescription>
-          </SheetHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
-            className="flex flex-col h-[calc(100vh-10rem)]"
-          >
-            <div className="space-y-4 flex-1 overflow-y-auto px-4 py-6">
-              <TextField
-                form={form}
-                name="name"
-                label="Tag Name"
-                placeholder="e.g., hot-lead, vip, follow-up"
-                required
-                validators={{
-                  onChange: ({ value }) =>
-                    !value || value.trim().length < 2
-                      ? "Name must be at least 2 characters"
-                      : undefined,
-                }}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <form.Field name="type">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Type</label>
-                      <Select
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const TypeIcon = TAG_TYPES.find((t) => t.value === field.state.value)?.icon || Tag;
-                                return <TypeIcon className="h-3.5 w-3.5" />;
-                              })()}
-                              {TAG_TYPES.find((t) => t.value === field.state.value)?.label || "General"}
-                            </div>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TAG_TYPES.filter((t) => t.value !== "all").map((type) => {
-                            const Icon = type.icon;
-                            return (
-                              <SelectItem key={type.value} value={type.value}>
-                                <div className="flex items-center gap-2">
-                                  <Icon className="h-3.5 w-3.5" />
-                                  {type.label}
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </form.Field>
-
-                <form.Field name="color">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Color</label>
-                      <Select
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>
-                            <div className="flex items-center gap-2">
-                              <div className={cn("h-3 w-3 rounded-full", getColorClasses(field.state.value).dot)} />
-                              {COLORS.find((c) => c.value === field.state.value)?.label || "Blue"}
-                            </div>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COLORS.map((color) => (
-                            <SelectItem key={color.value} value={color.value}>
-                              <div className="flex items-center gap-2">
-                                <div className={cn("h-3 w-3 rounded-full", color.dot)} />
-                                {color.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-
-              <TextareaField
-                form={form}
-                name="description"
-                label="Description (optional)"
-                placeholder="What is this tag used for?"
-                rows={2}
-              />
-
-              {/* Preview */}
-              <form.Subscribe selector={(state) => [state.values.name, state.values.color]}>
-                {([name, color]) => (
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground">Preview</Label>
-                    <div className="p-3 border rounded-lg">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          getColorClasses(color).bg,
-                          getColorClasses(color).text
-                        )}
-                      >
-                        {name || "tag-name"}
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-              </form.Subscribe>
-            </div>
-
-            <SheetFooter className="pt-6 gap-2">
-              <Button type="button" variant="outline" onClick={handleCloseCreate} className="flex-1 sm:flex-none">
-                Cancel
-              </Button>
-              <SaveButton
-                form={form}
-                saveButton={saveButton}
-                loadingText="Creating..."
-                className="flex-1 sm:flex-none"
-              >
-                Create
-              </SaveButton>
-            </SheetFooter>
-          </form>
-        </SheetContent>
-      </Sheet>
 
       {/* Mobile View Sheet (bottom) - only render on mobile */}
       {isMobile && viewingTag && (() => {

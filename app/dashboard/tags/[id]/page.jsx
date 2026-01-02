@@ -34,7 +34,7 @@ import {
   Trash2,
   Merge,
 } from "lucide-react";
-import { useTags, useUpdateTag, useDeleteTag, useMergeTags } from "@/lib/hooks";
+import { useTags, useCreateTag, useUpdateTag, useDeleteTag, useMergeTags } from "@/lib/hooks";
 import {
   useTanstackForm,
   TextField,
@@ -72,38 +72,49 @@ function getColorClasses(colorValue) {
   return COLORS.find((c) => c.value === colorValue) || COLORS[0];
 }
 
-// Separate form component that receives tag data as props
-function TagEditForm({ tag, tags, onSuccess }) {
+// Shared form component for create and edit - exported for use in new tag page
+export function TagForm({ tag, tags = [] }) {
   const router = useRouter();
+  const isEditMode = !!tag;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [mergeTarget, setMergeTarget] = useState("");
 
+  const createTagMutation = useCreateTag();
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
   const mergeTagsMutation = useMergeTags();
 
   const saveButton = useSaveButton();
 
-  // Initialize form with tag data as defaultValues
+  // Initialize form with tag data as defaultValues (or empty for create)
   const form = useTanstackForm({
     defaultValues: {
-      name: tag.name,
-      color: tag.color || "blue",
-      description: tag.description || "",
-      type: tag.type || "general",
+      name: tag?.name || "",
+      color: tag?.color || "blue",
+      description: tag?.description || "",
+      type: tag?.type || "general",
     },
     onSubmit: async ({ value }) => {
       const startTime = Date.now();
 
       try {
         const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
-        await Promise.all([
-          updateTagMutation.mutateAsync({ id: tag.id, ...value }),
-          minDelay,
-        ]);
 
-        toast.success("Tag updated");
+        if (isEditMode) {
+          await Promise.all([
+            updateTagMutation.mutateAsync({ id: tag.id, ...value }),
+            minDelay,
+          ]);
+          toast.success("Tag updated");
+        } else {
+          await Promise.all([
+            createTagMutation.mutateAsync(value),
+            minDelay,
+          ]);
+          toast.success("Tag created");
+        }
+
         saveButton.handleSuccess();
 
         setTimeout(() => {
@@ -114,7 +125,7 @@ function TagEditForm({ tag, tags, onSuccess }) {
         const remainingTime = Math.max(0, 2000 - elapsed);
         await new Promise(resolve => setTimeout(resolve, remainingTime));
 
-        toast.error(error.message || "Failed to update tag");
+        toast.error(error.message || `Failed to ${isEditMode ? "update" : "create"} tag`);
         saveButton.handleError();
       }
     },
@@ -150,8 +161,8 @@ function TagEditForm({ tag, tags, onSuccess }) {
     }
   };
 
-  // System tags cannot be edited
-  if (tag.isSystem) {
+  // System tags cannot be edited (only applies in edit mode)
+  if (isEditMode && tag.isSystem) {
     return (
       <div className="flex flex-col h-full space-y-4">
         <div className="flex items-start gap-3">
@@ -201,10 +212,12 @@ function TagEditForm({ tag, tags, onSuccess }) {
         <div className="flex-1 min-w-0">
           <form.Subscribe selector={(state) => state.values.name}>
             {(name) => (
-              <h1 className="hig-title-2 truncate">{name || "Edit Tag"}</h1>
+              <h1 className="hig-title-2 truncate">{name || (isEditMode ? "Edit Tag" : "New Tag")}</h1>
             )}
           </form.Subscribe>
-          <p className="hig-footnote text-muted-foreground">Update tag details</p>
+          <p className="hig-footnote text-muted-foreground">
+            {isEditMode ? "Update tag details" : "Create a new tag"}
+          </p>
         </div>
       </div>
 
@@ -337,106 +350,114 @@ function TagEditForm({ tag, tags, onSuccess }) {
       {/* Action Buttons - Fixed footer */}
       <BottomActionBar
         left={
+          isEditMode ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="size-4 sm:mr-1" />
+              <span className="hidden sm:inline">Delete</span>
+            </Button>
+          ) : undefined
+        }
+      >
+        {isEditMode && (
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-            onClick={() => setDeleteDialogOpen(true)}
+            onClick={() => setMergeDialogOpen(true)}
           >
-            <Trash2 className="size-4 sm:mr-1" />
-            <span className="hidden sm:inline">Delete</span>
+            <Merge className="size-4 sm:mr-1" />
+            <span className="hidden sm:inline">Merge</span>
           </Button>
-        }
-      >
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setMergeDialogOpen(true)}
-        >
-          <Merge className="size-4 sm:mr-1" />
-          <span className="hidden sm:inline">Merge</span>
-        </Button>
+        )}
         <SaveButton
           form={form}
           saveButton={saveButton}
           size="sm"
-          loadingText="Saving..."
+          loadingText={isEditMode ? "Saving..." : "Creating..."}
         >
-          Save
+          {isEditMode ? "Save" : "Create"}
         </SaveButton>
       </BottomActionBar>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Tag</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{tag.name}"? This will remove it from all contacts, invoices, and bookings.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteTagMutation.isPending}>
-              {deleteTagMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Confirmation Dialog (edit mode only) */}
+      {isEditMode && (
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Tag</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{tag.name}"? This will remove it from all contacts, invoices, and bookings.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleteTagMutation.isPending}>
+                {deleteTagMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Merge Dialog */}
-      <Dialog open={mergeDialogOpen} onOpenChange={setMergeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Merge Tag</DialogTitle>
-            <DialogDescription>
-              Merge "{tag.name}" into another tag. All associations will be moved to the target tag, and "{tag.name}" will be deleted.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Merge into</Label>
-              <Select value={mergeTarget} onValueChange={setMergeTarget}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select target tag..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {tags
-                    .filter((t) => t.id !== tag.id && !t.isSystem)
-                    .map((t) => {
-                      const colorClasses = getColorClasses(t.color);
-                      return (
-                        <SelectItem key={t.id} value={t.id}>
-                          <div className="flex items-center gap-2">
-                            <div className={cn("h-2 w-2 rounded-full", colorClasses.dot)} />
-                            {t.name}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                </SelectContent>
-              </Select>
+      {/* Merge Dialog (edit mode only) */}
+      {isEditMode && (
+        <Dialog open={mergeDialogOpen} onOpenChange={setMergeDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Merge Tag</DialogTitle>
+              <DialogDescription>
+                Merge "{tag.name}" into another tag. All associations will be moved to the target tag, and "{tag.name}" will be deleted.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Merge into</Label>
+                <Select value={mergeTarget} onValueChange={setMergeTarget}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select target tag..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tags
+                      .filter((t) => t.id !== tag.id && !t.isSystem)
+                      .map((t) => {
+                        const colorClasses = getColorClasses(t.color);
+                        return (
+                          <SelectItem key={t.id} value={t.id}>
+                            <div className="flex items-center gap-2">
+                              <div className={cn("h-2 w-2 rounded-full", colorClasses.dot)} />
+                              {t.name}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setMergeDialogOpen(false);
-              setMergeTarget("");
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={handleMerge} disabled={!mergeTarget || mergeTagsMutation.isPending}>
-              {mergeTagsMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-              Merge Tags
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => {
+                setMergeDialogOpen(false);
+                setMergeTarget("");
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleMerge} disabled={!mergeTarget || mergeTagsMutation.isPending}>
+                {mergeTagsMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+                Merge Tags
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -467,5 +488,5 @@ export default function TagEditPage({ params }) {
   }
 
   // Render form with tag data - key ensures form remounts if tag changes
-  return <TagEditForm key={tag.id} tag={tag} tags={tags} />;
+  return <TagForm key={tag.id} tag={tag} tags={tags} />;
 }

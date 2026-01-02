@@ -1,5 +1,6 @@
 "use client";
 
+import { Children } from "react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 
@@ -23,19 +24,13 @@ export const BOTTOM_ACTION_BAR_HEIGHT = 80; // ~5rem (h-20)
  * </ActionButtonGroup>
  */
 export function ActionButtonGroup({ children, left, className }) {
-  // Count total buttons to determine flex basis (max 4 per row)
-  const leftCount = left ? 1 : 0;
-  const childrenCount = Array.isArray(children) ? children.length : children ? 1 : 0;
-  const totalButtons = leftCount + childrenCount;
-  const cols = Math.min(totalButtons, 4);
+  // Use React.Children to properly handle children (works with fragments, arrays, single elements)
+  const childrenArray = Children.toArray(children);
 
-  // Calculate flex basis percentage (accounting for gap)
-  const basisClass = {
-    1: "basis-full",
-    2: "basis-[calc(50%-0.25rem)]",
-    3: "basis-[calc(33.333%-0.334rem)]",
-    4: "basis-[calc(25%-0.375rem)]",
-  }[cols];
+  // Count total buttons to determine grid columns (max 4 per row)
+  const leftCount = left ? 1 : 0;
+  const totalButtons = leftCount + childrenArray.length;
+  const cols = Math.min(totalButtons, 4);
 
   // When 4+ buttons, show icon-only (hide text, keep svg icons)
   const iconOnlyClass = cols >= 4 && "[&_button]:gap-0 [&_button>*:not(svg)]:sr-only";
@@ -43,18 +38,19 @@ export function ActionButtonGroup({ children, left, className }) {
   return (
     <div
       className={cn(
-        "flex flex-wrap items-stretch gap-2",
+        "grid gap-2",
+        cols === 1 && "grid-cols-1",
+        cols === 2 && "grid-cols-2",
+        cols === 3 && "grid-cols-3",
+        cols === 4 && "grid-cols-4",
         iconOnlyClass,
         className
       )}
     >
-      {left && <div className={cn("grow *:w-full *:h-full", basisClass)}>{left}</div>}
-      {Array.isArray(children)
-        ? children.map((child, i) => (
-            <div key={i} className={cn("grow *:w-full *:h-full", basisClass)}>{child}</div>
-          ))
-        : children && <div className={cn("grow *:w-full *:h-full", basisClass)}>{children}</div>
-      }
+      {left && <div className="*:w-full *:h-full">{left}</div>}
+      {childrenArray.map((child, i) => (
+        <div key={i} className="*:w-full *:h-full">{child}</div>
+      ))}
     </div>
   );
 }
