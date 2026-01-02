@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function WorkflowsPage() {
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 pb-20 sm:pb-0">
       <div>
         <h1 className="font-bold">Workflows</h1>
         <p className="text-muted-foreground mt-0.5 sm:mt-1">

@@ -296,6 +296,25 @@ async function createDefaultWorkflowsForTenant(tenantId) {
         { type: "send_email", config: { templateId: templateByKey["client_welcome"] || null } },
       ],
     },
+    // New automation workflows using new action types
+    {
+      name: "Auto-Confirm Booking on Payment",
+      description: "Automatically confirm booking when payment is received",
+      triggerType: "payment_received",
+      active: false, // Off by default
+      actions: [
+        { type: "update_booking_status", config: { status: "confirmed" } },
+      ],
+    },
+    {
+      name: "Auto-Create Invoice for Booking",
+      description: "Automatically create an invoice when a booking is confirmed",
+      triggerType: "booking_confirmed",
+      active: false, // Off by default
+      actions: [
+        { type: "create_invoice", config: { dueInDays: 30, includeBookingTotal: true } },
+      ],
+    },
   ];
 
   const created = [];
@@ -313,7 +332,7 @@ async function createDefaultWorkflowsForTenant(tenantId) {
           description: wf.description,
           triggerType: wf.triggerType,
           delayMinutes: 0,
-          active: true,
+          active: wf.active !== undefined ? wf.active : true,
           isSystem: true,
           actions: wf.actions,
         },

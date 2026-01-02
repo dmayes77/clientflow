@@ -1,20 +1,39 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { ActionButtonGroup } from "./bottom-action-bar";
 
+/**
+ * BottomSheet - Mobile-optimized slide-up sheet with action bar
+ *
+ * A professional bottom sheet component for mobile views that slides up
+ * with a drag handle, content area, and anchored action bar at the bottom.
+ */
 export function BottomSheet({
   open,
   onOpenChange,
   children,
   title,
   description,
-  className = ""
+  icon,
+  actions,
+  minHeight = "75vh",
+  className,
+  showCloseButton = true,
 }) {
   const sheetRef = useRef(null);
   const dragControls = useDragControls();
+  const [mounted, setMounted] = useState(false);
+
+  // Only render on client to avoid hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Lock body scroll when open
   useEffect(() => {
@@ -35,7 +54,9 @@ export function BottomSheet({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -45,7 +66,7 @@ export function BottomSheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/50"
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px]"
             onClick={() => onOpenChange(false)}
           />
 
@@ -61,52 +82,119 @@ export function BottomSheet({
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.5 }}
             onDragEnd={handleDragEnd}
-            className={`fixed inset-x-0 bottom-0 z-50 flex flex-col bg-background rounded-t-xl h-[85vh] max-h-[85vh] ${className}`}
+            style={{ minHeight }}
+            className={cn(
+              "fixed inset-x-0 bottom-0 z-50 bg-background rounded-t-xl",
+              "flex flex-col",
+              className
+            )}
           >
             {/* Drag handle */}
             <div
-              className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing touch-none"
+              className="flex justify-center pt-3 pb-4 cursor-grab active:cursor-grabbing touch-none"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
             </div>
 
-            {/* Header */}
-            <div className="flex items-start justify-between px-4 pb-3 border-b">
-              <div>
-                {title && <h2>{title}</h2>}
-                {description && (
-                  <p className="text-muted-foreground tablet:text-sm desktop:text-xs text-[13px] tracking-[-0.078px] leading-[18px]">
-                    {description}
-                  </p>
-                )}
-              </div>
+            {/* Close button */}
+            {showCloseButton && (
               <Button
                 variant="ghost"
-                size="icon-xs"
+                size="icon"
+                className="absolute top-3 right-3 size-8"
                 onClick={() => onOpenChange(false)}
-                className="shrink-0 -mt-1"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </Button>
-            </div>
+            )}
 
-            {/* Content */}
-            <div className="flex-1 min-h-0 flex flex-col">
+            {/* Header */}
+            {(title || icon) && (
+              <div className="px-6 pb-4 shrink-0">
+                <div className="flex items-center gap-4">
+                  {icon && <div className="shrink-0">{icon}</div>}
+                  <div className="flex-1 min-w-0 pr-8">
+                    {title && (
+                      <h2 className="text-xl font-semibold truncate">{title}</h2>
+                    )}
+                    {description && (
+                      <div className="text-muted-foreground text-sm mt-0.5">
+                        {description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Content - scrollable area, flex-1 pushes actions to bottom */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
               {children}
             </div>
+
+            {/* Actions - anchored to bottom with safe area padding */}
+            {actions && (
+              <div className="shrink-0 border-t bg-background pb-[env(safe-area-inset-bottom)] mt-auto">
+                {actions}
+              </div>
+            )}
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 
-// Footer component to pin at bottom
-export function BottomSheetFooter({ children, className = "" }) {
+/**
+ * BottomSheetActions - Action bar for BottomSheet
+ *
+ * Wraps ActionButtonGroup with proper styling for use inside BottomSheet.
+ * Always anchored to the bottom of the sheet.
+ */
+export function BottomSheetActions({ children, left, className }) {
   return (
-    <div className={`sticky bottom-0 px-4 py-3 border-t bg-background ${className}`}>
+    <ActionButtonGroup left={left} className={cn("px-4 py-2.5", className)}>
       {children}
+    </ActionButtonGroup>
+  );
+}
+
+/**
+ * BottomSheetStats - Grid of stat cards for BottomSheet
+ *
+ * Displays stats in a responsive grid layout.
+ */
+export function BottomSheetStats({ children, columns = 3, className }) {
+  return (
+    <div
+      className={cn(
+        "grid gap-3",
+        columns === 2 && "grid-cols-2",
+        columns === 3 && "grid-cols-3",
+        columns === 4 && "grid-cols-4",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * BottomSheetStat - Individual stat card for BottomSheetStats
+ */
+export function BottomSheetStat({ icon: Icon, value, label, className }) {
+  return (
+    <div className={cn("bg-muted/50 rounded-lg p-3 text-center", className)}>
+      {Icon && (
+        <div className="flex justify-center mb-1">
+          <Icon className="size-5 text-muted-foreground" />
+        </div>
+      )}
+      <div className="font-semibold text-foreground">{value}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   Copy,
   Eye,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
@@ -24,12 +25,16 @@ import { Badge } from "@/components/ui/badge";
 import { useEmailTemplates, useCreateEmailTemplate, useDeleteEmailTemplate } from "@/lib/hooks";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingCard } from "@/components/ui/loading-card";
+import { BottomSheet, BottomSheetActions } from "@/components/ui/bottom-sheet";
 
 const CATEGORIES = [
   { value: "welcome", label: "Welcome" },
+  { value: "lead", label: "Lead" },
+  { value: "client", label: "Client" },
   { value: "follow-up", label: "Follow Up" },
   { value: "booking", label: "Booking" },
   { value: "invoice", label: "Invoice" },
+  { value: "payment", label: "Payment" },
   { value: "reminder", label: "Reminder" },
   { value: "thank-you", label: "Thank You" },
   { value: "other", label: "Other" },
@@ -40,6 +45,8 @@ export function EmailTemplatesList() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [filterCategory, setFilterCategory] = useState("all");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 639px)");
 
   // TanStack Query hooks
@@ -60,6 +67,11 @@ export function EmailTemplatesList() {
     setIsPreviewOpen(true);
   };
 
+  const handleOpenSheet = (template) => {
+    setSelectedTemplate(template);
+    setSheetOpen(true);
+  };
+
   const handleDuplicate = async (template) => {
     createMutation.mutate(
       {
@@ -72,6 +84,7 @@ export function EmailTemplatesList() {
       {
         onSuccess: () => {
           toast.success("Template duplicated");
+          setSheetOpen(false);
         },
         onError: (error) => {
           toast.error(error.message || "Failed to duplicate template");
@@ -80,19 +93,25 @@ export function EmailTemplatesList() {
     );
   };
 
-  const handleDelete = async (template) => {
-    if (!confirm(`Are you sure you want to delete "${template.name}"?`)) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!selectedTemplate) return;
 
-    deleteMutation.mutate(template.id, {
+    deleteMutation.mutate(selectedTemplate.id, {
       onSuccess: () => {
         toast.success("Template deleted");
+        setDeleteDialogOpen(false);
+        setSheetOpen(false);
+        setSelectedTemplate(null);
       },
       onError: (error) => {
         toast.error(error.message || "Failed to delete template");
       },
     });
+  };
+
+  const handleDeleteFromDropdown = (template) => {
+    setSelectedTemplate(template);
+    setDeleteDialogOpen(true);
   };
 
   const filteredTemplates = filterCategory === "all" ? templates : templates.filter((t) => t.category === filterCategory);
@@ -160,7 +179,7 @@ export function EmailTemplatesList() {
                 <div
                   key={template.id}
                   className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
-                  onClick={() => handleOpenEdit(template)}
+                  onClick={() => handleOpenSheet(template)}
                 >
                   {/* Icon */}
                   <div className="size-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -226,7 +245,7 @@ export function EmailTemplatesList() {
                             Duplicate
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDelete(template)} className="text-destructive">
+                          <DropdownMenuItem onClick={() => handleDeleteFromDropdown(template)} className="text-destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </DropdownMenuItem>
@@ -247,7 +266,7 @@ export function EmailTemplatesList() {
         </CardContent>
       </Card>
 
-      {/* Preview Dialog */}
+      {/* Preview Dialog (Desktop) */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -278,6 +297,121 @@ export function EmailTemplatesList() {
             >
               <Pencil className="h-4 w-4 mr-2" />
               Edit Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile BottomSheet */}
+      <BottomSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        title={selectedTemplate?.name}
+        description={selectedTemplate?.category ? getCategoryLabel(selectedTemplate.category) : "Email Template"}
+        icon={
+          <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Mail className="size-6 text-primary" />
+          </div>
+        }
+        actions={
+          <BottomSheetActions
+            left={
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2 className="size-4 mr-1.5" />
+                Delete
+              </Button>
+            }
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => selectedTemplate && handleDuplicate(selectedTemplate)}
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="size-4 mr-1.5 animate-spin" />
+              ) : (
+                <Copy className="size-4 mr-1.5" />
+              )}
+              Duplicate
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                setSheetOpen(false);
+                if (selectedTemplate) handleOpenEdit(selectedTemplate);
+              }}
+            >
+              <Pencil className="size-4 mr-1.5" />
+              Edit
+            </Button>
+          </BottomSheetActions>
+        }
+      >
+        {selectedTemplate && (
+          <div className="bg-white rounded-lg border overflow-hidden">
+            {/* Email Header */}
+            <div className="p-4 border-b bg-muted/20">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="size-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">Your Business</p>
+                  <p className="text-xs text-muted-foreground truncate">hello@business.com</p>
+                </div>
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground shrink-0">To:</span>
+                  <span className="truncate">john@example.com</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground shrink-0">Subject:</span>
+                  <span className="font-medium truncate">{selectedTemplate.subject}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Email Body */}
+            <div
+              className="p-4 prose prose-sm max-w-none text-sm [&_p]:leading-relaxed [&_p]:mb-3 [&_h1]:mb-3 [&_h2]:mb-2 [&_h3]:mb-2 [&_ul]:mb-3 [&_ol]:mb-3 [&_li]:mb-1"
+              dangerouslySetInnerHTML={{ __html: selectedTemplate.body || '<p class="text-muted-foreground">No content</p>' }}
+            />
+
+            {/* Email Footer */}
+            <div className="px-4 py-3 border-t bg-muted/10 text-xs text-muted-foreground">
+              Preview with sample data
+            </div>
+          </div>
+        )}
+      </BottomSheet>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Template</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{selectedTemplate?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

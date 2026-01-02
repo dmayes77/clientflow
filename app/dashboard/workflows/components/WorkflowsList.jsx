@@ -1,22 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useWorkflows,
   useCreateWorkflow,
   useUpdateWorkflow,
   useDeleteWorkflow,
-  useTags,
-  useEmailTemplates,
 } from "@/lib/hooks";
 import {
   Dialog,
@@ -27,31 +24,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
   Plus,
   Pencil,
   Trash2,
+  Copy,
   Play,
   Tag,
-  Mail,
-  Bell,
   UserCheck,
   Clock,
   ArrowRight,
@@ -59,7 +37,6 @@ import {
   Megaphone,
   Rocket,
   Loader2,
-  X,
   ChevronRight,
   Calendar,
   CheckCircle,
@@ -67,14 +44,6 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import {
-  useTanstackForm,
-  TextField,
-  TextareaField,
-  NumberField,
-  SwitchField,
-  SubmitButton,
-} from "@/components/ui/tanstack-form";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const TRIGGER_TYPES = [
@@ -90,141 +59,34 @@ const TRIGGER_TYPES = [
   { value: "invoice_paid", label: "When invoice is paid", icon: DollarSign },
 ];
 
-const ACTION_TYPES = [
-  { value: "send_email", label: "Send Email", icon: Mail },
-  { value: "add_tag", label: "Add Tag", icon: Tag },
-  { value: "remove_tag", label: "Remove Tag", icon: Tag },
-  { value: "update_status", label: "Update Status", icon: UserCheck },
-  { value: "send_notification", label: "Send Notification", icon: Bell },
-  { value: "wait", label: "Wait", icon: Clock },
-];
-
-const LEAD_STATUSES = [
-  { value: "new", label: "New" },
-  { value: "contacted", label: "Contacted" },
-  { value: "quoted", label: "Quoted" },
-  { value: "won", label: "Won" },
-  { value: "lost", label: "Lost" },
-];
-
-const initialFormState = {
-  name: "",
-  description: "",
-  triggerType: "tag_added",
-  triggerTagId: "",
-  delayMinutes: "0",
-  active: true,
-};
-
-function getDefaultConfig(type) {
-  switch (type) {
-    case "send_email":
-      return { templateId: "" };
-    case "add_tag":
-    case "remove_tag":
-      return { tagId: "" };
-    case "update_status":
-      return { status: "contacted" };
-    case "send_notification":
-      return { message: "" };
-    case "wait":
-      return { minutes: 60 };
-    default:
-      return {};
-  }
-}
-
 export function WorkflowsList() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("workflows");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingWorkflow, setEditingWorkflow] = useState(null);
   const [workflowToDelete, setWorkflowToDelete] = useState(null);
-  const [actions, setActions] = useState([]);
-  const [formData, setFormData] = useState(initialFormState);
-  const [errors, setErrors] = useState({});
   const isMobile = useMediaQuery("(max-width: 639px)");
 
   // TanStack Query hooks
-  const { data: workflows = [], isLoading: workflowsLoading } = useWorkflows();
-  const { data: tags = [], isLoading: tagsLoading } = useTags();
-  const { data: emailTemplates = [], isLoading: templatesLoading } = useEmailTemplates();
+  const { data: workflows = [], isLoading } = useWorkflows();
   const createWorkflow = useCreateWorkflow();
   const updateWorkflow = useUpdateWorkflow();
   const deleteWorkflow = useDeleteWorkflow();
 
-  const loading = workflowsLoading || tagsLoading || templatesLoading;
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name || formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
-    }
-    if ((formData.triggerType === "tag_added" || formData.triggerType === "tag_removed") && !formData.triggerTagId) {
-      newErrors.triggerTagId = "Please select a trigger tag";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleOpenDialog = (workflow = null) => {
-    if (workflow) {
-      setEditingWorkflow(workflow);
-      setFormData({
-        name: workflow.name,
+  const handleDuplicate = async (workflow) => {
+    try {
+      const newWorkflow = await createWorkflow.mutateAsync({
+        name: `${workflow.name} (Copy)`,
         description: workflow.description || "",
         triggerType: workflow.triggerType,
-        triggerTagId: workflow.triggerTagId || "",
-        delayMinutes: String(workflow.delayMinutes || 0),
-        active: workflow.active,
+        triggerTagId: workflow.triggerTagId || null,
+        delayMinutes: workflow.delayMinutes || 0,
+        actions: workflow.actions || [],
+        active: false, // Start as inactive
       });
-      setActions(workflow.actions || []);
-    } else {
-      setEditingWorkflow(null);
-      setFormData(initialFormState);
-      setActions([]);
-    }
-    setErrors({});
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingWorkflow(null);
-    setFormData(initialFormState);
-    setActions([]);
-    setErrors({});
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    if (actions.length === 0) {
-      toast.error("Please add at least one action");
-      return;
-    }
-
-    const workflowData = {
-      ...formData,
-      delayMinutes: parseInt(formData.delayMinutes) || 0,
-      actions,
-    };
-
-    try {
-      if (editingWorkflow) {
-        await updateWorkflow.mutateAsync({
-          id: editingWorkflow.id,
-          ...workflowData,
-        });
-        toast.success("Workflow updated");
-      } else {
-        await createWorkflow.mutateAsync(workflowData);
-        toast.success("Workflow created");
-      }
-      handleCloseDialog();
+      toast.success("Workflow duplicated");
+      router.push(`/dashboard/workflows/${newWorkflow.id}`);
     } catch (error) {
-      toast.error(error.message || "Failed to save workflow");
+      toast.error("Failed to duplicate workflow");
     }
   };
 
@@ -252,23 +114,7 @@ export function WorkflowsList() {
     }
   };
 
-  const addAction = (type) => {
-    setActions([...actions, { type, config: getDefaultConfig(type) }]);
-  };
-
-  const updateAction = (index, config) => {
-    const updated = [...actions];
-    updated[index].config = { ...updated[index].config, ...config };
-    setActions(updated);
-  };
-
-  const removeAction = (index) => {
-    setActions(actions.filter((_, i) => i !== index));
-  };
-
-  const needsTagSelection = formData.triggerType === "tag_added" || formData.triggerType === "tag_removed";
-
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="py-4 md:py-6">
         <CardContent className="flex items-center justify-center py-12">
@@ -280,29 +126,43 @@ export function WorkflowsList() {
 
   return (
     <>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-          <TabsList className="h-8.5 sm:h-9 p-1">
-            <TabsTrigger value="workflows" className="gap-1 sm:gap-1.5 h-6.5 sm:h-7 px-2.5 sm:px-3 rounded-md">
-              <Settings className="size-4.25 sm:size-4.5" />
-              <span className="hidden sm:inline">Workflows</span>
-            </TabsTrigger>
-            <TabsTrigger value="campaigns" className="gap-1 sm:gap-1.5 h-6.5 sm:h-7 px-2.5 sm:px-3 rounded-md">
-              <Megaphone className="size-4.25 sm:size-4.5" />
-              <span className="hidden sm:inline">Campaigns</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant={activeTab === "workflows" ? "default" : "outline"}
+              onClick={() => setActiveTab("workflows")}
+              className="flex-1 sm:flex-initial h-8.5 sm:h-9"
+            >
+              <Settings className="size-4.25 sm:size-4.5 mr-1.5" />
+              Workflows
+            </Button>
+            <Button
+              size="sm"
+              variant={activeTab === "campaigns" ? "default" : "outline"}
+              onClick={() => setActiveTab("campaigns")}
+              className="flex-1 sm:flex-initial h-8.5 sm:h-9"
+            >
+              <Megaphone className="size-4.25 sm:size-4.5 mr-1.5" />
+              Campaigns
+            </Button>
+          </div>
 
           {activeTab === "workflows" && (
-            <Button size="sm" onClick={() => handleOpenDialog()} className="w-full sm:w-auto h-8.5 sm:h-9">
+            <Button
+              size="sm"
+              onClick={() => router.push("/dashboard/workflows/new")}
+              className="w-full sm:w-auto h-8.5 sm:h-9"
+            >
               <Plus className="size-4.25 sm:size-4.5 mr-1.5" />
               {isMobile ? "New" : "Create Workflow"}
             </Button>
           )}
         </div>
 
-        <TabsContent value="workflows" className="mt-0">
-          {workflows.length === 0 ? (
+        {activeTab === "workflows" && (
+          workflows.length === 0 ? (
             <Card className="py-3 sm:py-4 md:py-6">
               <CardContent className="py-8 sm:py-12">
                 <EmptyState
@@ -312,7 +172,7 @@ export function WorkflowsList() {
                   description="Create workflows to automate actions. For example, send an email when a &quot;hot-lead&quot; tag is added."
                   actionLabel="Create Your First Workflow"
                   actionIcon={<Plus className="size-4 mr-1.5" />}
-                  onAction={() => handleOpenDialog()}
+                  onAction={() => router.push("/dashboard/workflows/new")}
                 />
               </CardContent>
             </Card>
@@ -326,7 +186,7 @@ export function WorkflowsList() {
                     <div
                       key={workflow.id}
                       className="flex items-center gap-3 pl-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
-                      onClick={() => handleOpenDialog(workflow)}
+                      onClick={() => router.push(`/dashboard/workflows/${workflow.id}`)}
                     >
                       {/* Icon with status indicator */}
                       <div className={cn(
@@ -377,13 +237,18 @@ export function WorkflowsList() {
             /* Desktop Card List */
             <div className="space-y-3">
               {workflows.map((workflow) => (
-                <Card key={workflow.id} className="py-4 overflow-hidden">
+                <Card
+                  key={workflow.id}
+                  className="py-4 overflow-hidden cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => router.push(`/dashboard/workflows/${workflow.id}`)}
+                >
                   <CardContent className="pt-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
                         <Switch
                           checked={workflow.active}
                           onCheckedChange={() => handleToggleActive(workflow)}
+                          onClick={(e) => e.stopPropagation()}
                           className="shrink-0 mt-0.5"
                         />
                         <div className="min-w-0 flex-1">
@@ -402,16 +267,32 @@ export function WorkflowsList() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleOpenDialog(workflow)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/workflows/${workflow.id}`);
+                          }}
                           className="h-7 w-7"
                         >
                           <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicate(workflow);
+                          }}
+                          className="h-7 w-7"
+                          disabled={createWorkflow.isPending}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
                         </Button>
                         {!workflow.isSystem && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setWorkflowToDelete(workflow);
                               setDeleteDialogOpen(true);
                             }}
@@ -461,10 +342,10 @@ export function WorkflowsList() {
                 </Card>
               ))}
             </div>
-          )}
-        </TabsContent>
+          )
+        )}
 
-        <TabsContent value="campaigns" className="mt-0">
+        {activeTab === "campaigns" && (
           <Card className="py-4 md:py-6 overflow-hidden">
             <CardContent className="py-8 sm:py-12 px-4 sm:px-6">
               <div className="flex flex-col items-center gap-4 text-center">
@@ -497,301 +378,8 @@ export function WorkflowsList() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Create/Edit Sheet */}
-      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-        <SheetContent className="sm:max-w-xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>
-              {editingWorkflow ? "Edit Workflow" : "Create Workflow"}
-            </SheetTitle>
-            <SheetDescription>
-              {editingWorkflow ? "Update the workflow settings" : "Create a new automated workflow"}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="px-4">
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                <Label htmlFor="name">
-                  Workflow Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="e.g., Hot Lead Follow-up"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={cn(errors.name && "border-red-500")}
-                />
-                {errors.name && (
-                  <p className="hig-caption-2 text-red-500">{errors.name}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="What does this workflow do?"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
-                />
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-background px-2 hig-caption-2 text-muted-foreground uppercase">Trigger</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>When should this workflow run?</Label>
-                <Select
-                  value={formData.triggerType}
-                  onValueChange={(value) => setFormData({ ...formData, triggerType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TRIGGER_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {needsTagSelection && (
-                <div className="space-y-2">
-                  <Label>
-                    Select Tag <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.triggerTagId}
-                    onValueChange={(value) => setFormData({ ...formData, triggerTagId: value })}
-                  >
-                    <SelectTrigger className={cn(errors.triggerTagId && "border-red-500")}>
-                      <SelectValue placeholder="Choose a tag" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tags.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.triggerTagId && (
-                    <p className="hig-caption-2 text-red-500">{errors.triggerTagId}</p>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="delay">Delay (minutes)</Label>
-                <Input
-                  id="delay"
-                  type="number"
-                  min="0"
-                  value={formData.delayMinutes}
-                  onChange={(e) => setFormData({ ...formData, delayMinutes: e.target.value })}
-                />
-                <p className="hig-caption-2 text-muted-foreground">Wait this many minutes before executing</p>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-background px-2 hig-caption-2 text-muted-foreground uppercase">Actions</span>
-                </div>
-              </div>
-
-              {actions.length === 0 ? (
-                <div className="bg-muted/50 border rounded-lg p-4">
-                  <p className="text-muted-foreground text-center">
-                    No actions added yet. Add an action below.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {actions.map((action, index) => {
-                    const actionType = ACTION_TYPES.find((a) => a.value === action.type);
-                    const Icon = actionType?.icon || Settings;
-
-                    return (
-                      <div key={index} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
-                              <Icon className="h-3 w-3" />
-                            </div>
-                            <span className="font-medium">{actionType?.label || action.type}</span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeAction(index)}
-                            className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-
-                        {action.type === "send_email" && (
-                          <div className="space-y-2">
-                            <Select
-                              value={action.config.templateId || ""}
-                              onValueChange={(value) => updateAction(index, { templateId: value })}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select email template" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {emailTemplates.length === 0 ? (
-                                  <div className="px-2 py-4 text-center">
-                                    <p className="text-muted-foreground">No templates found</p>
-                                    <a
-                                      href="/dashboard/email-templates"
-                                      className="hig-caption-2 text-primary hover:underline"
-                                    >
-                                      Create one
-                                    </a>
-                                  </div>
-                                ) : (
-                                  emailTemplates.map((t) => (
-                                    <SelectItem key={t.id} value={t.id}>
-                                      {t.name}
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                            {action.config.templateId && (
-                              <p className="hig-caption-2 text-muted-foreground">
-                                Subject: {emailTemplates.find((t) => t.id === action.config.templateId)?.subject}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        {(action.type === "add_tag" || action.type === "remove_tag") && (
-                          <Select
-                            value={action.config.tagId || ""}
-                            onValueChange={(value) => updateAction(index, { tagId: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select tag" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {tags.map((t) => (
-                                <SelectItem key={t.id} value={t.id}>
-                                  {t.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                        {action.type === "update_status" && (
-                          <Select
-                            value={action.config.status || ""}
-                            onValueChange={(value) => updateAction(index, { status: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {LEAD_STATUSES.map((s) => (
-                                <SelectItem key={s.value} value={s.value}>
-                                  {s.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                        {action.type === "send_notification" && (
-                          <Input
-                            placeholder="Notification message"
-                            value={action.config.message || ""}
-                            onChange={(e) => updateAction(index, { message: e.target.value })}
-                          />
-                        )}
-                        {action.type === "wait" && (
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="Minutes to wait"
-                            value={action.config.minutes || 60}
-                            onChange={(e) => updateAction(index, { minutes: parseInt(e.target.value) || 60 })}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5">
-                {ACTION_TYPES.map((action) => {
-                  const Icon = action.icon;
-                  return (
-                    <Button
-                      key={action.value}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addAction(action.value)}
-                      className=""
-                    >
-                      <Icon className="h-3 w-3 mr-1 shrink-0" />
-                      <span className="truncate">{action.label}</span>
-                    </Button>
-                  );
-                })}
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Active</Label>
-                  <p className="hig-caption-2 text-muted-foreground">Enable or disable this workflow</p>
-                </div>
-                <Switch
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                />
-              </div>
-              </div>
-
-              <SheetFooter className="pt-6 gap-2">
-              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createWorkflow.isPending || updateWorkflow.isPending}
-                className="flex-1 sm:flex-none"
-              >
-                {(createWorkflow.isPending || updateWorkflow.isPending) && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                {editingWorkflow ? "Update" : "Create"}
-              </Button>
-            </SheetFooter>
-            </form>
-          </div>
-        </SheetContent>
-      </Sheet>
+        )}
+      </>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

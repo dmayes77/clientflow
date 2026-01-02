@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -37,17 +37,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  useEmailTemplate,
   useCreateEmailTemplate,
   useUpdateEmailTemplate,
   useDeleteEmailTemplate,
   useSendTestEmail,
   useTenant,
 } from "@/lib/hooks";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 import { useTanstackForm, SaveButton, useSaveButton } from "@/components/ui/tanstack-form";
+import { BottomActionBar, BottomActionBarSpacer } from "@/components/ui/bottom-action-bar";
 
 const CATEGORIES = [
   { value: "welcome", label: "Welcome" },
+  { value: "lead", label: "Lead" },
+  { value: "client", label: "Client" },
   { value: "follow-up", label: "Follow Up" },
   { value: "booking", label: "Booking" },
   { value: "invoice", label: "Invoice" },
@@ -582,48 +585,43 @@ function RichTextEditor({ content, onChange, placeholder }) {
   );
 }
 
-export function EmailTemplateForm({ mode = "create", templateId = null }) {
+export function EmailTemplateForm({ mode = "create", template = null }) {
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [testEmailDialogOpen, setTestEmailDialogOpen] = useState(false);
   const [testRecipientEmail, setTestRecipientEmail] = useState("");
+  const [category, setCategory] = useState(template?.category || "");
+  const isMobile = useMediaQuery("(max-width: 639px)");
+
+  // Sync category state when template data loads
+  useEffect(() => {
+    if (template?.category) {
+      setCategory(template.category);
+    }
+  }, [template?.category]);
 
   const { data: tenant } = useTenant();
-  const { data: template } = useEmailTemplate(templateId, { enabled: mode === "edit" && !!templateId });
   const createMutation = useCreateEmailTemplate();
   const updateMutation = useUpdateEmailTemplate();
   const deleteMutation = useDeleteEmailTemplate();
   const sendTestMutation = useSendTestEmail();
   const saveButton = useSaveButton();
 
-  const initialValues = useMemo(() => {
-    if (mode === "edit" && template) {
-      return {
-        name: template.name || "",
-        subject: template.subject || "",
-        body: template.body || "",
-        description: template.description || "",
-        category: template.category || "",
-      };
-    }
-    return {
-      name: "",
-      subject: "",
-      body: "",
-      description: "",
-      category: "",
-    };
-  }, [mode, template]);
-
   const form = useTanstackForm({
-    defaultValues: initialValues,
-    onSubmit: async (values) => {
+    defaultValues: {
+      name: template?.name || "",
+      subject: template?.subject || "",
+      body: template?.body || "",
+      description: template?.description || "",
+    },
+    onSubmit: async ({ value }) => {
       try {
-        if (mode === "edit" && templateId) {
-          await updateMutation.mutateAsync({ id: templateId, ...values });
+        const data = { ...value, category: category || null };
+        if (mode === "edit" && template?.id) {
+          await updateMutation.mutateAsync({ id: template.id, ...data });
           toast.success("Template updated");
         } else {
-          const newTemplate = await createMutation.mutateAsync(values);
+          const newTemplate = await createMutation.mutateAsync(data);
           toast.success("Template created");
           router.push(`/dashboard/email-templates/${newTemplate.id}`);
         }
@@ -633,20 +631,9 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
     },
   });
 
-  // Update form when template data loads
-  useEffect(() => {
-    if (mode === "edit" && template) {
-      form.setFieldValue("name", template.name || "");
-      form.setFieldValue("subject", template.subject || "");
-      form.setFieldValue("body", template.body || "");
-      form.setFieldValue("description", template.description || "");
-      form.setFieldValue("category", template.category || "");
-    }
-  }, [template, mode, form]);
-
   const handleDelete = async () => {
     try {
-      await deleteMutation.mutateAsync(templateId);
+      await deleteMutation.mutateAsync(template.id);
       toast.success("Template deleted");
       router.push("/dashboard/email-templates");
     } catch (error) {
@@ -662,7 +649,7 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
 
     try {
       await sendTestMutation.mutateAsync({
-        id: templateId,
+        id: template.id,
         recipientEmail: testRecipientEmail,
         sampleData: {},
       });
@@ -747,12 +734,12 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
           </div>
         </div>
 
-        {/* Split View */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        {/* Split View - hide preview on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
           {/* Left Column - Form */}
-          <Card className="h-full overflow-hidden">
-            <CardContent className="p-6 flex flex-col h-full overflow-hidden">
-              <div className="flex-1 overflow-auto -mr-6 pr-6 space-y-4">
+          <Card className="h-full overflow-hidden flex flex-col">
+            <CardContent className="p-4 sm:p-6 flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-auto -mr-4 pr-4 sm:-mr-6 sm:pr-6 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <form.Field name="name">
                     {(field) => (
@@ -771,25 +758,24 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
                     )}
                   </form.Field>
 
-                  <form.Field name="category">
-                    {(field) => (
-                      <div className="space-y-2">
-                        <Label htmlFor={field.name}>Category</Label>
-                        <Select value={field.state.value} onValueChange={field.handleChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CATEGORIES.map((cat) => (
-                              <SelectItem key={cat.value} value={cat.value}>
-                                {cat.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </form.Field>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select
+                      value={category || undefined}
+                      onValueChange={setCategory}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <form.Field name="subject">
@@ -837,12 +823,15 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
                     </div>
                   )}
                 </form.Field>
+
+                {/* Spacer for mobile bottom action bar */}
+                {isMobile && <BottomActionBarSpacer />}
               </div>
             </CardContent>
           </Card>
 
-          {/* Right Column - Live Preview */}
-          <Card className="h-full overflow-hidden bg-white">
+          {/* Right Column - Live Preview (hidden on mobile) */}
+          <Card className="hidden lg:flex h-full overflow-hidden bg-white flex-col">
             <CardContent className="p-0 flex flex-col h-full overflow-hidden">
               <div className="flex-1 overflow-auto">
                 <form.Subscribe selector={(state) => ({ subject: state.values.subject, body: state.values.body })}>
@@ -934,6 +923,41 @@ export function EmailTemplateForm({ mode = "create", templateId = null }) {
             </CardContent>
           </Card>
         </div>
+
+        {/* Mobile Bottom Action Bar */}
+        {isMobile && (
+          <BottomActionBar
+            left={
+              mode === "edit" && !template?.isSystem ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="size-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Delete</span>
+                </Button>
+              ) : undefined
+            }
+          >
+            {mode === "edit" && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setTestEmailDialogOpen(true)}
+              >
+                <Send className="size-4 sm:mr-1" />
+                <span className="hidden sm:inline">Test</span>
+              </Button>
+            )}
+            <SaveButton form={form} saveButton={saveButton} size="sm">
+              {mode === "edit" ? "Save" : "Create"}
+            </SaveButton>
+          </BottomActionBar>
+        )}
       </form>
 
       {/* Delete Confirmation Dialog */}

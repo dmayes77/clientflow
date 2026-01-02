@@ -1,22 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -49,22 +41,16 @@ import {
   Receipt,
   Calendar,
   Layers,
-  ChevronRight,
   Upload,
   Download,
   Merge,
   MoreVertical,
+  ChevronRight,
+  Archive,
 } from "lucide-react";
+import { BottomSheet, BottomSheetActions, BottomSheetStats, BottomSheetStat } from "@/components/ui/bottom-sheet";
 import { useMediaQuery } from "@/lib/hooks/use-media-query";
-import { useTags, useCreateTag, useUpdateTag, useDeleteTag, useMergeTags, useImportTags, useExportTags } from "@/lib/hooks";
-import {
-  useTanstackForm,
-  TextField,
-  TextareaField,
-  SelectField,
-  SaveButton,
-  useSaveButton,
-} from "@/components/ui/tanstack-form";
+import { useTags, useDeleteTag, useMergeTags, useImportTags, useExportTags } from "@/lib/hooks";
 import { EmptyState } from "@/components/ui/empty-state";
 
 const TAG_TYPES = [
@@ -95,27 +81,14 @@ function getColorClasses(colorValue) {
   return COLORS.find((c) => c.value === colorValue) || COLORS[0];
 }
 
-// Zod validation schema
-const tagSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  color: z.string(),
-  description: z.string(),
-  type: z.string(),
-});
-
-const getInitialFormState = (activeFilter) => ({
-  name: "",
-  color: "blue",
-  description: "",
-  type: activeFilter !== "all" ? activeFilter : "general",
-});
 
 export function TagsList() {
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const router = useRouter();
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [viewingTag, setViewingTag] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [editingTag, setEditingTag] = useState(null);
   const [tagToDelete, setTagToDelete] = useState(null);
   const [tagToMerge, setTagToMerge] = useState(null);
   const [mergeTarget, setMergeTarget] = useState("");
@@ -125,83 +98,34 @@ export function TagsList() {
 
   // TanStack Query hooks
   const { data: tags = [], isLoading: loading } = useTags(activeFilter);
-  const createTagMutation = useCreateTag();
-  const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
   const mergeTagsMutation = useMergeTags();
   const importTagsMutation = useImportTags();
   const exportTagsMutation = useExportTags();
-
-  // Save button state
-  const saveButton = useSaveButton();
-
-  // TanStack Form
-  const form = useTanstackForm({
-    defaultValues: getInitialFormState(activeFilter),
-    onSubmit: async ({ value }) => {
-      const startTime = Date.now();
-
-      try {
-        // Minimum 2 second delay for loading state visibility
-        const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Perform the actual mutation
-        const mutation = editingTag
-          ? updateTagMutation.mutateAsync({ id: editingTag.id, ...value })
-          : createTagMutation.mutateAsync(value);
-
-        // Wait for both the mutation and minimum delay
-        await Promise.all([mutation, minDelay]);
-
-        toast.success(editingTag ? "Tag updated" : "Tag created");
-        saveButton.handleSuccess();
-
-        // Close dialog after 2 seconds to show success state
-        setTimeout(() => {
-          handleCloseDialog();
-        }, 2000);
-      } catch (error) {
-        // Ensure error state is shown for at least the remaining time
-        const elapsed = Date.now() - startTime;
-        const remainingTime = Math.max(0, 2000 - elapsed);
-
-        await new Promise(resolve => setTimeout(resolve, remainingTime));
-
-        toast.error(error.message || "Failed to save tag");
-        saveButton.handleError();
-      }
-    },
-  });
 
   const getTypeLabel = (type) => {
     const found = TAG_TYPES.find((t) => t.value === type);
     return found?.label || "General";
   };
 
-  const getTotalCount = (tag) => {
-    return (tag._count?.contacts || 0) + (tag._count?.invoices || 0) + (tag._count?.bookings || 0);
+  const handleOpenCreate = () => {
+    router.push("/dashboard/tags/new");
   };
 
-  const handleOpenDialog = (tag = null) => {
-    if (tag) {
-      setEditingTag(tag);
-      form.reset();
-      form.setFieldValue("name", tag.name);
-      form.setFieldValue("color", tag.color || "blue");
-      form.setFieldValue("description", tag.description || "");
-      form.setFieldValue("type", tag.type || "general");
+  const handleTagClick = (tag) => {
+    if (isMobile) {
+      // Mobile: open bottom sheet for viewing
+      setViewingTag(tag);
+      setViewSheetOpen(true);
     } else {
-      setEditingTag(null);
-      form.reset();
-      form.setFieldValue("type", activeFilter !== "all" ? activeFilter : "general");
+      // Desktop: navigate to edit page
+      router.push(`/dashboard/tags/${tag.id}`);
     }
-    setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingTag(null);
-    form.reset();
+  const handleCloseViewSheet = () => {
+    setViewSheetOpen(false);
+    setViewingTag(null);
   };
 
   const handleDelete = async () => {
@@ -291,7 +215,7 @@ export function TagsList() {
             <Download className="size-4.25 sm:size-4.5 mr-1.5" />
             <span className="hidden sm:inline">Export</span>
           </Button>
-          <Button size="sm" onClick={() => handleOpenDialog()} className="h-8.5 sm:h-9 px-3 sm:px-4">
+          <Button size="sm" onClick={handleOpenCreate} className="h-8.5 sm:h-9 px-3 sm:px-4">
             <Plus className="size-4.25 sm:size-4.5 mr-1.5" />
             Create Tag
           </Button>
@@ -314,7 +238,7 @@ export function TagsList() {
               description="Create tags to categorize your contacts, invoices, and bookings. Tags can trigger automated workflows."
               actionLabel="Create Your First Tag"
               actionIcon={<Plus className="h-4 w-4 mr-1" />}
-              onAction={() => handleOpenDialog()}
+              onAction={handleOpenCreate}
             />
           </CardContent>
         </Card>
@@ -329,97 +253,40 @@ export function TagsList() {
               return (
                 <div
                   key={tag.id}
-                  className="flex items-center gap-3 pl-4"
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-muted/50 transition-colors",
+                    index < tags.length - 1 && "border-b border-border"
+                  )}
+                  onClick={() => handleTagClick(tag)}
                 >
-                  {/* Color dot indicator */}
-                  <div
-                    className={cn("size-11 rounded-full flex items-center justify-center shrink-0", colorClasses.bg)}
-                    onClick={() => handleOpenDialog(tag)}
-                  >
-                    <Tag className={cn("size-5.5", colorClasses.text)} />
+                  {/* Color icon */}
+                  <div className={cn("size-10 rounded-full flex items-center justify-center shrink-0", colorClasses.bg)}>
+                    <Tag className={cn("size-5", colorClasses.text)} />
                   </div>
 
-                  {/* Content with iOS-style divider */}
-                  <div
-                    className={cn(
-                      "flex-1 min-w-0 flex items-center gap-2 py-3 pr-2 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors",
-                      index < tags.length - 1 && "border-b border-border"
-                    )}
-                    onClick={() => handleOpenDialog(tag)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold truncate">{tag.name}</span>
-                        <Badge variant="outline" className="shrink-0">
-                          <TypeIcon className="size-3 mr-1" />
-                          {getTypeLabel(tag.type)}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        {(tag.type === "general" || tag.type === "contact") && tag._count?.contacts > 0 && (
-                          <span className="hig-caption-2 text-muted-foreground flex items-center gap-1">
-                            <Users className="size-3" />
-                            {tag._count.contacts}
-                          </span>
-                        )}
-                        {(tag.type === "general" || tag.type === "invoice") && tag._count?.invoices > 0 && (
-                          <span className="hig-caption-2 text-muted-foreground flex items-center gap-1">
-                            <Receipt className="size-3" />
-                            {tag._count.invoices}
-                          </span>
-                        )}
-                        {(tag.type === "general" || tag.type === "booking") && tag._count?.bookings > 0 && (
-                          <span className="hig-caption-2 text-muted-foreground flex items-center gap-1">
-                            <Calendar className="size-3" />
-                            {tag._count.bookings}
-                          </span>
-                        )}
-                        {totalCount === 0 && (
-                          <span className="hig-caption-2 text-muted-foreground">No items</span>
-                        )}
-                      </div>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">{tag.name}</span>
+                      {tag.isSystem && (
+                        <Badge variant="outline" className="text-xs shrink-0">System</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="hig-caption-2 text-muted-foreground flex items-center gap-1">
+                        <TypeIcon className="size-3" />
+                        {getTypeLabel(tag.type)}
+                      </span>
+                      {totalCount > 0 && (
+                        <span className="hig-caption-2 text-muted-foreground">
+                          {totalCount} {totalCount === 1 ? "item" : "items"}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Mobile Actions Menu */}
-                  <div className="pr-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleOpenDialog(tag)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          setTagToMerge(tag);
-                          setMergeDialogOpen(true);
-                        }}>
-                          <Merge className="h-4 w-4 mr-2" />
-                          Merge
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setTagToDelete(tag);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  {/* Chevron */}
+                  <ChevronRight className="size-5 text-muted-foreground/50 shrink-0" />
                 </div>
               );
             })}
@@ -432,7 +299,11 @@ export function TagsList() {
             const colorClasses = getColorClasses(tag.color);
             const TypeIcon = TAG_TYPES.find((t) => t.value === tag.type)?.icon || Tag;
             return (
-              <Card key={tag.id} className="py-4">
+              <Card
+                key={tag.id}
+                className="py-4 cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => handleTagClick(tag)}
+              >
                 <CardHeader className="pb-2 pt-0">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
@@ -453,12 +324,13 @@ export function TagsList() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleOpenDialog(tag)}>
+                        <DropdownMenuItem onClick={() => router.push(`/dashboard/tags/${tag.id}`)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
@@ -484,7 +356,7 @@ export function TagsList() {
                     </DropdownMenu>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3 pt-0">
+                <CardContent className="space-y-3 pt-0" onClick={(e) => e.stopPropagation()}>
                   {tag.description && (
                     <p className="text-muted-foreground">{tag.description}</p>
                   )}
@@ -522,155 +394,120 @@ export function TagsList() {
         </div>
       )}
 
-      {/* Create/Edit Sheet */}
-      <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>
-              {editingTag ? "Edit Tag" : "Create Tag"}
-            </SheetTitle>
-            <SheetDescription>
-              {editingTag ? "Update the tag details" : "Create a new tag to organize your contacts"}
-            </SheetDescription>
-          </SheetHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
-            className="flex flex-col h-[calc(100vh-10rem)]"
-          >
-            <div className="space-y-4 flex-1 overflow-y-auto px-4 py-6">
-              <TextField
-                form={form}
-                name="name"
-                label="Tag Name"
-                placeholder="e.g., hot-lead, vip, follow-up"
-                required
-                validators={{
-                  onChange: ({ value }) =>
-                    !value || value.trim().length < 2
-                      ? "Name must be at least 2 characters"
-                      : undefined,
-                }}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <form.Field name="type">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Type</label>
-                      <Select
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const TypeIcon = TAG_TYPES.find((t) => t.value === field.state.value)?.icon || Tag;
-                                return <TypeIcon className="h-3.5 w-3.5" />;
-                              })()}
-                              {TAG_TYPES.find((t) => t.value === field.state.value)?.label || "General"}
-                            </div>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TAG_TYPES.filter((t) => t.value !== "all").map((type) => {
-                            const Icon = type.icon;
-                            return (
-                              <SelectItem key={type.value} value={type.value}>
-                                <div className="flex items-center gap-2">
-                                  <Icon className="h-3.5 w-3.5" />
-                                  {type.label}
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </form.Field>
-
-                <form.Field name="color">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Color</label>
-                      <Select
-                        value={field.state.value}
-                        onValueChange={field.handleChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>
-                            <div className="flex items-center gap-2">
-                              <div className={cn("h-3 w-3 rounded-full", getColorClasses(field.state.value).dot)} />
-                              {COLORS.find((c) => c.value === field.state.value)?.label || "Blue"}
-                            </div>
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COLORS.map((color) => (
-                            <SelectItem key={color.value} value={color.value}>
-                              <div className="flex items-center gap-2">
-                                <div className={cn("h-3 w-3 rounded-full", color.dot)} />
-                                {color.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </form.Field>
-              </div>
-
-              <TextareaField
-                form={form}
-                name="description"
-                label="Description (optional)"
-                placeholder="What is this tag used for?"
-                rows={2}
-              />
-
-              {/* Preview */}
-              <form.Subscribe selector={(state) => [state.values.name, state.values.color]}>
-                {([name, color]) => (
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground">Preview</Label>
-                    <div className="p-3 border rounded-lg">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          getColorClasses(color).bg,
-                          getColorClasses(color).text
-                        )}
-                      >
-                        {name || "tag-name"}
-                      </Badge>
-                    </div>
-                  </div>
+      {/* Mobile View Sheet (bottom) - only render on mobile */}
+      {isMobile && viewingTag && (() => {
+        const colorClasses = getColorClasses(viewingTag.color);
+        const TypeIcon = TAG_TYPES.find((t) => t.value === viewingTag.type)?.icon || Tag;
+        return (
+          <BottomSheet
+            open={viewSheetOpen}
+            onOpenChange={setViewSheetOpen}
+            title={viewingTag.name}
+            description={
+              <div className="flex items-center gap-1.5">
+                <TypeIcon className="size-4" />
+                {getTypeLabel(viewingTag.type)} tag
+                {viewingTag.isSystem && (
+                  <Badge variant="outline" className="ml-2 text-xs">System</Badge>
                 )}
-              </form.Subscribe>
-            </div>
+              </div>
+            }
+            icon={
+              <div className={cn("size-14 rounded-full flex items-center justify-center", colorClasses.bg)}>
+                <Tag className={cn("size-7", colorClasses.text)} />
+              </div>
+            }
+            actions={
+              viewingTag.isSystem ? (
+                <BottomSheetActions>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // TODO: Implement archive functionality
+                      handleCloseViewSheet();
+                    }}
+                  >
+                    <Archive className="size-4 mr-1.5" />
+                    Archive
+                  </Button>
+                </BottomSheetActions>
+              ) : (
+                <BottomSheetActions
+                  left={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                      onClick={() => {
+                        setTagToDelete(viewingTag);
+                        setDeleteDialogOpen(true);
+                        handleCloseViewSheet();
+                      }}
+                    >
+                      <Trash2 className="size-4 mr-1.5" />
+                      Delete
+                    </Button>
+                  }
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setTagToMerge(viewingTag);
+                      setMergeDialogOpen(true);
+                      handleCloseViewSheet();
+                    }}
+                  >
+                    <Merge className="size-4 mr-1.5" />
+                    Merge
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      handleCloseViewSheet();
+                      router.push(`/dashboard/tags/${viewingTag.id}`);
+                    }}
+                  >
+                    <Pencil className="size-4 mr-1.5" />
+                    Edit
+                  </Button>
+                </BottomSheetActions>
+              )
+            }
+          >
+            {viewingTag.description && (
+              <p className="text-muted-foreground mb-4">{viewingTag.description}</p>
+            )}
 
-            <SheetFooter className="pt-6 gap-2">
-              <Button type="button" variant="outline" onClick={handleCloseDialog} className="flex-1 sm:flex-none">
-                Cancel
-              </Button>
-              <SaveButton
-                form={form}
-                saveButton={saveButton}
-                loadingText={editingTag ? "Updating..." : "Creating..."}
-                className="flex-1 sm:flex-none"
-              >
-                {editingTag ? "Update" : "Create"}
-              </SaveButton>
-            </SheetFooter>
-          </form>
-        </SheetContent>
-      </Sheet>
+            {/* Stats - always show all three */}
+            <BottomSheetStats columns={3}>
+              <BottomSheetStat
+                icon={Users}
+                value={viewingTag._count?.contacts || 0}
+                label="Contacts"
+              />
+              <BottomSheetStat
+                icon={Receipt}
+                value={viewingTag._count?.invoices || 0}
+                label="Invoices"
+              />
+              <BottomSheetStat
+                icon={Calendar}
+                value={viewingTag._count?.bookings || 0}
+                label="Bookings"
+              />
+            </BottomSheetStats>
+
+            {/* System tag notice */}
+            {viewingTag.isSystem && (
+              <p className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-400 rounded-lg p-3 mt-4">
+                System tags are managed automatically and cannot be modified.
+              </p>
+            )}
+          </BottomSheet>
+        );
+      })()}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -710,7 +547,7 @@ export function TagsList() {
                 </SelectTrigger>
                 <SelectContent>
                   {tags
-                    .filter((tag) => tag.id !== tagToMerge?.id)
+                    .filter((tag) => tag.id !== tagToMerge?.id && !tag.isSystem)
                     .map((tag) => {
                       const colorClasses = getColorClasses(tag.color);
                       return (
