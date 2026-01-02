@@ -159,6 +159,25 @@ Sell and redeem gift certificates for your services
 
 These features are under consideration based on customer demand and market fit.
 
+### Advanced Workflow Automation
+Enhanced workflow capabilities for complex business automation
+
+**Planned Features:**
+- **Conditional Logic** - Add if/else branching to workflows (e.g., "if invoice > $500, send VIP email")
+  - Condition builder with field picker, operators, and value inputs
+  - Support for AND/OR logic combinations
+  - Branch visualization in workflow editor
+- **Per-Action Delays** - Wait times between individual actions (e.g., "send email → wait 3 days → send follow-up")
+  - Requires job queue infrastructure (BullMQ/Inngest)
+  - Delay visualization in action timeline
+- **Workflow Testing** - Dry-run mode to preview what a workflow would do
+  - Select test contact/booking for simulation
+  - Show action-by-action preview without executing
+  - Helpful for debugging complex workflows
+
+**Status:** Under consideration
+**Dependencies:** Per-action delays requires background job infrastructure
+
 ### Native Mobile App
 iOS and Android app built with React Native for on-the-go business management
 
