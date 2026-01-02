@@ -1,188 +1,175 @@
 import { NextResponse } from "next/server";
+import { readFileSync } from "fs";
+import { join } from "path";
 
-// GET - Fetch public changelog from GitHub releases
-export async function GET(request) {
+// Icon mapping based on keywords in the content
+const ICON_KEYWORDS = {
+  workflow: "Workflow",
+  drag: "Navigation",
+  duplicate: "Boxes",
+  copy: "Boxes",
+  validation: "Shield",
+  button: "Navigation",
+  toggle: "Navigation",
+  mobile: "Smartphone",
+  scroll: "Navigation",
+  email: "Mail",
+  template: "Mail",
+  action: "Zap",
+  invoice: "Receipt",
+  booking: "Calendar",
+  payment: "CreditCard",
+  contact: "Users",
+  tag: "Activity",
+  notification: "Bell",
+  webhook: "Webhook",
+  stat: "Activity",
+  component: "Boxes",
+};
+
+// GET - Fetch changelog from CHANGELOG.md file
+export async function GET() {
   try {
-    const githubRepo = process.env.GITHUB_REPO || process.env.NEXT_PUBLIC_GITHUB_REPO;
-    const githubToken = process.env.GITHUB_TOKEN;
+    // Read CHANGELOG.md from project root
+    const changelogPath = join(process.cwd(), "CHANGELOG.md");
+    let content;
 
-    if (!githubRepo) {
+    try {
+      content = readFileSync(changelogPath, "utf-8");
+    } catch {
+      // Fallback to empty changelog if file doesn't exist
       return NextResponse.json({
-        error: "GitHub repo not configured"
-      }, { status: 500 });
+        changelog: [],
+        lastUpdated: new Date().toISOString(),
+      });
     }
 
-    // Fetch releases from GitHub
-    const headers = {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-    };
-
-    if (githubToken) {
-      headers.Authorization = `Bearer ${githubToken}`;
-    }
-
-    const response = await fetch(
-      `https://api.github.com/repos/${githubRepo}/releases?per_page=50`,
-      {
-        headers,
-        next: { revalidate: 300 } // Cache for 5 minutes
-      }
-    );
-
-    if (!response.ok) {
-      console.error("GitHub API error:", response.status, response.statusText);
-      return NextResponse.json({
-        error: "Failed to fetch releases",
-        releases: [] // Return empty array as fallback
-      }, { status: 200 });
-    }
-
-    const releases = await response.json();
-
-    // Filter to only published releases (exclude drafts)
-    const publishedReleases = releases.filter(r => !r.draft);
-
-    // Transform to changelog format
-    const changelog = publishedReleases.map(release => {
-      // Determine type from release name/tags
-      let type = "feature";
-      const name = (release.name || release.tag_name).toLowerCase();
-
-      if (name.includes("fix") || name.includes("patch") || name.includes("hotfix")) {
-        type = "fix";
-      } else if (name.includes("breaking")) {
-        type = "breaking";
-      } else if (name.includes("improve") || name.includes("update") || name.includes("enhance")) {
-        type = "improvement";
-      }
-
-      // Parse release body to extract items
-      const items = parseReleaseBody(release.body || "");
-
-      return {
-        version: release.tag_name.replace(/^v/, ""), // Remove leading 'v' if present
-        date: new Date(release.published_at).toLocaleDateString("en-US", {
-          month: "long",
-          year: "numeric"
-        }),
-        title: release.name || release.tag_name,
-        isNew: publishedReleases.indexOf(release) === 0, // First release is newest
-        items,
-        htmlUrl: release.html_url,
-      };
-    });
+    const changelog = parseChangelog(content);
 
     return NextResponse.json({
       changelog,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Error fetching changelog:", error);
+    console.error("Error reading changelog:", error);
     return NextResponse.json({
       error: error.message,
-      changelog: [] // Return empty array as fallback
+      changelog: [],
     }, { status: 200 });
   }
 }
 
-// Check if a changelog line is internal-only (should be filtered out)
-function isInternalChange(text) {
-  const lowerText = text.toLowerCase();
+// Parse CHANGELOG.md content
+function parseChangelog(content) {
+  const releases = [];
+  const lines = content.split("\n");
 
-  // Filter out internal commit types
-  const internalPrefixes = [
-    'chore:',
-    'chore(',
-    'ci:',
-    'ci(',
-    'test:',
-    'test(',
-    'refactor:',
-    'refactor(',
-    'docs:',
-    'docs(',
-    'build:',
-    'build(',
-    'style:',
-    'style(',
-    'debug:',
-    'debug(',
-    'merge ',
-  ];
-
-  return internalPrefixes.some(prefix => lowerText.startsWith(prefix));
-}
-
-// Parse release body markdown to extract changelog items
-function parseReleaseBody(body) {
-  const items = [];
-
-  // Split by lines
-  const lines = body.split("\n");
+  let currentRelease = null;
+  let currentSection = null;
 
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Skip empty lines and headers
-    if (!trimmed || trimmed.startsWith("#")) continue;
+    // Skip empty lines
+    if (!trimmed) continue;
 
-    // Parse markdown list items (- or *)
-    const listMatch = trimmed.match(/^[-*]\s+(.+)/);
-    if (listMatch) {
-      const text = listMatch[1];
-
-      // Filter out internal changes
-      if (isInternalChange(text)) {
-        continue;
+    // Match version headers: ## v1.10.5 - January 2, 2026
+    const versionMatch = trimmed.match(/^##\s+v?([\d.]+)\s*[-–]\s*(.+)/);
+    if (versionMatch) {
+      // Save previous release if exists
+      if (currentRelease) {
+        releases.push(currentRelease);
       }
 
-      // Determine type and extract title/description
+      currentRelease = {
+        version: versionMatch[1],
+        date: versionMatch[2].trim(),
+        title: `v${versionMatch[1]}`,
+        isNew: releases.length === 0,
+        items: [],
+      };
+      currentSection = null;
+      continue;
+    }
+
+    // Match section headers: ### Workflow Improvements
+    const sectionMatch = trimmed.match(/^###\s+(.+)/);
+    if (sectionMatch && currentRelease) {
+      currentSection = sectionMatch[1].trim();
+      continue;
+    }
+
+    // Match list items: - **Feature Name** - Description
+    const itemMatch = trimmed.match(/^[-*]\s+\*\*(.+?)\*\*\s*[-–]?\s*(.*)/);
+    if (itemMatch && currentRelease) {
+      const title = itemMatch[1].trim();
+      const description = itemMatch[2].trim();
+
+      // Determine type from section or content
       let type = "feature";
-      let icon = "Sparkles";
-
-      if (text.toLowerCase().includes("fix") || text.toLowerCase().includes("fixed")) {
+      if (currentSection?.toLowerCase().includes("fix")) {
         type = "fix";
-        icon = "Bug";
-      } else if (text.toLowerCase().includes("improv") || text.toLowerCase().includes("updat") || text.toLowerCase().includes("enhanc")) {
+      } else if (
+        currentSection?.toLowerCase().includes("improve") ||
+        currentSection?.toLowerCase().includes("enhance") ||
+        currentSection?.toLowerCase().includes("ui")
+      ) {
         type = "improvement";
-        icon = "Zap";
-      } else if (text.toLowerCase().startsWith("feat:") || text.toLowerCase().startsWith("feat(")) {
-        type = "feature";
-        icon = "Sparkles";
-      } else if (text.toLowerCase().startsWith("perf:") || text.toLowerCase().startsWith("perf(")) {
-        type = "improvement";
-        icon = "Zap";
       }
 
-      // Try to split title and description
-      let title = text;
-      let description = "";
+      // Determine icon from keywords
+      const icon = getIconForContent(title + " " + description);
 
-      const colonIndex = text.indexOf(":");
-      if (colonIndex > 0 && colonIndex < 100) {
-        title = text.substring(0, colonIndex).trim();
-        description = text.substring(colonIndex + 1).trim();
-      }
-
-      items.push({
+      currentRelease.items.push({
         type,
         icon,
         title,
         description: description || title,
       });
+      continue;
+    }
+
+    // Match simple list items: - Item text
+    const simpleItemMatch = trimmed.match(/^[-*]\s+(.+)/);
+    if (simpleItemMatch && currentRelease) {
+      const text = simpleItemMatch[1].trim();
+
+      // Determine type
+      let type = "feature";
+      if (text.toLowerCase().includes("fix")) {
+        type = "fix";
+      } else if (text.toLowerCase().includes("improve") || text.toLowerCase().includes("update")) {
+        type = "improvement";
+      }
+
+      const icon = getIconForContent(text);
+
+      currentRelease.items.push({
+        type,
+        icon,
+        title: text,
+        description: text,
+      });
     }
   }
 
-  // If no items parsed (all were filtered), show fallback message
-  if (items.length === 0 && body.trim()) {
-    items.push({
-      type: "improvement",
-      icon: "Zap",
-      title: "Internal improvements and bug fixes",
-      description: "This release includes behind-the-scenes improvements to make ClientFlow better.",
-    });
+  // Add the last release
+  if (currentRelease) {
+    releases.push(currentRelease);
   }
 
-  return items;
+  return releases;
+}
+
+// Get appropriate icon based on content keywords
+function getIconForContent(text) {
+  const lowerText = text.toLowerCase();
+
+  for (const [keyword, icon] of Object.entries(ICON_KEYWORDS)) {
+    if (lowerText.includes(keyword)) {
+      return icon;
+    }
+  }
+
+  return "Sparkles"; // Default icon
 }
