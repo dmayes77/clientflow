@@ -30,7 +30,6 @@ import {
   Camera,
   Bug,
   AlertTriangle,
-  ExternalLink,
 } from "lucide-react";
 
 // Icon mapping
@@ -154,19 +153,7 @@ export function ChangelogList() {
                   <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Latest</Badge>
                 )}
               </div>
-              <div className="text-muted-foreground flex items-center gap-2">
-                <span>v{release.version} &middot; {release.date}</span>
-                {release.htmlUrl && (
-                  <a
-                    href={release.htmlUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-700"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
+              <span className="text-sm text-muted-foreground">{release.date}</span>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
