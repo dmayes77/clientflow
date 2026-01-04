@@ -32,6 +32,18 @@ if [ -z "$LATEST_COMMITS" ]; then
   exit 0
 fi
 
+# Update CHANGELOG.md before creating PR
+echo ""
+echo -e "${BLUE}📝 Updating CHANGELOG.md...${NC}"
+SCRIPT_DIR="$(dirname "$0")"
+"$SCRIPT_DIR/update-changelog.sh" || {
+  echo -e "${YELLOW}⚠️  Changelog update skipped or failed${NC}"
+}
+
+# Refresh commits after changelog update
+git fetch origin
+LATEST_COMMITS=$(git log origin/main..origin/dev --oneline --pretty=format:"- %s" | head -10)
+
 echo -e "${BLUE}📋 Changes to be included:${NC}"
 echo "$LATEST_COMMITS"
 echo ""
