@@ -46,10 +46,20 @@ get_date() {
   date "+%B %-d, %Y"
 }
 
-# Get commits that are in dev but not in main
+# Get commits since the last release tag
 get_new_commits() {
-  git fetch origin --quiet
-  git log origin/main..origin/dev --oneline --pretty=format:"%s" 2>/dev/null | grep -v "^$" || echo ""
+  git fetch origin --tags --quiet
+
+  # Get the latest release tag
+  LATEST_TAG=$(git describe --tags --abbrev=0 origin/main 2>/dev/null || echo "")
+
+  if [ -z "$LATEST_TAG" ]; then
+    # No tags found, get recent commits from dev
+    git log origin/dev -20 --oneline --pretty=format:"%s" 2>/dev/null | grep -v "^$" || echo ""
+  else
+    # Get commits on dev since the latest release tag
+    git log ${LATEST_TAG}..origin/dev --oneline --pretty=format:"%s" 2>/dev/null | grep -v "^$" || echo ""
+  fi
 }
 
 # Parse commits and generate changelog entries
@@ -60,13 +70,18 @@ parse_commits() {
   local fixes=""
 
   while IFS= read -r commit; do
-    # Skip empty lines and auto-generated commits
+    # Skip empty lines and auto-generated/maintenance commits
     [[ -z "$commit" ]] && continue
     [[ "$commit" == *"Generated with"* ]] && continue
     [[ "$commit" == *"Merge"* ]] && continue
     [[ "$commit" == *"Sync dev"* ]] && continue
     [[ "$commit" == *"chore:"* ]] && continue
     [[ "$commit" == *"Bump version"* ]] && continue
+    [[ "$commit" == *"Update CHANGELOG"* ]] && continue
+    [[ "$commit" == *"docs:"* ]] && continue
+    [[ "$commit" == *"test:"* ]] && continue
+    [[ "$commit" == *"style:"* ]] && continue
+    [[ "$commit" == *"debug:"* ]] && continue
 
     # Clean up the commit message
     local clean_msg=$(echo "$commit" | sed 's/^[a-z]*: //i' | sed 's/^[a-z]*([^)]*): //i')
