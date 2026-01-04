@@ -1,5 +1,13 @@
 # What's New
 
+## v1.10.8 - January 4, 2026
+
+### CI/CD Improvements
+- **Automatic Changelog Updates** - CHANGELOG.md is now automatically updated before each production deployment
+- **Smarter Commit Parsing** - Changes are categorized into Features, Improvements, and Bug Fixes
+
+---
+
 ## v1.10.6 - January 2, 2026
 
 ### What's New Page
