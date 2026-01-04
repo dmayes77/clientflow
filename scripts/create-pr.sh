@@ -32,13 +32,10 @@ if [ -z "$LATEST_COMMITS" ]; then
   exit 0
 fi
 
-# Update CHANGELOG.md before creating PR
+# Skip automatic changelog update - manually update CHANGELOG.md before running make pr
+# The auto-update script doesn't work well with diverged branch histories
 echo ""
-echo -e "${BLUE}📝 Updating CHANGELOG.md...${NC}"
-SCRIPT_DIR="$(dirname "$0")"
-"$SCRIPT_DIR/update-changelog.sh" || {
-  echo -e "${YELLOW}⚠️  Changelog update skipped or failed${NC}"
-}
+echo -e "${YELLOW}📝 Note: Update CHANGELOG.md manually before deploying${NC}"
 
 # Refresh commits after changelog update
 git fetch origin

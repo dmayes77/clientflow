@@ -46,20 +46,12 @@ get_date() {
   date "+%B %-d, %Y"
 }
 
-# Get commits since the last release tag
+# Get commits that will be included in the PR (dev commits not in main)
+# Limited to recent commits to avoid noise from old diverged history
 get_new_commits() {
-  git fetch origin --tags --quiet
-
-  # Get the latest release tag
-  LATEST_TAG=$(git describe --tags --abbrev=0 origin/main 2>/dev/null || echo "")
-
-  if [ -z "$LATEST_TAG" ]; then
-    # No tags found, get recent commits from dev
-    git log origin/dev -20 --oneline --pretty=format:"%s" 2>/dev/null | grep -v "^$" || echo ""
-  else
-    # Get commits on dev since the latest release tag
-    git log ${LATEST_TAG}..origin/dev --oneline --pretty=format:"%s" 2>/dev/null | grep -v "^$" || echo ""
-  fi
+  git fetch origin --quiet
+  # Get commits in dev that are not in main, limited to most recent 30
+  git log origin/main..origin/dev --oneline --pretty=format:"%s" -30 2>/dev/null | grep -v "^$" || echo ""
 }
 
 # Parse commits and generate changelog entries
