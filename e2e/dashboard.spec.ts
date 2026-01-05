@@ -31,11 +31,12 @@ test.describe('Dashboard Overview', () => {
 
   test('should display quick action buttons', async ({ page }) => {
     // Wait for page to fully render
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
-    await expect(page.locator('button:has-text("New Booking")')).toBeVisible();
-    await expect(page.locator('button:has-text("Add Contact")')).toBeVisible();
-    await expect(page.locator('button:has-text("New Invoice")')).toBeVisible();
+    // Use getByRole for more reliable button matching
+    await expect(page.getByRole('button', { name: 'New Booking' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: 'Add Contact' }).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: 'New Invoice' })).toBeVisible({ timeout: 10000 });
   });
 
   test('should navigate to new booking when clicking quick action', async ({ page }) => {

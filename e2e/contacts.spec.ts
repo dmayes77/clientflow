@@ -16,8 +16,9 @@ test.describe('Contacts List', () => {
   });
 
   test('should have add contact button', async ({ page }) => {
-    const addButton = page.getByRole('button', { name: /Add Contact/i });
-    await expect(addButton).toBeVisible();
+    // Button has accessible name "Add new contact" but visible text "Add Contact"
+    const addButton = page.getByRole('button', { name: /Add.*contact/i });
+    await expect(addButton.first()).toBeVisible();
   });
 
   test('should have search/filter functionality', async ({ page }) => {
@@ -37,32 +38,33 @@ test.describe('Contacts List', () => {
 });
 
 test.describe('Contact Creation', () => {
-  test('should navigate to new contact form', async ({ page }) => {
+  test('should open add contact dialog from list', async ({ page }) => {
     await page.goto('/dashboard/contacts');
     await page.waitForLoadState('networkidle');
 
-    // Click add button - this navigates to /dashboard/contacts/new
-    const addButton = page.getByRole('button', { name: /Add Contact/i });
+    // Click add button - this opens a dialog/modal
+    // Button has accessible name "Add new contact" but visible text "Add Contact"
+    const addButton = page.getByRole('button', { name: /Add.*contact/i }).first();
     await addButton.click();
 
-    // Wait for navigation to new contact page
-    await page.waitForURL('**/contacts/new**', { timeout: 10000 });
+    // Wait for dialog to appear
+    await page.waitForTimeout(500);
 
-    // Should be on the new contact page
-    await expect(page).toHaveURL(/contacts\/new/);
+    // Should see the dialog with "Add Contact" heading
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 5000 });
   });
 
-  test('should have required form fields', async ({ page }) => {
+  test('should have required form fields on new contact page', async ({ page }) => {
     await page.goto('/dashboard/contacts/new');
     await page.waitForLoadState('networkidle');
 
     // Wait for form to render
     await page.waitForTimeout(1000);
 
-    // Check for form or input elements
-    const hasForm = await page.locator('form').first().isVisible().catch(() => false);
-    const hasInput = await page.locator('input').first().isVisible().catch(() => false);
-    expect(hasForm || hasInput).toBeTruthy();
+    // Check for form input elements
+    const nameInput = page.getByPlaceholder(/John Smith/i);
+    await expect(nameInput).toBeVisible({ timeout: 5000 });
   });
 
   test('should validate required fields', async ({ page }) => {
@@ -71,8 +73,8 @@ test.describe('Contact Creation', () => {
     await page.waitForTimeout(1000);
 
     // Try to submit without filling required fields
-    const submitButton = page.getByRole('button', { name: /Save|Create|Add/i });
-    await submitButton.first().click();
+    const submitButton = page.getByRole('button', { name: /Create Contact/i });
+    await submitButton.click();
 
     // Form or page should still be visible (not submitted/redirected)
     await expect(page).toHaveURL(/contacts\/new/);
@@ -86,25 +88,30 @@ test.describe('Contact Creation', () => {
     const testName = `E2E Test Contact ${Date.now()}`;
     const testEmail = `e2e-test-${Date.now()}@example.com`;
 
-    // Fill form - find inputs by placeholder or position
-    const nameInput = page.getByPlaceholder(/Name/i).or(page.locator('input').first());
-    await nameInput.first().fill(testName);
+    // Fill form - use placeholders from error context
+    const nameInput = page.getByPlaceholder(/John Smith/i);
+    await nameInput.fill(testName);
 
-    const emailInput = page.getByPlaceholder(/Email/i).or(page.locator('input[type="email"]'));
-    await emailInput.first().fill(testEmail);
+    const emailInput = page.getByPlaceholder(/john@example.com/i);
+    await emailInput.fill(testEmail);
 
-    // Submit
-    const submitButton = page.getByRole('button', { name: /Save|Create|Add/i });
-    await submitButton.first().click();
+    // Click the submit button
+    const submitButton = page.getByRole('button', { name: /Create Contact/i });
+    await expect(submitButton).toBeVisible({ timeout: 5000 });
+    await Promise.all([
+      page.waitForResponse(
+        (response) => response.url().includes('/api/contacts') && response.request().method() === 'POST',
+        { timeout: 15000 }
+      ).catch(() => null),
+      submitButton.click()
+    ]);
 
-    // Wait for navigation or success
-    await page.waitForTimeout(2000);
+    // Wait for "Saved" button state to appear (confirms submission worked)
+    const savedButton = page.getByRole('button', { name: /Saved/i });
+    await expect(savedButton).toBeVisible({ timeout: 10000 });
 
-    // Either redirected or success shown
-    const redirected = page.url().includes('/contacts/') && !page.url().includes('/new');
-    const hasContact = await page.getByText(testName).isVisible().catch(() => false);
-
-    expect(redirected || hasContact).toBeTruthy();
+    // Test passes - contact was created successfully
+    // The app will redirect after ~4 more seconds, but we don't need to wait for that
   });
 });
 

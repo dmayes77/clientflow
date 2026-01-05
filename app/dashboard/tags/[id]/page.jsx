@@ -223,6 +223,7 @@ export function TagForm({ tag, tags = [] }) {
 
       {/* Form */}
       <form
+        id="tag-form"
         onSubmit={(e) => {
           e.preventDefault();
           form.handleSubmit();
@@ -378,6 +379,7 @@ export function TagForm({ tag, tags = [] }) {
         <SaveButton
           form={form}
           saveButton={saveButton}
+          formId="tag-form"
           size="sm"
           loadingText={isEditMode ? "Saving..." : "Creating..."}
         >

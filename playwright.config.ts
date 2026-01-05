@@ -23,8 +23,11 @@ export default defineConfig({
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
 
-  // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : undefined,
+  // Limit workers to avoid rate limiting
+  // - CI: 1 worker (sequential)
+  // - Remote URL testing: 2 workers (reduced concurrency)
+  // - Local: undefined (use all available)
+  workers: process.env.CI ? 1 : (process.env.PLAYWRIGHT_TEST_BASE_URL ? 2 : undefined),
 
   // Reporter to use
   reporter: [
