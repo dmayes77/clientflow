@@ -1,4 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env.local
+dotenv.config({ path: '.env.local' });
+
+const authFile = path.join(__dirname, '.playwright/.auth/user.json');
 
 /**
  * Playwright configuration for E2E testing
@@ -20,7 +27,13 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
 
   // Reporter to use
-  reporter: 'html',
+  reporter: [
+    ['html'],
+    ['list'],
+  ],
+
+  // Global timeout
+  timeout: 60000,
 
   // Shared settings for all the projects below
   use: {
@@ -32,38 +45,86 @@ export default defineConfig({
 
     // Screenshot on failure
     screenshot: 'only-on-failure',
+
+    // Video on failure
+    video: 'on-first-retry',
   },
 
-  // Configure projects for major browsers
+  // Configure projects
   projects: [
+    // Setup project - runs auth before tests
+    {
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
+    },
+
+    // Unauthenticated tests (marketing site, public pages)
+    {
+      name: 'public',
+      testMatch: /.*\.public\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+
+    // Authenticated tests - Desktop
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      testMatch: /.*(?<!\.public)\.spec\.ts/,
+      testIgnore: /.*\.setup\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
     },
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      testMatch: /.*(?<!\.public)\.spec\.ts/,
+      testIgnore: /.*\.setup\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: authFile,
+      },
     },
 
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      testMatch: /.*(?<!\.public)\.spec\.ts/,
+      testIgnore: /.*\.setup\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Desktop Safari'],
+        storageState: authFile,
+      },
     },
 
-    // Test against mobile viewports
+    // Mobile tests
     {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      name: 'mobile-chrome',
+      testMatch: /.*(?<!\.public)\.spec\.ts/,
+      testIgnore: /.*\.setup\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['Pixel 5'],
+        storageState: authFile,
+      },
     },
+
     {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      name: 'mobile-safari',
+      testMatch: /.*(?<!\.public)\.spec\.ts/,
+      testIgnore: /.*\.setup\.ts/,
+      dependencies: ['setup'],
+      use: {
+        ...devices['iPhone 12'],
+        storageState: authFile,
+      },
     },
   ],
 
-  // Run your local dev server before starting the tests
-  webServer: {
+  // Run your local dev server before starting the tests (skip if testing remote URL)
+  webServer: process.env.PLAYWRIGHT_TEST_BASE_URL ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
