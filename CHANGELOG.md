@@ -1,5 +1,16 @@
 # What's New
 
+## v1.10.9 - January 5, 2026
+
+### Bug Fixes
+- **Form Submission Fix** - Fixed forms with BottomActionBar where clicking Save/Create buttons didn't submit the form. Affected ContactForm, BookingForm, and Tags pages now work correctly.
+
+### Improvements
+- **Business Settings** - Added email field to Business Settings for contact information
+- **E2E Testing** - Added comprehensive Playwright E2E test suite with Clerk authentication
+
+---
+
 ## v1.10.8 - January 4, 2026
 
 ### CI/CD Improvements
