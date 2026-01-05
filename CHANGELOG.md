@@ -1,5 +1,14 @@
 # What's New
 
+## v1.10.10 - January 5, 2026
+
+## Changes
+- Deploy to Production (#33)
+- chore: Update CHANGELOG.md for v1.10.9
+
+---
+
+
 ## v1.10.9 - January 5, 2026
 
 ### Bug Fixes
