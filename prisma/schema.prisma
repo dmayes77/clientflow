@@ -33,6 +33,7 @@ model Tenant {
   businessZip         String?
   businessCountry     String?
   businessPhone       String?
+  businessEmail       String?
   contactPerson       String?
   businessWebsite     String?
   businessDescription String?
