@@ -15,29 +15,53 @@ function SignInContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [debugLogs, setDebugLogs] = useState([]);
   const [secondFactor, setSecondFactor] = useState(false);
   const [secondFactorType, setSecondFactorType] = useState(null); // 'email_code' or 'totp'
   const [code, setCode] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromMarketing = searchParams.get("from") === "marketing";
+  const clerkTicket = searchParams.get("__clerk_ticket");
   const isSubmitting = useRef(false);
-
-  // Debug logger that shows on screen
-  const addDebugLog = (message, type = "info") => {
-    const timestamp = new Date().toLocaleTimeString();
-    setDebugLogs(prev => [...prev, { message, type, timestamp }].slice(-10)); // Keep last 10 logs
-    console.log(`[${timestamp}] ${message}`);
-  };
+  const ticketProcessed = useRef(false);
 
   // If already signed in, redirect to dashboard
   useEffect(() => {
     if (isSignedIn) {
-      addDebugLog("Already signed in, redirecting to dashboard", "success");
       window.location.href = "/dashboard";
     }
   }, [isSignedIn]);
+
+  // Handle sign-in ticket (for E2E testing)
+  useEffect(() => {
+    async function handleTicket() {
+      if (!clerkTicket || !isLoaded || !signIn || ticketProcessed.current) return;
+
+      ticketProcessed.current = true;
+      setLoading(true);
+
+      try {
+        const result = await signIn.create({
+          strategy: "ticket",
+          ticket: clerkTicket,
+        });
+
+        if (result.status === "complete") {
+          await setActive({ session: result.createdSessionId });
+          window.location.href = "/dashboard";
+        } else {
+          setError("Sign-in ticket failed. Please try again.");
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Ticket sign-in error:", err);
+        setError(err.errors?.[0]?.message || "Sign-in ticket failed");
+        setLoading(false);
+      }
+    }
+
+    handleTicket();
+  }, [clerkTicket, isLoaded, signIn, setActive]);
 
   const handleGoogleSignIn = async () => {
     if (!isLoaded) return;
@@ -69,7 +93,6 @@ function SignInContent() {
 
     setError("");
     setLoading(true);
-    addDebugLog(`Submitting ${secondFactorType} code...`);
 
     try {
       const result = await signIn.attemptSecondFactor({
@@ -77,20 +100,14 @@ function SignInContent() {
         code: code,
       });
 
-      addDebugLog(`2FA result: ${result.status}`, "success");
-
       if (result.status === "complete") {
-        addDebugLog("Activating session...");
         await setActive({ session: result.createdSessionId });
-        addDebugLog("Session activated, redirecting...", "success");
         window.location.href = "/dashboard";
       } else {
-        addDebugLog(`2FA incomplete: ${result.status}`, "error");
         setError("Verification failed. Please try again.");
         setLoading(false);
       }
     } catch (err) {
-      addDebugLog(`2FA error: ${err.message || err}`, "error");
       const errorMessage = err.errors?.[0]?.message || err.message || "Invalid code";
       setError(errorMessage);
       setLoading(false);
@@ -101,81 +118,47 @@ function SignInContent() {
     e.preventDefault();
     e.stopPropagation();
 
-    addDebugLog("=== SIGN IN STARTED ===");
-    addDebugLog(`isSubmitting: ${isSubmitting.current}, isLoaded: ${isLoaded}, loading: ${loading}`);
-    addDebugLog(`Email: ${email}, Password length: ${password.length}`);
-
     // Prevent double submissions
-    if (isSubmitting.current) {
-      addDebugLog("Already submitting, ignoring", "warn");
-      return;
-    }
+    if (isSubmitting.current) return;
 
     if (!isLoaded) {
-      addDebugLog("Clerk not loaded", "error");
       setError("Authentication service not ready. Please refresh and try again.");
       return;
     }
 
     if (!email || !password) {
-      addDebugLog("Missing email or password", "error");
       setError("Please enter both email and password");
       return;
     }
 
-    if (loading) {
-      addDebugLog("Already loading, ignoring", "warn");
-      return;
-    }
+    if (loading) return;
 
     isSubmitting.current = true;
     setError("");
     setLoading(true);
-    addDebugLog("Loading state set to true");
 
     try {
-      addDebugLog("Calling signIn.create...");
-
       const result = await signIn.create({
         identifier: email.trim(),
         password,
       });
 
-      addDebugLog(`Sign in result: ${result.status}`, "success");
-
       if (result.status === "complete") {
-        addDebugLog("Activating session...");
-
-        // Activate the session
         await setActive({ session: result.createdSessionId });
-
-        addDebugLog("Session activated, redirecting...", "success");
-
-        // Redirect immediately - session is now active
         window.location.href = "/dashboard";
       } else if (result.status === "needs_second_factor") {
-        addDebugLog("2FA required - using email code", "warn");
-
         try {
-          // Force email code strategy
           setSecondFactorType("email_code");
 
           const supportedFactors = result.supportedSecondFactors;
           const emailFactor = supportedFactors?.find(f => f.strategy === "email_code");
 
-          if (!emailFactor) {
-            addDebugLog("Email factor not found, but forcing email_code anyway", "warn");
-          }
-
-          // Prepare the email code (this triggers Clerk to send the email)
           try {
             await signIn.prepareSecondFactor({
               strategy: "email_code",
               emailAddressId: emailFactor?.emailAddressId,
             });
-            addDebugLog("Email verification code sent", "success");
           } catch (prepErr) {
-            addDebugLog(`Failed to send email: ${prepErr.message}`, "error");
             setError(`Failed to send verification code: ${prepErr.message}`);
           }
 
@@ -183,29 +166,23 @@ function SignInContent() {
           setLoading(false);
           isSubmitting.current = false;
         } catch (factorErr) {
-          addDebugLog(`Error processing 2FA: ${factorErr.message}`, "error");
           setError("Failed to process two-factor authentication. Please try again.");
           setLoading(false);
           isSubmitting.current = false;
         }
       } else {
-        addDebugLog(`Sign in incomplete: ${result.status}`, "error");
         setError("Sign in failed. Please try again.");
         setLoading(false);
         isSubmitting.current = false;
       }
     } catch (err) {
-      addDebugLog(`Sign in error: ${err.message || err}`, "error");
-
       // If session already exists error, just redirect to dashboard
       if (err.message?.includes("already") || err.errors?.[0]?.message?.includes("already") || err.errors?.[0]?.code === "session_exists") {
-        addDebugLog("Session already exists, redirecting", "warn");
         window.location.href = "/dashboard";
         return;
       }
 
       const errorMessage = err.errors?.[0]?.message || err.message || "Invalid email or password";
-      addDebugLog(`Error: ${errorMessage}`, "error");
       setError(errorMessage);
       setLoading(false);
       isSubmitting.current = false;
@@ -354,7 +331,6 @@ function SignInContent() {
                     type="button"
                     onClick={async () => {
                       setError("");
-                      addDebugLog("Resending email code...");
                       try {
                         const supportedFactors = signIn.supportedSecondFactors;
                         const emailFactor = supportedFactors?.find(f => f.strategy === "email_code");
@@ -362,10 +338,8 @@ function SignInContent() {
                           strategy: "email_code",
                           emailAddressId: emailFactor?.emailAddressId,
                         });
-                        addDebugLog("Email code resent", "success");
                         setError("Code resent! Check your email.");
                       } catch (err) {
-                        addDebugLog(`Failed to resend: ${err.message}`, "error");
                         setError("Failed to resend code. Please try again.");
                       }
                     }}
@@ -485,32 +459,6 @@ function SignInContent() {
           ClientFlow helps service businesses manage clients, bookings, and invoices all in one place.
         </p>
 
-        {/* Debug Console - Shows logs on mobile */}
-        {debugLogs.length > 0 && (
-          <div className="mt-8 w-full max-w-md bg-gray-900 rounded-lg p-4 text-white font-mono text-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-bold">Debug Console</span>
-              <button
-                onClick={() => setDebugLogs([])}
-                className="text-gray-400 hover:text-white text-xs"
-              >
-                Clear
-              </button>
-            </div>
-            <div className="space-y-1 max-h-64 overflow-y-auto">
-              {debugLogs.map((log, i) => (
-                <div key={i} className={`${
-                  log.type === "error" ? "text-red-400" :
-                  log.type === "warn" ? "text-yellow-400" :
-                  log.type === "success" ? "text-green-400" :
-                  "text-gray-300"
-                }`}>
-                  <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

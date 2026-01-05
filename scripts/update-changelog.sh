@@ -46,10 +46,12 @@ get_date() {
   date "+%B %-d, %Y"
 }
 
-# Get commits that are in dev but not in main
+# Get commits that will be included in the PR (dev commits not in main)
+# Limited to recent commits to avoid noise from old diverged history
 get_new_commits() {
   git fetch origin --quiet
-  git log origin/main..origin/dev --oneline --pretty=format:"%s" 2>/dev/null | grep -v "^$" || echo ""
+  # Get commits in dev that are not in main, limited to most recent 30
+  git log origin/main..origin/dev --oneline --pretty=format:"%s" -30 2>/dev/null | grep -v "^$" || echo ""
 }
 
 # Parse commits and generate changelog entries
@@ -60,13 +62,18 @@ parse_commits() {
   local fixes=""
 
   while IFS= read -r commit; do
-    # Skip empty lines and auto-generated commits
+    # Skip empty lines and auto-generated/maintenance commits
     [[ -z "$commit" ]] && continue
     [[ "$commit" == *"Generated with"* ]] && continue
     [[ "$commit" == *"Merge"* ]] && continue
     [[ "$commit" == *"Sync dev"* ]] && continue
     [[ "$commit" == *"chore:"* ]] && continue
     [[ "$commit" == *"Bump version"* ]] && continue
+    [[ "$commit" == *"Update CHANGELOG"* ]] && continue
+    [[ "$commit" == *"docs:"* ]] && continue
+    [[ "$commit" == *"test:"* ]] && continue
+    [[ "$commit" == *"style:"* ]] && continue
+    [[ "$commit" == *"debug:"* ]] && continue
 
     # Clean up the commit message
     local clean_msg=$(echo "$commit" | sed 's/^[a-z]*: //i' | sed 's/^[a-z]*([^)]*): //i')
@@ -142,25 +149,32 @@ echo -e "${BLUE}📝 Generated changelog entries:${NC}"
 echo -e "$CHANGELOG_ENTRIES"
 echo ""
 
-# Create the new version block
-NEW_ENTRY="## v${NEW_VERSION} - ${TODAY}
-
-${CHANGELOG_ENTRIES}---
-
-"
-
-# Insert the new entry after the header line
-# The header is "# What's New" followed by a blank line
+# Create the new version block and insert after header
 TEMP_FILE=$(mktemp)
+NEW_ENTRY_FILE=$(mktemp)
 
-# Read the file and insert the new entry after the header
-awk -v new_entry="$NEW_ENTRY" '
-  /^# What/ { print; getline; print; print ""; print new_entry; next }
-  { print }
-' "$CHANGELOG_FILE" > "$TEMP_FILE"
+# Write the new entry to a temp file (avoids awk newline issues)
+cat > "$NEW_ENTRY_FILE" << ENTRY_EOF
+## v${NEW_VERSION} - ${TODAY}
+
+$(echo -e "$CHANGELOG_ENTRIES")---
+
+ENTRY_EOF
+
+# Build the new changelog: header + new entry + rest of file
+{
+  # Print header line
+  head -1 "$CHANGELOG_FILE"
+  echo ""
+  # Print new entry
+  cat "$NEW_ENTRY_FILE"
+  # Print rest of file (skip first 2 lines: header + blank)
+  tail -n +3 "$CHANGELOG_FILE"
+} > "$TEMP_FILE"
 
 # Replace the original file
 mv "$TEMP_FILE" "$CHANGELOG_FILE"
+rm -f "$NEW_ENTRY_FILE"
 
 echo -e "${GREEN}✅ CHANGELOG.md updated with v${NEW_VERSION}${NC}"
 echo ""

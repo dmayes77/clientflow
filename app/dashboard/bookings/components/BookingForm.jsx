@@ -667,6 +667,7 @@ export function BookingForm({
   return (
     <>
     <form
+      id="booking-form"
       onSubmit={(e) => {
         e.preventDefault();
         form.handleSubmit();
@@ -1500,6 +1501,7 @@ export function BookingForm({
       <SaveButton
         form={form}
         saveButton={saveButton}
+        formId="booking-form"
         variant="success"
         size="sm"
         loadingText={isEditMode ? "Saving..." : "Creating..."}

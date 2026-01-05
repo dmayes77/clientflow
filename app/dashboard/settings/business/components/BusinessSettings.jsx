@@ -68,6 +68,7 @@ export function BusinessSettings() {
       businessZip: "",
       businessCountry: "",
       businessPhone: "",
+      businessEmail: "",
       businessWebsite: "",
       contactPerson: "",
       slug: "",
@@ -122,6 +123,7 @@ export function BusinessSettings() {
       form.setFieldValue("businessZip", tenantData.businessZip || "");
       form.setFieldValue("businessCountry", tenantData.businessCountry || "");
       form.setFieldValue("businessPhone", tenantData.businessPhone || "");
+      form.setFieldValue("businessEmail", tenantData.businessEmail || "");
       form.setFieldValue("businessWebsite", tenantData.businessWebsite || "");
       form.setFieldValue("contactPerson", tenantData.contactPerson || "");
       form.setFieldValue("slug", tenantData.slug || "");
@@ -330,19 +332,26 @@ export function BusinessSettings() {
             />
             <TextField
               form={form}
+              name="businessEmail"
+              label="Email"
+              type="email"
+              placeholder="contact@yourbusiness.com"
+            />
+            <TextField
+              form={form}
               name="businessPhone"
               label="Phone Number"
               type="tel"
               placeholder="(555) 123-4567"
             />
+            <TextField
+              form={form}
+              name="businessWebsite"
+              label="Website"
+              type="url"
+              placeholder="https://yourbusiness.com"
+            />
           </div>
-          <TextField
-            form={form}
-            name="businessWebsite"
-            label="Website"
-            type="url"
-            placeholder="https://yourbusiness.com"
-          />
         </CardContent>
       </Card>
 

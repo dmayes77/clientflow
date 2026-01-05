@@ -12,6 +12,7 @@ import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { format, formatDistanceToNow, subDays, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, isSameDay, isWithinInterval, subMonths } from "date-fns";
 
 import { formatCompactCurrency } from "@/lib/formatters";
+import { TrialCard } from "./components/TrialCard";
 
 const CHART_COLORS = {
   pending: "#f59e0b",
@@ -341,6 +342,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-4">
+      {/* Trial Card - shows only during trial period */}
+      <TrialCard />
+
       {/* Page Header with Quick Actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

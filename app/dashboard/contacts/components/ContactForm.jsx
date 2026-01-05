@@ -290,10 +290,13 @@ export function ContactForm({ mode = "create", contactId = null }) {
         </div>
       </div>
 
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        form.handleSubmit();
-      }}>
+      <form
+        id="contact-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+      >
         <div className="grid grid-cols-1 tablet:grid-cols-2 gap-6">
           {/* Left Column - Basic Info */}
           <Card>
@@ -503,6 +506,7 @@ export function ContactForm({ mode = "create", contactId = null }) {
         <SaveButton
           form={form}
           saveButton={saveButton}
+          formId="contact-form"
           variant="success"
           size="sm"
           loadingText={mode === "edit" ? "Saving..." : "Creating..."}
