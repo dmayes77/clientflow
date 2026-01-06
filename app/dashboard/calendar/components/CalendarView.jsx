@@ -529,7 +529,7 @@ export function CalendarView() {
         <div className="flex flex-1 overflow-y-auto">
           <div className="w-14 shrink-0 border-r border-border">
             {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => (
-              <div key={hour} className="h-[3rem] text-2xs text-muted-foreground text-right pr-2 pt-0.5">
+              <div key={hour} className="h-12 text-2xs text-muted-foreground text-right pr-2 pt-0.5">
                 {format(setHours(new Date(), hour), "h a")}
               </div>
             ))}
@@ -548,7 +548,7 @@ export function CalendarView() {
                 return (
                   <div
                     key={hour}
-                    className="h-[3rem] border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
+                    className="h-12 border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
                     onClick={() => handleOpenDialog(day, hour)}
                   >
                     {hourBookings.map((booking) => {
@@ -619,7 +619,7 @@ export function CalendarView() {
         <div className="flex flex-1 overflow-y-auto">
           <div className="w-14 shrink-0 border-r border-border">
             {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => (
-              <div key={hour} className="h-[3rem] text-2xs text-muted-foreground text-right pr-2 pt-0.5">
+              <div key={hour} className="h-12 text-2xs text-muted-foreground text-right pr-2 pt-0.5">
                 {format(setHours(new Date(), hour), "h a")}
               </div>
             ))}
@@ -637,7 +637,7 @@ export function CalendarView() {
               return (
                 <div
                   key={hour}
-                  className="h-[3rem] border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="h-12 border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
                   onClick={() => handleOpenDialog(currentDate, hour)}
                 >
                   {hourBookings.map((booking) => {
