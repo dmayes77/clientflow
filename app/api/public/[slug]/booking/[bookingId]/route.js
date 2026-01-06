@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
         businessName: true,
         logoUrl: true,
         email: true,
-        phone: true,
+        businessPhone: true,
         businessAddress: true,
         businessCity: true,
         businessState: true,
@@ -89,7 +89,7 @@ export async function GET(request, { params }) {
         name: tenant.businessName,
         logoUrl: tenant.logoUrl,
         email: tenant.email,
-        phone: tenant.phone,
+        phone: tenant.businessPhone,
         timezone: tenant.timezone,
         address: tenant.businessAddress ? {
           street: tenant.businessAddress,
