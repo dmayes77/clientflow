@@ -664,7 +664,7 @@ export function CalendarView() {
                     return (
                       <div
                         key={booking.id}
-                        className={cn("absolute left-1 right-1 rounded px-2 py-0.5 text-white overflow-hidden z-5 flex flex-col justify-center", statusConfig[booking.status]?.color)}
+                        className={cn("absolute left-1 right-1 rounded px-2 py-1 text-white overflow-hidden z-5 flex flex-col", statusConfig[booking.status]?.color)}
                         style={{
                           top: `${topOffset}rem`,
                           height: `${Math.max(heightRem, 1.75)}rem`,
