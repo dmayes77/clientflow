@@ -119,11 +119,13 @@ jobs:
     runs-on: ubuntu-latest
     # Only deploy to production when merging from dev to main
     # Tests already passed on the PR - no need to run again
+    # Detects: merge commits ("Merge"), squash merges ("(#123)"), and bot commits
     if: |
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' &&
-       (contains(github.event.head_commit.message, 'Merge') ||
-        github.event.head_commit.author.username == 'github-actions[bot]'))
+      github.event_name == 'push' &&
+      (contains(github.event.head_commit.message, 'Merge') ||
+       contains(github.event.head_commit.message, '(#') ||
+       github.event.head_commit.author.username == 'github-actions[bot]')
 
     steps:
       - name: Checkout code
