@@ -452,7 +452,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 2).map((booking) => (
                     <div
                       key={booking.id}
-                      className={cn("hig-caption-2 leading-tight px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
+                      className={cn("text-xs font-medium leading-tight px-1.5 py-1 rounded truncate text-white", statusConfig[booking.status]?.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleBookingClick(booking);
@@ -461,7 +461,7 @@ export function CalendarView() {
                       {formatTimeInTz(booking.scheduledAt, "h:mma")} {booking.contact?.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && <div className="hig-caption-2 leading-tight text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
+                  {dayBookings.length > 2 && <div className="text-xs font-medium leading-tight text-muted-foreground px-1.5">+{dayBookings.length - 2} more</div>}
                 </div>
               </div>
             );
