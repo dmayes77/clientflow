@@ -596,6 +596,8 @@ export function CalendarView() {
 
   // Day View Component
   const DayView = () => {
+    const dayBookings = getBookingsForDay(currentDate);
+
     return (
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex border-b border-border shrink-0">
@@ -610,6 +612,9 @@ export function CalendarView() {
             >
               {format(currentDate, "d")}
             </div>
+            {dayBookings.length > 0 && (
+              <div className="text-xs text-muted-foreground mt-1">{dayBookings.length} booking{dayBookings.length !== 1 ? 's' : ''}</div>
+            )}
           </div>
         </div>
 
