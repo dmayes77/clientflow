@@ -63,7 +63,7 @@ function FeaturedServiceCard({ service, slug, index }) {
       <Link href={`/${slug}/book?serviceId=${service.id}`}>
         <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
           {/* Image */}
-          <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
+          <div className="aspect-4/3 overflow-hidden bg-linear-to-br from-gray-100 to-gray-50">
             {service.images?.[0] ? (
               <Image
                 src={service.images[0].url}
@@ -146,7 +146,7 @@ export default function TenantLandingPage({ params }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-white">
         <div className="text-center">
           <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -159,7 +159,7 @@ export default function TenantLandingPage({ params }) {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-white p-4">
         <Card className="max-w-sm w-full shadow-xl border-0">
           <CardContent className="p-8 text-center">
             <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-5">
@@ -200,10 +200,10 @@ export default function TenantLandingPage({ params }) {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" />
+        <div className="absolute inset-0 bg-linear-to-br from-gray-900 via-gray-800 to-gray-900" />
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-violet-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
+        <div className="absolute top-0 right-0 w-150 h-150 bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-100 h-100 bg-violet-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
 
         <div className="relative max-w-6xl mx-auto px-5 py-20 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -226,7 +226,7 @@ export default function TenantLandingPage({ params }) {
                     />
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-primary/25">
+                  <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-primary/25">
                     {business.name?.[0] || "B"}
                   </div>
                 )}
@@ -244,7 +244,7 @@ export default function TenantLandingPage({ params }) {
               {/* Headline */}
               <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-tight mb-6">
                 Book Your Next{" "}
-                <span className="bg-gradient-to-r from-primary to-violet-400 bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-primary to-violet-400 bg-clip-text text-transparent">
                   Appointment
                 </span>{" "}
                 Today
@@ -260,7 +260,7 @@ export default function TenantLandingPage({ params }) {
                 <Link href={`/${slug}/book`}>
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto h-14 px-8 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/30"
+                    className="w-full sm:w-auto h-14 px-8 text-base font-semibold rounded-xl bg-linear-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/30"
                   >
                     <Calendar className="w-5 h-5 mr-2" />
                     Book Now
@@ -316,7 +316,7 @@ export default function TenantLandingPage({ params }) {
                 {/* Card */}
                 <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8 shadow-2xl">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary to-violet-500 flex items-center justify-center">
                       <Sparkles className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -407,9 +407,9 @@ export default function TenantLandingPage({ params }) {
       )}
 
       {/* CTA Section */}
-      <section className="py-20 lg:py-28 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
+      <section className="py-20 lg:py-28 bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute top-0 left-1/2 w-[600px] h-[300px] bg-primary/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute top-0 left-1/2 w-150 h-75 bg-primary/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2" />
 
         <div className="relative max-w-4xl mx-auto px-5 text-center">
           <motion.div
@@ -467,7 +467,7 @@ export default function TenantLandingPage({ params }) {
                     />
                   </div>
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-lg">
                     {business.name?.[0] || "B"}
                   </div>
                 )}
@@ -549,10 +549,10 @@ export default function TenantLandingPage({ params }) {
       </footer>
 
       {/* Mobile Fixed CTA */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent lg:hidden z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-linear-to-t from-white via-white to-transparent lg:hidden z-40">
         <Link href={`/${slug}/book`} className="block">
           <Button
-            className="w-full h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-primary/90 shadow-2xl shadow-primary/30"
+            className="w-full h-14 text-base font-semibold rounded-xl bg-linear-to-r from-primary to-primary/90 shadow-2xl shadow-primary/30"
             size="lg"
           >
             <Calendar className="w-5 h-5 mr-2" />
