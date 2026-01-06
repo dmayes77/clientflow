@@ -231,15 +231,21 @@ export function CalendarView() {
 
   const getBookingsForDay = (date) => {
     return bookings
-      .filter((booking) => isSameDay(new Date(booking.scheduledAt), date))
+      .filter((booking) => {
+        const bookingDate = new Date(booking.scheduledAt);
+        const zonedBookingDate = toZonedTime(bookingDate, timezone);
+        const zonedTargetDate = toZonedTime(date, timezone);
+        return isSameDay(zonedBookingDate, zonedTargetDate);
+      })
       .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
   };
 
   const getBookingsForHour = (date, hour) => {
     return bookings.filter((booking) => {
       const bookingDate = new Date(booking.scheduledAt);
-      const zonedDate = toZonedTime(bookingDate, timezone);
-      return isSameDay(bookingDate, date) && getHours(zonedDate) === hour;
+      const zonedBookingDate = toZonedTime(bookingDate, timezone);
+      const zonedTargetDate = toZonedTime(date, timezone);
+      return isSameDay(zonedBookingDate, zonedTargetDate) && getHours(zonedBookingDate) === hour;
     });
   };
 
