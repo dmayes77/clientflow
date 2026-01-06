@@ -11,6 +11,8 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
+  startOfDay,
+  endOfDay,
   addWeeks,
   subWeeks,
   addMonths,
@@ -62,7 +64,7 @@ const statusConfig = {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const BUSINESS_HOURS_START = 6;
 const BUSINESS_HOURS_END = 22;
-const SLOT_HEIGHT = 48;
+const SLOT_HEIGHT_REM = 3; // 3rem = 48px at 16px base
 
 // Helper function to render break time indicator
 const BreakTimeIndicator = ({ breakStartTime, breakEndTime }) => {
@@ -77,17 +79,17 @@ const BreakTimeIndicator = ({ breakStartTime, breakEndTime }) => {
       return null;
     }
 
-    // Calculate position and height
-    const startOffset = (startHour - BUSINESS_HOURS_START) * SLOT_HEIGHT + (startMin / 60) * SLOT_HEIGHT;
+    // Calculate position and height in rem
+    const startOffset = (startHour - BUSINESS_HOURS_START) * SLOT_HEIGHT_REM + (startMin / 60) * SLOT_HEIGHT_REM;
     const durationMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
-    const height = (durationMinutes / 60) * SLOT_HEIGHT;
+    const height = (durationMinutes / 60) * SLOT_HEIGHT_REM;
 
     return (
       <div
         className="absolute left-0 right-0 bg-amber-100/40 dark:bg-amber-950/40 border-y border-amber-300/50 dark:border-amber-700/50 pointer-events-none z-10"
         style={{
-          top: `${startOffset}px`,
-          height: `${height}px`,
+          top: `${startOffset}rem`,
+          height: `${height}rem`,
         }}
       >
         <div className="flex items-center justify-center h-full">
@@ -136,7 +138,8 @@ export function CalendarView() {
       const end = endOfWeek(currentDate, { weekStartsOn: 0 });
       return { start, end };
     }
-    return { start: currentDate, end: currentDate };
+    // Day view - fetch full day range
+    return { start: startOfDay(currentDate), end: endOfDay(currentDate) };
   }, [currentDate, view, isMobile]);
 
   // Fetch tenant settings
@@ -192,6 +195,13 @@ export function CalendarView() {
     router.push(`/dashboard/bookings/${booking.id}`);
   };
 
+  // Switch to day view for a specific date (used when clicking on a day in month view)
+  const handleDaySelect = (date) => {
+    setCurrentDate(date);
+    setSelectedDate(date);
+    setView("day");
+  };
+
   const handleStatusChange = async (booking, newStatus) => {
     updateBooking.mutate(
       { id: booking.id, status: newStatus },
@@ -223,14 +233,25 @@ export function CalendarView() {
   };
 
   const getBookingsForDay = (date) => {
-    return bookings.filter((booking) => isSameDay(new Date(booking.scheduledAt), date));
+    const targetDay = formatTz(toZonedTime(date, timezone), "yyyy-MM-dd", { timeZone: timezone });
+    return bookings
+      .filter((booking) => {
+        const bookingDate = new Date(booking.scheduledAt);
+        const zonedBookingDate = toZonedTime(bookingDate, timezone);
+        const bookingDay = formatTz(zonedBookingDate, "yyyy-MM-dd", { timeZone: timezone });
+        return bookingDay === targetDay;
+      })
+      .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
   };
 
   const getBookingsForHour = (date, hour) => {
+    const targetDay = formatTz(toZonedTime(date, timezone), "yyyy-MM-dd", { timeZone: timezone });
     return bookings.filter((booking) => {
       const bookingDate = new Date(booking.scheduledAt);
-      const zonedDate = toZonedTime(bookingDate, timezone);
-      return isSameDay(bookingDate, date) && getHours(zonedDate) === hour;
+      const zonedBookingDate = toZonedTime(bookingDate, timezone);
+      const bookingDay = formatTz(zonedBookingDate, "yyyy-MM-dd", { timeZone: timezone });
+      const bookingHour = parseInt(formatTz(zonedBookingDate, "H", { timeZone: timezone }), 10);
+      return bookingDay === targetDay && bookingHour === hour;
     });
   };
 
@@ -260,7 +281,7 @@ export function CalendarView() {
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
     const calendarEnd = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-    const selectedDayBookings = getBookingsForDay(selectedDate).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+    const selectedDayBookings = getBookingsForDay(selectedDate);
 
     return (
       <div className="flex flex-col">
@@ -435,7 +456,7 @@ export function CalendarView() {
                   !isCurrentMonth && "bg-muted/10",
                   isToday(day) && "bg-primary/5"
                 )}
-                onClick={() => handleOpenDialog(day)}
+                onClick={() => handleDaySelect(day)}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span
@@ -452,7 +473,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 2).map((booking) => (
                     <div
                       key={booking.id}
-                      className={cn("hig-caption-2 leading-tight px-1 py-0.5 rounded truncate text-white", statusConfig[booking.status]?.color)}
+                      className={cn("text-xs font-medium leading-tight px-1.5 py-1 rounded truncate text-white cursor-pointer", statusConfig[booking.status]?.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleBookingClick(booking);
@@ -461,7 +482,17 @@ export function CalendarView() {
                       {formatTimeInTz(booking.scheduledAt, "h:mma")} {booking.contact?.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && <div className="hig-caption-2 leading-tight text-muted-foreground px-1">+{dayBookings.length - 2} more</div>}
+                  {dayBookings.length > 2 && (
+                    <div
+                      className="text-xs font-medium leading-tight text-primary hover:underline cursor-pointer px-1.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDaySelect(day);
+                      }}
+                    >
+                      +{dayBookings.length - 2} more
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -522,7 +553,7 @@ export function CalendarView() {
                   >
                     {hourBookings.map((booking) => {
                       const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
-                      const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
+                      const topOffset = (startMinutes / 60) * SLOT_HEIGHT_REM;
 
                       // Calculate break-aware end time
                       const startTime = new Date(booking.scheduledAt);
@@ -533,18 +564,18 @@ export function CalendarView() {
                         tenant?.breakEndTime
                       );
 
-                      // Calculate actual display duration in minutes (including break extension)
+                      // Calculate actual display duration in rem
                       const displayDuration = (adjustedEndTime - startTime) / 60000;
-                      const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 8);
+                      const heightRem = Math.min((displayDuration / 60) * SLOT_HEIGHT_REM, SLOT_HEIGHT_REM * 8);
 
                       return (
                         <div
                           key={booking.id}
-                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white hig-caption-2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
+                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white text-xs overflow-hidden z-5", statusConfig[booking.status]?.color)}
                           style={{
-                            top: `${topOffset}px`,
-                            height: `${Math.max(height, 20)}px`,
-                            minHeight: "20px",
+                            top: `${topOffset}rem`,
+                            height: `${Math.max(heightRem, 1.25)}rem`,
+                            minHeight: "1.25rem",
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -552,7 +583,7 @@ export function CalendarView() {
                           }}
                         >
                           <div className="font-medium truncate">{booking.contact?.name}</div>
-                          {height > 30 && <div className="opacity-80">{formatTimeInTz(booking.scheduledAt, "h:mm a")}</div>}
+                          {heightRem > 1.875 && <div className="opacity-80">{formatTimeInTz(booking.scheduledAt, "h:mm a")}</div>}
                         </div>
                       );
                     })}
@@ -611,7 +642,7 @@ export function CalendarView() {
                 >
                   {hourBookings.map((booking) => {
                     const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
-                    const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
+                    const topOffset = (startMinutes / 60) * SLOT_HEIGHT_REM;
 
                     // Calculate break-aware end time
                     const startTime = new Date(booking.scheduledAt);
@@ -622,30 +653,34 @@ export function CalendarView() {
                       tenant?.breakEndTime
                     );
 
-                    // Calculate actual display duration in minutes (including break extension)
+                    // Calculate actual display duration in rem
                     const displayDuration = (adjustedEndTime - startTime) / 60000;
-                    const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 8);
+                    const heightRem = Math.min((displayDuration / 60) * SLOT_HEIGHT_REM, SLOT_HEIGHT_REM * 8);
+                    const serviceName = booking.services?.[0]?.service?.name ||
+                      booking.packages?.[0]?.package?.name ||
+                      booking.service?.name ||
+                      booking.package?.name;
 
                     return (
                       <div
                         key={booking.id}
-                        className={cn("absolute left-1 right-1 rounded px-2 text-white hig-caption-2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
+                        className={cn("absolute left-1 right-1 rounded px-2 py-1 text-white overflow-hidden z-5 flex flex-col", statusConfig[booking.status]?.color)}
                         style={{
-                          top: `${topOffset}px`,
-                          height: `${Math.max(height, 28)}px`,
-                          minHeight: "28px",
+                          top: `${topOffset}rem`,
+                          height: `${Math.max(heightRem, 1.75)}rem`,
+                          minHeight: "1.75rem",
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleBookingClick(booking);
                         }}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium truncate">{booking.contact?.name}</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-sm font-semibold truncate">{booking.contact?.name}</span>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20">
-                                <MoreHorizontal className="h-4 w-4" />
+                              <Button variant="ghost" className="h-5 w-5 p-0 shrink-0 text-white hover:bg-white/20">
+                                <MoreHorizontal className="h-3.5 w-3.5" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -686,20 +721,10 @@ export function CalendarView() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                        {height > 40 && (
-                          <>
-                            <div className="opacity-80">
-                              {formatTimeInTz(booking.scheduledAt, "h:mm a")} - {formatTimeInTz(adjustedEndTime, "h:mm a")}
-                            </div>
-                            <div className="opacity-80 truncate">
-                              {booking.services?.[0]?.service?.name ||
-                                booking.packages?.[0]?.package?.name ||
-                                booking.service?.name ||
-                                booking.package?.name ||
-                                "Custom"}
-                            </div>
-                          </>
-                        )}
+                        <div className="text-xs opacity-90 truncate leading-tight">
+                          {formatTimeInTz(booking.scheduledAt, "h:mma")}
+                          {serviceName && <span className="opacity-80"> · {serviceName}</span>}
+                        </div>
                       </div>
                     );
                   })}

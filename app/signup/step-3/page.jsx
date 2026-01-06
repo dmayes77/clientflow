@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Shield,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSignupState } from "@/lib/signup-state";
@@ -85,11 +86,11 @@ export default function Step3Page() {
     return (
       <div className="space-y-5">
         <div className="text-center">
-          <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
+          <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
             <CreditCard className="w-5 h-5 text-red-500" />
           </div>
-          <h2 className="hig-title-2 font-semibold text-gray-900">No Plans Available</h2>
-          <p className="mt-1 hig-caption1 text-gray-500">
+          <h2 className="hig-title-2 font-semibold text-gray-900 dark:text-white">No Plans Available</h2>
+          <p className="mt-1 hig-caption-1 text-gray-500 dark:text-gray-400">
             Please contact support or check back later.
           </p>
         </div>
@@ -97,7 +98,7 @@ export default function Step3Page() {
           <button
             type="button"
             onClick={() => router.push("/signup/step-2")}
-            className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors"
+            className="min-h-11 flex items-center gap-2 hig-body text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 active:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -110,13 +111,21 @@ export default function Step3Page() {
   return (
     <div className="space-y-5">
       <div className="text-center">
-        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
+        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
           <CreditCard className="w-5 h-5 text-blue-500" />
         </div>
-        <h2 className="hig-title-2 font-semibold text-gray-900">Choose your plan</h2>
-        <p className="mt-1 hig-caption1 text-gray-500">
-          Start with a 30-day free trial
+        <h2 className="hig-title-2 font-semibold text-gray-900 dark:text-white">Choose your plan</h2>
+        <p className="mt-1 hig-caption-1 text-gray-500 dark:text-gray-400">
+          Select a plan to start your free trial
         </p>
+      </div>
+
+      {/* Trial badge */}
+      <div className="flex items-center justify-center gap-2 py-2 px-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl">
+        <Gift className="w-4 h-4 text-green-600 dark:text-green-400" />
+        <span className="hig-caption-1 font-medium text-green-700 dark:text-green-300">
+          30-day free trial • No charge until trial ends
+        </span>
       </div>
 
       {/* Plan cards */}
@@ -127,28 +136,28 @@ export default function Step3Page() {
             className={cn(
               "p-4 rounded-2xl border-2 transition-colors",
               plan.isDefault
-                ? "border-violet-500 bg-violet-50"
-                : "border-gray-200 bg-white"
+                ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
+                : "border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-700/50"
             )}
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <span className="hig-body font-semibold text-gray-900">
+                <span className="hig-body font-semibold text-gray-900 dark:text-white">
                   {plan.name}
                 </span>
                 {plan.description && (
-                  <p className="hig-caption1 text-gray-500 mt-0.5">
+                  <p className="hig-caption-1 text-gray-500 dark:text-gray-400 mt-0.5">
                     {plan.description}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <div className="hig-title-1 font-bold text-gray-900">
+                <div className="hig-title-1 font-bold text-gray-900 dark:text-white">
                   {formatWholeDollars(plan.priceMonthly)}
-                  <span className="hig-caption1 font-normal text-gray-500">/mo</span>
+                  <span className="hig-caption-1 font-normal text-gray-500 dark:text-gray-400">/mo</span>
                 </div>
                 {plan.priceYearly && (
-                  <div className="hig-caption-2 text-gray-500">
+                  <div className="hig-caption-2 text-gray-500 dark:text-gray-400">
                     or {formatWholeDollars(plan.priceYearly)}/yr
                   </div>
                 )}
@@ -160,7 +169,7 @@ export default function Step3Page() {
                 {plan.features.map((feature, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-1.5 hig-caption-2 text-gray-600"
+                    className="flex items-center gap-1.5 hig-caption-2 text-gray-600 dark:text-gray-300"
                   >
                     <Check
                       className={cn(
@@ -203,12 +212,11 @@ export default function Step3Page() {
 
       {/* Trust badges */}
       <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-        <div className="flex items-center gap-1.5 hig-caption-2 text-gray-500">
+        <div className="flex items-center gap-1.5 hig-caption-2 text-gray-500 dark:text-gray-400">
           <Shield className="w-3.5 h-3.5" />
           <span>Secure checkout</span>
         </div>
-        <div className="hig-caption-2 text-gray-500">30-day free trial</div>
-        <div className="hig-caption-2 text-gray-500">Cancel anytime</div>
+        <div className="hig-caption-2 text-gray-500 dark:text-gray-400">Cancel anytime</div>
       </div>
 
       {/* Back button */}
@@ -217,7 +225,7 @@ export default function Step3Page() {
           type="button"
           onClick={() => router.push("/signup/step-2")}
           disabled={createCheckoutSession.isPending}
-          className="min-h-11 flex items-center gap-2 hig-body text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors disabled:opacity-50"
+          className="min-h-11 flex items-center gap-2 hig-body text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 active:text-gray-800 transition-colors disabled:opacity-50"
         >
           <ArrowLeft className="w-4 h-4" />
           Back

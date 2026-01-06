@@ -13,14 +13,14 @@ export function PasswordStrength({ password, context = {} }) {
       {/* Strength bar */}
       <div className="space-y-1">
         <div className="flex items-center justify-between hig-caption-2">
-          <span className="text-gray-500">Password strength</span>
+          <span className="text-gray-500 dark:text-gray-400">Password strength</span>
           {strength.label && (
             <span
               className={cn(
                 "font-medium",
                 strength.level === 1 && "text-red-500",
                 strength.level === 2 && "text-orange-500",
-                strength.level === 3 && "text-yellow-600",
+                strength.level === 3 && "text-yellow-600 dark:text-yellow-500",
                 strength.level === 4 && "text-green-500"
               )}
             >
@@ -28,7 +28,7 @@ export function PasswordStrength({ password, context = {} }) {
             </span>
           )}
         </div>
-        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-gray-200 dark:bg-slate-600 rounded-full overflow-hidden">
           <div
             className={cn("h-full transition-all duration-300", strength.color)}
             style={{ width: `${strength.score}%` }}
@@ -45,7 +45,7 @@ export function PasswordStrength({ password, context = {} }) {
               key={rule.id}
               className={cn(
                 "flex items-center gap-1.5",
-                passed ? "text-green-600" : "text-gray-400"
+                passed ? "text-green-600 dark:text-green-400" : "text-gray-400"
               )}
             >
               {passed ? (

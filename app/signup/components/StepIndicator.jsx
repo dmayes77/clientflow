@@ -27,7 +27,7 @@ export function StepIndicator({ currentStep }) {
                   "hig-callout tablet:hig-body font-semibold transition-colors",
                   isCompleted && "bg-green-500 text-white",
                   isActive && "bg-blue-500 text-white",
-                  !isActive && !isCompleted && "bg-gray-200 text-gray-500"
+                  !isActive && !isCompleted && "bg-gray-200 dark:bg-slate-600 text-gray-500 dark:text-gray-400"
                 )}
               >
                 {isCompleted ? (
@@ -41,7 +41,7 @@ export function StepIndicator({ currentStep }) {
                 className={cn(
                   "mt-1.5 hig-caption-1 tablet:hig-caption-2 hidden fold:block",
                   isActive && "text-blue-500 font-semibold",
-                  isCompleted && "text-green-600 font-medium",
+                  isCompleted && "text-green-600 dark:text-green-400 font-medium",
                   !isActive && !isCompleted && "text-gray-400"
                 )}
               >
@@ -53,7 +53,7 @@ export function StepIndicator({ currentStep }) {
               <div
                 className={cn(
                   "w-6 fold:w-10 tablet:w-14 h-0.5 mx-1 fold:mx-2 rounded-full",
-                  isCompleted ? "bg-green-500" : "bg-gray-200"
+                  isCompleted ? "bg-green-500" : "bg-gray-200 dark:bg-slate-600"
                 )}
               />
             )}

@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dispatchBookingCreated, dispatchContactCreated } from "@/lib/webhooks";
 import { calculateAdjustedEndTime } from "@/lib/utils/schedule";
-import { applyBookingStatusTag } from "@/lib/system-tags";
+import { applyBookingStatusTag, convertLeadToClient } from "@/lib/system-tags";
+import { triggerWorkflows } from "@/lib/workflow-executor";
+import { sendBookingConfirmation } from "@/lib/send-system-email";
 
 // POST /api/public/[slug]/book - Create a public booking
 export async function POST(request, { params }) {
@@ -25,6 +27,7 @@ export async function POST(request, { params }) {
       serviceIds,
       packageIds,
       scheduledAt,
+      contactId, // Optional: pre-saved lead ID from auto-save
       contactName,
       contactEmail,
       contactPhone,
@@ -205,14 +208,43 @@ export async function POST(request, { params }) {
       }
 
       // Find or create the contact
-      let foundContact = await tx.contact.findFirst({
-        where: {
-          tenantId: tenant.id,
-          email: contactEmail.toLowerCase(),
-        },
-      });
-
+      // If contactId is provided (from auto-save), use that contact
+      let foundContact = null;
       let newContactFlag = false;
+
+      if (contactId) {
+        // Use the pre-saved contact from auto-save
+        foundContact = await tx.contact.findFirst({
+          where: {
+            id: contactId,
+            tenantId: tenant.id,
+          },
+        });
+        // Update contact info if provided and different
+        if (foundContact) {
+          const updates = {};
+          if (contactName && contactName !== foundContact.name) updates.name = contactName;
+          if (contactPhone && contactPhone !== foundContact.phone) updates.phone = contactPhone;
+          if (Object.keys(updates).length > 0) {
+            foundContact = await tx.contact.update({
+              where: { id: foundContact.id },
+              data: updates,
+            });
+          }
+        }
+      }
+
+      // Fallback to finding by email if contactId not found or not provided
+      if (!foundContact) {
+        foundContact = await tx.contact.findFirst({
+          where: {
+            tenantId: tenant.id,
+            email: contactEmail.toLowerCase(),
+          },
+        });
+      }
+
+      // Create new contact if not found
       if (!foundContact) {
         foundContact = await tx.contact.create({
           data: {
@@ -257,8 +289,52 @@ export async function POST(request, { params }) {
       };
     });
 
-    // Apply booking status tag (pending - awaiting payment or confirmation)
-    await applyBookingStatusTag(prisma, booking.id, tenant.id, "pending", { tenant });
+    // Determine booking status based on price
+    // Free bookings (price = 0) are confirmed immediately
+    // Paid bookings remain pending until payment is received
+    const isFreeBooking = finalPrice === 0;
+    const bookingStatus = isFreeBooking ? "confirmed" : "pending";
+
+    // Update booking status if it's free
+    if (isFreeBooking && booking.status !== "confirmed") {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: "confirmed", paymentStatus: "not_required" },
+      });
+    }
+
+    // Apply booking status tag
+    await applyBookingStatusTag(prisma, booking.id, tenant.id, bookingStatus, { tenant });
+
+    // Convert lead to client for free bookings (no payment required)
+    if (isFreeBooking && contact.id) {
+      convertLeadToClient(prisma, contact.id, tenant.id, {
+        tenant,
+        contact,
+      }).catch((err) => {
+        console.error("Error converting lead to client for free booking:", err);
+      });
+
+      // Trigger client_converted workflow for free bookings
+      triggerWorkflows("booking_confirmed", {
+        tenant,
+        booking,
+        contact,
+      }).catch((err) => {
+        console.error("Error triggering booking_confirmed workflow:", err);
+      });
+
+      // Send booking confirmation email for free bookings
+      sendBookingConfirmation({
+        ...booking,
+        tenant,
+        contact,
+        service: selectedServices[0] || null,
+        package: selectedPackages[0] || null,
+      }).catch((err) => {
+        console.error("Error sending booking confirmation email:", err);
+      });
+    }
 
     // Save custom field values if provided
     if (customFields && Array.isArray(customFields) && customFields.length > 0) {
@@ -363,14 +439,16 @@ export async function POST(request, { params }) {
         scheduledAt: booking.scheduledAt,
         serviceName,
         totalPrice: booking.totalPrice,
-        status: booking.status,
+        status: bookingStatus,
       },
       contact: {
         id: contact.id,
         name: contact.name,
         email: contact.email,
       },
-      message: "Your booking request has been submitted! We'll confirm your appointment shortly.",
+      message: isFreeBooking
+        ? "Your booking is confirmed! A confirmation email has been sent to your email address."
+        : "Your booking request has been submitted! We'll confirm your appointment shortly.",
     });
   } catch (error) {
     console.error("Error creating public booking:", error);

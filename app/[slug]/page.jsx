@@ -1,10 +1,10 @@
 "use client";
 
-import { use, useState, useMemo } from "react";
+import { use } from "react";
 import Link from "next/link";
 import { usePublicBusiness } from "@/lib/hooks/use-public-booking";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +17,12 @@ import {
   Check,
   Loader2,
   Building2,
-  Package,
   Sparkles,
   ChevronRight,
-  X,
-  ExternalLink,
-  Navigation,
   Star,
+  Shield,
   ArrowRight,
+  Mail,
 } from "lucide-react";
 import { formatCurrency, formatDuration } from "@/lib/formatters";
 
@@ -37,18 +35,6 @@ function toTitleCase(str) {
     .join(" ");
 }
 
-function formatPhoneNumber(phone) {
-  if (!phone) return phone;
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length === 11 && digits[0] === "1") {
-    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
-  }
-  return phone;
-}
-
 function getGoogleMapsUrl(address) {
   if (!address) return null;
   const parts = [address.street, address.city, address.state, address.zip].filter(Boolean);
@@ -56,291 +42,92 @@ function getGoogleMapsUrl(address) {
   return `https://maps.google.com/maps?q=${encodeURIComponent(parts.join(", "))}`;
 }
 
-// Category Filter Pills
-function CategoryPills({ categories, selectedCategory, onSelect, services, packages }) {
-  const categoriesWithItems = useMemo(() => {
-    return categories.filter((cat) => {
-      const hasServices = services.some((s) => s.categoryId === cat.id);
-      const hasPackages = packages.some((p) => p.categoryId === cat.id);
-      return hasServices || hasPackages;
-    });
-  }, [categories, services, packages]);
-
-  const hasUncategorized = useMemo(() => {
-    return services.some((s) => !s.categoryId) || packages.some((p) => !p.categoryId);
-  }, [services, packages]);
-
-  // Don't show if no categories to filter (need at least 2 filter options)
-  const totalFilterOptions = categoriesWithItems.length + (hasUncategorized ? 1 : 0);
-  if (totalFilterOptions < 2) {
-    return null;
+function formatPhoneDisplay(phone) {
+  if (!phone) return phone;
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
-
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-      <button
-        onClick={() => onSelect(null)}
-        className={`
-          shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-all
-          ${selectedCategory === null ? "bg-primary text-primary-foreground shadow-md" : "bg-card border hover:bg-muted text-muted-foreground"}
-        `}
-      >
-        All
-      </button>
-      {categoriesWithItems.map((cat) => (
-        <button
-          key={cat.id}
-          onClick={() => onSelect(cat.id)}
-          className={`
-            shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-all flex items-center gap-2
-            ${selectedCategory === cat.id ? "text-white shadow-md" : "bg-card border hover:bg-muted text-muted-foreground"}
-          `}
-          style={{
-            backgroundColor: selectedCategory === cat.id ? cat.color : undefined,
-            borderColor: selectedCategory === cat.id ? cat.color : undefined,
-          }}
-        >
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedCategory === cat.id ? "white" : cat.color }} />
-          {cat.name}
-        </button>
-      ))}
-      {hasUncategorized && categoriesWithItems.length > 0 && (
-        <button
-          onClick={() => onSelect("uncategorized")}
-          className={`
-            shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-all
-            ${selectedCategory === "uncategorized" ? "bg-gray-600 text-white shadow-md" : "bg-card border hover:bg-muted text-muted-foreground"}
-          `}
-        >
-          Other
-        </button>
-      )}
-    </div>
-  );
+  return phone;
 }
 
-// Mobile Bottom Sheet for service/package details
-function MobileDetailSheet({ item, type, slug, isOpen, onClose }) {
-  if (!item) return null;
-
-  const isPackage = type === "package";
-
+// Featured Service Card
+function FeaturedServiceCard({ service, slug, index }) {
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/60 z-50" />
-
-          {/* Sheet */}
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-3xl bg-background rounded-t-2xl z-50 h-auto max-h-[70vh] flex flex-col overflow-hidden"
-          >
-            {/* Handle - overlaid on content */}
-            <div className="absolute top-0 left-0 right-0 flex justify-center pt-2 z-10">
-              <div className="w-10 h-1 rounded-full bg-white/50" />
-            </div>
-
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black/80 hover:scale-105 rounded-full z-10 text-white shadow-lg transition-all duration-200"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="overflow-y-auto min-h-0">
-              {/* Image */}
-              {item.images?.[0] && !isPackage && (
-                <div className="aspect-video overflow-hidden bg-muted">
-                  <Image src={item.images[0].url} alt={item.images[0].alt || item.name} width={448} height={252} className="w-full h-full object-cover" />
-                </div>
-              )}
-
-              {/* Package gradient header */}
-              {isPackage && (
-                <div className="bg-linear-to-r from-violet-500 to-purple-500 px-5 py-4">
-                  <Badge className="bg-white/20 text-white border-0 mb-2">Package</Badge>
-                  <h2 className="text-white">{item.name}</h2>
-                </div>
-              )}
-
-              <div className="p-5 space-y-4">
-                {/* Service title */}
-                {!isPackage && <h2 className="pr-8">{item.name}</h2>}
-
-                {/* Price & Duration */}
-                <div className={`flex items-center gap-4 p-4 rounded-xl ${isPackage ? "bg-violet-50 border border-violet-100" : "bg-muted/50"}`}>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Price</p>
-                    <p className={`text-2xl font-bold ${isPackage ? "text-violet-600" : "text-primary"}`}>{formatCurrency(item.price)}</p>
-                  </div>
-                  <div className={`border-l pl-4 ${isPackage ? "border-violet-200" : ""}`}>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Duration</p>
-                    <p className="text-sm font-medium flex items-center gap-1.5">
-                      <Clock className="w-4 h-4" />
-                      {formatDuration(isPackage ? item.totalDuration : item.duration)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Description */}
-                {item.description && <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>}
-
-                {/* What's Included (service) */}
-                {item.includes && item.includes.length > 0 && (
-                  <div>
-                    <h4 className="mb-3">What's Included</h4>
-                    <div className="space-y-2">
-                      {item.includes.map((inc, index) => (
-                        <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                          <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                            <Check className="w-3.5 h-3.5 text-green-600" />
-                          </div>
-                          <span className="text-sm">{inc}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Included Services (package) */}
-                {isPackage && item.services && item.services.length > 0 && (
-                  <div>
-                    <h4 className="mb-3">{item.services.length} Services Included</h4>
-                    <div className="space-y-2">
-                      {item.services.map((service) => (
-                        <div key={service.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                              <Check className="w-3.5 h-3.5 text-green-600" />
-                            </div>
-                            <span className="text-sm font-medium">{service.name}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{formatDuration(service.duration)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Book Button */}
-                <Link href={`/${slug}/book?${isPackage ? "packageId" : "serviceId"}=${item.id}`} className="block">
-                  <Button className={`w-full h-12 text-base ${isPackage ? "bg-violet-600 hover:bg-violet-700" : ""}`} size="lg">
-                    <Calendar className="w-5 h-5 mr-2" />
-                    Book {isPackage ? "Package" : "Service"}
-                  </Button>
-                </Link>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+    >
+      <Link href={`/${slug}/book?serviceId=${service.id}`}>
+        <div className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
+          {/* Image */}
+          <div className="aspect-4/3 overflow-hidden bg-linear-to-br from-gray-100 to-gray-50">
+            {service.images?.[0] ? (
+              <Image
+                src={service.images[0].url}
+                alt={service.images[0].alt || service.name}
+                width={400}
+                height={300}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Sparkles className="w-12 h-12 text-gray-300" />
               </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// Quick Action Button Component
-function QuickActionButton({ icon: Icon, label, href, onClick }) {
-  const content = (
-    <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-primary" />
-      </div>
-      <span className="text-xs font-medium">{label}</span>
-    </div>
-  );
-
-  if (href) {
-    return (
-      <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer">
-        {content}
-      </a>
-    );
-  }
-
-  return <button onClick={onClick}>{content}</button>;
-}
-
-// Service Card Component - Mobile-first
-function ServiceCard({ service, onClick }) {
-  return (
-    <div onClick={onClick} className="flex gap-4 p-4 bg-card rounded-xl border hover:shadow-md transition-all cursor-pointer active:scale-[0.98]">
-      {/* Thumbnail */}
-      {service.images?.[0] ? (
-        <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted shrink-0">
-          <Image src={service.images[0].url} alt={service.images[0].alt || service.name} width={80} height={80} className="w-full h-full object-cover" />
-        </div>
-      ) : (
-        <div className="w-20 h-20 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <Sparkles className="w-6 h-6 text-primary" />
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <h3 className="truncate">{service.name}</h3>
-        {service.description && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{service.description}</p>}
-        <div className="flex items-center gap-3 mt-2">
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            {formatDuration(service.duration)}
-          </span>
-          <span className="font-bold text-sm text-green-600">{formatCurrency(service.price)}</span>
-        </div>
-      </div>
-
-      <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 self-center" />
-    </div>
-  );
-}
-
-// Package Card Component - Mobile-first
-function PackageCard({ pkg, onClick }) {
-  return (
-    <div onClick={onClick} className="bg-card rounded-xl border overflow-hidden hover:shadow-md transition-all cursor-pointer active:scale-[0.98]">
-      {/* Gradient header */}
-      <div className="h-2 bg-linear-to-r from-violet-500 to-purple-500" />
-
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="min-w-0">
-            <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100 mb-1.5">
-              <Package className="w-3 h-3 mr-1" />
-              Package
-            </Badge>
-            <h3>{pkg.name}</h3>
-            {pkg.description && <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{pkg.description}</p>}
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-xl font-bold text-violet-600">{formatCurrency(pkg.price)}</p>
-            <p className="text-xs text-muted-foreground">{formatDuration(pkg.totalDuration)}</p>
-          </div>
-        </div>
-
-        {/* Included services preview */}
-        {pkg.services && pkg.services.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {pkg.services.slice(0, 3).map((service) => (
-              <span key={service.id} className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded-full text-xs">
-                <Check className="w-3 h-3 text-green-500" />
-                {service.name}
-              </span>
-            ))}
-            {pkg.services.length > 3 && (
-              <span className="inline-flex items-center px-2 py-1 bg-muted rounded-full text-xs text-muted-foreground">+{pkg.services.length - 3} more</span>
             )}
           </div>
-        )}
 
-        <Button variant="outline" className="w-full" size="sm">
-          View Details
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+          {/* Content */}
+          <div className="p-5">
+            <h3 className="font-semibold text-gray-900 text-lg group-hover:text-primary transition-colors">
+              {service.name}
+            </h3>
+            {service.description && (
+              <p className="text-sm text-gray-500 mt-1.5 line-clamp-2">{service.description}</p>
+            )}
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl font-bold text-gray-900">{formatCurrency(service.price)}</span>
+                <span className="text-sm text-gray-400">•</span>
+                <span className="text-sm text-gray-500 flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {formatDuration(service.duration)}
+                </span>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-primary/10 group-hover:bg-primary flex items-center justify-center transition-colors">
+                <ArrowRight className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
+// Stats/Trust Section
+function TrustBadges() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+          <Shield className="w-4 h-4 text-green-600" />
+        </div>
+        <span>Verified Business</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+          <Star className="w-4 h-4 text-amber-600" />
+        </div>
+        <span>Top Rated</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+          <Calendar className="w-4 h-4 text-blue-600" />
+        </div>
+        <span>Easy Booking</span>
       </div>
     </div>
   );
@@ -349,7 +136,6 @@ function PackageCard({ pkg, onClick }) {
 export default function TenantLandingPage({ params }) {
   const { slug } = use(params);
 
-  // Fetch business data with TanStack Query
   const {
     data,
     isLoading: loading,
@@ -357,30 +143,15 @@ export default function TenantLandingPage({ params }) {
   } = usePublicBusiness(slug);
 
   const error = queryError?.message || null;
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-
-  // Filter services and packages by category
-  const filteredServices = useMemo(() => {
-    if (!data?.services) return [];
-    if (selectedCategory === null) return data.services;
-    if (selectedCategory === "uncategorized") return data.services.filter((s) => !s.categoryId);
-    return data.services.filter((s) => s.categoryId === selectedCategory);
-  }, [data?.services, selectedCategory]);
-
-  const filteredPackages = useMemo(() => {
-    if (!data?.packages) return [];
-    if (selectedCategory === null) return data.packages;
-    if (selectedCategory === "uncategorized") return data.packages.filter((p) => !p.categoryId);
-    return data.packages.filter((p) => p.categoryId === selectedCategory);
-  }, [data?.packages, selectedCategory]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-white">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+          <p className="text-sm text-gray-500 font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -388,16 +159,18 @@ export default function TenantLandingPage({ params }) {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-        <Card className="max-w-sm w-full">
-          <CardContent className="p-6 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Building2 className="w-8 h-8 text-muted-foreground" />
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-white p-4">
+        <Card className="max-w-sm w-full shadow-xl border-0">
+          <CardContent className="p-8 text-center">
+            <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-5">
+              <Building2 className="w-10 h-10 text-gray-400" />
             </div>
-            <h1 className="mb-2">Business Not Found</h1>
-            <p className="text-sm text-muted-foreground mb-6">The business you&apos;re looking for doesn&apos;t exist or may have been removed.</p>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Business Not Found</h1>
+            <p className="text-sm text-gray-500 mb-6">
+              The business you&apos;re looking for doesn&apos;t exist or may have been removed.
+            </p>
             <Link href="/">
-              <Button className="w-full">Go Home</Button>
+              <Button className="w-full" size="lg">Go Home</Button>
             </Link>
           </CardContent>
         </Card>
@@ -405,186 +178,388 @@ export default function TenantLandingPage({ params }) {
     );
   }
 
-  const { business, services, packages, categories = [] } = data;
+  const { business, services, packages } = data;
   const hasAddress = business.address?.street || business.address?.city;
   const mapsUrl = getGoogleMapsUrl(business.address);
+  const featuredServices = services?.slice(0, 3) || [];
+  const totalServices = (services?.length || 0) + (packages?.length || 0);
+
+  const fullAddress = business.address
+    ? [
+        business.address.street,
+        business.address.city,
+        business.address.state,
+        business.address.zip,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : null;
 
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Hero Section - Mobile First */}
-      <header className="bg-card">
-        <div className="max-w-3xl mx-auto">
-          {/* Business Hero */}
-          <div className="px-5 pt-6 pb-5">
-            <div className="flex items-start gap-4">
-              {/* Logo */}
-              {business.logo ? (
-                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-muted ring-1 ring-border shrink-0">
-                  <Image src={business.logo} alt={business.name || "Business logo"} width={64} height={64} className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shrink-0">
-                  {business.name?.[0] || "B"}
-                </div>
-              )}
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 bg-linear-to-br from-gray-900 via-gray-800 to-gray-900" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+        <div className="absolute top-0 right-0 w-150 h-150 bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-100 h-100 bg-violet-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/4" />
 
-              {/* Business Info */}
-              <div className="flex-1 min-w-0">
-                <h1 className="truncate">{business.name || "Welcome"}</h1>
+        <div className="relative max-w-6xl mx-auto px-5 py-20 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* Logo & Name */}
+              <div className="flex items-center gap-4 mb-8">
+                {business.logo ? (
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white/10 backdrop-blur ring-2 ring-white/20 shadow-xl">
+                    <Image
+                      src={business.logo}
+                      alt={business.name || "Business logo"}
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-primary/25">
+                    {business.name?.[0] || "B"}
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-xl font-bold text-white">{business.name}</h2>
+                  {hasAddress && (
+                    <p className="text-sm text-gray-400 flex items-center gap-1.5 mt-0.5">
+                      <MapPin className="w-3.5 h-3.5" />
+                      {toTitleCase(business.address?.city)}, {business.address?.state?.toUpperCase()}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-                {/* Location */}
-                {hasAddress && (
-                  <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{[toTitleCase(business.address?.city), business.address?.state?.toUpperCase()].filter(Boolean).join(", ")}</span>
-                  </p>
+              {/* Headline */}
+              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-tight mb-6">
+                Book Your Next{" "}
+                <span className="bg-linear-to-r from-primary to-violet-400 bg-clip-text text-transparent">
+                  Appointment
+                </span>{" "}
+                Today
+              </h1>
+
+              <p className="text-lg text-gray-300 mb-8 max-w-lg">
+                {business.description ||
+                  `Professional services tailored to your needs. Book online in minutes and experience the difference.`}
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href={`/${slug}/book`}>
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto h-14 px-8 text-base font-semibold rounded-xl bg-linear-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/30"
+                  >
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Book Now
+                  </Button>
+                </Link>
+                {business.phone && (
+                  <a href={`tel:${business.phone}`}>
+                    <Button
+                      size="lg"
+                      className="w-full sm:w-auto h-14 px-8 text-base font-semibold rounded-xl bg-transparent border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50"
+                    >
+                      <Phone className="w-5 h-5 mr-2" />
+                      Call Us
+                    </Button>
+                  </a>
                 )}
               </div>
-            </div>
 
-            {/* Description */}
-            {business.description && <p className="text-sm text-muted-foreground mt-4 leading-relaxed">{business.description}</p>}
+              {/* Quick Stats */}
+              <div className="flex items-center gap-8 mt-10 pt-10 border-t border-white/10">
+                <div>
+                  <p className="text-3xl font-bold text-white">{totalServices}+</p>
+                  <p className="text-sm text-gray-400">Services</p>
+                </div>
+                <div className="w-px h-10 bg-white/10" />
+                <div>
+                  <p className="text-3xl font-bold text-white">5.0</p>
+                  <p className="text-sm text-gray-400 flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                    Rating
+                  </p>
+                </div>
+                <div className="w-px h-10 bg-white/10" />
+                <div>
+                  <p className="text-3xl font-bold text-white">24/7</p>
+                  <p className="text-sm text-gray-400">Online Booking</p>
+                </div>
+              </div>
+            </motion.div>
 
-            {/* Quick Actions - Mobile */}
-            <div className="grid grid-cols-3 gap-2 mt-5">
-              {business.phone && <QuickActionButton icon={Phone} label="Call" href={`tel:${business.phone}`} />}
-              {mapsUrl && <QuickActionButton icon={Navigation} label="Directions" href={mapsUrl} />}
-              {business.website && <QuickActionButton icon={Globe} label="Website" href={business.website} />}
-            </div>
+            {/* Right Content - Feature Card */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="hidden lg:block"
+            >
+              <div className="relative">
+                {/* Decorative elements */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/30 rounded-full blur-2xl" />
+                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-violet-500/30 rounded-full blur-2xl" />
 
-            {/* Book Now CTA */}
-            <Link href={`/${slug}/book`} className="block mt-5">
-              <Button className="w-full h-12 text-base" size="lg">
-                <Calendar className="w-5 h-5 mr-2" />
-                Book an Appointment
-              </Button>
-            </Link>
+                {/* Card */}
+                <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8 shadow-2xl">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary to-violet-500 flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Quick & Easy Booking</h3>
+                      <p className="text-sm text-gray-400">Book in under 2 minutes</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {[
+                      "Choose your preferred service",
+                      "Pick a convenient date & time",
+                      "Confirm and you're all set!",
+                    ].map((step, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white">
+                          {i + 1}
+                        </div>
+                        <p className="text-gray-300">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-white/10">
+                    <Link href={`/${slug}/book`}>
+                      <Button className="w-full h-12 rounded-xl bg-white text-gray-900 hover:bg-gray-100 font-semibold">
+                        Get Started
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
-      </header>
+      </section>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-3xl mx-auto px-4 py-6 space-y-6 pb-24 lg:pb-6 w-full">
-        {/* Category Filter */}
-        {(services?.length > 0 || packages?.length > 0) && (
-          <CategoryPills
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelect={setSelectedCategory}
-            services={services || []}
-            packages={packages || []}
-          />
-        )}
+      {/* Trust Section */}
+      <section className="py-8 bg-gray-50 border-y border-gray-100">
+        <div className="max-w-6xl mx-auto px-5">
+          <TrustBadges />
+        </div>
+      </section>
 
-        {/* Services Section */}
-        {filteredServices.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h2>Services</h2>
-                  <p className="text-xs text-muted-foreground">
-                    {filteredServices.length} available
-                    {selectedCategory && services.length !== filteredServices.length && <span className="text-muted-foreground/60"> of {services.length}</span>}
-                  </p>
-                </div>
+      {/* Featured Services Section */}
+      {featuredServices.length > 0 && (
+        <section className="py-20 lg:py-28">
+          <div className="max-w-6xl mx-auto px-5">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <Badge className="bg-primary/10 text-primary hover:bg-primary/10 mb-4">Our Services</Badge>
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                What We Offer
+              </h2>
+              <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+                Browse our most popular services and book your appointment in just a few clicks.
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredServices.map((service, index) => (
+                <FeaturedServiceCard key={service.id} service={service} slug={slug} index={index} />
+              ))}
+            </div>
+
+            {(services?.length > 3 || packages?.length > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-center mt-10"
+              >
+                <Link href={`/${slug}/book`}>
+                  <Button variant="outline" size="lg" className="h-12 px-8 rounded-xl">
+                    View All Services
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </motion.div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* CTA Section */}
+      <section className="py-20 lg:py-28 bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
+        <div className="absolute top-0 left-1/2 w-150 h-75 bg-primary/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2" />
+
+        <div className="relative max-w-4xl mx-auto px-5 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl lg:text-5xl font-bold text-white mb-6">
+              Ready to Book Your Appointment?
+            </h2>
+            <p className="text-lg text-gray-300 mb-10 max-w-2xl mx-auto">
+              Don&apos;t wait! Schedule your appointment today and experience our exceptional service.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href={`/${slug}/book`}>
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto h-14 px-10 text-base font-semibold rounded-xl bg-white text-gray-900 hover:bg-gray-100"
+                >
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Book Now
+                </Button>
+              </Link>
+              {business.phone && (
+                <a href={`tel:${business.phone}`}>
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto h-14 px-10 text-base font-semibold rounded-xl bg-transparent border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50"
+                  >
+                    <Phone className="w-5 h-5 mr-2" />
+                    {formatPhoneDisplay(business.phone)}
+                  </Button>
+                </a>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Contact/Footer Section */}
+      <footer className="bg-gray-50 border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-5 py-16">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+            {/* Business Info */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                {business.logo ? (
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100">
+                    <Image
+                      src={business.logo}
+                      alt={business.name || "Business logo"}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-lg">
+                    {business.name?.[0] || "B"}
+                  </div>
+                )}
+                <h3 className="text-lg font-bold text-gray-900">{business.name}</h3>
+              </div>
+              <p className="text-gray-500 mb-6 max-w-sm">
+                {business.description || "Professional services with exceptional quality. Book your appointment online today."}
+              </p>
+              <div className="flex items-center gap-3">
+                <Link href={`/${slug}/book`}>
+                  <Button size="sm" className="rounded-lg">
+                    Book Appointment
+                  </Button>
+                </Link>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {filteredServices.map((service) => (
-                <ServiceCard key={service.id} service={service} onClick={() => setSelectedItem({ type: "service", item: service })} />
-              ))}
+            {/* Contact */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Contact</h4>
+              <ul className="space-y-3">
+                {business.phone && (
+                  <li>
+                    <a href={`tel:${business.phone}`} className="flex items-center gap-2 text-gray-500 hover:text-primary transition-colors">
+                      <Phone className="w-4 h-4" />
+                      {formatPhoneDisplay(business.phone)}
+                    </a>
+                  </li>
+                )}
+                {business.email && (
+                  <li>
+                    <a href={`mailto:${business.email}`} className="flex items-center gap-2 text-gray-500 hover:text-primary transition-colors">
+                      <Mail className="w-4 h-4" />
+                      {business.email}
+                    </a>
+                  </li>
+                )}
+                {business.website && (
+                  <li>
+                    <a href={business.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-500 hover:text-primary transition-colors">
+                      <Globe className="w-4 h-4" />
+                      Website
+                    </a>
+                  </li>
+                )}
+              </ul>
             </div>
-          </section>
-        )}
 
-        {/* Packages Section */}
-        {filteredPackages.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-violet-500" />
-                </div>
-                <div>
-                  <h2>Packages</h2>
-                  <p className="text-xs text-muted-foreground">
-                    {filteredPackages.length} bundle{filteredPackages.length !== 1 ? "s" : ""} available
-                    {selectedCategory && packages.length !== filteredPackages.length && <span className="text-muted-foreground/60"> of {packages.length}</span>}
-                  </p>
-                </div>
+            {/* Location */}
+            {fullAddress && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-4">Location</h4>
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-2 text-gray-500 hover:text-primary transition-colors"
+                >
+                  <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>{fullAddress}</span>
+                </a>
               </div>
-            </div>
-
-            <div className="space-y-3">
-              {filteredPackages.map((pkg) => (
-                <PackageCard key={pkg.id} pkg={pkg} onClick={() => setSelectedItem({ type: "package", item: pkg })} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Empty State - No services at all */}
-        {(!services || services.length === 0) && (!packages || packages.length === 0) && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h2 className="mb-2">No Services Yet</h2>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto">This business hasn&apos;t added any services yet. Check back soon!</p>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Empty State - Category filter shows no results */}
-        {selectedCategory && filteredServices.length === 0 && filteredPackages.length === 0 && (services?.length > 0 || packages?.length > 0) && (
-          <div className="text-center py-12">
-            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-7 h-7 text-muted-foreground" />
-            </div>
-            <h2 className="mb-2">No Results</h2>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-4">No services found in this category.</p>
-            <Button variant="outline" size="sm" onClick={() => setSelectedCategory(null)}>
-              View All Services
-            </Button>
-          </div>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-card border-t">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-            <span>
-              {business.name} &copy; {new Date().getFullYear()}
-            </span>
-            <div className="flex items-center gap-4">
-              <Link href="/privacy" className="hover:text-foreground transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="hover:text-foreground transition-colors">
-                Terms
-              </Link>
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-200">
+          <div className="max-w-6xl mx-auto px-5 py-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+              <span>&copy; {new Date().getFullYear()} {business.name}. All rights reserved.</span>
+              <div className="flex items-center gap-6">
+                <Link href="/privacy" className="hover:text-gray-900 transition-colors">Privacy</Link>
+                <Link href="/terms" className="hover:text-gray-900 transition-colors">Terms</Link>
+              </div>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Mobile Fixed CTA - Shows when scrolling */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-linear-to-t from-background via-background to-transparent lg:hidden">
+      {/* Mobile Fixed CTA */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-linear-to-t from-white via-white to-transparent lg:hidden z-40">
         <Link href={`/${slug}/book`} className="block">
-          <Button className="w-full h-12 text-base shadow-xl" size="lg">
+          <Button
+            className="w-full h-14 text-base font-semibold rounded-xl bg-linear-to-r from-primary to-primary/90 shadow-2xl shadow-primary/30"
+            size="lg"
+          >
             <Calendar className="w-5 h-5 mr-2" />
             Book Now
           </Button>
         </Link>
       </div>
-
-      {/* Mobile Detail Sheet */}
-      <MobileDetailSheet item={selectedItem?.item} type={selectedItem?.type} slug={slug} isOpen={!!selectedItem} onClose={() => setSelectedItem(null)} />
     </div>
   );
 }

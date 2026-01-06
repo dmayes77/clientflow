@@ -121,11 +121,11 @@ export default function Step2Page() {
   return (
     <div className="space-y-5">
       <div className="text-center">
-        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
+        <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-blue-500" />
         </div>
-        <h2 className="hig-title-2 font-semibold text-gray-900">Name your business</h2>
-        <p className="mt-1 hig-caption1 text-gray-500">
+        <h2 className="hig-title-2 font-semibold text-gray-900 dark:text-white">Name your business</h2>
+        <p className="mt-1 hig-caption-1 text-gray-500 dark:text-gray-400">
           This will be your business name on ClientFlow
         </p>
       </div>
@@ -133,11 +133,11 @@ export default function Step2Page() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Business name - 44px height */}
         <div>
-          <label className="block hig-caption1 font-medium text-gray-700 mb-1.5">
+          <label className="block hig-caption-1 font-medium text-gray-700 dark:text-gray-300 mb-1.5">
             Business name
           </label>
-          <div className="flex h-11 border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
-            <div className="w-11 shrink-0 flex items-center justify-center bg-gray-100 border-r border-gray-300">
+          <div className="flex h-11 border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+            <div className="w-11 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-slate-600 border-r border-gray-300 dark:border-gray-600">
               <Building2 className="w-4 h-4 text-gray-400" />
             </div>
             <input
@@ -145,7 +145,7 @@ export default function Step2Page() {
               placeholder="Acme Photography"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
-              className="flex-1 min-w-0 px-3 hig-body outline-none bg-white text-gray-700 placeholder:text-gray-400"
+              className="flex-1 min-w-0 px-3 hig-body outline-none bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-200 placeholder:text-gray-400"
               required
               autoFocus
             />
@@ -154,7 +154,7 @@ export default function Step2Page() {
 
         {/* Booking URL */}
         <div>
-          <label className="block hig-caption1 font-medium text-gray-700 mb-1.5">
+          <label className="block hig-caption-1 font-medium text-gray-700 dark:text-gray-300 mb-1.5">
             Booking page URL
           </label>
           <SlugInput
@@ -165,13 +165,13 @@ export default function Step2Page() {
           />
         </div>
 
-        {error && <p className="text-red-500 hig-caption1 text-center">{error}</p>}
+        {error && <p className="text-red-500 hig-caption-1 text-center">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={() => router.push("/signup/step-1")}
-            className="min-h-11 px-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 active:text-gray-800 transition-colors hig-body"
+            className="min-h-11 px-4 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 active:text-gray-800 transition-colors hig-body"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
