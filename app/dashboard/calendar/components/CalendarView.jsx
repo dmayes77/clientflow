@@ -192,6 +192,13 @@ export function CalendarView() {
     router.push(`/dashboard/bookings/${booking.id}`);
   };
 
+  // Switch to day view for a specific date (used when clicking on a day in month view)
+  const handleDaySelect = (date) => {
+    setCurrentDate(date);
+    setSelectedDate(date);
+    setView("day");
+  };
+
   const handleStatusChange = async (booking, newStatus) => {
     updateBooking.mutate(
       { id: booking.id, status: newStatus },
@@ -437,7 +444,7 @@ export function CalendarView() {
                   !isCurrentMonth && "bg-muted/10",
                   isToday(day) && "bg-primary/5"
                 )}
-                onClick={() => handleOpenDialog(day)}
+                onClick={() => handleDaySelect(day)}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span
@@ -454,7 +461,7 @@ export function CalendarView() {
                   {dayBookings.slice(0, 2).map((booking) => (
                     <div
                       key={booking.id}
-                      className={cn("text-xs font-medium leading-tight px-1.5 py-1 rounded truncate text-white", statusConfig[booking.status]?.color)}
+                      className={cn("text-xs font-medium leading-tight px-1.5 py-1 rounded truncate text-white cursor-pointer", statusConfig[booking.status]?.color)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleBookingClick(booking);
@@ -463,7 +470,17 @@ export function CalendarView() {
                       {formatTimeInTz(booking.scheduledAt, "h:mma")} {booking.contact?.name}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && <div className="text-xs font-medium leading-tight text-muted-foreground px-1.5">+{dayBookings.length - 2} more</div>}
+                  {dayBookings.length > 2 && (
+                    <div
+                      className="text-xs font-medium leading-tight text-primary hover:underline cursor-pointer px-1.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDaySelect(day);
+                      }}
+                    >
+                      +{dayBookings.length - 2} more
+                    </div>
+                  )}
                 </div>
               </div>
             );
