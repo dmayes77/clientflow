@@ -267,7 +267,7 @@ export async function GET(request, { params }) {
     if (isDeposit && remainingBalance > 0) {
       const invoice = await prisma.invoice.findFirst({
         where: {
-          bookingId: booking.id,
+          booking: { id: booking.id },
           tenantId: tenant.id,
         },
         select: {
