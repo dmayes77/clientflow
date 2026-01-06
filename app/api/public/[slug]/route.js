@@ -103,6 +103,15 @@ export async function GET(request, { params }) {
                 },
               },
             },
+            images: {
+              take: 1,
+              orderBy: { createdAt: "desc" },
+              select: {
+                id: true,
+                url: true,
+                alt: true,
+              },
+            },
           },
           orderBy: { name: "asc" },
         },

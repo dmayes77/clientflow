@@ -436,7 +436,7 @@ model EmailTemplate {
 
   // System template fields
   isSystem    Boolean   @default(false)  // Can't be deleted if true
-  systemKey   String?   @unique          // e.g., "payment_reminder_gentle"
+  systemKey   String?                    // e.g., "payment_reminder_gentle"
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -445,9 +445,9 @@ model EmailTemplate {
   campaigns   Campaign[]
 
   @@unique([tenantId, name])
+  @@unique([tenantId, systemKey])
   @@index([tenantId])
   @@index([category])
-  @@index([systemKey])
 }
 
 model Campaign {

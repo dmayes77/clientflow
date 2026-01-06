@@ -9,6 +9,7 @@ import {
   dispatchInvoicePaid,
 } from "@/lib/webhooks";
 import { sendDisputeNotification, sendTrialEndingNotification } from "@/lib/email";
+import { sendBookingConfirmation } from "@/lib/send-system-email";
 import { triggerEventAlert, triggerEventAlertByStripeCustomer } from "@/lib/alert-runner";
 import { calculateBookingPaymentStatus } from "@/lib/payment-allocation";
 import { triggerWorkflows } from "@/lib/workflow-executor";
@@ -1930,6 +1931,18 @@ async function handleConnectPaymentIntentSucceeded(paymentIntent, accountId) {
       contact: booking.contact,
     }).catch((err) => {
       console.error("Error triggering booking_scheduled workflow:", err);
+    });
+
+    // Send booking confirmation email
+    sendBookingConfirmation({
+      ...booking,
+      status: "scheduled",
+      tenant: booking.tenant,
+      contact: booking.contact,
+      service: booking.service || null,
+      package: booking.package || null,
+    }).catch((err) => {
+      console.error("Error sending booking confirmation email:", err);
     });
 
     if (isPaidInFull) {

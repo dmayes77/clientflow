@@ -70,8 +70,8 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
     <div className="space-y-1.5">
       {/* Slug input */}
       <div className="relative">
-        <div className="flex h-11 items-center border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
-          <span className="px-3 bg-gray-100 text-gray-500 hig-caption1 border-r border-gray-300 h-full flex items-center">
+        <div className="flex h-11 items-center border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+          <span className="px-3 bg-gray-100 dark:bg-slate-600 text-gray-500 dark:text-gray-400 hig-caption-1 border-r border-gray-300 dark:border-gray-600 h-full flex items-center">
             clientflow.app/
           </span>
           <input
@@ -84,12 +84,12 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
             }}
             placeholder="your-business"
             className={cn(
-              "flex-1 min-w-0 px-3 hig-body outline-none",
-              isEditing ? "bg-white" : "bg-gray-50"
+              "flex-1 min-w-0 px-3 hig-body outline-none text-gray-700 dark:text-gray-200 placeholder:text-gray-400",
+              isEditing ? "bg-white dark:bg-slate-700" : "bg-gray-50 dark:bg-slate-700/50"
             )}
             disabled={!isEditing && !value}
           />
-          <div className="px-3 flex items-center gap-2">
+          <div className="px-3 flex items-center gap-2 bg-white dark:bg-slate-700">
             {checkSlugMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
             {!checkSlugMutation.isPending && available === true && (
               <Check className="w-4 h-4 text-green-500" />
@@ -101,7 +101,7 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -113,7 +113,7 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       {/* Status message */}
       {error && <p className="hig-caption-2 text-red-500">{error}</p>}
       {!error && available === true && (
-        <p className="hig-caption-2 text-green-600">This URL is available!</p>
+        <p className="hig-caption-2 text-green-600 dark:text-green-400">This URL is available!</p>
       )}
       {!error && available === false && !checkSlugMutation.isPending && (
         <p className="hig-caption-2 text-red-500">This URL is already taken</p>
@@ -122,14 +122,14 @@ export function SlugInput({ businessName, value, onChange, onValidChange }) {
       {/* Suggestions */}
       {suggestions.length > 0 && (
         <div className="space-y-1">
-          <p className="hig-caption-2 text-gray-500">Try one of these:</p>
+          <p className="hig-caption-2 text-gray-500 dark:text-gray-400">Try one of these:</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="px-2 py-1 hig-caption-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+                className="px-2 py-1 hig-caption-2 bg-gray-100 dark:bg-slate-600 hover:bg-gray-200 dark:hover:bg-slate-500 rounded text-gray-700 dark:text-gray-200"
               >
                 {suggestion}
               </button>

@@ -187,6 +187,7 @@ const SYSTEM_TEMPLATES = {
 
 async function seedSystemTemplates(tenantId) {
   const created = [];
+  const updated = [];
   const skipped = [];
 
   for (const [key, template] of Object.entries(SYSTEM_TEMPLATES)) {
@@ -199,7 +200,16 @@ async function seedSystemTemplates(tenantId) {
     });
 
     if (existing) {
-      skipped.push(key);
+      // If existing template doesn't have isSystem flag, update it
+      if (!existing.isSystem) {
+        await prisma.emailTemplate.update({
+          where: { id: existing.id },
+          data: { isSystem: true },
+        });
+        updated.push(key);
+      } else {
+        skipped.push(key);
+      }
       continue;
     }
 
@@ -220,7 +230,7 @@ async function seedSystemTemplates(tenantId) {
     created.push(key);
   }
 
-  return { created, skipped };
+  return { created, updated, skipped };
 }
 
 async function main() {
@@ -238,6 +248,7 @@ async function main() {
   console.log(`Found ${tenants.length} tenant(s)\n`);
 
   let totalCreated = 0;
+  let totalUpdated = 0;
   let totalSkipped = 0;
 
   // Seed templates for each tenant
@@ -245,13 +256,17 @@ async function main() {
     const displayName = tenant.businessName || tenant.name || tenant.id;
     console.log(`📧 Seeding templates for: ${displayName}`);
 
-    const { created, skipped } = await seedSystemTemplates(tenant.id);
+    const { created, updated, skipped } = await seedSystemTemplates(tenant.id);
 
     totalCreated += created.length;
+    totalUpdated += updated.length;
     totalSkipped += skipped.length;
 
     if (created.length > 0) {
       console.log(`   ✅ Created ${created.length} template(s): ${created.join(", ")}`);
+    }
+    if (updated.length > 0) {
+      console.log(`   🔄 Updated ${updated.length} template(s): ${updated.join(", ")}`);
     }
     if (skipped.length > 0) {
       console.log(`   ⏭️  Skipped ${skipped.length} (already exist): ${skipped.join(", ")}`);
@@ -261,6 +276,9 @@ async function main() {
 
   console.log("━".repeat(60));
   console.log(`✨ Done! Created ${totalCreated} templates across ${tenants.length} tenant(s)`);
+  if (totalUpdated > 0) {
+    console.log(`   (Updated ${totalUpdated} templates with isSystem flag)`);
+  }
   if (totalSkipped > 0) {
     console.log(`   (Skipped ${totalSkipped} templates that already existed)`);
   }
