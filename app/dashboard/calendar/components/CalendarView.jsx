@@ -64,7 +64,7 @@ const statusConfig = {
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const BUSINESS_HOURS_START = 6;
 const BUSINESS_HOURS_END = 22;
-const SLOT_HEIGHT = 48;
+const SLOT_HEIGHT_REM = 3; // 3rem = 48px at 16px base
 
 // Helper function to render break time indicator
 const BreakTimeIndicator = ({ breakStartTime, breakEndTime }) => {
@@ -79,17 +79,17 @@ const BreakTimeIndicator = ({ breakStartTime, breakEndTime }) => {
       return null;
     }
 
-    // Calculate position and height
-    const startOffset = (startHour - BUSINESS_HOURS_START) * SLOT_HEIGHT + (startMin / 60) * SLOT_HEIGHT;
+    // Calculate position and height in rem
+    const startOffset = (startHour - BUSINESS_HOURS_START) * SLOT_HEIGHT_REM + (startMin / 60) * SLOT_HEIGHT_REM;
     const durationMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
-    const height = (durationMinutes / 60) * SLOT_HEIGHT;
+    const height = (durationMinutes / 60) * SLOT_HEIGHT_REM;
 
     return (
       <div
         className="absolute left-0 right-0 bg-amber-100/40 dark:bg-amber-950/40 border-y border-amber-300/50 dark:border-amber-700/50 pointer-events-none z-10"
         style={{
-          top: `${startOffset}px`,
-          height: `${height}px`,
+          top: `${startOffset}rem`,
+          height: `${height}rem`,
         }}
       >
         <div className="flex items-center justify-center h-full">
@@ -529,7 +529,7 @@ export function CalendarView() {
         <div className="flex flex-1 overflow-y-auto">
           <div className="w-14 shrink-0 border-r border-border">
             {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => (
-              <div key={hour} className="h-12 text-2xs text-muted-foreground text-right pr-2 pt-0.5">
+              <div key={hour} className="h-[3rem] text-2xs text-muted-foreground text-right pr-2 pt-0.5">
                 {format(setHours(new Date(), hour), "h a")}
               </div>
             ))}
@@ -548,12 +548,12 @@ export function CalendarView() {
                 return (
                   <div
                     key={hour}
-                    className="h-12 border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
+                    className="h-[3rem] border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
                     onClick={() => handleOpenDialog(day, hour)}
                   >
                     {hourBookings.map((booking) => {
                       const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
-                      const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
+                      const topOffset = (startMinutes / 60) * SLOT_HEIGHT_REM;
 
                       // Calculate break-aware end time
                       const startTime = new Date(booking.scheduledAt);
@@ -564,18 +564,18 @@ export function CalendarView() {
                         tenant?.breakEndTime
                       );
 
-                      // Calculate actual display duration in minutes (including break extension)
+                      // Calculate actual display duration in rem
                       const displayDuration = (adjustedEndTime - startTime) / 60000;
-                      const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 8);
+                      const heightRem = Math.min((displayDuration / 60) * SLOT_HEIGHT_REM, SLOT_HEIGHT_REM * 8);
 
                       return (
                         <div
                           key={booking.id}
-                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white hig-caption-2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
+                          className={cn("absolute left-0.5 right-0.5 rounded px-1 text-white text-xs overflow-hidden z-5", statusConfig[booking.status]?.color)}
                           style={{
-                            top: `${topOffset}px`,
-                            height: `${Math.max(height, 20)}px`,
-                            minHeight: "20px",
+                            top: `${topOffset}rem`,
+                            height: `${Math.max(heightRem, 1.25)}rem`,
+                            minHeight: "1.25rem",
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -583,7 +583,7 @@ export function CalendarView() {
                           }}
                         >
                           <div className="font-medium truncate">{booking.contact?.name}</div>
-                          {height > 30 && <div className="opacity-80">{formatTimeInTz(booking.scheduledAt, "h:mm a")}</div>}
+                          {heightRem > 1.875 && <div className="opacity-80">{formatTimeInTz(booking.scheduledAt, "h:mm a")}</div>}
                         </div>
                       );
                     })}
@@ -619,7 +619,7 @@ export function CalendarView() {
         <div className="flex flex-1 overflow-y-auto">
           <div className="w-14 shrink-0 border-r border-border">
             {HOURS.slice(BUSINESS_HOURS_START, BUSINESS_HOURS_END).map((hour) => (
-              <div key={hour} className="h-12 text-2xs text-muted-foreground text-right pr-2 pt-0.5">
+              <div key={hour} className="h-[3rem] text-2xs text-muted-foreground text-right pr-2 pt-0.5">
                 {format(setHours(new Date(), hour), "h a")}
               </div>
             ))}
@@ -637,12 +637,12 @@ export function CalendarView() {
               return (
                 <div
                   key={hour}
-                  className="h-12 border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="h-[3rem] border-b border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
                   onClick={() => handleOpenDialog(currentDate, hour)}
                 >
                   {hourBookings.map((booking) => {
                     const startMinutes = getMinutes(toZonedTime(new Date(booking.scheduledAt), timezone));
-                    const topOffset = (startMinutes / 60) * SLOT_HEIGHT;
+                    const topOffset = (startMinutes / 60) * SLOT_HEIGHT_REM;
 
                     // Calculate break-aware end time
                     const startTime = new Date(booking.scheduledAt);
@@ -653,30 +653,34 @@ export function CalendarView() {
                       tenant?.breakEndTime
                     );
 
-                    // Calculate actual display duration in minutes (including break extension)
+                    // Calculate actual display duration in rem
                     const displayDuration = (adjustedEndTime - startTime) / 60000;
-                    const height = Math.min((displayDuration / 60) * SLOT_HEIGHT, SLOT_HEIGHT * 8);
+                    const heightRem = Math.min((displayDuration / 60) * SLOT_HEIGHT_REM, SLOT_HEIGHT_REM * 8);
+                    const serviceName = booking.services?.[0]?.service?.name ||
+                      booking.packages?.[0]?.package?.name ||
+                      booking.service?.name ||
+                      booking.package?.name;
 
                     return (
                       <div
                         key={booking.id}
-                        className={cn("absolute left-1 right-1 rounded px-2 text-white hig-caption-2 overflow-hidden z-5", statusConfig[booking.status]?.color)}
+                        className={cn("absolute left-1 right-1 rounded px-2 py-0.5 text-white overflow-hidden z-5 flex flex-col justify-center", statusConfig[booking.status]?.color)}
                         style={{
-                          top: `${topOffset}px`,
-                          height: `${Math.max(height, 28)}px`,
-                          minHeight: "28px",
+                          top: `${topOffset}rem`,
+                          height: `${Math.max(heightRem, 1.75)}rem`,
+                          minHeight: "1.75rem",
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleBookingClick(booking);
                         }}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium truncate">{booking.contact?.name}</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-sm font-semibold truncate">{booking.contact?.name}</span>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20">
-                                <MoreHorizontal className="h-4 w-4" />
+                              <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 text-white hover:bg-white/20">
+                                <MoreHorizontal className="h-3.5 w-3.5" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -717,20 +721,10 @@ export function CalendarView() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
-                        {height > 40 && (
-                          <>
-                            <div className="opacity-80">
-                              {formatTimeInTz(booking.scheduledAt, "h:mm a")} - {formatTimeInTz(adjustedEndTime, "h:mm a")}
-                            </div>
-                            <div className="opacity-80 truncate">
-                              {booking.services?.[0]?.service?.name ||
-                                booking.packages?.[0]?.package?.name ||
-                                booking.service?.name ||
-                                booking.package?.name ||
-                                "Custom"}
-                            </div>
-                          </>
-                        )}
+                        <div className="text-xs opacity-90 truncate leading-tight">
+                          {formatTimeInTz(booking.scheduledAt, "h:mma")}
+                          {serviceName && <span className="opacity-80"> · {serviceName}</span>}
+                        </div>
                       </div>
                     );
                   })}
