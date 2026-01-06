@@ -544,20 +544,46 @@ npm run test:e2e         # Run E2E tests (Playwright)
 npm run test:e2e:ui      # Run E2E tests with UI
 ```
 
+## Conventional Commits
+
+All commit messages MUST follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+<type>: <description>
+```
+
+**Types:**
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `chore:` - Maintenance, dependencies, config
+- `refactor:` - Code restructuring without behavior change
+- `style:` - Formatting, whitespace (not CSS styling)
+- `docs:` - Documentation only
+- `perf:` - Performance improvements
+- `test:` - Adding/updating tests
+
+**Examples:**
+```bash
+make deploy-dev MSG="feat: add dark mode toggle"
+make deploy-dev MSG="fix: calendar day view not showing bookings"
+make deploy-dev MSG="chore: update dependencies"
+make deploy-dev MSG="refactor: extract booking card component"
+```
+
 ## CI/CD Workflow
 
 Deployments use Make commands with scripts in `scripts/`:
 
 ```bash
-make deploy-dev MSG="your commit message"  # Deploy to dev environment
-make pr                                     # Create PR from dev to main
-make deploy                                 # Deploy to production (merge PR)
-make status                                 # Check deployment status
+make deploy-dev MSG="fix: your commit message"  # Deploy to dev environment
+make pr                                          # Create PR from dev to main
+make deploy                                      # Deploy to production (merge PR)
+make status                                      # Check deployment status
 ```
 
 **Workflow:**
 
-1. `make deploy-dev MSG="..."` - Commits and pushes to dev branch, triggers dev deployment
+1. `make deploy-dev MSG="type: description"` - Commits and pushes to dev branch, triggers dev deployment
 2. `make pr` - Creates a PR from dev → main
 3. `make deploy` - Merges PR and deploys to production
 
