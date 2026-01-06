@@ -230,24 +230,25 @@ export function CalendarView() {
   };
 
   const getBookingsForDay = (date) => {
+    const targetDay = formatTz(toZonedTime(date, timezone), "yyyy-MM-dd", { timeZone: timezone });
     return bookings
       .filter((booking) => {
         const bookingDate = new Date(booking.scheduledAt);
         const zonedBookingDate = toZonedTime(bookingDate, timezone);
-        const zonedTargetDate = toZonedTime(date, timezone);
-        return isSameDay(zonedBookingDate, zonedTargetDate);
+        const bookingDay = formatTz(zonedBookingDate, "yyyy-MM-dd", { timeZone: timezone });
+        return bookingDay === targetDay;
       })
       .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
   };
 
   const getBookingsForHour = (date, hour) => {
+    const targetDay = formatTz(toZonedTime(date, timezone), "yyyy-MM-dd", { timeZone: timezone });
     return bookings.filter((booking) => {
       const bookingDate = new Date(booking.scheduledAt);
       const zonedBookingDate = toZonedTime(bookingDate, timezone);
-      const zonedTargetDate = toZonedTime(date, timezone);
-      // Use formatTz to get the correct hour in the tenant's timezone
+      const bookingDay = formatTz(zonedBookingDate, "yyyy-MM-dd", { timeZone: timezone });
       const bookingHour = parseInt(formatTz(zonedBookingDate, "H", { timeZone: timezone }), 10);
-      return isSameDay(zonedBookingDate, zonedTargetDate) && bookingHour === hour;
+      return bookingDay === targetDay && bookingHour === hour;
     });
   };
 
