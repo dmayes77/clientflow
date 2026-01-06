@@ -679,7 +679,7 @@ export function CalendarView() {
                           <span className="text-sm font-semibold truncate">{booking.contact?.name}</span>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 text-white hover:bg-white/20">
+                              <Button variant="ghost" className="h-5 w-5 p-0 shrink-0 text-white hover:bg-white/20">
                                 <MoreHorizontal className="h-3.5 w-3.5" />
                               </Button>
                             </DropdownMenuTrigger>
