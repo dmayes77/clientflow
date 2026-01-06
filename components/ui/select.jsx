@@ -112,7 +112,7 @@ const SelectLabel = React.forwardRef(({ className, ...props }, ref) => (
       "py-1 pl-2 pr-2 font-medium text-muted-foreground",
       "tablet:text-xs desktop:text-2xs",
       /* HIG caption-2 (mobile default) */
-      "text-[11px] tracking-[0.066px] leading-[13px]",
+      "text-[11px] tracking-[0.066px] leading-3.25",
       className
     )}
     {...props}
