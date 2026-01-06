@@ -270,8 +270,7 @@ export default function TenantLandingPage({ params }) {
                   <a href={`tel:${business.phone}`}>
                     <Button
                       size="lg"
-                      variant="outline"
-                      className="w-full sm:w-auto h-14 px-8 text-base font-semibold rounded-xl border-white/20 text-white hover:bg-white/10 hover:text-white"
+                      className="w-full sm:w-auto h-14 px-8 text-base font-semibold rounded-xl bg-transparent border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50"
                     >
                       <Phone className="w-5 h-5 mr-2" />
                       Call Us
