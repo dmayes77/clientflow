@@ -245,7 +245,9 @@ export function CalendarView() {
       const bookingDate = new Date(booking.scheduledAt);
       const zonedBookingDate = toZonedTime(bookingDate, timezone);
       const zonedTargetDate = toZonedTime(date, timezone);
-      return isSameDay(zonedBookingDate, zonedTargetDate) && getHours(zonedBookingDate) === hour;
+      // Use formatTz to get the correct hour in the tenant's timezone
+      const bookingHour = parseInt(formatTz(zonedBookingDate, "H", { timeZone: timezone }), 10);
+      return isSameDay(zonedBookingDate, zonedTargetDate) && bookingHour === hour;
     });
   };
 
