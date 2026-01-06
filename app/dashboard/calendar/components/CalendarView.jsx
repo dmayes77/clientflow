@@ -11,6 +11,8 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
+  startOfDay,
+  endOfDay,
   addWeeks,
   subWeeks,
   addMonths,
@@ -136,7 +138,8 @@ export function CalendarView() {
       const end = endOfWeek(currentDate, { weekStartsOn: 0 });
       return { start, end };
     }
-    return { start: currentDate, end: currentDate };
+    // Day view - fetch full day range
+    return { start: startOfDay(currentDate), end: endOfDay(currentDate) };
   }, [currentDate, view, isMobile]);
 
   // Fetch tenant settings
@@ -596,8 +599,6 @@ export function CalendarView() {
 
   // Day View Component
   const DayView = () => {
-    const dayBookings = getBookingsForDay(currentDate);
-
     return (
       <div className="flex flex-col h-full overflow-hidden">
         <div className="flex border-b border-border shrink-0">
@@ -612,9 +613,6 @@ export function CalendarView() {
             >
               {format(currentDate, "d")}
             </div>
-            {dayBookings.length > 0 && (
-              <div className="text-xs text-muted-foreground mt-1">{dayBookings.length} booking{dayBookings.length !== 1 ? 's' : ''}</div>
-            )}
           </div>
         </div>
 
