@@ -1,5 +1,13 @@
 # What's New
 
+## v1.10.12 - January 6, 2026
+
+## Changes
+- Deploy to Production (#37)
+
+---
+
+
 ## v1.10.11 - January 6, 2026
 
 ## Changes
