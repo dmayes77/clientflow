@@ -141,8 +141,9 @@ export async function GET(request, { params }) {
       // Apply confirmed status tag
       await applyBookingStatusTag(prisma, booking.id, tenant.id, "confirmed", { tenant });
 
-      // If deposit, create invoice with Stripe Payment Link for remaining balance
+      // Create invoice for all payments
       if (isDeposit && remainingBalance > 0) {
+        // Deposit payment - create invoice with payment link for remaining balance
         const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
 
         // Create a Stripe Product for this balance payment
@@ -259,6 +260,37 @@ export async function GET(request, { params }) {
             },
           });
         }
+      } else {
+        // Full payment - create a paid invoice
+        const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+
+        await prisma.invoice.create({
+          data: {
+            tenantId: tenant.id,
+            contactId: booking.contact?.id,
+            bookingId: booking.id,
+            invoiceNumber,
+            status: "paid",
+            issueDate: new Date(),
+            dueDate: new Date(),
+            paidAt: new Date(),
+            subtotal: serviceTotal,
+            total: serviceTotal,
+            amountPaid: amountPaid,
+            balanceDue: 0,
+            lineItems: JSON.stringify([
+              {
+                description: serviceName,
+                quantity: 1,
+                unitPrice: serviceTotal,
+                amount: serviceTotal,
+              },
+            ]),
+            contactName: booking.contact?.name || "",
+            contactEmail: booking.contact?.email || "",
+            notes: `Payment received in full. Thank you for your business!`,
+          },
+        });
       }
     }
 
