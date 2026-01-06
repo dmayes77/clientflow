@@ -223,7 +223,9 @@ export function CalendarView() {
   };
 
   const getBookingsForDay = (date) => {
-    return bookings.filter((booking) => isSameDay(new Date(booking.scheduledAt), date));
+    return bookings
+      .filter((booking) => isSameDay(new Date(booking.scheduledAt), date))
+      .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
   };
 
   const getBookingsForHour = (date, hour) => {
@@ -260,7 +262,7 @@ export function CalendarView() {
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
     const calendarEnd = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-    const selectedDayBookings = getBookingsForDay(selectedDate).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt));
+    const selectedDayBookings = getBookingsForDay(selectedDate);
 
     return (
       <div className="flex flex-col">
