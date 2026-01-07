@@ -246,49 +246,37 @@ jobs:
 
       - name: Generate changelog
         id: changelog
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Extract PR number from the merge commit message (e.g., "Deploy to Production (#37)")
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
-          PR_NUMBER=$(echo "$COMMIT_MSG" | grep -oE '\(#([0-9]+)\)' | grep -oE '[0-9]+' | head -1)
+          # Get commits since last tag, filter out automated ones
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-          COMMITS=""
-
-          if [ -n "$PR_NUMBER" ]; then
-            echo "Found PR #${PR_NUMBER}, fetching commits..."
-            # Fetch first line of each commit message from the PR, filter automated ones
-            COMMITS=$(gh api repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits \
-              --jq '.[].commit.message | split("\n")[0]' 2>/dev/null \
-              | grep -viE '^(chore: (Sync|Bump)|Merge)' \
-              | sed 's/^/- /' \
-              || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            # No previous tag, get last 20 commits
+            COMMITS=$(git log --oneline --pretty=format:"%s" HEAD~20..HEAD 2>/dev/null || git log --oneline --pretty=format:"%s" | head -20)
+          else
+            # Get commits since last tag
+            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"%s")
           fi
 
-          # Fallback to git log if no PR commits found
-          if [ -z "$COMMITS" ]; then
-            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-            if [ -z "$LAST_TAG" ]; then
-              COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
-            else
-              COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
-            fi
-            # Filter out automated commits
-            COMMITS=$(echo "$COMMITS" | grep -viE '^- (chore: (Sync|Bump)|Merge)' || echo "$COMMITS")
-          fi
+          # Filter out automated commits and format as bullet list
+          COMMITS=$(echo "$COMMITS" | grep -viE '^(chore: (Sync|Bump)|Merge|Deploy to Production)' | sed 's/^/- /' || echo "")
 
-          # Default if still empty
-          if [ -z "$COMMITS" ]; then
+          # Default if empty
+          if [ -z "$COMMITS" ] || [ "$COMMITS" = "- " ]; then
             COMMITS="- Bug fixes and improvements"
           fi
 
+          # Write to file
           echo "## Changes" > /tmp/changelog.md
           echo "$COMMITS" >> /tmp/changelog.md
 
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "## Changes" >> $GITHUB_OUTPUT
-          echo "$COMMITS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Output for GitHub Release
+          {
+            echo "changelog<<EOF"
+            echo "## Changes"
+            echo "$COMMITS"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Update CHANGELOG.md
         run: |
