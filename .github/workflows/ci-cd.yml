@@ -246,17 +246,48 @@ jobs:
 
       - name: Generate changelog
         id: changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -z "$LAST_TAG" ]; then
-            COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
-          else
-            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
+          # Extract PR number from the merge commit message (e.g., "Deploy to Production (#37)")
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          PR_NUMBER=$(echo "$COMMIT_MSG" | grep -oE '\(#([0-9]+)\)' | grep -oE '[0-9]+' | head -1)
+
+          COMMITS=""
+
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Found PR #${PR_NUMBER}, fetching commits..."
+            # Fetch commits from the PR using GitHub API
+            PR_COMMITS=$(gh api repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits --jq '.[].commit.message' 2>/dev/null || echo "")
+
+            if [ -n "$PR_COMMITS" ]; then
+              # Format commits as bullet points, taking first line of each commit message
+              # Filter out merge/sync commits and version bumps
+              COMMITS=$(echo "$PR_COMMITS" | while IFS= read -r msg; do
+                FIRST_LINE=$(echo "$msg" | head -1)
+                # Skip automated commits
+                if ! echo "$FIRST_LINE" | grep -qiE '^(chore: (Sync|Bump)|Merge)'; then
+                  echo "- $FIRST_LINE"
+                fi
+              done)
+            fi
           fi
 
-          # No filtering - show all commits
+          # Fallback to git log if no PR commits found
           if [ -z "$COMMITS" ]; then
-            COMMITS="- No changes"
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -z "$LAST_TAG" ]; then
+              COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
+            else
+              COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --pretty=format:"- %s")
+            fi
+            # Filter out automated commits
+            COMMITS=$(echo "$COMMITS" | grep -viE '^- (chore: (Sync|Bump)|Merge)' || echo "$COMMITS")
+          fi
+
+          # Default if still empty
+          if [ -z "$COMMITS" ]; then
+            COMMITS="- Bug fixes and improvements"
           fi
 
           echo "## Changes" > /tmp/changelog.md
