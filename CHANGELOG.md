@@ -2,8 +2,12 @@
 
 ## v1.10.13 - January 7, 2026
 
-## Changes
-- Bug fixes and improvements
+### Bug Fixes
+- **CI/CD** - Fixed changelog generation failing on multi-line commit messages
+- **CI/CD** - Simplified changelog script to use git log instead of PR API
+
+### Improvements
+- **CI/CD** - Changelog now properly filters automated commits (sync, bump, merge)
 
 ---
 
