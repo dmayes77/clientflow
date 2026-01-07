@@ -257,20 +257,12 @@ jobs:
 
           if [ -n "$PR_NUMBER" ]; then
             echo "Found PR #${PR_NUMBER}, fetching commits..."
-            # Fetch commits from the PR using GitHub API
-            PR_COMMITS=$(gh api repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits --jq '.[].commit.message' 2>/dev/null || echo "")
-
-            if [ -n "$PR_COMMITS" ]; then
-              # Format commits as bullet points, taking first line of each commit message
-              # Filter out merge/sync commits and version bumps
-              COMMITS=$(echo "$PR_COMMITS" | while IFS= read -r msg; do
-                FIRST_LINE=$(echo "$msg" | head -1)
-                # Skip automated commits
-                if ! echo "$FIRST_LINE" | grep -qiE '^(chore: (Sync|Bump)|Merge)'; then
-                  echo "- $FIRST_LINE"
-                fi
-              done)
-            fi
+            # Fetch first line of each commit message from the PR, filter automated ones
+            COMMITS=$(gh api repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits \
+              --jq '.[].commit.message | split("\n")[0]' 2>/dev/null \
+              | grep -viE '^(chore: (Sync|Bump)|Merge)' \
+              | sed 's/^/- /' \
+              || echo "")
           fi
 
           # Fallback to git log if no PR commits found
