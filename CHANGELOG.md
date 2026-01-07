@@ -1,5 +1,13 @@
 # What's New
 
+## v1.10.13 - January 7, 2026
+
+## Changes
+- Bug fixes and improvements
+
+---
+
+
 ## v1.10.12 - January 6, 2026
 
 ### Bug Fixes
