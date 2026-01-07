@@ -2,25 +2,35 @@
 
 ## v1.10.12 - January 6, 2026
 
-## Changes
-- Deploy to Production (#37)
+### Bug Fixes
+- **Calendar Day View** - Fixed dropdown button padding that was too large
+- **Calendar Day View** - Booking content now anchored to top instead of centered
+
+### Improvements
+- **CI/CD** - Auto-release now detects squash merges to properly trigger changelog updates
+- **Code Standards** - Added conventional commits documentation to CLAUDE.md
 
 ---
 
 
 ## v1.10.11 - January 6, 2026
 
-## Changes
-- Deploy to Production (#35)
+### Bug Fixes
+- **Calendar Day View** - Fixed bookings not displaying by using full day range for API queries
+
+### Improvements
+- **Code Standards** - Updated landing page to use Tailwind canonical classes (gradients, aspect ratios, sizing)
+- **Code Standards** - Updated select component to use canonical leading classes
+- **Calendar** - Switched to rem units for consistent sizing, improved compact day view with full booking info
 
 ---
 
 
 ## v1.10.10 - January 5, 2026
 
-## Changes
-- Deploy to Production (#33)
-- chore: Update CHANGELOG.md for v1.10.9
+### Improvements
+- **Calendar** - Updated calendar view to use rem-based sizing for better consistency
+- **Calendar Day View** - Enhanced compact booking display showing contact name, time, and service
 
 ---
 
